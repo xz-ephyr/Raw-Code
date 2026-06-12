@@ -7,7 +7,7 @@ export default function ChatInput() {
 
   return (
     <div className="w-full max-w-[720px] mx-auto p-4">
-      <div className="bg-white rounded-[12px] transition-all">
+      <div className="bg-white rounded-[12px] transition-all border-[1.5px] border-[#e5e5e5]">
         <ThinScrollbar className="max-h-[145px]">
           <textarea
             value={value}
