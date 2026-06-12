@@ -7,7 +7,7 @@ type Message = { role: 'user' | 'assistant'; content: string };
 const CopyButton = ({ content }: { content: string }) => (
   <button 
     onClick={() => navigator.clipboard.writeText(content).catch(err => console.error('Failed to copy!', err))}
-    className="opacity-0 group-hover:opacity-100 p-1 mt-1 text-gray-400 hover:text-gray-900 transition-opacity"
+    className="p-1 mt-1 text-gray-400 hover:text-gray-900 transition-opacity"
   >
     <Copy size={14} />
   </button>
@@ -36,8 +36,8 @@ const AssistantBubble = ({ content }: { content: string }) => {
   }, [content]);
 
   return (
-    <div className="mb-4 group">
-      <div className="text-sm p-4">
+    <div className="mb-4">
+      <div className="text-sm py-4">
         {displayedContent}
       </div>
       <CopyButton content={content} />
