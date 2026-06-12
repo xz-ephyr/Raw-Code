@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
-const GEMMA_4_MODELS = ['gemma-4-pro', 'gemma-4-flash', 'gemma-4-nano'];
+const AI_MODELS = ['gemma-4-31b', 'gemma-4-26b', 'gemini-3.1-flash-lite', 'Gemini 3.5 Flash', 'Gemini 2.5 Flash'];
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -9,30 +9,33 @@ interface SettingsModalProps {
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('api-key') || '');
-  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('selected-model') || GEMMA_4_MODELS[0]);
+  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('selected-model') || AI_MODELS[0]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
+  const handleSave = async () => {
+    setIsLoading(true);
+    // Simulate a brief delay to show loading state
+    await new Promise(resolve => setTimeout(resolve, 600));
     localStorage.setItem('api-key', apiKey);
-  }, [apiKey]);
-
-  useEffect(() => {
     localStorage.setItem('selected-model', selectedModel);
-  }, [selectedModel]);
+    setIsLoading(false);
+    onClose();
+  };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px] z-50">
-      <div className="bg-white/70 backdrop-blur-md rounded-[12px] p-6 w-[500px] shadow-xl border border-white/50">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[4px] z-50">
+      <div className="bg-white rounded-[12px] p-6 w-[500px] shadow-xl border border-neutral-100">
         <h2 className="text-[18px] font-bold mb-6">Settings</h2>
         
         <div className="space-y-6">
           {/* API Key Section */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Google API Key</label>
+            <label className="text-sm font-medium text-neutral-700">Google API Key</label>
             <input
               type="password"
-              className="h-9 bg-white/50 rounded-[8px] px-3 outline-none text-sm w-full border border-white/20"
+              className="h-9 bg-neutral-50 rounded-[8px] px-3 outline-none text-sm w-full border border-neutral-200 focus:border-neutral-400 transition-colors"
               placeholder="Enter your API Key"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
@@ -41,13 +44,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
           {/* Model Selection Section */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Select Model</label>
+            <label className="text-sm font-medium text-neutral-700">Select Model</label>
             <select 
-              className="h-9 bg-white/50 rounded-[8px] px-3 text-sm outline-none w-full border border-white/20"
+              className="h-9 bg-neutral-50 rounded-[8px] px-3 text-sm outline-none w-full border border-neutral-200 focus:border-neutral-400 transition-colors"
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
             >
-              {GEMMA_4_MODELS.map(model => (
+              {AI_MODELS.map(model => (
                 <option key={model} value={model}>{model}</option>
               ))}
             </select>
@@ -57,9 +60,20 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <div className="flex justify-end gap-2 mt-8">
           <button 
             onClick={onClose} 
-            className="px-4 py-2 text-sm font-bold text-neutral-600 hover:bg-white/50 rounded-[8px]"
+            className="px-4 py-2 text-sm font-bold text-neutral-600 hover:bg-neutral-100 rounded-[8px] transition-colors"
+            disabled={isLoading}
           >
-            Close
+            Cancel
+          </button>
+          <button 
+            onClick={handleSave} 
+            className="px-4 py-2 text-sm font-bold text-white bg-black hover:bg-neutral-800 rounded-[8px] transition-colors flex items-center gap-2"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : null}
+            Save
           </button>
         </div>
       </div>
