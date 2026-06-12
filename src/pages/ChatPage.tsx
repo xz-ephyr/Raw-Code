@@ -75,11 +75,12 @@ export const ChatPage = () => {
         currentContent += fullContent[i];
         setMessages((prev) => {
           const newMessages = [...prev];
-          const lastMsg = newMessages[newMessages.length - 1];
+          const lastIdx = newMessages.length - 1;
+          const lastMsg = newMessages[lastIdx];
           if (lastMsg && lastMsg.role === 'assistant') {
-            lastMsg.content = currentContent;
+            newMessages[lastIdx] = { ...lastMsg, content: currentContent };
           }
-          return [...newMessages];
+          return newMessages;
         });
         i++;
         if (i >= fullContent.length) clearInterval(interval);

@@ -19,7 +19,7 @@ export default function ChatInput({ onSend }: ChatInputProps) {
   return (
     <div className="w-full max-w-[720px] mx-auto p-4">
       <div className="bg-[#f2f3f6] rounded-[12px] transition-all">
-        <ThinScrollbar className="max-h-[145px]">
+        <ThinScrollbar className="max-h-[195px]">
           <textarea
             value={value}
             onChange={(e) => setValue(e.target.value)}
@@ -34,7 +34,7 @@ export default function ChatInput({ onSend }: ChatInputProps) {
             rows={1}
           />
         </ThinScrollbar>
-        <div className="flex items-center justify-end px-3 py-2 bg-transparent">
+        <div className="flex items-center justify-end px-3 py-1 bg-transparent">
           <div className="flex-1" /> {/* Spacer to push button to right */}
           <button 
             onClick={handleSend}

@@ -1,12 +1,20 @@
 // Your rules resume
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SquarePen, AlarmClock, Toolbox, SunMoon, Settings, PanelLeft, PanelRight, GalleryVerticalEnd } from 'lucide-react';
 import SidebarTab from './SidebarTab';
+import { ChatSessionManager } from '../../services/ChatSessionManager';
 import ProjectItem from './ProjectItem';
 import ChatsList from './ChatsList';
 
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const navigate = useNavigate();
+
+  const handleNewThread = () => {
+    const session = ChatSessionManager.create('New Chat');
+    navigate(`/chat/${session.id}`);
+  };
 
   return (
     <div 
@@ -20,7 +28,16 @@ export default function Sidebar() {
 
       <div className={`px-4 flex-1 ${isCollapsed ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         <>
-          <SidebarTab icon={SquarePen} label="New thread" path="/chat/new" collapsed={isCollapsed} />
+          <SidebarTab
+            icon={SquarePen}
+            label="New thread"
+            path="#"
+            collapsed={isCollapsed}
+            onClick={(e) => {
+              e.preventDefault();
+              handleNewThread();
+            }}
+          />
           <SidebarTab icon={GalleryVerticalEnd} label="Chats" path="/chats" collapsed={isCollapsed} />
           <ChatsList collapsed={isCollapsed} />
           <SidebarTab icon={AlarmClock} label="Schedule" path="/schedule" collapsed={isCollapsed} />
