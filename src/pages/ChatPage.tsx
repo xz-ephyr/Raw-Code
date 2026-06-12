@@ -35,22 +35,10 @@ const UserBubble = React.memo(({ content }: { content: string }) => (
 ));
 
 const AssistantBubble = React.memo(({ content }: { content: string }) => {
-  const [displayedContent, setDisplayedContent] = useState('');
-
-  useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      setDisplayedContent(content.slice(0, i + 1));
-      i++;
-      if (i >= content.length) clearInterval(interval);
-    }, 20);
-    return () => clearInterval(interval);
-  }, [content]);
-
   return (
     <div className="mb-4">
       <div className="text-sm py-4 max-w-[70%]">
-        {displayedContent}
+        {content}
       </div>
       <div className="flex gap-2 text-gray-400 items-center">
         <CopyButton content={content} alwaysVisible={true} />
@@ -71,7 +59,32 @@ export const ChatPage = () => {
   }, [uuid]);
 
   const handleSend = useCallback((content: string) => {
-    setMessages((prev) => [...prev, { role: 'user', content }, { role: 'assistant', content: 'This is a simulated AI response.' }]);
+    // Add user message first (Request First logic)
+    setMessages((prev) => [...prev, { role: 'user', content }]);
+
+    // Simulate streaming from "backend"
+    let fullContent = 'This is a simulated AI response.';
+    let currentContent = '';
+
+    // Initial assistant message entry (empty content)
+    setTimeout(() => {
+      setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+
+      let i = 0;
+      const interval = setInterval(() => {
+        currentContent += fullContent[i];
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const lastMsg = newMessages[newMessages.length - 1];
+          if (lastMsg && lastMsg.role === 'assistant') {
+            lastMsg.content = currentContent;
+          }
+          return [...newMessages];
+        });
+        i++;
+        if (i >= fullContent.length) clearInterval(interval);
+      }, 30);
+    }, 100);
   }, []);
 
   return (
