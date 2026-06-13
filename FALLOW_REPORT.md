@@ -1,6 +1,6 @@
-# Fallow Analysis Report (Post-Fix)
+# Fallow Analysis Report (Post-Accessibility Fix)
 
-This report contains the updated output of all available `npx fallow` commands after addressing identified issues.
+This report contains the updated output of all available `npx fallow` commands after addressing identified issues, including accessibility improvements.
 
 ## Default Combined Analysis
 ```text
@@ -12,15 +12,15 @@ Warning: shallow clone detected. Hotspot analysis may be incomplete. Use `git fe
 
 ── Dead Code ──────────────────────────────────────
 
-✓ No issues found (0.06s)
+✓ No issues found (0.08s)
 
 ── Duplication ────────────────────────────────────
 
-✓ No code duplication found (0.01s)
+✓ No code duplication found (0.02s)
 
 ── Complexity ─────────────────────────────────────
 
-■ Metrics: 962 LOC · dead files 0.0% · dead exports 0.0% · avg cyclomatic 1.4 · p90 cyclomatic 2 · maintainability 96.2 (good) · 0 churn hotspots (since 6 months)
+■ Metrics: 967 LOC · dead files 0.0% · dead exports 0.0% · avg cyclomatic 1.4 · p90 cyclomatic 2 · maintainability 96.2 (good) · 0 churn hotspots (since 6 months)
 
 ● File health scores (22 files) · sorted by triage concern
 
@@ -33,6 +33,9 @@ Warning: shallow clone detected. Hotspot analysis may be incomplete. Use `git fe
    94.9    src/components/sidebar/ProjectItem.tsx          risk
              35 LOC    1 fan-in    1 fan-out    0% dead  0.11 density  12.0 risk
 
+   98.2    src/components/sidebar/SidebarHeader.tsx        risk
+             22 LOC    1 fan-in    0 fan-out    0% dead  0.14 density  12.0 risk
+
    89.9    src/services/ChatSessionManager.ts              risk
              38 LOC    2 fan-in    1 fan-out    0% dead  0.32 density  6.0 risk
 
@@ -44,9 +47,6 @@ Warning: shallow clone detected. Hotspot analysis may be incomplete. Use `git fe
 
    96.0    src/components/sidebar/ProjectsSection.tsx      risk
              23 LOC    1 fan-in    1 fan-out    0% dead  0.09 density  6.0 risk
-
-   98.8    src/components/sidebar/SidebarHeader.tsx        risk
-             17 LOC    1 fan-in    0 fan-out    0% dead  0.12 density  6.0 risk
 
    98.8    src/components/sidebar/SidebarTabLabel.tsx      risk
              14 LOC    1 fan-in    0 fan-out    0% dead  0.14 density  6.0 risk
@@ -65,7 +65,7 @@ Warning: shallow clone detected. Hotspot analysis may be incomplete. Use `git fe
 ```text
 34 entry points detected (33 plugin, 1 default index)
 
-✓ No issues found (0.04s)
+✓ No issues found (0.05s)
 ```
 
 ## Duplication Analysis
@@ -80,7 +80,7 @@ Warning: shallow clone detected. Hotspot analysis may be incomplete. Use `git fe
 ● Health score: 90 A
   Deductions: unit size -10.0
 
-■ Metrics: 962 LOC · dead files 0.0% · dead exports 0.0% · avg cyclomatic 1.4 · p90 cyclomatic 2 · maintainability 96.2 (good) · 0 churn hotspots (since 6 months) · duplication 0.0%
+■ Metrics: 967 LOC · dead files 0.0% · dead exports 0.0% · avg cyclomatic 1.4 · p90 cyclomatic 2 · maintainability 96.2 (good) · 0 churn hotspots (since 6 months) · duplication 0.0%
 
 ● File health scores (22 files) · sorted by triage concern
 
@@ -92,6 +92,9 @@ Warning: shallow clone detected. Hotspot analysis may be incomplete. Use `git fe
 
    94.9    src/components/sidebar/ProjectItem.tsx          risk
              35 LOC    1 fan-in    1 fan-out    0% dead  0.11 density  12.0 risk
+
+   98.2    src/components/sidebar/SidebarHeader.tsx        risk
+             22 LOC    1 fan-in    0 fan-out    0% dead  0.14 density  12.0 risk
 
    89.9    src/services/ChatSessionManager.ts              risk
              38 LOC    2 fan-in    1 fan-out    0% dead  0.32 density  6.0 risk
@@ -105,9 +108,6 @@ Warning: shallow clone detected. Hotspot analysis may be incomplete. Use `git fe
    96.0    src/components/sidebar/ProjectsSection.tsx      risk
              23 LOC    1 fan-in    1 fan-out    0% dead  0.09 density  6.0 risk
 
-   98.8    src/components/sidebar/SidebarHeader.tsx        risk
-             17 LOC    1 fan-in    0 fan-out    0% dead  0.12 density  6.0 risk
-
    98.8    src/components/sidebar/SidebarTabLabel.tsx      risk
              14 LOC    1 fan-in    0 fan-out    0% dead  0.14 density  6.0 risk
 
@@ -118,12 +118,12 @@ Warning: shallow clone detected. Hotspot analysis may be incomplete. Use `git fe
 
   Sorted by triage concern: the larger of low-MI concern and CRAP risk. The risk / structure tag marks which one placed each file. MI reflects complexity, coupling, and dead code; risk reflects untested complexity (CRAP) and can diverge from MI. Risk: low <15, moderate 15-30, high >=30. CRAP estimated from export references (85% direct, 40% indirect, 0% untested). Run `fallow health --coverage <coverage-final.json>` for exact scores. https://docs.fallow.tools/explanations/health#file-health-scores
 
-✗ 0 above threshold · 75 analyzed · maintainability 96.2 (good) (0.05s)
+✗ 0 above threshold · 75 analyzed · maintainability 96.2 (good) (0.06s)
 ```
 
 ## Feature Flags
 ```text
-✓ No feature flags detected (0.07s)
+✓ No feature flags detected (0.05s)
   Scanned 34 files for:
     · Env prefixes: FEATURE_*, NEXT_PUBLIC_FEATURE_*, NEXT_PUBLIC_ENABLE_*, REACT_APP_FEATURE_*, REACT_APP_ENABLE_*, VITE_FEATURE_*, VITE_ENABLE_*, NUXT_PUBLIC_FEATURE_*, ENABLE_*, FF_*, FLAG_*, TOGGLE_*
     · SDKs: LaunchDarkly, Statsig, Unleash, GrowthBook, Split, PostHog, ConfigCat, Flagsmith, Optimizely, Eppo, Vercel Flags
@@ -145,8 +145,8 @@ Result: 0 security items to check.
 
 ## Audit Analysis
 ```text
-Audit scope: 18 changed files vs 445779283727 (merge-base with origin/main) (4457792..HEAD)
-✓ No issues in 18 changed files (0.12s)
+Audit scope: 19 changed files vs 445779283727 (merge-base with origin/main) (4457792..HEAD)
+✓ No issues in 19 changed files (0.17s)
 ```
 
 ## Project Structure (List)
@@ -2840,8 +2840,8 @@ Options:
 ## Setup Hooks
 ```text
 fallow setup-hooks (install):
-  .claude/settings.json                       created
-  .claude/hooks/fallow-gate.sh                created
+  .claude/settings.json                       unchanged
+  .claude/hooks/fallow-gate.sh                unchanged
 ```
 
 ## Coverage Analysis
