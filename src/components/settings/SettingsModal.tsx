@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const AI_MODELS = ['gemma-4-31b', 'gemma-4-26b', 'gemini-3.1-flash-lite', 'Gemini 3.5 Flash', 'Gemini 2.5 Flash'];
+const AI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash'];
 
 interface SettingsModalProps {
   isOpen: boolean;

@@ -92,11 +92,11 @@ export const ChatPage = () => {
     
     // Model rotation logic
     const models = [
-      'gemma-4-31b', 
-      'gemma-4-26b', 
-      'gemini-3.1-flash-lite', 
-      'Gemini 3.5 Flash', 
-      'Gemini 2.5 Flash'
+       'gemma-4-31b', 
+       'gemma-4-26b', 
+       'gemini-3.1-flash-lite', 
+       'Gemini 3.5 Flash', 
+       'Gemini 2.5 Flash'
     ];
     const currentModel = models[messageCount % models.length];
     setMessageCount((prev) => prev + 1);
@@ -150,14 +150,14 @@ export const ChatPage = () => {
           {messages.length === 0 && (
             <div className="w-full mt-4 flex flex-col items-center">
               <h1 className="text-[43px] font-serif-source mb-[10px] text-neutral-800">Hello, how can I help?</h1>
-              <ChatInput onSend={handleSend} />
+              <ChatInput onSend={handleSend} isLoading={isStreaming} />
             </div>
           )}
         </div>
       </div>
       {messages.length > 0 && (
         <div className="shrink-0 pb-8 px-4">
-          <ChatInput onSend={handleSend} />
+          <ChatInput onSend={handleSend} isLoading={isStreaming} />
         </div>
       )}
     </div>
