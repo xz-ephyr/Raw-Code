@@ -33,7 +33,7 @@ const CopyButton = ({ content, alwaysVisible }: { content: string; alwaysVisible
 };
 
 const UserBubble = React.memo(({ content }: { content: string }) => (
-  <div className="flex flex-col items-end mb-6 group">
+  <div className="flex flex-col items-end mb-6 group w-full">
     <div className="bg-[#f9f9f9] rounded-[8px] px-4 py-2.5 text-sm max-w-[70%]">
       {content}
     </div>
@@ -43,8 +43,8 @@ const UserBubble = React.memo(({ content }: { content: string }) => (
 
 const AssistantBubble = React.memo(({ content, isStreaming }: { content: string, isStreaming: boolean }) => {
   return (
-    <div className="mb-6">
-      <div className="text-sm py-4 max-w-full whitespace-pre-wrap">
+    <div className="mb-6 w-full">
+      <div className="text-sm py-4 whitespace-pre-wrap">
         {content}
       </div>
       {!isStreaming && (
