@@ -37,7 +37,9 @@ const UserBubble = React.memo(({ content }: { content: string }) => (
     <div className="bg-[#f9f9f9] rounded-[8px] px-4 py-2.5 text-sm max-w-[70%]">
       {content}
     </div>
-    <CopyButton content={content} alwaysVisible={false} />
+    <div className="mr-3">
+      <CopyButton content={content} alwaysVisible={false} />
+    </div>
   </div>
 ));
 
@@ -48,7 +50,7 @@ const AssistantBubble = React.memo(({ content, isStreaming }: { content: string,
         {content}
       </div>
       {!isStreaming && (
-        <div className="flex gap-3 text-gray-600 items-center">
+        <div className="flex gap-3 text-gray-600 items-center -ml-1">
           <CopyButton content={content} alwaysVisible={true} />
           <button className="hover:text-black transition-colors"><HugeiconRenderer icon={ThumbsUpIcon} size={18} /></button>
           <button className="hover:text-black transition-colors"><HugeiconRenderer icon={ThumbsDownIcon} size={18} /></button>
@@ -132,24 +134,24 @@ export const ChatPage = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      <div className={`flex-1 overflow-y-auto p-4 ${messages.length === 0 ? 'flex flex-col items-center justify-center' : ''}`}>
+      <div className={`flex-1 overflow-y-auto ${messages.length === 0 ? 'flex flex-col items-center justify-center p-4' : ''}`}>
         {messages.length > 0 && <div className="h-[20px] bg-white w-full shrink-0" />}
-        <div className="max-w-[720px] w-full mx-auto">
+        <div className="max-w-[720px] w-full mx-auto px-4">
           {messages.map((m, i) => (
-            <div key={i} className="max-w-[720px] w-full mx-auto">
+            <React.Fragment key={i}>
               {m.role === 'user' ? <UserBubble content={m.content} /> : <AssistantBubble content={m.content} isStreaming={isStreaming && i === messages.length - 1} />}
-            </div>
+            </React.Fragment>
           ))}
           {messages.length === 0 && (
             <div className="w-full mt-4 flex flex-col items-center">
-              <h1 className="text-[43px] font-serif-source mb-[10px] text-neutral-800">Hello, how can I help?</h1>
+              <h1 className="text-[43px] font-serif-source mb-[10px] text-neutral-800 text-center">Hello, how can I help?</h1>
               <ChatInput onSend={handleSend} isLoading={isStreaming} />
             </div>
           )}
         </div>
       </div>
       {messages.length > 0 && (
-        <div className="shrink-0 pb-8 px-4">
+        <div className="shrink-0 pb-8 w-full max-w-[720px] mx-auto px-4">
           <ChatInput onSend={handleSend} isLoading={isStreaming} />
         </div>
       )}
