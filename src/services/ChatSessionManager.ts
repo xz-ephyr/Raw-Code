@@ -4,12 +4,21 @@ import { ChatSession } from '../types/chat';
 const STORAGE_KEY = 'chat_sessions';
 
 const getSessions = (): ChatSession[] => {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Failed to parse chat sessions from localStorage:', error);
+    return [];
+  }
 };
 
 const saveSessions = (sessions: ChatSession[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+  } catch (error) {
+    console.error('Failed to save chat sessions to localStorage:', error);
+  }
 };
 
 export const ChatSessionManager = {
