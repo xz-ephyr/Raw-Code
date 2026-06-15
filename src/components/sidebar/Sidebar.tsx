@@ -63,7 +63,12 @@ export default function Sidebar() {
         className={`bg-[#f9f9f9] border-r border-[#e5e5e5] h-screen transition-[width] duration-300 ease-in-out flex flex-col shrink-0 ${isCollapsed ? 'w-[48px]' : 'w-[320px]'}`}
       >
         <div className="flex justify-end p-2 shrink-0">
-          <button onClick={() => setIsCollapsed(!isCollapsed)} className="p-1 hover:bg-[#e5e5e5] rounded-[8px]">
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-1 hover:bg-[#e5e5e5] rounded-[8px]"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!isCollapsed}
+          >
             {isCollapsed ? <HugeiconRenderer icon={PanelRightIcon} /> : <HugeiconRenderer icon={PanelLeftIcon} />}
           </button>
         </div>
