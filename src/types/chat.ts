@@ -12,5 +12,4 @@ export interface ChatSession {
   projectId?: string;
   archived: boolean;
   createdAt: number;
-  lastMessage?: string;
 }

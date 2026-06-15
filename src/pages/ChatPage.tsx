@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useChat } from '@ai-sdk/react';
 import ChatInput from '../components/chat/ChatInput';
 import { UserBubble } from '../components/chat/UserBubble';
@@ -19,11 +19,45 @@ import { join, normalize } from '@tauri-apps/api/path';
 
 export const ChatPage = () => {
   const { uuid } = useParams();
+  const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
   const [projectContext, setProjectContext] = useState<string>('');
   const [showIDEPrompt, setShowIDEPrompt] = useState(false);
   const [isIDEOpen, setIsIDEOpen] = useState(false);
+  const [paneWidth, setPaneWidth] = useState(50);
+  const [isResizing, setIsResizing] = useState(false);
   const lastProjectIdRef = useRef<string | null>(null);
+
+  const startResizing = useCallback(() => {
+    setIsResizing(true);
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const resize = useCallback((e: MouseEvent) => {
+    if (isResizing) {
+      const newWidth = 100 - (e.clientX / window.innerWidth) * 100;
+      if (newWidth > 20 && newWidth < 80) {
+        setPaneWidth(newWidth);
+      }
+    }
+  }, [isResizing]);
+
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener('mousemove', resize);
+      window.addEventListener('mouseup', stopResizing);
+    } else {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('mouseup', stopResizing);
+    }
+    return () => {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('mouseup', stopResizing);
+    };
+  }, [isResizing, resize, stopResizing]);
 
   const {
     activeArtifactId,
@@ -226,25 +260,37 @@ export const ChatPage = () => {
         )}
       </div>
 
-      {isArtifactOpen && !isIDEOpen && (
-        <ArtifactPane
-          isOpen={isArtifactOpen}
-          onClose={closeArtifact}
-          artifacts={activeArtifactVersions}
-          activeArtifact={activeArtifact}
-          onVersionSelect={(a: any) => {
-            setViewingVersion(a.version);
-          }}
-        />
-      )}
-
-      {isIDEOpen && project && (
-          <ProjectIDE
-            key={`${project.id}-${projectContext.length}`}
-            project={project}
-            onClose={() => setIsIDEOpen(false)}
-            onSave={() => loadProjectContext(project.path)}
+      {(isArtifactOpen || isIDEOpen) && (
+        <div
+          style={{ width: `${paneWidth}%` }}
+          className={`relative h-full flex flex-row shrink-0 ${isResizing ? 'select-none' : ''}`}
+        >
+          <div
+            onMouseDown={startResizing}
+            className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-blue-500/30 transition-colors z-50 -ml-0.75"
           />
+
+          {isArtifactOpen && !isIDEOpen && (
+            <ArtifactPane
+              isOpen={isArtifactOpen}
+              onClose={closeArtifact}
+              artifacts={activeArtifactVersions}
+              activeArtifact={activeArtifact}
+              onVersionSelect={(a: any) => {
+                setViewingVersion(a.version);
+              }}
+            />
+          )}
+
+          {isIDEOpen && project && (
+              <ProjectIDE
+                key={`${project.id}-${projectContext.length}`}
+                project={project}
+                onClose={() => setIsIDEOpen(false)}
+                onSave={() => loadProjectContext(project.path)}
+              />
+          )}
+        </div>
       )}
 
       {showIDEPrompt && (

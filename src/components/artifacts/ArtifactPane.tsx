@@ -2,7 +2,9 @@ import { useState } from 'react';
 import {
   Cancel01Icon,
   Download01Icon,
-  ArrowDown01Icon
+  ArrowDown01Icon,
+  CodeIcon,
+  ViewIcon
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Artifact } from '../../hooks/useArtifacts';
@@ -32,6 +34,7 @@ export const ArtifactPane: React.FC<ArtifactPaneProps> = ({
   onVersionSelect
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [view, setView] = useState<'preview' | 'code'>('preview');
 
   if (!isOpen || !activeArtifact) return null;
 
@@ -64,7 +67,7 @@ export const ArtifactPane: React.FC<ArtifactPaneProps> = ({
   };
 
   return (
-    <div className="w-[50%] h-full border-l border-neutral-200 bg-white flex flex-col shadow-2xl z-10">
+    <div className="w-full h-full border-l border-neutral-200 bg-white flex flex-col z-10">
       <div className="h-14 border-b border-neutral-200 px-4 flex items-center justify-between bg-white shrink-0">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -99,7 +102,32 @@ export const ArtifactPane: React.FC<ArtifactPaneProps> = ({
           </h2>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-neutral-100 p-0.5 rounded-lg mr-2">
+            <button
+              onClick={() => setView('preview')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                view === 'preview'
+                  ? 'bg-white text-neutral-900 shadow-sm'
+                  : 'text-neutral-500 hover:text-neutral-700'
+              }`}
+            >
+              <HugeiconRenderer icon={ViewIcon} size={12} />
+              Preview
+            </button>
+            <button
+              onClick={() => setView('code')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                view === 'code'
+                  ? 'bg-white text-neutral-900 shadow-sm'
+                  : 'text-neutral-500 hover:text-neutral-700'
+              }`}
+            >
+              <HugeiconRenderer icon={CodeIcon} size={12} />
+              Code
+            </button>
+          </div>
+
           <button
             onClick={handleDownload}
             className="p-2 hover:bg-neutral-100 rounded-md transition-colors text-neutral-600 hover:text-black"
@@ -118,7 +146,11 @@ export const ArtifactPane: React.FC<ArtifactPaneProps> = ({
       </div>
 
       <div className="flex-1 overflow-hidden relative">
-        <ArtifactRenderer type={activeArtifact.type} content={activeArtifact.content} />
+        <ArtifactRenderer
+          type={activeArtifact.type}
+          content={activeArtifact.content}
+          mode={view}
+        />
       </div>
     </div>
   );

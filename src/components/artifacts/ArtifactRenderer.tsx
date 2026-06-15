@@ -1,13 +1,63 @@
 import React from 'react';
 import { Sandpack } from '@codesandbox/sandpack-react';
 import { ArtifactType } from '../../hooks/useArtifacts';
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
+import { html } from '@codemirror/lang-html';
+import { markdown } from '@codemirror/lang-markdown';
+import { python } from '@codemirror/lang-python';
+import { css } from '@codemirror/lang-css';
+import { json } from '@codemirror/lang-json';
+import { rust } from '@codemirror/lang-rust';
 
 interface ArtifactRendererProps {
   type: ArtifactType;
   content: string;
+  mode?: 'preview' | 'code';
 }
 
-export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, content }) => {
+export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({ type, content, mode = 'preview' }) => {
+  const getLanguage = (type: string) => {
+    switch (type) {
+      case 'react':
+      case 'js':
+        return [javascript({ jsx: true, typescript: true })];
+      case 'html':
+        return [html()];
+      case 'css':
+        return [css()];
+      case 'json':
+        return [json()];
+      case 'python':
+        return [python()];
+      case 'rust':
+        return [rust()];
+      case 'markdown':
+        return [markdown()];
+      default:
+        return [javascript({ jsx: true, typescript: true })];
+    }
+  };
+
+  if (mode === 'code') {
+    return (
+      <div className="h-full overflow-auto">
+        <CodeMirror
+          value={content}
+          height="100%"
+          theme="light"
+          extensions={getLanguage(type)}
+          readOnly={true}
+          basicSetup={{
+            lineNumbers: true,
+            foldGutter: true,
+            highlightActiveLine: true,
+          }}
+        />
+      </div>
+    );
+  }
+
   switch (type) {
     case 'react':
       return (
