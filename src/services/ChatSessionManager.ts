@@ -31,7 +31,7 @@ export const ChatSessionManager = {
     return sessions.filter(s => s.projectId === projectId);
   },
   
-  create: (title: string, projectId?: string): ChatSession => {
+  create: (title: string, lastMessage?: string, projectId?: string): ChatSession => {
     const sessions = getStoredSessions();
     const session: ChatSession = {
       id: crypto.randomUUID(),
