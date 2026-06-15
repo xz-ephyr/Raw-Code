@@ -1,179 +1,165 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Copy01Icon, CheckmarkBadge01Icon, ThumbsUpIcon, ThumbsDownIcon, ArrowTurnBackwardIcon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { useChat } from '@ai-sdk/react';
 import ChatInput from '../components/chat/ChatInput';
-import { MarkdownMessage } from '../components/chat/MarkdownMessage';
-import { ThinkingIndicator } from '../components/chat/ThinkingIndicator';
-import { getChatStream } from '../services/aiService';
+import { UserBubble } from '../components/chat/UserBubble';
+import { AssistantBubble } from '../components/chat/AssistantBubble';
 import { ChatSessionManager } from '../services/ChatSessionManager';
 import { getModelForChatRequest } from '../config/models';
-
-const HugeiconRenderer = ({ icon: Icon, size = 14, className }: { icon: any, size?: number, className?: string }) => (
-  <HugeiconsIcon icon={Icon} size={size} color="currentColor" strokeWidth={1.5} className={className} />
-);
-
-type Message = { role: 'user' | 'assistant'; content: string; model?: string };
-
-const CopyButton = ({ content, alwaysVisible }: { content: string; alwaysVisible: boolean }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(content).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  return (
-    <button 
-      onClick={handleCopy}
-      className={`${alwaysVisible ? '' : 'opacity-0 group-hover:opacity-100'} p-1 mt-1 text-gray-600 hover:text-black transition-opacity`}
-    >
-      {copied ? <HugeiconRenderer icon={CheckmarkBadge01Icon} size={18} className="text-green-600" /> : <HugeiconRenderer icon={Copy01Icon} size={18} />}
-    </button>
-  );
-};
-
-const UserBubble = React.memo(({ content }: { content: string }) => (
-  <div className="flex flex-col items-end mb-6 group w-full">
-    <div className="bg-[#f9f9f9] rounded-[8px] px-4 py-2.5 text-sm max-w-[70%] whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
-      {content}
-    </div>
-    <div className="mr-3">
-      <CopyButton content={content} alwaysVisible={false} />
-    </div>
-  </div>
-));
-
-const AssistantBubble = React.memo(({ content, isStreaming, model }: { content: string, isStreaming: boolean, model?: string }) => {
-  const showThinking = isStreaming && !content.trim();
-
-  return (
-    <div className="mb-6 w-full">
-      {showThinking ? (
-        <ThinkingIndicator model={model} />
-      ) : (
-        <div className="text-sm py-4 break-words [overflow-wrap:anywhere]">
-          <MarkdownMessage content={content} />
-        </div>
-      )}
-      {!isStreaming && (
-        <div className="flex items-center justify-between gap-3 text-gray-600 -ml-1">
-          <div className="flex gap-3 items-center">
-            <CopyButton content={content} alwaysVisible={true} />
-            <button className="hover:text-black transition-colors"><HugeiconRenderer icon={ThumbsUpIcon} size={18} /></button>
-            <button className="hover:text-black transition-colors"><HugeiconRenderer icon={ThumbsDownIcon} size={18} /></button>
-            <button className="hover:text-black transition-colors"><HugeiconRenderer icon={ArrowTurnBackwardIcon} size={18} /></button>
-          </div>
-          {model && <span className="text-xs text-gray-400">{model}</span>}
-        </div>
-      )}
-    </div>
-  );
-});
+import { useArtifacts } from '../hooks/useArtifacts';
+import { ArtifactPane } from '../components/artifacts/ArtifactPane';
+import { ArtifactPreviewCard } from '../components/artifacts/ArtifactPreviewCard';
+import { chatCompletion } from '../services/aiService';
 
 export const ChatPage = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isStreaming, setIsStreaming] = useState(false);
   const { uuid } = useParams();
-  
-  // Persist message count for this chat session
-  const [messageCount, setMessageCount] = useState(() => {
-    const saved = localStorage.getItem(`message-count-${uuid}`);
-    return saved ? parseInt(saved, 10) : 0;
-  });
+  const {
+    activeArtifactId,
+    setActiveArtifactId,
+    setViewingVersion,
+    isOpen: isArtifactOpen,
+    setIsOpen: setIsArtifactOpen,
+    addOrUpdateArtifact,
+    getArtifactVersions,
+    getActiveArtifact,
+    closeArtifact
+  } = useArtifacts();
+
+  const currentModel = getModelForChatRequest(uuid);
+  const apiKey = localStorage.getItem('api-key');
+
+  const { messages, append, isLoading, setMessages } = useChat({
+    // @ts-ignore
+    fetch: async (url: any, options: any) => {
+        const body = JSON.parse(options?.body as string);
+        const result = await chatCompletion({
+            messages: body.messages,
+            apiKey: body.apiKey,
+            modelName: body.model
+        });
+        return result.toTextStreamResponse();
+    },
+    initialMessages: [],
+    body: {
+      model: currentModel,
+      apiKey: apiKey,
+    },
+    onFinish: (message) => {
+      // @ts-ignore
+      if (message.toolInvocations) {
+        // @ts-ignore
+        message.toolInvocations.forEach((toolInvocation) => {
+          if (toolInvocation.toolName === 'create_artifact' && toolInvocation.state === 'result') {
+            const { type, title, content } = toolInvocation.args;
+            addOrUpdateArtifact(type, title, content);
+          }
+        });
+      }
+    },
+  }) as any;
 
   useEffect(() => {
     setMessages([]);
-    setMessageCount(0);
-  }, [uuid]);
-
-  useEffect(() => {
-    localStorage.setItem(`message-count-${uuid}`, messageCount.toString());
-  }, [messageCount, uuid]);
+  }, [uuid, setMessages]);
 
   const handleSend = useCallback(async (content: string) => {
-    let currentUuid = uuid;
-    if (currentUuid === 'new') {
-      const newSession = ChatSessionManager.create(content.slice(0, 30) + '...');
-      currentUuid = newSession.id;
-    }
-
-    setMessages((prev) => [...prev, { role: 'user', content }]);
-
-    const apiKey = localStorage.getItem('api-key');
-    setMessageCount((prev) => prev + 1);
-
     if (!apiKey) {
       alert('Please set your Google API Key in settings.');
       return;
     }
 
-    const currentModel = getModelForChatRequest(currentUuid);
-    setMessages((prev) => [...prev, { role: 'assistant', content: '', model: currentModel }]);
-    setIsStreaming(true);
-
-    try {
-      const stream = await getChatStream([...messages, { role: 'user', content }], apiKey, currentModel);
-      
-      let accumulatedContent = '';
-      const startTime = Date.now();
-      let firstTokenReceived = false;
-
-      for await (const chunk of stream) {
-        if (!firstTokenReceived) {
-          console.log(`First token received in ${Date.now() - startTime}ms`);
-          firstTokenReceived = true;
-        }
-        accumulatedContent += chunk;
-        
-        // Update state on every chunk for responsive UI
-        setMessages((prev) => {
-          const updated = [...prev];
-          const lastIdx = updated.length - 1;
-          updated[lastIdx].content = accumulatedContent;
-          return updated;
-        });
-      }
-
-      if (!accumulatedContent.trim()) {
-        setMessages((prev) => [
-          ...prev.slice(0, -1),
-          { role: 'assistant', content: `No response received from ${currentModel}. Please check your API key, model access, and network connection.`, model: currentModel },
-        ]);
-      }
-    } catch (error) {
-      console.error('Error fetching chat stream:', error);
-      const message = error instanceof Error ? error.message : String(error);
-      setMessages((prev) => [...prev.slice(0, -1), { role: 'assistant', content: `Error from ${currentModel}: ${message}`, model: currentModel }]);
-    } finally {
-      setIsStreaming(false);
+    let currentUuid = uuid;
+    if (currentUuid === 'new') {
+      ChatSessionManager.create(content.slice(0, 30) + '...');
     }
-  }, [messages, messageCount, uuid]);
+
+    append({
+      role: 'user',
+      content,
+    });
+  }, [uuid, apiKey, append]);
+
+  const activeArtifact = getActiveArtifact();
+  const activeArtifactVersions = activeArtifactId ? getArtifactVersions(activeArtifactId) : [];
+
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.toolInvocations) {
+      const artifactTool = lastMessage.toolInvocations.find((ti: any) => ti.toolName === 'create_artifact');
+      if (artifactTool?.state === 'result') {
+         const id = artifactTool.args.title.toLowerCase().replace(/\s+/g, '-');
+         setActiveArtifactId(id);
+         setIsArtifactOpen(true);
+      }
+    }
+  }, [messages, setActiveArtifactId, setIsArtifactOpen]);
 
   return (
-    <div className="flex flex-col h-screen">
-      <div className={`flex-1 overflow-y-auto ${messages.length === 0 ? 'flex flex-col items-center justify-center p-4' : ''}`}>
-        {messages.length > 0 && <div className="h-[20px] bg-white w-full shrink-0" />}
-        <div className="max-w-[720px] w-full mx-auto px-4">
-          {messages.map((m, i) => (
-            <React.Fragment key={i}>
-              {m.role === 'user' ? <UserBubble content={m.content} /> : <AssistantBubble content={m.content} model={m.model} isStreaming={isStreaming && i === messages.length - 1} />}
-            </React.Fragment>
-          ))}
-          {messages.length === 0 && (
-            <div className="w-full mt-4 flex flex-col items-center">
-              <h1 className="text-[43px] font-serif-source mb-[10px] text-neutral-800 text-center">Hello, how can I help?</h1>
-              <ChatInput onSend={handleSend} isLoading={isStreaming} />
-            </div>
-          )}
+    <div className="flex h-screen overflow-hidden bg-white">
+      <div className={`flex flex-col flex-1 min-w-0 bg-white transition-all duration-300 relative`}>
+        <div className={`flex-1 overflow-y-auto ${messages.length === 0 ? 'flex flex-col items-center justify-center p-4' : ''}`}>
+          {messages.length > 0 && <div className="h-[20px] bg-white w-full shrink-0" />}
+          <div className="max-w-[720px] w-full mx-auto px-4">
+            {messages.map((m: any, i: number) => (
+              <React.Fragment key={m.id || i}>
+                {m.role === 'user' ? (
+                  <UserBubble content={m.content} />
+                ) : (
+                  <>
+                    <AssistantBubble
+                      content={m.content}
+                      model={currentModel}
+                      isStreaming={isLoading && i === messages.length - 1}
+                      toolInvocations={m.toolInvocations}
+                    />
+                    {m.toolInvocations?.map((ti: any, idx: number) => {
+                      if (ti.toolName === 'create_artifact' && ti.state === 'result') {
+                        return (
+                          <ArtifactPreviewCard
+                            key={idx}
+                            title={ti.args.title}
+                            type={ti.args.type}
+                            onClick={() => {
+                              setActiveArtifactId(ti.args.title.toLowerCase().replace(/\s+/g, '-'));
+                              setViewingVersion(null);
+                              setIsArtifactOpen(true);
+                            }}
+                          />
+                        );
+                      }
+                      return null;
+                    })}
+                  </>
+                )}
+              </React.Fragment>
+            ))}
+
+            {messages.length === 0 && (
+              <div className="w-full mt-4 flex flex-col items-center">
+                <h1 className="text-[43px] font-serif-source mb-[10px] text-neutral-800 text-center">Hello, how can I help?</h1>
+                <ChatInput onSend={handleSend} isLoading={isLoading} />
+              </div>
+            )}
+          </div>
         </div>
+
+        {messages.length > 0 && (
+          <div className="shrink-0 pb-8 w-full max-w-[720px] mx-auto px-4 bg-white">
+            <ChatInput onSend={handleSend} isLoading={isLoading} />
+          </div>
+        )}
       </div>
-      {messages.length > 0 && (
-        <div className="shrink-0 pb-8 w-full max-w-[720px] mx-auto px-4">
-          <ChatInput onSend={handleSend} isLoading={isStreaming} />
-        </div>
+
+      {isArtifactOpen && (
+        <ArtifactPane
+          isOpen={isArtifactOpen}
+          onClose={closeArtifact}
+          artifacts={activeArtifactVersions}
+          activeArtifact={activeArtifact}
+          onVersionSelect={(a: any) => {
+            setViewingVersion(a.version);
+          }}
+        />
       )}
     </div>
   );
