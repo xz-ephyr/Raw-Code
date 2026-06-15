@@ -3,14 +3,17 @@ import { useParams } from 'react-router-dom';
 import { Copy01Icon, CheckmarkBadge01Icon, ThumbsUpIcon, ThumbsDownIcon, ArrowTurnBackwardIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import ChatInput from '../components/chat/ChatInput';
+import { MarkdownMessage } from '../components/chat/MarkdownMessage';
+import { ThinkingIndicator } from '../components/chat/ThinkingIndicator';
 import { getChatStream } from '../services/aiService';
 import { ChatSessionManager } from '../services/ChatSessionManager';
+import { getModelForChatRequest } from '../config/models';
 
 const HugeiconRenderer = ({ icon: Icon, size = 14, className }: { icon: any, size?: number, className?: string }) => (
   <HugeiconsIcon icon={Icon} size={size} color="currentColor" strokeWidth={1.5} className={className} />
 );
 
-type Message = { role: 'user' | 'assistant'; content: string };
+type Message = { role: 'user' | 'assistant'; content: string; model?: string };
 
 const CopyButton = ({ content, alwaysVisible }: { content: string; alwaysVisible: boolean }) => {
   const [copied, setCopied] = useState(false);
@@ -34,7 +37,7 @@ const CopyButton = ({ content, alwaysVisible }: { content: string; alwaysVisible
 
 const UserBubble = React.memo(({ content }: { content: string }) => (
   <div className="flex flex-col items-end mb-6 group w-full">
-    <div className="bg-[#f9f9f9] rounded-[8px] px-4 py-2.5 text-sm max-w-[70%]">
+    <div className="bg-[#f9f9f9] rounded-[8px] px-4 py-2.5 text-sm max-w-[70%] whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
       {content}
     </div>
     <div className="mr-3">
@@ -43,18 +46,27 @@ const UserBubble = React.memo(({ content }: { content: string }) => (
   </div>
 ));
 
-const AssistantBubble = React.memo(({ content, isStreaming }: { content: string, isStreaming: boolean }) => {
+const AssistantBubble = React.memo(({ content, isStreaming, model }: { content: string, isStreaming: boolean, model?: string }) => {
+  const showThinking = isStreaming && !content.trim();
+
   return (
     <div className="mb-6 w-full">
-      <div className="text-sm py-4 whitespace-pre-wrap">
-        {content}
-      </div>
+      {showThinking ? (
+        <ThinkingIndicator model={model} />
+      ) : (
+        <div className="text-sm py-4 break-words [overflow-wrap:anywhere]">
+          <MarkdownMessage content={content} />
+        </div>
+      )}
       {!isStreaming && (
-        <div className="flex gap-3 text-gray-600 items-center -ml-1">
-          <CopyButton content={content} alwaysVisible={true} />
-          <button className="hover:text-black transition-colors"><HugeiconRenderer icon={ThumbsUpIcon} size={18} /></button>
-          <button className="hover:text-black transition-colors"><HugeiconRenderer icon={ThumbsDownIcon} size={18} /></button>
-          <button className="hover:text-black transition-colors"><HugeiconRenderer icon={ArrowTurnBackwardIcon} size={18} /></button>
+        <div className="flex items-center justify-between gap-3 text-gray-600 -ml-1">
+          <div className="flex gap-3 items-center">
+            <CopyButton content={content} alwaysVisible={true} />
+            <button className="hover:text-black transition-colors"><HugeiconRenderer icon={ThumbsUpIcon} size={18} /></button>
+            <button className="hover:text-black transition-colors"><HugeiconRenderer icon={ThumbsDownIcon} size={18} /></button>
+            <button className="hover:text-black transition-colors"><HugeiconRenderer icon={ArrowTurnBackwardIcon} size={18} /></button>
+          </div>
+          {model && <span className="text-xs text-gray-400">{model}</span>}
         </div>
       )}
     </div>
@@ -91,7 +103,6 @@ export const ChatPage = () => {
     setMessages((prev) => [...prev, { role: 'user', content }]);
 
     const apiKey = localStorage.getItem('api-key');
-    const currentModel = localStorage.getItem('selected-model') || 'gemini-3.5-flash';
     setMessageCount((prev) => prev + 1);
 
     if (!apiKey) {
@@ -99,7 +110,8 @@ export const ChatPage = () => {
       return;
     }
 
-    setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+    const currentModel = getModelForChatRequest(currentUuid);
+    setMessages((prev) => [...prev, { role: 'assistant', content: '', model: currentModel }]);
     setIsStreaming(true);
 
     try {
@@ -124,9 +136,17 @@ export const ChatPage = () => {
           return updated;
         });
       }
+
+      if (!accumulatedContent.trim()) {
+        setMessages((prev) => [
+          ...prev.slice(0, -1),
+          { role: 'assistant', content: `No response received from ${currentModel}. Please check your API key, model access, and network connection.`, model: currentModel },
+        ]);
+      }
     } catch (error) {
       console.error('Error fetching chat stream:', error);
-      setMessages((prev) => [...prev.slice(0, -1), { role: 'assistant', content: `Error: Failed to stream response using ${currentModel}.` }]);
+      const message = error instanceof Error ? error.message : String(error);
+      setMessages((prev) => [...prev.slice(0, -1), { role: 'assistant', content: `Error from ${currentModel}: ${message}`, model: currentModel }]);
     } finally {
       setIsStreaming(false);
     }
@@ -139,7 +159,7 @@ export const ChatPage = () => {
         <div className="max-w-[720px] w-full mx-auto px-4">
           {messages.map((m, i) => (
             <React.Fragment key={i}>
-              {m.role === 'user' ? <UserBubble content={m.content} /> : <AssistantBubble content={m.content} isStreaming={isStreaming && i === messages.length - 1} />}
+              {m.role === 'user' ? <UserBubble content={m.content} /> : <AssistantBubble content={m.content} model={m.model} isStreaming={isStreaming && i === messages.length - 1} />}
             </React.Fragment>
           ))}
           {messages.length === 0 && (

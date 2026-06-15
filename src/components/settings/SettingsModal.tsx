@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ViewIcon, ViewOffSlashIcon } from '@hugeicons/core-free-icons';
-
-const AI_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-2.5-pro'
-];
+import {
+  AI_MODELS,
+  MODEL_MODE_STORAGE_KEY,
+  MODEL_MODES,
+  SELECTED_MODEL_STORAGE_KEY,
+  getStoredModelMode,
+  getStoredSelectedModel,
+} from '../../config/models';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -16,7 +18,8 @@ interface SettingsModalProps {
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('api-key') || '');
   const [showApiKey, setShowApiKey] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('selected-model') || AI_MODELS[0]);
+  const [selectedModel, setSelectedModel] = useState(getStoredSelectedModel);
+  const [modelMode, setModelMode] = useState(getStoredModelMode);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = async () => {
@@ -24,7 +27,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     // Simulate a brief delay to show loading state
     await new Promise(resolve => setTimeout(resolve, 600));
     localStorage.setItem('api-key', apiKey);
-    localStorage.setItem('selected-model', selectedModel);
+    localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
+    localStorage.setItem(MODEL_MODE_STORAGE_KEY, modelMode);
     setIsLoading(false);
     onClose();
   };
@@ -58,13 +62,29 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
           </div>
 
+          {/* Model Mode Section */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-neutral-700">Model Mode</label>
+            <select
+              className="h-9 bg-neutral-50 rounded-[8px] px-3 text-sm outline-none w-full border border-neutral-200 focus:border-neutral-400 transition-colors"
+              value={modelMode}
+              onChange={(e) => setModelMode(e.target.value as typeof modelMode)}
+            >
+              <option value={MODEL_MODES.fixed}>Fixed selected model</option>
+              <option value={MODEL_MODES.rotate}>Auto rotate models</option>
+            </select>
+            <p className="text-xs text-neutral-500">
+              Auto rotate cycles through every available model in the active chat session.
+            </p>
+          </div>
+
           {/* Model Selection Section */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-neutral-700">Select Model</label>
             <select 
               className="h-9 bg-neutral-50 rounded-[8px] px-3 text-sm outline-none w-full border border-neutral-200 focus:border-neutral-400 transition-colors"
               value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
+              onChange={(e) => setSelectedModel(e.target.value as typeof selectedModel)}
             >
               {AI_MODELS.map(model => (
                 <option key={model} value={model}>{model}</option>

@@ -29,3 +29,30 @@ body {
 .thin-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #d4d4d4;
 }
+
+@keyframes thinkingTextShimmer {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.thinking-shimmer-text {
+  background: linear-gradient(110deg, #111111 30%, #bdbdbd 50%, #111111 70%);
+  background-size: 200% 100%;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: thinkingTextShimmer 2s linear infinite;
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thinking-shimmer-text {
+    animation: none;
+    background: none;
+    color: #111111;
+  }
+}
