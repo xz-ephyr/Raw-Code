@@ -67,7 +67,7 @@ export const AssistantBubble = React.memo(
         {showThinking ? (
           <ThinkingIndicator model={model} reasoning={reasoning} />
         ) : (
-          <div className="text-sm py-4 break-words [overflow-wrap:anywhere] flex flex-col gap-2">
+          <div className="text-base py-4 break-words [overflow-wrap:anywhere] flex flex-col gap-2">
             {intentMessage && (
               <div className="font-medium text-neutral-800 mb-1">{intentMessage}</div>
             )}
@@ -91,14 +91,18 @@ export const AssistantBubble = React.memo(
                   <HugeiconRenderer icon={ArrowDown01Icon} size={12} className={isReasoningOpen ? 'rotate-180' : ''} />
                 </button>
                 {isReasoningOpen && (
-                  <div className="px-3 py-2 text-neutral-600 bg-white border-t border-neutral-100 text-xs italic whitespace-pre-wrap">
+                  <div className="px-3 py-2 text-neutral-600 bg-white border-t border-neutral-100 text-xs whitespace-pre-wrap">
                     {reasoning}
                   </div>
                 )}
               </div>
             )}
 
-            {content && <MarkdownMessage content={content} />}
+            {content && (
+              <div className="font-medium text-neutral-900">
+                <MarkdownMessage content={content} />
+              </div>
+            )}
           </div>
         )}
 

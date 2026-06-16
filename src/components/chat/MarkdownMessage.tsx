@@ -1,4 +1,5 @@
 import React from 'react';
+import { CodeBlock } from './CodeBlock';
 
 type Block =
   | { type: 'code'; content: string; language?: string }
@@ -150,7 +151,7 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
         if (block.type === 'heading') {
           if (block.level === 1) {
             return (
-              <h1 key={index} className="text-xl font-semibold">
+              <h1 key={index} className="text-2xl font-semibold">
                 {renderInline(block.content)}
               </h1>
             );
@@ -158,14 +159,14 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
 
           if (block.level === 2) {
             return (
-              <h2 key={index} className="text-lg font-semibold">
+              <h2 key={index} className="text-xl font-semibold">
                 {renderInline(block.content)}
               </h2>
             );
           }
 
           return (
-            <h3 key={index} className="text-base font-semibold">
+            <h3 key={index} className="text-lg font-semibold">
               {renderInline(block.content)}
             </h3>
           );
@@ -174,8 +175,8 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
         if (block.type === 'list') {
           const ListTag = block.ordered ? 'ol' : 'ul';
           const listClassName = block.ordered
-            ? 'list-decimal space-y-1 pl-5'
-            : 'list-disc space-y-1 pl-5';
+            ? 'list-decimal space-y-1 pl-5 text-base'
+            : 'list-disc space-y-1 pl-5 text-base';
 
           return (
             <ListTag key={index} className={listClassName}>
@@ -188,22 +189,16 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
 
         if (block.type === 'code') {
           return (
-            <pre
+            <CodeBlock
               key={index}
-              className="overflow-x-auto rounded-lg bg-neutral-950 p-3 text-xs text-neutral-100"
-            >
-              {block.language && (
-                <div className="mb-2 text-[11px] uppercase tracking-wide text-neutral-400">
-                  {block.language}
-                </div>
-              )}
-              <code className="whitespace-pre">{block.content}</code>
-            </pre>
+              content={block.content}
+              language={block.language}
+            />
           );
         }
 
         return (
-          <p key={index} className="whitespace-pre-wrap leading-6">
+          <p key={index} className="whitespace-pre-wrap leading-7 text-base">
             {renderInline(block.content)}
           </p>
         );

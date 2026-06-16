@@ -66,7 +66,7 @@ export default function ChatInput({ onSend, isLoading, isIdle, isThinkingEnabled
                   }
                 }}
                 placeholder={isLoading ? 'Generating...' : 'Ask anything...'}
-                className="w-full py-3 px-4 resize-none outline-none text-sm min-h-[44px] bg-transparent"
+                className="w-full py-3 px-4 resize-none outline-none text-base min-h-[44px] bg-transparent"
                 rows={1}
                 disabled={isLoading}
               />
