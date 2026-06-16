@@ -37,8 +37,12 @@ interface AssistantBubbleProps {
 
 export const AssistantBubble = React.memo(
   ({ content, isStreaming, model, toolInvocations, reasoning }: AssistantBubbleProps) => {
-    const showThinking =
-      isStreaming && !content.trim() && (!toolInvocations || toolInvocations.length === 0);
+    // ✅ FIX #6: Show ThinkingIndicator when streaming with no text content yet AND no
+    // tool call has completed. The old check (`toolInvocations.length === 0`) meant that
+    // the moment any tool invocation appeared (even mid-flight), the thinking indicator
+    // disappeared and the bubble went blank — no text, no indicator, just empty space.
+    const hasPendingTool = toolInvocations?.some((ti) => ti.state !== 'result');
+    const showThinking = isStreaming && !content.trim() && !hasPendingTool;
 
     const artifactTool = toolInvocations?.find((ti) => ti.toolName === 'create_artifact');
     const isArtifactGenerating = artifactTool && artifactTool.state !== 'result';

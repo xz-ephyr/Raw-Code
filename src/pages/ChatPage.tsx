@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useRef } from 'react';
+import React, { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useMatch } from 'react-router-dom';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
@@ -105,6 +105,13 @@ export const ChatPage = () => {
   const [isResizing, setIsResizing] = useState(false);
   const lastProjectIdRef = useRef<string | null>(null);
 
+  // ✅ FIX #3: Refs hold the latest projectContext and project so the useChat transport
+  // closure (created once at hook init) always reads the current values. Without this,
+  // the transport captures empty-string projectContext from the very first render and
+  // never sees updates — project file context was never actually sent to the AI.
+  const projectContextRef = useRef('');
+  const projectRef = useRef<Project | null>(null);
+
   const startResizing = useCallback(() => {
     setIsResizing(true);
   }, []);
@@ -195,8 +202,16 @@ export const ChatPage = () => {
     setProjectContext(summary);
   };
 
-  const currentModel = getModelForChatRequest(uuid);
+  // ✅ FIX #5: Evaluate model once per uuid, not on every render. In rotate mode,
+  // getModelForChatRequest mutates localStorage on each call, so calling it every
+  // render during streaming increments the rotation index repeatedly.
+  const currentModel = useMemo(() => getModelForChatRequest(uuid), [uuid]);
   const apiKey = localStorage.getItem('api-key');
+
+  // ✅ FIX #3: Keep refs in sync with state. The useChat transport is a stale closure —
+  // it captures values at hook creation. Refs are always current regardless of closure age.
+  useEffect(() => { projectContextRef.current = projectContext; }, [projectContext]);
+  useEffect(() => { projectRef.current = project; }, [project]);
 
   const {
     messages: rawMessages,
@@ -211,8 +226,8 @@ export const ChatPage = () => {
           messages: body.messages,
           apiKey: body.apiKey,
           modelName: body.model,
-          projectContext: projectContext,
-          projectPath: project?.path,
+          projectContext: projectContextRef.current,  // ✅ always current value
+          projectPath: projectRef.current?.path,      // ✅ always current value
         });
         return (result as any).toUIMessageStreamResponse();
       },
