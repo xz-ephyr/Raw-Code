@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Copy01Icon, CheckmarkBadge01Icon } from '@hugeicons/core-free-icons';
+import { Copy01Icon, Tick01Icon } from '@hugeicons/core-free-icons';
 
 export const CopyButton = ({
   content,
@@ -25,7 +25,7 @@ export const CopyButton = ({
     >
       {copied ? (
         <HugeiconsIcon
-          icon={CheckmarkBadge01Icon}
+          icon={Tick01Icon}
           size={18}
           color="currentColor"
           strokeWidth={1.5}
