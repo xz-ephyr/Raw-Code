@@ -83,7 +83,6 @@ export default function Sidebar() {
     try {
       if (isTauri()) {
         // Desktop: use native folder-picker dialog
-        // @ts-ignore
         const { open } = await import('@tauri-apps/plugin-dialog');
         const selected = await open({
           directory: true,

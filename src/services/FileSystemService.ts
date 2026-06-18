@@ -14,12 +14,10 @@ const webVirtualFS: Record<string, string> = {};
 // Tauri-only dynamic imports (to avoid crashing in a browser build)
 // ------------------------------------------------------------------
 const getTauriFs = async () => {
-  // @ts-ignore
   return import('@tauri-apps/plugin-fs');
 };
 
 const getTauriPath = async () => {
-  // @ts-ignore
   return import('@tauri-apps/api/path');
 };
 
