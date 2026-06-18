@@ -220,6 +220,7 @@ export const ChatPage = () => {
     messages: rawMessages,
     sendMessage,
     isLoading,
+    stop,
     setMessages,
   } = useChat({
     transport: new DefaultChatTransport({
@@ -424,9 +425,11 @@ export const ChatPage = () => {
                         let type: any = 'markdown';
 
                         if (isArtifactTool) {
+                          if (!ti.args?.title) return null;
                           title = ti.args.title;
-                          type = ti.args.type;
+                          type = ti.args.type || 'markdown';
                         } else if (isWriteFileTool || isEditFileTool) {
+                          if (!ti.args?.file_path) return null;
                           title = ti.args.file_path;
                           const ext = title.split('.').pop() || '';
                           type = ['ts', 'tsx', 'js', 'jsx'].includes(ext)
@@ -435,10 +438,12 @@ export const ChatPage = () => {
                               ? 'html'
                               : 'markdown';
                         } else if (isWritePlanTool) {
+                          if (!ti.args?.filename) return null;
                           title = ti.args.filename;
                           type = 'markdown';
                         }
 
+                        if (!title) return null;
                         const artifactId = title.toLowerCase().replace(/\s+/g, '-');
 
                         return (
@@ -470,7 +475,14 @@ export const ChatPage = () => {
                 <h1 className="text-[38px] font-serif-source mb-[10px] text-neutral-800 text-center">
                   {project ? `Working on ${project.name}` : 'Hello, how can I help?'}
                 </h1>
-                <ChatInput onSend={handleSend} isLoading={isLoading} isIdle={true} isThinkingEnabled={isThinkingEnabled} onToggleThinking={toggleThinking} />
+                <ChatInput
+                  onSend={handleSend}
+                  isLoading={isLoading}
+                  onStop={stop}
+                  isIdle={true}
+                  isThinkingEnabled={isThinkingEnabled}
+                  onToggleThinking={toggleThinking}
+                />
               </div>
             )}
           </div>
@@ -478,7 +490,13 @@ export const ChatPage = () => {
 
         {messages.length > 0 && (
           <div className="shrink-0 pb-8 w-full max-w-[720px] mx-auto px-4 bg-white">
-            <ChatInput onSend={handleSend} isLoading={isLoading} isThinkingEnabled={isThinkingEnabled} onToggleThinking={toggleThinking} />
+            <ChatInput
+              onSend={handleSend}
+              isLoading={isLoading}
+              onStop={stop}
+              isThinkingEnabled={isThinkingEnabled}
+              onToggleThinking={toggleThinking}
+            />
           </div>
         )}
       </div>

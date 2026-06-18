@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ArrowUp02Icon, PlusSignIcon, Idea01Icon, Cancel01Icon } from '@hugeicons/core-free-icons';
+import { ArrowUp02Icon, PlusSignIcon, Idea01Icon, Cancel01Icon, StopIcon } from '@hugeicons/core-free-icons';
 import { ThinScrollbar } from '../ui/ThinScrollbar';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
+  onStop?: () => void;
   isLoading?: boolean;
   isIdle?: boolean;
   isThinkingEnabled: boolean;
   onToggleThinking: () => void;
 }
 
-export default function ChatInput({ onSend, isLoading, isIdle, isThinkingEnabled, onToggleThinking }: ChatInputProps) {
+export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkingEnabled, onToggleThinking }: ChatInputProps) {
   const [value, setValue] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -22,23 +23,58 @@ export default function ChatInput({ onSend, isLoading, isIdle, isThinkingEnabled
     }
   };
 
-  const handleCreateProject = () => {
-    onSend(
-      "Let's create a new project structure! Please design a clean folder layout, a README.md, and starting configuration files for this project workspace."
-    );
-  };
+  const PlusDropdown = ({ dropUp = false }: { dropUp?: boolean }) => (
+    <div className="relative">
+      <button
+        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-neutral-200/60 transition-colors text-black"
+      >
+        <HugeiconsIcon icon={PlusSignIcon} size={18} />
+      </button>
 
-  const handleCreatePlan = () => {
-    onSend(
-      'Please write a plan.md file listing our development milestones, checklists, and next steps. Make sure to update it as we proceed.'
-    );
-  };
+      {isDropdownOpen && (
+        <div
+          className={`absolute ${dropUp ? 'bottom-full mb-2' : 'top-full mt-2'} left-0 w-48 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 z-50`}
+        >
+          <button
+            onClick={() => { onToggleThinking(); setIsDropdownOpen(false); }}
+            className="w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 text-neutral-700 flex items-center justify-between"
+          >
+            <span className="flex items-center gap-2"><HugeiconsIcon icon={Idea01Icon} size={14} /> Thinking Mode</span>
+            {isThinkingEnabled && <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
-  const handleCreateTodo = () => {
-    onSend(
-      'Please write a todo.md file listing the immediate tasks and actions we need to check off. Update it as we progress.'
-    );
-  };
+  const ThinkingPill = ({ size = 'normal' }: { size?: 'normal' | 'small' }) => (
+    <div
+      onClick={onToggleThinking}
+      className={`group flex items-center gap-2 bg-blue-100 text-blue-900 ${size === 'normal' ? 'px-4 py-1.5 text-sm' : 'px-3 py-1 text-xs'} rounded-full font-medium cursor-pointer transition-all active:scale-95`}
+    >
+      <div className={`relative flex items-center justify-center ${size === 'normal' ? 'w-4 h-4' : 'w-3.5 h-3.5'}`}>
+        <HugeiconsIcon icon={Idea01Icon} size={size === 'normal' ? 16 : 14} className="group-hover:hidden" />
+        <HugeiconsIcon icon={Cancel01Icon} size={size === 'normal' ? 16 : 14} className="hidden group-hover:block" />
+      </div>
+      Think
+    </div>
+  );
+
+  const SendButton = () => (
+    <button
+      onClick={isLoading ? onStop : handleSend}
+      disabled={!value.trim() && !isLoading}
+      className="p-1.5 text-white rounded-full bg-black disabled:opacity-50 transition-opacity hover:opacity-90 active:scale-95"
+    >
+      <HugeiconsIcon
+        icon={isLoading ? StopIcon : ArrowUp02Icon}
+        size={18}
+        color="currentColor"
+        strokeWidth={1.5}
+      />
+    </button>
+  );
 
   return (
     <div className="relative w-full max-w-[720px] mx-auto transition-all duration-300">
@@ -46,10 +82,11 @@ export default function ChatInput({ onSend, isLoading, isIdle, isThinkingEnabled
         /* ── IDLE STATE: Input sits inside a "shelf" holding box ── */
         <div className="relative">
           {/* Holding box — same radius as input, blends top/sides into page bg,
-              only the bottom 28px strip shows as a distinct background */}
+              only the bottom strip shows as a distinct background.
+              Increased height from 28px to 43px (28 + 15). */}
           <div
             className="absolute inset-x-0 top-0 rounded-[12px] bg-[#d1d2d6] border border-neutral-200/60 shadow-sm"
-            style={{ bottom: '-28px' }}
+            style={{ bottom: '-43px' }}
             aria-hidden="true"
           />
 
@@ -74,56 +111,10 @@ export default function ChatInput({ onSend, isLoading, isIdle, isThinkingEnabled
             
             <div className="flex items-center justify-between px-3 py-2 bg-transparent">
               <div className="flex items-center gap-2">
-                {/* Action Dropdown Trigger */}
-                <div className="relative">
-                  <button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-neutral-200/60 transition-colors text-neutral-600"
-                  >
-                    <HugeiconsIcon icon={PlusSignIcon} size={18} />
-                  </button>
-
-                  {isDropdownOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 w-48 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 z-50">
-                      <button onClick={() => { handleCreateProject(); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 text-neutral-700">Create Project</button>
-                      <button onClick={() => { handleCreatePlan(); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 text-neutral-700">Create Plan</button>
-                      <button onClick={() => { handleCreateTodo(); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 text-neutral-700">Create Todo</button>
-                      <div className="border-t border-neutral-100 my-1"></div>
-                      <button onClick={() => { onToggleThinking(); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 text-neutral-700 flex items-center justify-between">
-                        <span className="flex items-center gap-2"><HugeiconsIcon icon={Idea01Icon} size={14} /> Thinking Mode</span>
-                        {isThinkingEnabled && <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Thinking Pill */}
-                {isThinkingEnabled && (
-                  <div
-                    onClick={onToggleThinking}
-                    className="group flex items-center gap-2 bg-blue-100 text-blue-900 px-4 py-1.5 rounded-full text-sm font-medium cursor-pointer"
-                  >
-                    <div className="relative flex items-center justify-center w-4 h-4">
-                      <HugeiconsIcon icon={Idea01Icon} size={16} className="group-hover:hidden" />
-                      <HugeiconsIcon icon={Cancel01Icon} size={16} className="hidden group-hover:block" />
-                    </div>
-                    Think
-                  </div>
-                )}
+                <PlusDropdown dropUp={false} />
+                {isThinkingEnabled && <ThinkingPill />}
               </div>
-
-              <button
-                onClick={handleSend}
-                disabled={!value.trim() || isLoading}
-                className="p-1.5 text-white rounded-full bg-black disabled:opacity-50 transition-opacity hover:opacity-90 active:scale-95"
-              >
-                <HugeiconsIcon
-                  icon={ArrowUp02Icon}
-                  size={18}
-                  color="currentColor"
-                  strokeWidth={1.5}
-                />
-              </button>
+              <SendButton />
             </div>
           </div>
         </div>
@@ -149,33 +140,10 @@ export default function ChatInput({ onSend, isLoading, isIdle, isThinkingEnabled
           
           <div className="flex items-center justify-between px-3 py-2 bg-transparent">
              <div className="flex items-center gap-2">
-                {/* Thinking Pill (in active state) */}
-                {isThinkingEnabled && (
-                  <div
-                    onClick={onToggleThinking}
-                    className="group flex items-center gap-1.5 bg-blue-100 text-blue-900 px-3 py-1 rounded-full text-xs font-medium cursor-pointer"
-                  >
-                    <div className="relative flex items-center justify-center w-3.5 h-3.5">
-                      <HugeiconsIcon icon={Idea01Icon} size={14} className="group-hover:hidden" />
-                      <HugeiconsIcon icon={Cancel01Icon} size={14} className="hidden group-hover:block" />
-                    </div>
-                    Think
-                  </div>
-                )}
+                <PlusDropdown dropUp={true} />
+                {isThinkingEnabled && <ThinkingPill size="small" />}
              </div>
-             
-             <button
-                onClick={handleSend}
-                disabled={!value.trim() || isLoading}
-                className="p-1.5 text-white rounded-full bg-black disabled:opacity-50 transition-opacity hover:opacity-90 active:scale-95"
-              >
-                <HugeiconsIcon
-                  icon={ArrowUp02Icon}
-                  size={18}
-                  color="currentColor"
-                  strokeWidth={1.5}
-                />
-              </button>
+             <SendButton />
           </div>
         </div>
       )}
