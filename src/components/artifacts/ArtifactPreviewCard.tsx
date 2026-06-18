@@ -20,7 +20,7 @@ export const ArtifactPreviewCard: React.FC<ArtifactPreviewCardProps> = ({
     >
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-600 group-hover:bg-neutral-900 group-hover:text-white transition-colors">
-          {/* @ts-ignore */}
+          {/* @ts-expect-error - external types */}
           <HugeiconsIcon icon={PlayIcon} size={20} variant="solid" />
         </div>
         <div className="flex-1 min-w-0">

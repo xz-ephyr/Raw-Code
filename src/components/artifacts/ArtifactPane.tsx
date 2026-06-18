@@ -53,9 +53,7 @@ export const ArtifactPane: React.FC<ArtifactPaneProps> = ({
     try {
       if (isTauri()) {
         // Desktop path: use native save dialog
-        // @ts-ignore
         const { save } = await import('@tauri-apps/plugin-dialog');
-        // @ts-ignore
         const { writeTextFile } = await import('@tauri-apps/plugin-fs');
         const path = await save({
           defaultPath: activeArtifact.title,

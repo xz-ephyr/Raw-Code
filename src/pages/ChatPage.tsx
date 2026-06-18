@@ -20,7 +20,6 @@ import { isTauri } from '../lib/tauri';
 // Safe path helpers — work in both Tauri and web environments
 const safejoin = async (base: string, segment: string): Promise<string> => {
   if (isTauri()) {
-    // @ts-ignore
     const { join } = await import('@tauri-apps/api/path');
     return join(base, segment);
   }
@@ -31,7 +30,6 @@ const safejoin = async (base: string, segment: string): Promise<string> => {
 
 const safeNormalize = async (p: string): Promise<string> => {
   if (isTauri()) {
-    // @ts-ignore
     const { normalize } = await import('@tauri-apps/api/path');
     return normalize(p);
   }
@@ -228,17 +226,15 @@ export const ChatPage = () => {
         const body = JSON.parse(options?.body as string);
         const result = await chatCompletion({
           messages: body.messages,
-          apiKey: body.apiKey,
           modelName: body.model,
-          projectContext: projectContextRef.current,  // ✅ always current value
-          projectPath: projectRef.current?.path,      // ✅ always current value
+          projectContext: projectContextRef.current, // ✅ always current value
+          projectPath: projectRef.current?.path, // ✅ always current value
           isThinkingEnabled: isThinkingEnabled,
         });
         return (result as any).toUIMessageStreamResponse();
       },
       body: {
         model: currentModel,
-        apiKey: apiKey,
       },
     }),
     messages: [],
@@ -335,11 +331,6 @@ export const ChatPage = () => {
 
   const handleSend = useCallback(
     async (content: string) => {
-      if (!apiKey) {
-        alert('Please set your Google API Key in settings.');
-        return;
-      }
-
       // On first send from /chat/new: create a real session and redirect to it.
       // The message is then sent in the new route context.
       if (uuid === 'new') {
