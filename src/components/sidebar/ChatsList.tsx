@@ -8,7 +8,11 @@ export default function ChatsList({ collapsed }: { collapsed: boolean }) {
 
   useEffect(() => {
     // This will need to be reactive in a real app
-    setChats(ChatSessionManager.getAll());
+    const loadChats = async () => {
+      const allChats = await ChatSessionManager.getAll();
+      setChats(allChats);
+    };
+    loadChats();
   }, []);
 
   if (collapsed) return null;

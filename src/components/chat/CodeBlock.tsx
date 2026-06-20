@@ -64,7 +64,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ content, language }) => {
       )}
       <button
         onClick={handleCopy}
-        className={`absolute top-1 right-1 p-1.5 rounded-[12px] transition-colors z-10 ${
+        className={`absolute top-1 right-1 p-1.5 rounded-[6px] transition-colors z-10 ${
           copied
             ? 'bg-green-100 text-green-700'
             : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900'

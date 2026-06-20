@@ -50,6 +50,7 @@ export async function chatCompletion({
   projectPath,
   isThinkingEnabled,
   abortSignal,
+  previousModelName,
 }: {
   messages: any[];
   modelName: string;
@@ -57,8 +58,11 @@ export async function chatCompletion({
   projectPath?: string;
   isThinkingEnabled?: boolean;
   abortSignal?: AbortSignal;
+  previousModelName?: string;
 }) {
   const providers = getProviders();
+
+  let processedMessages = messages;
 
   const getLanguageModel = (name: string) => {
     const def = getModelDefinition(name);
@@ -77,15 +81,9 @@ export async function chatCompletion({
 
   const uniqueChain = Array.from(new Set(fallbackChain));
 
-  const fullSystemPrompt = projectContext
-    ? `${SYSTEM_PROMPT}\n\n### PROJECT CONTEXT\nBelow is the current file tree of the project:\n${projectContext}\n\nMaintain this structure when creating or updating files.`
-    : SYSTEM_PROMPT;
+  const fullSystemPrompt = getSmartSystemPrompt(SYSTEM_PROMPT, projectContext);
 
-  const normalizedMessages = await convertToModelMessages(
-    messages.filter((m: any) => m.role !== 'system')
-  );
-
-  const getStreamResult = (modelIdx: number): any => {
+  const getStreamResult = async (modelIdx: number): Promise<any> => {
     const currentModelName = uniqueChain[modelIdx];
     const currentModel = getLanguageModel(currentModelName);
     const def = getModelDefinition(currentModelName);
@@ -100,6 +98,16 @@ export async function chatCompletion({
     }
 
     try {
+      if (previousModelName && previousModelName !== currentModelName) {
+        // Re-evaluate model and messages if routed
+        const incomingModel = getLanguageModel(currentModelName);
+        processedMessages = await contractContext(messages, incomingModel);
+      }
+
+      const normalizedMessages = await convertToModelMessages(
+        processedMessages.filter((m: any) => m.role !== 'system')
+      );
+
       return streamText({
         model: currentModel,
         system: fullSystemPrompt,
@@ -289,5 +297,5 @@ export async function chatCompletion({
     }
   };
 
-  return getStreamResult(0);
+  return await getStreamResult(0);
 }

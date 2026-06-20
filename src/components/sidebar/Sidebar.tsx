@@ -37,7 +37,11 @@ export default function Sidebar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setProjects(ChatSessionManager.getProjects());
+    const loadProjects = async () => {
+      const allProjects = await ChatSessionManager.getProjects();
+      setProjects(allProjects);
+    };
+    loadProjects();
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -124,9 +128,10 @@ export default function Sidebar() {
     }
   };
 
-  const handleDeleteProject = (id: string) => {
-    ChatSessionManager.deleteProject(id);
-    setProjects(ChatSessionManager.getProjects());
+  const handleDeleteProject = async (id: string) => {
+    await ChatSessionManager.deleteProject(id);
+    const allProjects = await ChatSessionManager.getProjects();
+    setProjects(allProjects);
     if (location.pathname.includes('/chat/')) {
       navigate('/chats');
     }

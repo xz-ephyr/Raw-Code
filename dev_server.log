@@ -1,0 +1,30 @@
+
+> xz@0.15.0 dev
+> vite
+
+error when starting dev server:
+Error: Port 4028 is already in use
+    at Server.onError (file:///app/node_mo10:21:00 PM [vite] (client) hmr update /src/pages/ChatPage.tsx, /src/index.css
+10:22:19 PM [vite] (client) hmr update /src/index.css, /src/pages/ChatPage.tsx, /src/components/settings/SettingsModal.tsx
+10:23:56 PM [vite] (client) hmr update /src/index.css, /src/pages/ChatPage.tsx, /src/components/settings/SettingsModal.tsx
+10:24:28 PM [vite] (client) hmr update /src/index.css, /src/pages/ChatPage.tsx, /src/components/settings/SettingsModal.tsx
+10:24:31 PM [vite] (client) hmr update /src/index.css, /src/pages/ChatPage.tsx, /src/components/settings/SettingsModal.tsx
+10:25:08 PM [vite] (client) hmr update /src/pages/ChatPage.tsx, /src/index.css
+10:26:19 PM [vite] (client) hmr update /src/index.css, /src/pages/ChatPage.tsx, /src/components/settings/SettingsModal.tsx
+6:20:24 AM [vite] (client) hmr update /src/index.css, /src/pages/ChatPage.tsx, /src/components/settings/SettingsModal.tsx
+8:11:29 AM [vite] (client) hmr update /src/App.tsx, /src/index.css
+8:12:07 AM [vite] (client) hmr update /src/index.css, /src/App.tsx, /src/components/sidebar/Sidebar.tsx, /src/pages/ChatPage.tsx, /src/pages/ChatsPage.tsx, /src/components/sidebar/ProjectItem.tsx
+8:12:37 AM [vite] (client) hmr update /src/App.tsx, /src/index.css, /src/components/sidebar/Sidebar.tsx, /src/pages/ChatPage.tsx, /src/pages/ChatsPage.tsx, /src/components/sidebar/ProjectItem.tsx
+8:13:11 AM [vite] (client) hmr update /src/index.css, /src/pages/ChatPage.tsx, /src/components/settings/SettingsModal.tsx
+8:13:16 AM [vite] (client) hmr update /src/index.css, /src/pages/ChatPage.tsx, /src/components/settings/SettingsModal.tsx
+8:13:28 AM [vite] (client) hmr update /src/index.css, /src/pages/ChatPage.tsx, /src/components/settings/SettingsModal.tsx
+8:14:09 AM [vite] (client) hmr update /src/index.css, /src/pages/ChatPage.tsx, /src/components/settings/SettingsModal.tsx
+8:14:13 AM [vite] (client) hmr update /src/index.css, /src/pages/ChatPage.tsx, /src/components/settings/SettingsModal.tsx
+8:14:46 AM [vite] (client) hmr update /src/components/chat/MarkdownMessage.tsx, /src/index.css
+8:14:53 AM [vite] (client) hmr update /src/pages/ChatPage.tsx, /src/index.css
+8:15:05 AM [vite] (client) hmr update /src/components/chat/AssistantBubble.tsx, /src/index.css
+8:15:09 AM [vite] (client) hmr update /src/pages/ChatPage.tsx, /src/index.css
+8:15:13 AM [vite] (client) hmr update /src/pages/ChatPage.tsx, /src/index.css
+8:16:18 AM [vite] (client) hmr update /src/index.css, /src/App.tsx, /src/components/sidebar/Sidebar.tsx, /src/pages/ChatPage.tsx, /src/pages/ChatsPage.tsx, /src/components/sidebar/ProjectItem.tsx
+8:31:43 AM [vite] (client) hmr update /src/index.css, /src/App.tsx, /src/components/sidebar/Sidebar.tsx, /src/pages/ChatPage.tsx, /src/pages/ChatsPage.tsx, /src/components/sidebar/ProjectItem.tsx
+8:32:24 AM [vite] (client) hmr update /src/index.css, /src/App.tsx, /src/components/sidebar/Sidebar.tsx, /src/pages/ChatPage.tsx, /src/pages/ChatsPage.tsx, /src/components/sidebar/ProjectItem.tsx

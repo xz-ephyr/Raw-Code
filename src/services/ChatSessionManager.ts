@@ -1,4 +1,5 @@
 import { ChatSession, Project } from '../types/chat';
+import { DatabaseService } from './DatabaseService';
 
 const SESSION_KEY = 'chat_sessions';
 const PROJECT_SESSION_KEY = 'project_chat_sessions';
@@ -15,14 +16,24 @@ const setStoredSessions = (sessions: ChatSession[], isProject: boolean) => {
   localStorage.setItem(key, JSON.stringify(sessions));
 };
 
-const getStoredProjects = (): Project[] => {
-  const stored = localStorage.getItem(PROJECT_KEY);
-  return stored ? JSON.parse(stored) : [];
-};
+    const storedProjects = localStorage.getItem(PROJECT_KEY);
+    if (storedProjects) {
+      const projects = JSON.parse(storedProjects);
+      for (const p of projects) {
+        await DatabaseService.createProject(p.name, p.path, p.id);
+      }
+      localStorage.removeItem(PROJECT_KEY);
+    }
 
-const setStoredProjects = (projects: Project[]) => {
-  localStorage.setItem(PROJECT_KEY, JSON.stringify(projects));
-};
+    const storedSessions = localStorage.getItem(SESSION_KEY);
+    if (storedSessions) {
+      const sessions = JSON.parse(storedSessions);
+      for (const s of sessions) {
+        await DatabaseService.createSession(s.title, s.lastMessage, s.projectId, s.id);
+      }
+      localStorage.removeItem(SESSION_KEY);
+    }
+  },
 
 export const ChatSessionManager = {
   // If no filter is provided, return all sessions from both stores.
@@ -102,21 +113,12 @@ export const ChatSessionManager = {
   },
 
   // Project Management
-  getProjects: (): Project[] => {
-    return getStoredProjects();
+  getProjects: async (): Promise<Project[]> => {
+    return DatabaseService.getProjects() as unknown as Promise<Project[]>;
   },
 
-  createProject: (name: string, path: string): Project => {
-    const projects = getStoredProjects();
-    const project: Project = {
-      id: crypto.randomUUID(),
-      name,
-      path,
-      createdAt: Date.now(),
-    };
-    projects.push(project);
-    setStoredProjects(projects);
-    return project;
+  createProject: async (name: string, path: string): Promise<Project> => {
+    return DatabaseService.createProject(name, path) as unknown as Promise<Project>;
   },
 
   deleteProject: (id: string) => {
