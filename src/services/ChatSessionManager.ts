@@ -11,7 +11,7 @@ export const ChatSessionManager = {
     if (storedProjects) {
       const projects = JSON.parse(storedProjects);
       for (const p of projects) {
-        await DatabaseService.createProject(p.name, p.path);
+        await DatabaseService.createProject(p.name, p.path, p.id);
       }
       localStorage.removeItem(PROJECT_KEY);
     }
@@ -20,18 +20,20 @@ export const ChatSessionManager = {
     if (storedSessions) {
       const sessions = JSON.parse(storedSessions);
       for (const s of sessions) {
-        await DatabaseService.createSession(s.title, s.lastMessage, s.projectId);
+        await DatabaseService.createSession(s.title, s.lastMessage, s.projectId, s.id);
       }
       localStorage.removeItem(SESSION_KEY);
     }
   },
 
   getAll: async (projectId?: string | null): Promise<ChatSession[]> => {
-    return DatabaseService.getSessions(projectId) as unknown as Promise<ChatSession[]>;
+    const sessions = await DatabaseService.getSessions(projectId);
+    return sessions as ChatSession[];
   },
 
   create: async (title: string, lastMessage?: string, projectId?: string): Promise<ChatSession> => {
-    return DatabaseService.createSession(title, lastMessage, projectId) as unknown as Promise<ChatSession>;
+    const session = await DatabaseService.createSession(title, lastMessage, projectId);
+    return session as ChatSession;
   },
 
   delete: async (id: string) => {
@@ -39,8 +41,7 @@ export const ChatSessionManager = {
   },
 
   archive: async (id: string) => {
-    const sessions = await DatabaseService.getSessions();
-    const session = sessions.find((s) => s.id === id);
+    const session = await DatabaseService.getSession(id);
     if (session) {
       await DatabaseService.updateSession(id, { archived: !session.archived });
     }

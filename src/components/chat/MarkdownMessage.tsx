@@ -64,23 +64,23 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
               <h4 className="text-base font-semibold mb-2 mt-4 text-neutral-900">{children}</h4>
             );
           },
-          table({ children }) {
-            return <Table>{children}</Table>;
+          table({ children, ...props }) {
+            return <Table {...props}>{children}</Table>;
           },
-          thead({ children }) {
-            return <TableHead>{children}</TableHead>;
+          thead({ children, ...props }) {
+            return <TableHead {...props}>{children}</TableHead>;
           },
-          tbody({ children }) {
-            return <TableBody>{children}</TableBody>;
+          tbody({ children, ...props }) {
+            return <TableBody {...props}>{children}</TableBody>;
           },
-          tr({ children }) {
-            return <TableRow>{children}</TableRow>;
+          tr({ children, ...props }) {
+            return <TableRow {...props}>{children}</TableRow>;
           },
-          th({ children }) {
-            return <TableHeaderCell>{children}</TableHeaderCell>;
+          th({ children, ...props }) {
+            return <TableHeaderCell {...props}>{children}</TableHeaderCell>;
           },
-          td({ children }) {
-            return <TableCell>{children}</TableCell>;
+          td({ children, ...props }) {
+            return <TableCell {...props}>{children}</TableCell>;
           },
           blockquote({ children }) {
             return (

@@ -95,17 +95,17 @@ export async function chatCompletion({
       }
     }
 
-    if (previousModelName && previousModelName !== currentModelName) {
-      // Re-evaluate model and messages if routed
-      const incomingModel = getLanguageModel(currentModelName);
-      processedMessages = await contractContext(messages, incomingModel);
-    }
-
-    const normalizedMessages = await convertToModelMessages(
-      processedMessages.filter((m: any) => m.role !== 'system')
-    );
-
     try {
+      if (previousModelName && previousModelName !== currentModelName) {
+        // Re-evaluate model and messages if routed
+        const incomingModel = getLanguageModel(currentModelName);
+        processedMessages = await contractContext(messages, incomingModel);
+      }
+
+      const normalizedMessages = await convertToModelMessages(
+        processedMessages.filter((m: any) => m.role !== 'system')
+      );
+
       return streamText({
         model: currentModel,
         system: fullSystemPrompt,

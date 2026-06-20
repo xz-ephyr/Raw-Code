@@ -314,6 +314,7 @@ export const ChatPage = () => {
         handleSend(pendingMessage);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uuid]);
 
   const handleSend = useCallback(
@@ -321,7 +322,7 @@ export const ChatPage = () => {
       if (uuid === 'new') {
         const snippet = content.trim().slice(0, 60);
         const title = snippet.length > 0 ? snippet : 'New conversation';
-        const session = await ChatSessionManager.create(title);
+        const session = await ChatSessionManager.create(title, undefined, project?.id || undefined);
         sessionStorage.setItem('pending-first-message', content);
         navigate(`/chat/${session.id}`);
         return;
@@ -340,7 +341,7 @@ export const ChatPage = () => {
 
       append(userMsg as any);
     },
-    [uuid, append, navigate]
+    [uuid, append, navigate, project]
   );
 
   const activeArtifact = getActiveArtifact();
@@ -390,7 +391,7 @@ export const ChatPage = () => {
                       isStreaming={
                         isLoading && messages.slice(i + 1).every((msg: any) => msg.role !== 'user')
                       }
-                      tokens={Math.round(((m.content?.length || 0) + (m.reasoning?.length || 0)) / 4)}
+                      estimatedTokens={Math.round(((m.content?.length || 0) + (m.reasoning?.length || 0)) / 4)}
                       toolInvocations={m.toolInvocations}
                       reasoning={m.reasoning}
                       artifactCards={m.toolInvocations?.filter(

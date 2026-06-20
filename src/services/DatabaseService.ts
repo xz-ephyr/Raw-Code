@@ -1,13 +1,17 @@
 import { PGlite } from '@electric-sql/pglite';
 
-let db: PGlite | null = null;
+let initPromise: Promise<PGlite> | null = null;
 
 export async function getDb() {
-  if (!db) {
-    db = new PGlite('idb://xz-database');
-    await initDb(db);
-  }
-  return db;
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
+    const pg = new PGlite('idb://xz-database');
+    await initDb(pg);
+    return pg;
+  })();
+
+  return initPromise;
 }
 
 async function initDb(pg: PGlite) {
@@ -48,12 +52,12 @@ export const DatabaseService = {
     return res.rows;
   },
 
-  async createProject(name: string, path: string) {
+  async createProject(name: string, path: string, existingId?: string) {
     const pg = await getDb();
-    const id = crypto.randomUUID();
+    const id = existingId || crypto.randomUUID();
     const createdAt = Date.now();
     await pg.query(
-      'INSERT INTO projects (id, name, path, created_at) VALUES ($1, $2, $3, $4)',
+      'INSERT INTO projects (id, name, path, created_at) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING',
       [id, name, path, createdAt]
     );
     return { id, name, path, createdAt };
@@ -79,20 +83,34 @@ export const DatabaseService = {
 
     query += ' ORDER BY created_at DESC';
     const res = await pg.query(query, params);
-    return res.rows.map((row: any) => ({
-      ...row,
-      projectId: row.project_id,
-      lastMessage: row.last_message,
-      createdAt: Number(row.created_at)
+    return res.rows.map(({ project_id, last_message, created_at, ...rest }: any) => ({
+      ...rest,
+      projectId: project_id,
+      lastMessage: last_message,
+      createdAt: Number(created_at)
     }));
   },
 
-  async createSession(title: string, lastMessage?: string, projectId?: string) {
+  async getSession(id: string) {
     const pg = await getDb();
-    const id = crypto.randomUUID();
+    const res = await pg.query('SELECT * FROM chat_sessions WHERE id = $1', [id]);
+    if (res.rows.length === 0) return null;
+    const row = res.rows[0] as any;
+    const { project_id, last_message, created_at, ...rest } = row;
+    return {
+      ...rest,
+      projectId: project_id,
+      lastMessage: last_message,
+      createdAt: Number(created_at)
+    };
+  },
+
+  async createSession(title: string, lastMessage?: string, projectId?: string, existingId?: string) {
+    const pg = await getDb();
+    const id = existingId || crypto.randomUUID();
     const createdAt = Date.now();
     await pg.query(
-      'INSERT INTO chat_sessions (id, title, last_message, project_id, created_at) VALUES ($1, $2, $3, $4, $5)',
+      'INSERT INTO chat_sessions (id, title, last_message, project_id, created_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
       [id, title, lastMessage || null, projectId || null, createdAt]
     );
     return { id, title, lastMessage, projectId, archived: false, createdAt };
@@ -100,21 +118,22 @@ export const DatabaseService = {
 
   async updateSession(id: string, updates: { title?: string; lastMessage?: string; archived?: boolean }) {
     const pg = await getDb();
+    const whitelist = {
+      title: 'title',
+      lastMessage: 'last_message',
+      archived: 'archived'
+    };
+
     const fields = [];
-    const params = [id];
+    const params: any[] = [id];
     let i = 2;
 
-    if (updates.title !== undefined) {
-      fields.push(`title = $${i++}`);
-      params.push(updates.title);
-    }
-    if (updates.lastMessage !== undefined) {
-      fields.push(`last_message = $${i++}`);
-      params.push(updates.lastMessage);
-    }
-    if (updates.archived !== undefined) {
-      fields.push(`archived = $${i++}`);
-      params.push(updates.archived ? 'true' : 'false');
+    for (const [key, column] of Object.entries(whitelist)) {
+      const val = (updates as any)[key];
+      if (val !== undefined) {
+        fields.push(`${column} = $${i++}`);
+        params.push(val);
+      }
     }
 
     if (fields.length === 0) return;
@@ -146,10 +165,13 @@ export const DatabaseService = {
 
   async saveMessages(sessionId: string, messages: any[]) {
     const pg = await getDb();
-    // In a real app, we might want to be more efficient, but for now we'll just clear and re-insert
-    // or better, only insert new ones. Let's do a simple insert for new messages.
-    for (const m of messages) {
-      if (!m.id) m.id = crypto.randomUUID();
+    const messagesToSave = messages.map(m => ({
+      ...m,
+      id: m.id || crypto.randomUUID(),
+      createdAt: m.createdAt || Date.now()
+    }));
+
+    for (const m of messagesToSave) {
       await pg.query(
         `INSERT INTO messages (id, session_id, role, content, reasoning, tool_invocations, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -164,7 +186,7 @@ export const DatabaseService = {
           m.content,
           m.reasoning || null,
           m.toolInvocations ? JSON.stringify(m.toolInvocations) : null,
-          m.createdAt || Date.now()
+          m.createdAt
         ]
       );
     }

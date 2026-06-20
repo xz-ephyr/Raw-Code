@@ -31,8 +31,19 @@ export const editFileTool = (projectPath?: string) => tool({
       const fullPath = await resolveProjectPath(projectPath, file_path);
       if (!fullPath) return { error: `Path escapes project: ${file_path}.` };
       const currentContent = await FileSystemService.getFileContent(fullPath);
-      if (!currentContent.includes(target_content))
+
+      if (!target_content) {
+        return { error: 'target_content cannot be empty.' };
+      }
+
+      const occurrences = currentContent.split(target_content).length - 1;
+      if (occurrences === 0) {
         return { error: `Target content not found in ${file_path}.` };
+      }
+      if (occurrences > 1) {
+        return { error: `Target content found ${occurrences} times in ${file_path}. Please provide a unique block.` };
+      }
+
       const updatedContent = currentContent.replace(target_content, replacement_content);
       await FileSystemService.saveFile(fullPath, updatedContent);
       return { success: true, file_path, content: updatedContent };

@@ -15,8 +15,9 @@ export const writeFileTool = (projectPath?: string) => tool({
   }),
   // @ts-expect-error - dynamic tool execution
   execute: async ({ file_path, content }: { file_path: string; content: string }) => {
-    if (!projectPath)
-      return { success: true, is_artifact: true, title: file_path, content };
+    if (!projectPath) {
+      return { error: 'Not in project mode. Cannot write files to disk.' };
+    }
     try {
       const fullPath = await resolveProjectPath(projectPath, file_path);
       if (!fullPath) return { error: `Path escapes project: ${file_path}.` };

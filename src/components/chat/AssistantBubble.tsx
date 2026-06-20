@@ -46,7 +46,7 @@ interface AssistantBubbleProps {
   onThumbsUp: () => void;
   onThumbsDown: () => void;
   onRegenerate: () => void;
-  tokens?: number;
+  estimatedTokens?: number;
 }
 
 const ThoughtLabel = ({
@@ -104,7 +104,7 @@ export const AssistantBubble = React.memo(
     onThumbsUp,
     onThumbsDown,
     onRegenerate,
-    tokens,
+    estimatedTokens,
   }: AssistantBubbleProps) => {
     const [isReasoningOpen, setIsReasoningOpen] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -173,8 +173,8 @@ export const AssistantBubble = React.memo(
             {model && (
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-gray-400">{model}</span>
-                {tokens !== undefined && (
-                  <span className="text-[10px] text-gray-400">({tokens} tokens)</span>
+                {estimatedTokens !== undefined && (
+                  <span className="text-[10px] text-gray-400">(~{estimatedTokens} tokens)</span>
                 )}
               </div>
             )}

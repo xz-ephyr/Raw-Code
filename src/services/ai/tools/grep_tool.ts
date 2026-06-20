@@ -28,6 +28,7 @@ export const grepTool = (projectPath?: string) => tool({
         const tree = await FileSystemService.getTree(path);
         for (const entry of tree) {
           if (entry.isDirectory) {
+            if (entry.name.match(/^(\.git|node_modules|dist|build|target|out)$/i)) continue;
             await collectFiles(entry.path, depth + 1);
           } else {
             // Ignore binary files and node_modules
@@ -42,12 +43,21 @@ export const grepTool = (projectPath?: string) => tool({
       await collectFiles(searchDir);
 
       const results: { file_path: string; matches: string[] }[] = [];
+      const regex = new RegExp(pattern, 'i');
+
       for (const filePath of allFiles) {
-        const content = await FileSystemService.getFileContent(filePath);
+        let content = '';
+        try {
+          content = await FileSystemService.getFileContent(filePath);
+        } catch (e) {
+          console.error(`Failed to read ${filePath} during grep:`, e);
+          continue;
+        }
+
         if (content.length > 100000) continue; // Skip very large files
 
         const lines = content.split('\n');
-        const matches = lines.filter(line => line.includes(pattern));
+        const matches = lines.filter(line => regex.test(line));
         if (matches.length > 0) {
           const relativePath = filePath.replace(projectPath, '').replace(/^[\\/]/, '');
           results.push({ file_path: relativePath, matches: matches.slice(0, 5) }); // Limit matches per file
