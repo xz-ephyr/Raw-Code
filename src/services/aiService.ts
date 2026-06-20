@@ -8,6 +8,8 @@ import {
   writeFileTool,
   editFileTool,
   writeToPlanTool,
+  listDirTool,
+  grepTool,
 } from './ai/config';
 import { FileSystemService } from './FileSystemService';
 import { resolveProjectPath } from '../lib/projectPaths';
@@ -198,6 +200,70 @@ export async function chatCompletion({
                 }
               }
               return { success: true, is_artifact: true, title: filename, content };
+            },
+          }),
+          list_dir: tool({
+            description: listDirTool.description,
+            parameters: listDirTool.parameters,
+            // @ts-expect-error - dynamic types
+            execute: async ({ path }: { path: string }) => {
+              if (!projectPath) return { error: 'Not in project mode.' };
+              try {
+                const fullPath = await resolveProjectPath(projectPath, path);
+                if (!fullPath) return { error: `Path escapes project: ${path}.` };
+                const tree = await FileSystemService.getTree(fullPath);
+                return {
+                  path,
+                  entries: tree.map((e) => ({
+                    name: e.name,
+                    isDirectory: e.isDirectory,
+                  })),
+                };
+              } catch (e: any) {
+                return { error: `Failed to list: ${e.message || e}` };
+              }
+            },
+          }),
+          grep_tool: tool({
+            description: grepTool.description,
+            parameters: grepTool.parameters,
+            // @ts-expect-error - dynamic types
+            execute: async ({ pattern, path }: { pattern: string; path: string }) => {
+              if (!projectPath) return { error: 'Not in project mode.' };
+              try {
+                const fullPath = await resolveProjectPath(projectPath, path);
+                if (!fullPath) return { error: `Path escapes project: ${path}.` };
+
+                // For simplicity in web mode, we just iterate through virtual FS
+                // In Tauri mode, we could use native grep but for consistency:
+                const results: { file: string; line: number; content: string }[] = [];
+                const tree = await FileSystemService.getTree(fullPath);
+
+                const search = async (entries: any[]) => {
+                  for (const entry of entries) {
+                    if (entry.isDirectory) {
+                      await search(entry.children || []);
+                    } else {
+                      const content = await FileSystemService.getFileContent(entry.path);
+                      const lines = content.split('\n');
+                      lines.forEach((line, i) => {
+                        if (new RegExp(pattern, 'i').test(line)) {
+                          results.push({
+                            file: entry.path.replace(projectPath, '').replace(/^\//, ''),
+                            line: i + 1,
+                            content: line.trim(),
+                          });
+                        }
+                      });
+                    }
+                  }
+                };
+
+                await search(tree);
+                return { results: results.slice(0, 50) }; // Limit results
+              } catch (e: any) {
+                return { error: `Grep failed: ${e.message || e}` };
+              }
             },
           }),
         },

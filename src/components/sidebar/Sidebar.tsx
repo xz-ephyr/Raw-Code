@@ -95,7 +95,8 @@ export default function Sidebar() {
           const folderName = selected.split(/[/\\]/).pop() || 'New Project';
           const newProject = ChatSessionManager.createProject(folderName, selected);
           setProjects(ChatSessionManager.getProjects());
-          navigate(`/project/${newProject.id}`);
+          const slug = folderName.toLowerCase().replace(/\s+/g, '-');
+          navigate(`/project/${slug}-${newProject.id}`);
         }
       } else {
         // Web: use File System Access API if available, otherwise prompt for a name
@@ -105,14 +106,16 @@ export default function Sidebar() {
           const projectPath = await FileSystemService.importDirectory(dirHandle);
           const newProject = ChatSessionManager.createProject(folderName, projectPath);
           setProjects(ChatSessionManager.getProjects());
-          navigate(`/project/${newProject.id}`);
+          const slug = folderName.toLowerCase().replace(/\s+/g, '-');
+          navigate(`/project/${slug}-${newProject.id}`);
         } else {
           const folderName = prompt('Enter a name for your project:');
           if (folderName) {
             const fakePath = `/web-projects/${folderName}`;
             const newProject = ChatSessionManager.createProject(folderName, fakePath);
             setProjects(ChatSessionManager.getProjects());
-            navigate(`/project/${newProject.id}`);
+            const slug = folderName.toLowerCase().replace(/\s+/g, '-');
+            navigate(`/project/${slug}-${newProject.id}`);
           }
         }
       }
@@ -156,11 +159,11 @@ export default function Sidebar() {
             <SidebarTab
               icon={() => <HugeiconRenderer icon={PencilEdit02Icon} />}
               label="New thread"
-              path="/chat/new"
-              active={location.pathname === '/chat/new'}
+              path="/thread/new"
+              active={location.pathname === '/thread/new'}
               collapsed={isCollapsed}
               onClick={() => {
-                if (location.pathname === '/chat/new') {
+                if (location.pathname === '/thread/new') {
                   window.dispatchEvent(new CustomEvent('reset-chat'));
                 }
               }}

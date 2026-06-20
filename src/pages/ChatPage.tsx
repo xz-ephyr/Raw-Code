@@ -322,15 +322,24 @@ export const ChatPage = () => {
 
   const handleSend = useCallback(
     async (content: string) => {
-      // On first send from /chat/new: create a real session and redirect to it.
+      // On first send from /chat/new or /thread/new: create a real session and redirect to it.
       // The message is then sent in the new route context.
       if (uuid === 'new') {
         const snippet = content.trim().slice(0, 60);
         const title = snippet.length > 0 ? snippet : 'New conversation';
-        const session = ChatSessionManager.create(title);
-        // Store the pending first message so the new ChatPage can pick it up
-        sessionStorage.setItem('pending-first-message', content);
-        navigate(`/chat/${session.id}`);
+        const isProjectSession = location.pathname.startsWith('/project/');
+
+        let session;
+        if (isProjectSession && project) {
+          session = ChatSessionManager.create(title, undefined, project.id);
+          sessionStorage.setItem('pending-first-message', content);
+          const slug = project.name.toLowerCase().replace(/\s+/g, '-');
+          navigate(`/project/${slug}/${session.id}`);
+        } else {
+          session = ChatSessionManager.create(title);
+          sessionStorage.setItem('pending-first-message', content);
+          navigate(`/thread/${session.id}`);
+        }
         return;
       }
 

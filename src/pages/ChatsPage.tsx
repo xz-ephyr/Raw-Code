@@ -96,6 +96,8 @@ const ChatListItem = ({
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const chatLink = chat.projectId ? `/project/session/${chat.id}` : `/thread/${chat.id}`;
+
   return (
     <div
       className={cn(
@@ -105,7 +107,7 @@ const ChatListItem = ({
         isMenuOpen ? 'z-20' : 'z-0 hover:z-10'
       )}
     >
-      <Link to={`/chat/${chat.id}`} className="flex-1 min-w-0 h-full flex items-center">
+      <Link to={chatLink} className="flex-1 min-w-0 h-full flex items-center">
         <div className="w-full">
           {isEditing ? (
             <form onSubmit={submitRename} onClick={(e) => e.stopPropagation()}>
@@ -175,17 +177,20 @@ export const ChatsPage = () => {
   const [chats, setChats] = useState<ChatSession[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'active' | 'archived'>('active');
+  const [sessionType, setSessionType] = useState<'normal' | 'project'>('normal');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
 
   const refreshChats = () => {
-    // Only fetch sessions that are NOT tied to a project (null = no projectId)
-    setChats(ChatSessionManager.getAll(null));
+    // Fetch based on sessionType tab
+    setChats(ChatSessionManager.getAll(sessionType === 'normal' ? null : undefined).filter(s =>
+      sessionType === 'normal' ? !s.projectId : !!s.projectId
+    ));
   };
 
   useEffect(() => {
     refreshChats();
-  }, []);
+  }, [sessionType]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -234,6 +239,32 @@ export const ChatsPage = () => {
         <div className="flex flex-col gap-6 mb-8">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-semibold text-neutral-900 tracking-tight">Chats</h1>
+          </div>
+
+          {/* Tab Switcher */}
+          <div className="flex p-1 bg-neutral-100 rounded-[6px] w-fit">
+            <button
+              onClick={() => setSessionType('normal')}
+              className={cn(
+                'px-4 py-1.5 text-sm font-medium rounded-[6px] transition-all',
+                sessionType === 'normal'
+                  ? 'bg-neutral-50 text-neutral-900 shadow-sm'
+                  : 'text-neutral-500 hover:text-neutral-700'
+              )}
+            >
+              Normal Threads
+            </button>
+            <button
+              onClick={() => setSessionType('project')}
+              className={cn(
+                'px-4 py-1.5 text-sm font-medium rounded-[6px] transition-all',
+                sessionType === 'project'
+                  ? 'bg-neutral-50 text-neutral-900 shadow-sm'
+                  : 'text-neutral-500 hover:text-neutral-700'
+              )}
+            >
+              Project Sessions
+            </button>
           </div>
 
           <div className="flex items-center gap-3">
@@ -350,7 +381,7 @@ export const ChatsPage = () => {
               </p>
               {!searchQuery && filter === 'active' && (
                 <Link
-                  to="/chat/new"
+                  to="/thread/new"
                   className="mt-8 px-6 py-2.5 bg-neutral-900 text-white text-sm font-semibold rounded-full hover:bg-neutral-800 transition-all hover:shadow-lg active:scale-95"
                 >
                   Start a new thread

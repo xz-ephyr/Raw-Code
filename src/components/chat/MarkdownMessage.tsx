@@ -8,7 +8,7 @@ interface MarkdownMessageProps {
 
 export function MarkdownMessage({ content }: MarkdownMessageProps) {
   return (
-    <div className="text-[15px] leading-relaxed break-words text-neutral-900">
+    <div className="text-[15px] leading-relaxed break-words text-neutral-900 transition-all duration-500">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -36,7 +36,7 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
             );
           },
           p({ children }) {
-            return <p className="mb-4 last:mb-0">{children}</p>;
+            return <p className="mb-4 last:mb-0 animate-in fade-in slide-in-from-bottom-1 duration-300">{children}</p>;
           },
           ul({ children }) {
             return <ul className="list-disc pl-5 mb-4 space-y-1">{children}</ul>;
@@ -45,7 +45,7 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
             return <ol className="list-decimal pl-5 mb-4 space-y-1">{children}</ol>;
           },
           li({ children }) {
-            return <li>{children}</li>;
+            return <li className="animate-in fade-in slide-in-from-left-1 duration-300">{children}</li>;
           },
           h1({ children }) {
             return (

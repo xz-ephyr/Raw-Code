@@ -50,7 +50,8 @@ export default function ProjectItem({ project, onDelete }: ProjectItemProps) {
     e.stopPropagation();
     const newSession = ChatSessionManager.create(`${project.name} — Chat`, undefined, project.id);
     setSessions(ChatSessionManager.getAll(project.id));
-    navigate(`/chat/${newSession.id}`);
+    const slug = project.name.toLowerCase().replace(/\s+/g, '-');
+    navigate(`/project/${slug}/${newSession.id}`);
   };
 
   return (
@@ -108,7 +109,10 @@ export default function ProjectItem({ project, onDelete }: ProjectItemProps) {
           {sessions.map((session) => (
             <div
               key={session.id}
-              onClick={() => navigate(`/chat/${session.id}`)}
+              onClick={() => {
+                const slug = project.name.toLowerCase().replace(/\s+/g, '-');
+                navigate(`/project/${slug}/${session.id}`);
+              }}
               className={`text-sm p-2 hover:bg-[#f2f3f6] rounded-[8px] flex items-center gap-3 group cursor-pointer active:scale-[0.99] transition-transform ${uuid === session.id ? 'bg-[#f2f3f6] text-black font-medium' : 'text-gray-600'}`}
             >
               <span className="flex-1 truncate">{session.title}</span>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MarkdownMessage } from './MarkdownMessage';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -27,6 +27,35 @@ const HugeiconRenderer = ({
     className={className}
   />
 );
+
+const ToolCallPill = ({ toolName, state, args }: { toolName: string; state: string; args: any }) => {
+  const getVerb = () => {
+    switch (toolName) {
+      case 'read_file':
+        return state === 'result' ? 'read' : 'reading';
+      case 'write_file':
+      case 'create_artifact':
+        return state === 'result' ? 'wrote' : 'writing';
+      case 'edit_file':
+        return state === 'result' ? 'edited' : 'editing';
+      case 'grep_tool':
+        return 'grep';
+      case 'list_dir':
+        return state === 'result' ? 'listed' : 'listing';
+      default:
+        return state === 'result' ? 'used' : 'using';
+    }
+  };
+
+  const fileName = args?.file_path || args?.path || args?.title || args?.filename || '';
+
+  return (
+    <div className="flex items-center gap-1.5 px-2 py-1 bg-neutral-100 rounded-[6px] text-xs font-medium text-neutral-600 border border-neutral-200 w-fit shrink-0">
+      <span className="capitalize">{getVerb()}</span>
+      {fileName && <span className="text-neutral-400 font-mono truncate max-w-[200px]">{fileName}</span>}
+    </div>
+  );
+};
 
 interface ArtifactCardData {
   title: string;
@@ -59,7 +88,7 @@ const ThoughtLabel = ({
 }) => {
   const [seconds, setSeconds] = useState(0);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isActivelyThinking) return;
     const interval = setInterval(() => {
       setSeconds((s) => s + 0.1);
@@ -74,7 +103,7 @@ const ThoughtLabel = ({
     <button
       type="button"
       onClick={onClick}
-      className="group flex items-center bg-transparent p-0 text-left outline-none w-fit"
+      className="group flex items-center bg-transparent p-0 text-left outline-none w-fit transition-all"
       aria-expanded={isOpen}
     >
       <span
@@ -120,13 +149,31 @@ export const AssistantBubble = React.memo(
     const isArtifactGenerating = artifactTool && artifactTool.state !== 'result';
     const intentMessage = artifactTool?.args?.intent_message;
 
-    const showThought = reasoning && !isStreaming ? reasoning : isStreaming;
+    const showThought = reasoning || isStreaming;
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      if (isStreaming && scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }, [reasoning, toolInvocations, isStreaming]);
+
+    // Split reasoning into sentences for the 1-2 sentence intent constraint
+    const sentences = useMemo(() => {
+      if (!reasoning) return [];
+      return reasoning
+        .split(/(?<=[.!?])\s+/)
+        .filter((s) => s.trim().length > 0)
+        .slice(0, 50); // Limit to avoid performance issues
+    }, [reasoning]);
 
     return (
-      <div className="mb-6 w-full">
+      <div className="mb-6 w-full group/bubble">
         <div className="text-base px-4 py-4 break-words flex flex-col gap-2">
           {intentMessage && (
-            <div className="font-medium text-neutral-800 mb-1">{intentMessage}</div>
+            <div className="font-medium text-neutral-800 mb-1 animate-in fade-in slide-in-from-bottom-1 duration-300">
+              {intentMessage}
+            </div>
           )}
 
           {isArtifactGenerating && (
@@ -142,16 +189,49 @@ export const AssistantBubble = React.memo(
                 isOpen={isReasoningOpen}
                 onClick={() => setIsReasoningOpen(!isReasoningOpen)}
               />
-              {isReasoningOpen && reasoning && (
-                <div className="w-full whitespace-pre-wrap font-mono text-[13px] leading-relaxed text-neutral-500 thin-scrollbar pt-1">
-                  {reasoning}
+
+              <div
+                className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+                  isReasoningOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div
+                    ref={scrollRef}
+                    className="h-[45px] overflow-y-auto no-scrollbar thinking-pad-mask relative flex flex-col gap-2 pt-1"
+                  >
+                    {sentences.map((s, idx) => (
+                      <div
+                        key={idx}
+                        className="text-[15px] leading-relaxed text-neutral-500 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                        style={{ animationDelay: `${idx * 50}ms` }}
+                      >
+                        {s}
+                      </div>
+                    ))}
+                    {toolInvocations && toolInvocations.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pb-4">
+                        {toolInvocations.map((ti, idx) => (
+                          <ToolCallPill
+                            key={ti.toolCallId || idx}
+                            toolName={ti.toolName}
+                            state={ti.state}
+                            args={ti.args}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {!reasoning && isStreaming && (
+                      <p className="text-[15px] text-neutral-400 animate-pulse">Thinking...</p>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
 
           {content && (
-            <div className="font-medium text-neutral-900">
+            <div className="font-medium text-neutral-900 animate-in fade-in duration-500">
               <MarkdownMessage content={content} />
             </div>
           )}

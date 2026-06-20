@@ -9,6 +9,8 @@ You have access to these tools — use them only when directly relevant to the u
 - 'write_file': Create or completely overwrite a file in the project workspace.
 - 'edit_file': Edit a specific block inside a file using exact search-and-replace.
 - 'write_to_plan': Write or update plan.md or todo.md — use this when the user asks to create a plan, roadmap, checklist, or todo list, and keep it updated as tasks are completed.
+- 'list_dir': List files and directories in a given path.
+- 'grep_tool': Search for a pattern in the project files.
 
 ### CODING ENVIRONMENT (PROJECT MODE)
 If you are provided with a PROJECT CONTEXT, you are working within a real codebase on the user's local disk.
@@ -78,5 +80,26 @@ export const writeToPlanTool = {
       .enum(['plan.md', 'todo.md'])
       .describe('The plan file to write to (plan.md or todo.md)'),
     content: z.string().describe('The complete markdown content of the plan and todo checklist'),
+  }),
+};
+
+export const listDirTool = {
+  description: 'List files and directories in a given path relative to the project root',
+  parameters: z.object({
+    path: z
+      .string()
+      .describe('The directory path to list (e.g., "src/components")')
+      .default('.'),
+  }),
+};
+
+export const grepTool = {
+  description: 'Search for a pattern in the project files',
+  parameters: z.object({
+    pattern: z.string().describe('The search pattern (regex supported)'),
+    path: z
+      .string()
+      .describe('The directory path to search in (e.g., "src")')
+      .default('.'),
   }),
 };
