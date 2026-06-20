@@ -12,6 +12,7 @@ import { useArtifacts } from '../hooks/useArtifacts';
 import { ArtifactPane } from '../components/artifacts/ArtifactPane';
 import { chatCompletion, getAIErrorMessage } from '../services/aiService';
 import { Project } from '../types/chat';
+import { DatabaseService } from '../services/DatabaseService';
 import { FileSystemService } from '../services/FileSystemService';
 import { ProjectIDE } from '../components/artifacts/ProjectIDE';
 import { IDEPromptModal } from '../components/chat/IDEPromptModal';
@@ -82,6 +83,7 @@ export const ChatPage = () => {
   const [paneWidth, setPaneWidth] = useState(50);
   const [isResizing, setIsResizing] = useState(false);
   const lastProjectIdRef = useRef<string | null>(null);
+  const previousModelRef = useRef<string | null>(null);
 
   const toggleThinking = () => setIsThinkingEnabled((prev) => !prev);
 
@@ -138,68 +140,17 @@ export const ChatPage = () => {
     closeArtifact,
   } = useArtifacts();
 
-  useEffect(() => {
-    if (uuid) {
-      const allSessions = ChatSessionManager.getAll();
-      const currentSession = allSessions.find((s) => s.id === uuid);
-
-      if (currentSession?.projectId) {
-        const allProjects = ChatSessionManager.getProjects();
-        const p = allProjects.find((proj) => proj.id === currentSession.projectId);
-        if (p) {
-          setProject(p);
-          if (lastProjectIdRef.current !== p.id) {
-            setShowIDEPrompt(true);
-            lastProjectIdRef.current = p.id;
-          }
-          loadProjectContext(p.path);
-        }
-      } else if (projectRouteId) {
-        // On /project/:uuid route — uuid IS the project id, not a session id
-        const allProjects = ChatSessionManager.getProjects();
-        const p = allProjects.find((proj) => proj.id === projectRouteId);
-        if (p) {
-          setProject(p);
-          if (lastProjectIdRef.current !== p.id) {
-            setShowIDEPrompt(true);
-            lastProjectIdRef.current = p.id;
-          }
-          loadProjectContext(p.path);
-        }
-      } else {
-        setProject(null);
-        setShowIDEPrompt(false);
-        setIsIDEOpen(false);
-        setProjectContext('');
-        lastProjectIdRef.current = null;
-      }
-    }
-  }, [uuid, projectRouteId]);
-
   const loadProjectContext = async (path: string) => {
     const tree = await FileSystemService.getTree(path);
     const summary = FileSystemService.getCompressedTree(tree);
     setProjectContext(summary);
   };
 
-  // ✅ FIX #5: Evaluate model once per uuid, not on every render. In rotate mode,
-  // getModelForChatRequest mutates localStorage on each call, so calling it every
-  // render during streaming increments the rotation index repeatedly.
   const currentModel = useMemo(() => getModelForChatRequest(uuid), [uuid]);
-  const apiKey = localStorage.getItem('api-key');
-
-  // ✅ FIX #3: Keep refs in sync with state. The useChat transport is a stale closure —
-  // it captures values at hook creation. Refs are always current regardless of closure age.
-  useEffect(() => {
-    projectContextRef.current = projectContext;
-  }, [projectContext]);
-  useEffect(() => {
-    projectRef.current = project;
-  }, [project]);
 
   const {
     messages: rawMessages,
-    sendMessage,
+    append,
     isLoading,
     stop,
     setMessages,
@@ -211,11 +162,16 @@ export const ChatPage = () => {
         const result = await chatCompletion({
           messages: body.messages,
           modelName: body.model,
-          projectContext: projectContextRef.current, // ✅ always current value
-          projectPath: projectRef.current?.path, // ✅ always current value
+          projectContext: projectContextRef.current,
+          projectPath: projectRef.current?.path,
           isThinkingEnabled: isThinkingEnabled,
           abortSignal: options?.signal,
+          previousModelName: previousModelRef.current || undefined,
         });
+
+        // Update previous model ref after request starts
+        previousModelRef.current = body.model;
+
         return (result as any).toUIMessageStreamResponse({
           getErrorMessage: getAIErrorMessage,
         });
@@ -229,6 +185,9 @@ export const ChatPage = () => {
       console.error('Chat stream failed:', getAIErrorMessage(chatError));
     },
     onFinish: async (event: any) => {
+      if (uuid && uuid !== 'new') {
+        await DatabaseService.saveMessages(uuid, [event.message]);
+      }
       const message = mapUIMessageToLegacyMessage(event.message);
       if (message.toolInvocations) {
         for (const toolInvocation of message.toolInvocations) {
@@ -249,16 +208,10 @@ export const ChatPage = () => {
               const file_path = args.file_path;
               addOrUpdateArtifact(type, title, content);
 
-              // Auto-save in project mode
               if (project && file_path) {
                 try {
                   const fullPath = await resolveProjectPath(project.path, file_path);
-
-                  if (!fullPath) {
-                    console.error('Blocked attempted path traversal:', file_path);
-                    continue;
-                  }
-
+                  if (!fullPath) continue;
                   await FileSystemService.saveFile(fullPath, content);
                   loadProjectContext(project.path);
                 } catch (e) {
@@ -277,15 +230,11 @@ export const ChatPage = () => {
                     : 'markdown';
                 addOrUpdateArtifact(type, file_path, content);
               }
-              if (project) {
-                loadProjectContext(project.path);
-              }
+              if (project) loadProjectContext(project.path);
             } else if (toolName === 'write_to_plan') {
               const { filename, content } = toolInvocation.args;
               addOrUpdateArtifact('markdown', filename, content);
-              if (project) {
-                loadProjectContext(project.path);
-              }
+              if (project) loadProjectContext(project.path);
             }
           }
         }
@@ -293,14 +242,62 @@ export const ChatPage = () => {
     },
   }) as any;
 
-  const messages = rawMessages.map(mapUIMessageToLegacyMessage);
+  useEffect(() => {
+    if (uuid) {
+      const loadSession = async () => {
+        if (uuid !== 'new') {
+          const storedMessages = await DatabaseService.getMessages(uuid);
+          setMessages(storedMessages.map(mapUIMessageToLegacyMessage));
+        } else {
+          setMessages([]);
+        }
+
+        const allSessions = await ChatSessionManager.getAll();
+        const currentSession = allSessions.find((s) => s.id === uuid);
+
+        if (currentSession?.projectId) {
+          const allProjects = await ChatSessionManager.getProjects();
+          const p = allProjects.find((proj) => proj.id === currentSession.projectId);
+          if (p) {
+            setProject(p);
+            if (lastProjectIdRef.current !== p.id) {
+              setShowIDEPrompt(true);
+              lastProjectIdRef.current = p.id;
+            }
+            loadProjectContext(p.path);
+          }
+        } else if (projectRouteId) {
+          const allProjects = await ChatSessionManager.getProjects();
+          const p = allProjects.find((proj) => proj.id === projectRouteId);
+          if (p) {
+            setProject(p);
+            if (lastProjectIdRef.current !== p.id) {
+              setShowIDEPrompt(true);
+              lastProjectIdRef.current = p.id;
+            }
+            loadProjectContext(p.path);
+          }
+        } else {
+          setProject(null);
+          setShowIDEPrompt(false);
+          setIsIDEOpen(false);
+          setProjectContext('');
+          lastProjectIdRef.current = null;
+        }
+      };
+      loadSession();
+    }
+  }, [uuid, projectRouteId, setMessages]);
 
   useEffect(() => {
-    setMessages([]);
-  }, [uuid, setMessages]);
+    projectContextRef.current = projectContext;
+  }, [projectContext]);
+  useEffect(() => {
+    projectRef.current = project;
+  }, [project]);
 
-  // Listen for the reset-chat event dispatched by the sidebar's "New thread" tab
-  // This fires only when the user is already on /chat/new and clicks it again.
+  const messages = rawMessages.map(mapUIMessageToLegacyMessage);
+
   useEffect(() => {
     const handleResetChat = () => {
       setMessages([]);
@@ -309,36 +306,42 @@ export const ChatPage = () => {
     return () => window.removeEventListener('reset-chat', handleResetChat);
   }, [setMessages]);
 
-  // Pick up the pending first message stored before redirect from /chat/new
   useEffect(() => {
     if (uuid && uuid !== 'new') {
       const pendingMessage = sessionStorage.getItem('pending-first-message');
       if (pendingMessage) {
         sessionStorage.removeItem('pending-first-message');
-        sendMessage({ text: pendingMessage });
+        handleSend(pendingMessage);
       }
     }
-  }, [uuid]); // intentionally omitting sendMessage to only run once on route change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uuid]);
 
   const handleSend = useCallback(
     async (content: string) => {
-      // On first send from /chat/new: create a real session and redirect to it.
-      // The message is then sent in the new route context.
       if (uuid === 'new') {
         const snippet = content.trim().slice(0, 60);
         const title = snippet.length > 0 ? snippet : 'New conversation';
-        const session = ChatSessionManager.create(title);
-        // Store the pending first message so the new ChatPage can pick it up
+        const session = await ChatSessionManager.create(title, undefined, project?.id || undefined);
         sessionStorage.setItem('pending-first-message', content);
         navigate(`/chat/${session.id}`);
         return;
       }
 
-      sendMessage({
-        text: content,
-      });
+      const userMsg = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content,
+        createdAt: Date.now(),
+      };
+
+      if (uuid) {
+        await DatabaseService.saveMessages(uuid, [userMsg]);
+      }
+
+      append(userMsg as any);
     },
-    [uuid, apiKey, sendMessage, navigate]
+    [uuid, append, navigate, project]
   );
 
   const activeArtifact = getActiveArtifact();
@@ -388,6 +391,7 @@ export const ChatPage = () => {
                       isStreaming={
                         isLoading && messages.slice(i + 1).every((msg: any) => msg.role !== 'user')
                       }
+                      estimatedTokens={Math.round(((m.content?.length || 0) + (m.reasoning?.length || 0)) / 4)}
                       toolInvocations={m.toolInvocations}
                       reasoning={m.reasoning}
                       artifactCards={m.toolInvocations?.filter(
@@ -413,7 +417,7 @@ export const ChatPage = () => {
                       onRegenerate={() => {
                         const userMessage = messages[i - 1];
                         if (userMessage) {
-                          sendMessage({ text: userMessage.content });
+                          handleSend(userMessage.content);
                         }
                       }}
                     />

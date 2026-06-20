@@ -37,7 +37,11 @@ export default function Sidebar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setProjects(ChatSessionManager.getProjects());
+    const loadProjects = async () => {
+      const allProjects = await ChatSessionManager.getProjects();
+      setProjects(allProjects);
+    };
+    loadProjects();
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -93,8 +97,9 @@ export default function Sidebar() {
         });
         if (selected && typeof selected === 'string') {
           const folderName = selected.split(/[/\\]/).pop() || 'New Project';
-          const newProject = ChatSessionManager.createProject(folderName, selected);
-          setProjects(ChatSessionManager.getProjects());
+          const newProject = await ChatSessionManager.createProject(folderName, selected);
+          const allProjects = await ChatSessionManager.getProjects();
+          setProjects(allProjects);
           navigate(`/project/${newProject.id}`);
         }
       } else {
@@ -103,15 +108,17 @@ export default function Sidebar() {
           const dirHandle = await (window as any).showDirectoryPicker();
           const folderName = dirHandle.name || 'New Project';
           const projectPath = await FileSystemService.importDirectory(dirHandle);
-          const newProject = ChatSessionManager.createProject(folderName, projectPath);
-          setProjects(ChatSessionManager.getProjects());
+          const newProject = await ChatSessionManager.createProject(folderName, projectPath);
+          const allProjects = await ChatSessionManager.getProjects();
+          setProjects(allProjects);
           navigate(`/project/${newProject.id}`);
         } else {
           const folderName = prompt('Enter a name for your project:');
           if (folderName) {
             const fakePath = `/web-projects/${folderName}`;
-            const newProject = ChatSessionManager.createProject(folderName, fakePath);
-            setProjects(ChatSessionManager.getProjects());
+            const newProject = await ChatSessionManager.createProject(folderName, fakePath);
+            const allProjects = await ChatSessionManager.getProjects();
+            setProjects(allProjects);
             navigate(`/project/${newProject.id}`);
           }
         }
@@ -121,9 +128,10 @@ export default function Sidebar() {
     }
   };
 
-  const handleDeleteProject = (id: string) => {
-    ChatSessionManager.deleteProject(id);
-    setProjects(ChatSessionManager.getProjects());
+  const handleDeleteProject = async (id: string) => {
+    await ChatSessionManager.deleteProject(id);
+    const allProjects = await ChatSessionManager.getProjects();
+    setProjects(allProjects);
     if (location.pathname.includes('/chat/')) {
       navigate('/chats');
     }

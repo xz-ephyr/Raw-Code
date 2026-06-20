@@ -178,9 +178,10 @@ export const ChatsPage = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
 
-  const refreshChats = () => {
+  const refreshChats = async () => {
     // Only fetch sessions that are NOT tied to a project (null = no projectId)
-    setChats(ChatSessionManager.getAll(null));
+    const allChats = await ChatSessionManager.getAll(null);
+    setChats(allChats);
   };
 
   useEffect(() => {
@@ -212,18 +213,18 @@ export const ChatsPage = () => {
       .sort((a, b) => b.createdAt - a.createdAt);
   }, [chats, searchQuery, filter]);
 
-  const handleDelete = (id: string) => {
-    ChatSessionManager.delete(id);
+  const handleDelete = async (id: string) => {
+    await ChatSessionManager.delete(id);
     refreshChats();
   };
 
-  const handleArchive = (id: string) => {
-    ChatSessionManager.archive(id);
+  const handleArchive = async (id: string) => {
+    await ChatSessionManager.archive(id);
     refreshChats();
   };
 
-  const handleRename = (id: string, newTitle: string) => {
-    ChatSessionManager.rename(id, newTitle);
+  const handleRename = async (id: string, newTitle: string) => {
+    await ChatSessionManager.rename(id, newTitle);
     refreshChats();
   };
 

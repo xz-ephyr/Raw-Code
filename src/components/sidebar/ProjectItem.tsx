@@ -43,13 +43,18 @@ export default function ProjectItem({ project, onDelete }: ProjectItemProps) {
   const { uuid } = useParams();
 
   useEffect(() => {
-    setSessions(ChatSessionManager.getAll(project.id));
+    const loadSessions = async () => {
+      const allSessions = await ChatSessionManager.getAll(project.id);
+      setSessions(allSessions);
+    };
+    loadSessions();
   }, [project.id]);
 
-  const handleNewChat = (e: React.MouseEvent) => {
+  const handleNewChat = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const newSession = ChatSessionManager.create(`${project.name} — Chat`, undefined, project.id);
-    setSessions(ChatSessionManager.getAll(project.id));
+    const newSession = await ChatSessionManager.create(`${project.name} — Chat`, undefined, project.id);
+    const allSessions = await ChatSessionManager.getAll(project.id);
+    setSessions(allSessions);
     navigate(`/chat/${newSession.id}`);
   };
 

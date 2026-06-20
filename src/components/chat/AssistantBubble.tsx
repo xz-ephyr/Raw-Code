@@ -46,6 +46,7 @@ interface AssistantBubbleProps {
   onThumbsUp: () => void;
   onThumbsDown: () => void;
   onRegenerate: () => void;
+  estimatedTokens?: number;
 }
 
 const ThoughtLabel = ({
@@ -103,6 +104,7 @@ export const AssistantBubble = React.memo(
     onThumbsUp,
     onThumbsDown,
     onRegenerate,
+    estimatedTokens,
   }: AssistantBubbleProps) => {
     const [isReasoningOpen, setIsReasoningOpen] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -114,13 +116,13 @@ export const AssistantBubble = React.memo(
     };
 
     const hasPendingTool = toolInvocations?.some((ti) => ti.state !== 'result');
-    const showThinking = isStreaming;
+    const showThinking = isStreaming && !content;
 
     const artifactTool = toolInvocations?.find((ti) => ti.toolName === 'create_artifact');
     const isArtifactGenerating = artifactTool && artifactTool.state !== 'result';
     const intentMessage = artifactTool?.args?.intent_message;
 
-    const showThought = reasoning && !isStreaming ? reasoning : isStreaming;
+    const showThought = (reasoning && !isStreaming) || (isStreaming && !content);
 
     return (
       <div className="mb-6 w-full">
@@ -168,7 +170,14 @@ export const AssistantBubble = React.memo(
 
         {!isStreaming && !hasPendingTool && (
           <div className="flex items-center justify-between gap-3 text-gray-600 px-4">
-            {model && <span className="text-xs text-gray-400">{model}</span>}
+            {model && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-400">{model}</span>
+                {estimatedTokens !== undefined && (
+                  <span className="text-[10px] text-gray-400">(~{estimatedTokens} tokens)</span>
+                )}
+              </div>
+            )}
             <div className="flex gap-3 items-center ml-auto">
               <button
                 onClick={handleCopy}
