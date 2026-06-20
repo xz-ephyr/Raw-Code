@@ -7,7 +7,6 @@ import { UserBubble } from '../components/chat/UserBubble';
 import { AssistantBubble } from '../components/chat/AssistantBubble';
 import { ChatSessionManager } from '../services/ChatSessionManager';
 import { getModelForChatRequest } from '../config/models';
-import { resolveProjectPath } from '../lib/projectPaths';
 import { useArtifacts } from '../hooks/useArtifacts';
 import { ArtifactPane } from '../components/artifacts/ArtifactPane';
 import { chatCompletion, getAIErrorMessage } from '../services/aiService';
@@ -16,63 +15,13 @@ import { DatabaseService } from '../services/DatabaseService';
 import { FileSystemService } from '../services/FileSystemService';
 import { ProjectIDE } from '../components/artifacts/ProjectIDE';
 import { IDEPromptModal } from '../components/chat/IDEPromptModal';
-
-const mapUIMessageToLegacyMessage = (m: any): any => {
-  if (!m) return m;
-
-  // Extract content from parts if missing
-  let content = m.content || '';
-  if (!content && Array.isArray(m.parts)) {
-    content = m.parts
-      .filter((part: any) => part.type === 'text')
-      .map((part: any) => part.text)
-      .join('');
-  }
-
-  // Extract reasoning from parts if missing
-  let reasoning = m.reasoning || '';
-  if (!reasoning && Array.isArray(m.parts)) {
-    reasoning = m.parts
-      .filter((part: any) => part.type === 'reasoning')
-      .map((part: any) => part.reasoning || (part as any).text || '')
-      .join('');
-  }
-
-  // Extract toolInvocations from parts
-  let toolInvocations = m.toolInvocations;
-  if (!toolInvocations && Array.isArray(m.parts)) {
-    toolInvocations = m.parts
-      .filter((part: any) => part.type === 'dynamic-tool' || part.type.startsWith('tool-'))
-      .map((part: any) => {
-        const toolName = part.toolName || part.type.replace(/^tool-/, '');
-        return {
-          state:
-            part.state === 'output-available'
-              ? 'result'
-              : part.state === 'input-available'
-                ? 'call'
-                : part.state,
-          toolCallId: part.toolCallId,
-          toolName: toolName,
-          args: part.input,
-          result: part.output,
-          error: part.errorText,
-        };
-      });
-  }
-
-  return {
-    ...m,
-    content,
-    reasoning,
-    toolInvocations,
-  };
-};
+import { mapUIMessageToLegacyMessage } from '../utils/chatUtils';
+import { useResizablePane } from '../hooks/useResizablePane';
+import { useChatHandlers } from '../hooks/useChatHandlers';
 
 export const ChatPage = () => {
   const { uuid } = useParams();
   const projectRouteMatch = useMatch('/project/:uuid');
-  // If on /project/:uuid route, load the project directly by its id
   const projectRouteId = projectRouteMatch?.params?.uuid ?? null;
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
@@ -80,53 +29,14 @@ export const ChatPage = () => {
   const [isThinkingEnabled, setIsThinkingEnabled] = useState(false);
   const [showIDEPrompt, setShowIDEPrompt] = useState(false);
   const [isIDEOpen, setIsIDEOpen] = useState(false);
-  const [paneWidth, setPaneWidth] = useState(50);
-  const [isResizing, setIsResizing] = useState(false);
   const lastProjectIdRef = useRef<string | null>(null);
   const previousModelRef = useRef<string | null>(null);
 
+  const { paneWidth, isResizing, startResizing } = useResizablePane(50);
   const toggleThinking = () => setIsThinkingEnabled((prev) => !prev);
 
-  // ✅ FIX #3: Refs hold the latest projectContext and project so the useChat transport
-  // closure (created once at hook init) always reads the current values. Without this,
-  // the transport captures empty-string projectContext from the very first render and
-  // never sees updates — project file context was never actually sent to the AI.
   const projectContextRef = useRef('');
   const projectRef = useRef<Project | null>(null);
-
-  const startResizing = useCallback(() => {
-    setIsResizing(true);
-  }, []);
-
-  const stopResizing = useCallback(() => {
-    setIsResizing(false);
-  }, []);
-
-  const resize = useCallback(
-    (e: MouseEvent) => {
-      if (isResizing) {
-        const newWidth = 100 - (e.clientX / window.innerWidth) * 100;
-        if (newWidth > 20 && newWidth < 80) {
-          setPaneWidth(newWidth);
-        }
-      }
-    },
-    [isResizing]
-  );
-
-  useEffect(() => {
-    if (isResizing) {
-      window.addEventListener('mousemove', resize);
-      window.addEventListener('mouseup', stopResizing);
-    } else {
-      window.removeEventListener('mousemove', resize);
-      window.removeEventListener('mouseup', stopResizing);
-    }
-    return () => {
-      window.removeEventListener('mousemove', resize);
-      window.removeEventListener('mouseup', stopResizing);
-    };
-  }, [isResizing, resize, stopResizing]);
 
   const {
     activeArtifactId,
@@ -140,11 +50,18 @@ export const ChatPage = () => {
     closeArtifact,
   } = useArtifacts();
 
-  const loadProjectContext = async (path: string) => {
+  const loadProjectContext = useCallback(async (path: string) => {
     const tree = await FileSystemService.getTree(path);
     const summary = FileSystemService.getCompressedTree(tree);
     setProjectContext(summary);
-  };
+  }, []);
+
+  const { handleChatFinish } = useChatHandlers(
+    uuid,
+    project,
+    addOrUpdateArtifact,
+    loadProjectContext
+  );
 
   const currentModel = useMemo(() => getModelForChatRequest(uuid), [uuid]);
 
@@ -169,7 +86,6 @@ export const ChatPage = () => {
           previousModelName: previousModelRef.current || undefined,
         });
 
-        // Update previous model ref after request starts
         previousModelRef.current = body.model;
 
         return (result as any).toUIMessageStreamResponse({
@@ -184,62 +100,7 @@ export const ChatPage = () => {
     onError: (chatError: Error) => {
       console.error('Chat stream failed:', getAIErrorMessage(chatError));
     },
-    onFinish: async (event: any) => {
-      if (uuid && uuid !== 'new') {
-        await DatabaseService.saveMessages(uuid, [event.message]);
-      }
-      const message = mapUIMessageToLegacyMessage(event.message);
-      if (message.toolInvocations) {
-        for (const toolInvocation of message.toolInvocations) {
-          if (toolInvocation.state === 'result') {
-            const toolName = toolInvocation.toolName;
-            const result = toolInvocation.result;
-
-            if (result && result.error) {
-              console.error(`Tool ${toolName} failed:`, result.error);
-              continue;
-            }
-
-            if (toolName === 'create_artifact') {
-              const args = toolInvocation.args || {};
-              const type = args.type || 'markdown';
-              const title = args.title || 'Untitled Artifact';
-              const content = args.content || '';
-              const file_path = args.file_path;
-              addOrUpdateArtifact(type, title, content);
-
-              if (project && file_path) {
-                try {
-                  const fullPath = await resolveProjectPath(project.path, file_path);
-                  if (!fullPath) continue;
-                  await FileSystemService.saveFile(fullPath, content);
-                  loadProjectContext(project.path);
-                } catch (e) {
-                  console.error('Failed to auto-save file:', e);
-                }
-              }
-            } else if (toolName === 'write_file' || toolName === 'edit_file') {
-              const file_path = toolInvocation.args.file_path;
-              const content = result.content || toolInvocation.args.content;
-              if (content) {
-                const ext = file_path.split('.').pop() || '';
-                const type = ['ts', 'tsx', 'js', 'jsx'].includes(ext)
-                  ? 'react'
-                  : ['html'].includes(ext)
-                    ? 'html'
-                    : 'markdown';
-                addOrUpdateArtifact(type, file_path, content);
-              }
-              if (project) loadProjectContext(project.path);
-            } else if (toolName === 'write_to_plan') {
-              const { filename, content } = toolInvocation.args;
-              addOrUpdateArtifact('markdown', filename, content);
-              if (project) loadProjectContext(project.path);
-            }
-          }
-        }
-      }
-    },
+    onFinish: handleChatFinish,
   }) as any;
 
   useEffect(() => {
@@ -287,7 +148,7 @@ export const ChatPage = () => {
       };
       loadSession();
     }
-  }, [uuid, projectRouteId, setMessages]);
+  }, [uuid, projectRouteId, setMessages, loadProjectContext]);
 
   useEffect(() => {
     projectContextRef.current = projectContext;
@@ -314,13 +175,10 @@ export const ChatPage = () => {
         handleSend(pendingMessage);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uuid]);
 
   const handleSend = useCallback(
     async (content: string) => {
-      // On first send from /chat/new or /thread/new: create a real session and redirect to it.
-      // The message is then sent in the new route context.
       if (uuid === 'new') {
         const snippet = content.trim().slice(0, 60);
         const title = snippet.length > 0 ? snippet : 'New conversation';
@@ -328,12 +186,12 @@ export const ChatPage = () => {
 
         let session;
         if (isProjectSession && project) {
-          session = ChatSessionManager.create(title, undefined, project.id);
+          session = await ChatSessionManager.create(title, undefined, project.id);
           sessionStorage.setItem('pending-first-message', content);
           const slug = project.name.toLowerCase().replace(/\s+/g, '-');
           navigate(`/project/${slug}/${session.id}`);
         } else {
-          session = ChatSessionManager.create(title);
+          session = await ChatSessionManager.create(title);
           sessionStorage.setItem('pending-first-message', content);
           navigate(`/thread/${session.id}`);
         }
