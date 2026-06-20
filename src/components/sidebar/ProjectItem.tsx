@@ -4,6 +4,7 @@ import { MoreVerticalIcon, Folder02Icon, PencilEdit02Icon, Delete02Icon } from '
 import { ChatSession } from '../../types/chat';
 import { ChatSessionManager } from '../../services/ChatSessionManager';
 import { HugeiconRenderer } from '../common/HugeiconRenderer';
+import { getProjectSlug } from '../../lib/slugs';
 export default function ProjectItem({ project, onDelete }: any) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -15,7 +16,7 @@ export default function ProjectItem({ project, onDelete }: any) {
     e.stopPropagation();
     const s = await ChatSessionManager.create(`${project.name} — Chat`, undefined, project.id);
     ChatSessionManager.getAll(project.id).then(setSessions);
-    navigate(`/project/${project.name.toLowerCase().replace(/\s+/g, '-')}/${s.id}`);
+    navigate(`/project/${getProjectSlug(project.name)}/${s.id}`);
   };
   return (
     <div className="mb-1" onMouseLeave={() => setShowMenu(false)}>
@@ -35,7 +36,7 @@ export default function ProjectItem({ project, onDelete }: any) {
       {isExpanded && (
         <div className="ml-4 border-l border-neutral-200 pl-2 mt-1 space-y-1">
           {sessions.map((s) => (
-            <div key={s.id} onClick={() => navigate(`/project/${project.name.toLowerCase().replace(/\s+/g, '-')}/${s.id}`)} className={`text-sm p-2 hover:bg-[#f2f3f6] rounded-[8px] flex items-center gap-3 group cursor-pointer ${uuid === s.id ? 'bg-[#f2f3f6] text-black font-medium' : 'text-gray-600'}`}>
+            <div key={s.id} onClick={() => navigate(`/project/${getProjectSlug(project.name)}/${s.id}`)} className={`text-sm p-2 hover:bg-[#f2f3f6] rounded-[8px] flex items-center gap-3 group cursor-pointer ${uuid === s.id ? 'bg-[#f2f3f6] text-black font-medium' : 'text-gray-600'}`}>
               <span className="flex-1 truncate">{s.title}</span>
             </div>
           ))}

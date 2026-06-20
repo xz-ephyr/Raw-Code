@@ -55,10 +55,11 @@ export async function chatCompletion({ messages, modelName, projectContext, proj
             const fullPath = await resolveProjectPath(projectPath || '', file_path);
             if (!fullPath) return { error: 'Path escape' };
             const current = await FileSystemService.getFileContent(fullPath);
-            if (!current.includes(target_content)) return { error: 'Not found' };
+            const matches = current.split(target_content).length - 1;
+            if (matches === 0) return { error: 'Not found' };
             const updated = current.replace(target_content, replacement_content);
             await FileSystemService.saveFile(fullPath, updated);
-            return { success: true, file_path, content: updated };
+            return { success: true, file_path, content: updated, match_count: matches };
           }} as any),
           write_to_plan: tool({ description: writeToPlanTool.description, parameters: writeToPlanTool.parameters, execute: async ({ filename, content }: any) => {
             if (projectPath) {
@@ -86,7 +87,9 @@ export async function chatCompletion({ messages, modelName, projectContext, proj
                 else {
                   const content = await FileSystemService.getFileContent(e.path);
                   content.split('\n').forEach((line, i) => {
-                    if (new RegExp(pattern, 'i').test(line)) results.push({ file: e.path.replace(projectPath || '', '').replace(/^\//, ''), line: i + 1, content: line.trim() });
+                    try {
+                      if (new RegExp(pattern, 'i').test(line)) results.push({ file: e.path.replace(projectPath || '', '').replace(/^\//, ''), line: i + 1, content: line.trim() });
+                    } catch (err) { /* invalid regex */ }
                   });
                 }
               }

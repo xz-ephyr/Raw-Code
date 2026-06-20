@@ -9,6 +9,7 @@ import { FileSystemService } from '../../services/FileSystemService';
 import { Project } from '../../types/chat';
 import { isTauri } from '../../lib/tauri';
 import { HugeiconRenderer } from '../common/HugeiconRenderer';
+import { getProjectSlug } from '../../lib/slugs';
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -25,19 +26,22 @@ export default function Sidebar() {
           const name = s.split(/[/\\]/).pop() || 'New';
           const p = await ChatSessionManager.createProject(name, s);
           ChatSessionManager.getProjects().then(setProjects);
-          navigate(`/project/${name.toLowerCase().replace(/\s+/g, '-')}-${p.id}`);
+          navigate(`/project/${getProjectSlug(name)}-${p.id}`);
         }
       } else if ('showDirectoryPicker' in window) {
         const h = await (window as any).showDirectoryPicker();
         const p = await ChatSessionManager.createProject(h.name, await FileSystemService.importDirectory(h));
         ChatSessionManager.getProjects().then(setProjects);
-        navigate(`/project/${h.name.toLowerCase().replace(/\s+/g, '-')}-${p.id}`);
+        navigate(`/project/${getProjectSlug(h.name)}-${p.id}`);
       }
     } catch (e) { console.error(e); }
   };
   const handleDeleteProject = async (id: string) => {
+    const cur = location.pathname.split('/').slice(2).join('/');
     await ChatSessionManager.deleteProject(id);
-    ChatSessionManager.getProjects().then(setProjects);
+    const all = await ChatSessionManager.getProjects();
+    setProjects(all);
+    if (cur.includes(id)) navigate('/chats');
   };
   return (
     <>

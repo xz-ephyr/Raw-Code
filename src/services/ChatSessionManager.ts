@@ -12,8 +12,8 @@ export const ChatSessionManager = {
             if (key === 'projects') await DatabaseService.createProject(item.name, item.path, item.id);
             else await DatabaseService.createSession(item.title, item.lastMessage, item.projectId, item.id);
           }
-        } catch (e) { console.error(e); }
-        localStorage.removeItem(key);
+          localStorage.removeItem(key);
+        } catch (e) { console.error('Migration failed for key:', key, e); }
       }
     }
   },

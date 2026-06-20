@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArchiveIcon, Delete02Icon, PencilEdit02Icon, MoreVerticalIcon } from '@hugeicons/core-free-icons';
 import { cn } from '../../lib/utils';
 import { HugeiconRenderer } from '../common/HugeiconRenderer';
+import { getProjectSlug } from '../../lib/slugs';
 export const ChatListItem = ({ chat, onDelete, onArchive, onRename }: any) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(chat.title);
@@ -13,7 +14,7 @@ export const ChatListItem = ({ chat, onDelete, onArchive, onRename }: any) => {
     if (isMenuOpen) document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, [isMenuOpen]);
-  const chatLink = chat.projectId ? `/project/session/${chat.id}` : `/thread/${chat.id}`;
+  const chatLink = chat.projectId ? `/project/${getProjectSlug(chat.title)}/${chat.id}` : `/thread/${chat.id}`;
   return (
     <div className={cn('group relative w-full rounded-[12px] transition-all duration-200 hover:bg-[#f5f5f5] active:bg-[#eeeeee] flex items-center gap-4 px-4 py-3 h-[60px]', isMenuOpen ? 'z-20' : 'z-0 hover:z-10')}>
       <Link to={chatLink} className="flex-1 min-w-0 h-full flex items-center">
