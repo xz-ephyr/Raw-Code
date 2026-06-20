@@ -26,3 +26,5 @@ Error: Port 4028 is already in use
 8:15:09 AM [vite] (client) hmr update /src/pages/ChatPage.tsx, /src/index.css
 8:15:13 AM [vite] (client) hmr update /src/pages/ChatPage.tsx, /src/index.css
 8:16:18 AM [vite] (client) hmr update /src/index.css, /src/App.tsx, /src/components/sidebar/Sidebar.tsx, /src/pages/ChatPage.tsx, /src/pages/ChatsPage.tsx, /src/components/sidebar/ProjectItem.tsx
+8:31:43 AM [vite] (client) hmr update /src/index.css, /src/App.tsx, /src/components/sidebar/Sidebar.tsx, /src/pages/ChatPage.tsx, /src/pages/ChatsPage.tsx, /src/components/sidebar/ProjectItem.tsx
+8:32:24 AM [vite] (client) hmr update /src/index.css, /src/App.tsx, /src/components/sidebar/Sidebar.tsx, /src/pages/ChatPage.tsx, /src/pages/ChatsPage.tsx, /src/components/sidebar/ProjectItem.tsx

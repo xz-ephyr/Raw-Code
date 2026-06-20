@@ -49,7 +49,10 @@ export const DatabaseService = {
   async getProjects() {
     const pg = await getDb();
     const res = await pg.query('SELECT * FROM projects ORDER BY created_at DESC');
-    return res.rows;
+    return res.rows.map(({ created_at, ...rest }: any) => ({
+      ...rest,
+      createdAt: Number(created_at)
+    }));
   },
 
   async createProject(name: string, path: string, existingId?: string) {
@@ -156,10 +159,11 @@ export const DatabaseService = {
       'SELECT * FROM messages WHERE session_id = $1 ORDER BY created_at ASC',
       [sessionId]
     );
-    return res.rows.map((row: any) => ({
-      ...row,
-      sessionId: row.session_id,
-      toolInvocations: row.tool_invocations ? JSON.parse(row.tool_invocations as string) : undefined
+    return res.rows.map(({ session_id, tool_invocations, created_at, ...rest }: any) => ({
+      ...rest,
+      sessionId: session_id,
+      createdAt: Number(created_at),
+      toolInvocations: tool_invocations ? JSON.parse(tool_invocations as string) : undefined
     }));
   },
 
