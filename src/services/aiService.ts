@@ -3,7 +3,7 @@ import { createGroq } from '@ai-sdk/groq';
 import { createMistral } from '@ai-sdk/mistral';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createCerebras } from '@ai-sdk/cerebras';
-import { convertToModelMessages, streamText, stepCountIs, tool } from 'ai';
+import { streamText, stepCountIs, tool, convertToModelMessages } from 'ai';
 import type { OpenAIProvider } from '@ai-sdk/openai';
 import {
   SYSTEM_PROMPT,
@@ -160,14 +160,12 @@ export async function chatCompletion({
         processedMessages = await contractContext(messages, incomingModel);
       }
 
-      const normalizedMessages = await convertToModelMessages(
-        processedMessages.filter((m: any) => m.role !== 'system')
-      );
+      const filteredMessages = processedMessages.filter((m: any) => m.role !== 'system');
 
       return streamText({
         model: currentModel,
         system: fullSystemPrompt,
-        messages: normalizedMessages,
+        messages: filteredMessages,
         providerOptions,
         abortSignal,
         maxRetries: 2,

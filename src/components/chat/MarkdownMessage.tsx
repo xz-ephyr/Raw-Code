@@ -37,7 +37,7 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
             );
           },
           p({ children }) {
-            return <p className="mb-4 last:mb-0 animate-in fade-in slide-in-from-bottom-1 duration-300">{children}</p>;
+            return <div className="mb-4 last:mb-0 animate-in fade-in slide-in-from-bottom-1 duration-300">{children}</div>;
           },
           ul({ children }) {
             return <ul className="list-disc pl-5 mb-4 space-y-1">{children}</ul>;

@@ -98,6 +98,11 @@ export const ChatPage = () => {
 
 const isResizingRef = useRef(false);
 
+const scrollContainerRef = useRef<HTMLDivElement>(null);
+const isNearBottomRef = useRef(true);
+
+const SCROLL_THRESHOLD = 150;
+
   const startResizing = useCallback(() => {
     isResizingRef.current = true;
     setIsResizing(true);
@@ -126,6 +131,14 @@ const isResizingRef = useRef(false);
       window.removeEventListener('mouseup', stopResizing);
     };
   }, [resize, stopResizing]);
+
+  const handleScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (el) {
+      const near = el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_THRESHOLD;
+      isNearBottomRef.current = near;
+    }
+  }, []);
 
   const {
     activeArtifactId,
@@ -194,12 +207,12 @@ const isResizingRef = useRef(false);
       addToast(msg, 'error');
     },
     onFinish: async (event: any) => {
+      const message = mapUIMessageToLegacyMessage(event.message);
       if (uuid && uuid !== 'new') {
-        DatabaseService.saveMessages(uuid, [event.message]).catch((e) =>
+        DatabaseService.saveMessages(uuid, [message]).catch((e) =>
           console.error('Failed to save assistant message to DB:', e)
         );
       }
-      const message = mapUIMessageToLegacyMessage(event.message);
       if (message.toolInvocations) {
         for (const toolInvocation of message.toolInvocations) {
           if (toolInvocation.state === 'result') {
@@ -334,6 +347,13 @@ const isResizingRef = useRef(false);
   const messages = rawMessages.map(mapUIMessageToLegacyMessage);
 
   useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (el && isNearBottomRef.current) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [messages]);
+
+  useEffect(() => {
     const handleResetChat = () => {
       setMessages([]);
     };
@@ -419,6 +439,8 @@ const isResizingRef = useRef(false);
     <div className="flex h-screen overflow-hidden bg-white">
       <div className={`flex flex-col flex-1 min-w-0 bg-white transition-all duration-300 relative`}>
         <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
           className={`flex-1 overflow-y-auto ${messages.length === 0 ? 'flex flex-col items-center justify-start pt-[15vh] p-4' : ''}`}
         >
           {messages.length > 0 && <div className="h-[20px] bg-white w-full shrink-0" />}
