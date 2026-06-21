@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  ChatBubbleEllipsesIcon,
-  CodeIcon,
-  UserMultipleIcon,
-  PencilEdit01Icon,
-} from '@hugeicons/core-free-icons';
+import { PencilEdit02Icon, Settings02Icon, FolderLibraryIcon, Download01Icon } from '@hugeicons/core-free-icons';
 
 interface PreferencesStepProps {
   onComplete: () => void;
@@ -29,15 +24,15 @@ const DEFAULT_PREFERENCES: Preferences = {
 };
 
 const STYLE_OPTIONS = [
-  { id: 'concise', label: 'Concise', desc: 'Short, direct answers with minimal explanation' },
-  { id: 'balanced', label: 'Balanced', desc: 'Clear answers with reasonable detail' },
-  { id: 'detailed', label: 'Detailed', desc: 'In-depth explanations with examples' },
+  { id: 'concise', label: 'Concise', desc: 'Short, direct answers' },
+  { id: 'balanced', label: 'Balanced', desc: 'Clear with reasonable detail' },
+  { id: 'detailed', label: 'Detailed', desc: 'In-depth with examples' },
 ];
 
 const EXPERTISE_OPTIONS = [
-  { id: 'beginner', label: 'Beginner', desc: 'Explain concepts from the ground up' },
-  { id: 'intermediate', label: 'Intermediate', desc: 'Assume basic coding knowledge' },
-  { id: 'expert', label: 'Expert', desc: 'Skip fundamentals, focus on advanced topics' },
+  { id: 'beginner', label: 'Beginner', desc: 'Explain from the ground up' },
+  { id: 'intermediate', label: 'Intermediate', desc: 'Assume basic knowledge' },
+  { id: 'expert', label: 'Expert', desc: 'Focus on advanced topics' },
 ];
 
 const FOCUS_OPTIONS = [
@@ -89,7 +84,7 @@ export function PreferencesStep({ onComplete, onSkip }: PreferencesStepProps) {
       <div className="space-y-6">
         <div className="space-y-3">
           <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
-            <HugeiconsIcon icon={ChatBubbleEllipsesIcon} size={16} />
+            <HugeiconsIcon icon={PencilEdit02Icon} size={16} />
             Communication Style
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -112,7 +107,7 @@ export function PreferencesStep({ onComplete, onSkip }: PreferencesStepProps) {
 
         <div className="space-y-3">
           <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
-            <HugeiconsIcon icon={UserMultipleIcon} size={16} />
+            <HugeiconsIcon icon={Settings02Icon} size={16} />
             Expertise Level
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -135,7 +130,7 @@ export function PreferencesStep({ onComplete, onSkip }: PreferencesStepProps) {
 
         <div className="space-y-3">
           <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
-            <HugeiconsIcon icon={CodeIcon} size={16} />
+            <HugeiconsIcon icon={FolderLibraryIcon} size={16} />
             Coding Focus Areas
           </label>
           <div className="flex flex-wrap gap-2">
@@ -158,7 +153,7 @@ export function PreferencesStep({ onComplete, onSkip }: PreferencesStepProps) {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
-              <HugeiconsIcon icon={PencilEdit01Icon} size={16} />
+              <HugeiconsIcon icon={File01Icon} size={16} />
               Custom Instructions
             </label>
             <button
