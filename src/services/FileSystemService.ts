@@ -7,6 +7,13 @@ export interface FileEntry {
   children?: FileEntry[];
 }
 
+const treeCache = new Map<string, { result: FileEntry[]; timestamp: number }>();
+const TREE_CACHE_TTL = 2_000;
+
+function clearTreeCache() {
+  treeCache.clear();
+}
+
 // In-memory virtual filesystem for web-browser mode
 const webVirtualFS: Record<string, string> = {};
 
@@ -61,6 +68,11 @@ export const FileSystemService = {
   getTree: async (basePath: string, depth = 0): Promise<FileEntry[]> => {
     if (depth > 20) return [];
 
+    const cached = treeCache.get(basePath);
+    if (cached && Date.now() - cached.timestamp < TREE_CACHE_TTL) {
+      return cached.result;
+    }
+
     if (isTauri()) {
       try {
         const { readDir } = await getTauriFs();
@@ -81,6 +93,7 @@ export const FileSystemService = {
               : undefined,
           });
         }
+        treeCache.set(basePath, { result, timestamp: Date.now() });
         return result;
       } catch (e) {
         console.error('Error reading dir:', e);
@@ -113,6 +126,7 @@ export const FileSystemService = {
           children: isDirectory ? await FileSystemService.getTree(fullPath, depth + 1) : undefined,
         });
       }
+      treeCache.set(basePath, { result, timestamp: Date.now() });
       return result;
     } catch (e) {
       console.error('Error reading virtual dir:', e);
@@ -160,6 +174,7 @@ export const FileSystemService = {
   },
 
   saveFile: async (path: string, content: string): Promise<void> => {
+    clearTreeCache();
     if (isTauri()) {
       try {
         const { writeFile, mkdir } = await getTauriFs();

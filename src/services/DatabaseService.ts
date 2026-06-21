@@ -118,8 +118,12 @@ export const DatabaseService = {
   },
 
   // Messages
-  async getMessages(sessionId: string) {
-    const rows = await request<MessageRow[]>('get_messages', { sessionId });
+  async getMessages(sessionId: string, opts?: { limit?: number; offset?: number }) {
+    const rows = await request<MessageRow[]>('get_messages', {
+      sessionId,
+      limit: opts?.limit ?? null,
+      offset: opts?.offset ?? null,
+    });
     return rows.map(({ sessionId: sid, toolInvocations, createdAt, ...rest }) => ({
       ...rest,
       sessionId: sid,

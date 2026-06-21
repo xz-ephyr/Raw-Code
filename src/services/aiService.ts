@@ -18,16 +18,22 @@ import { getSmartSystemPrompt } from './ai/contextController';
 import { contractContext } from './ai/contextContractor';
 
 let cachedProviders: { google: ReturnType<typeof createGoogleGenerativeAI>; groq: ReturnType<typeof createGroq> } | null = null;
+let cachedGoogleKey = '';
+let cachedGroqKey = '';
 
 export function refreshProviders() {
   cachedProviders = null;
 }
 
 function getProviders() {
-  if (!cachedProviders) {
+  const currentGoogleKey = localStorage.getItem(API_KEYS.google) || '';
+  const currentGroqKey = localStorage.getItem(API_KEYS.groq) || '';
+  if (!cachedProviders || currentGoogleKey !== cachedGoogleKey || currentGroqKey !== cachedGroqKey) {
+    cachedGoogleKey = currentGoogleKey;
+    cachedGroqKey = currentGroqKey;
     cachedProviders = {
-      google: createGoogleGenerativeAI({ apiKey: localStorage.getItem(API_KEYS.google) || '' }),
-      groq: createGroq({ apiKey: localStorage.getItem(API_KEYS.groq) || '' }),
+      google: createGoogleGenerativeAI({ apiKey: currentGoogleKey }),
+      groq: createGroq({ apiKey: currentGroqKey }),
     };
   }
   return cachedProviders;
@@ -186,7 +192,12 @@ export async function chatCompletion({
                 const currentContent = await FileSystemService.getFileContent(fullPath);
 
                 // Count occurrences
-                const occurrences = currentContent.split(target_content).length - 1;
+                let occurrences = 0;
+                let searchIdx = 0;
+                while ((searchIdx = currentContent.indexOf(target_content, searchIdx)) !== -1) {
+                  occurrences++;
+                  searchIdx += target_content.length;
+                }
                 if (occurrences === 0) {
                   return {
                     error: `Target content not found in ${file_path}. Your memory might be stale. Please re-read the file and try again.`
@@ -261,6 +272,7 @@ export async function chatCompletion({
                 const results: { file: string; line: number; content: string }[] = [];
                 const tree = await FileSystemService.getTree(fullPath);
 
+                const regex = new RegExp(pattern, 'i');
                 const search = async (entries: any[]) => {
                   for (const entry of entries) {
                     if (entry.isDirectory) {
@@ -268,16 +280,18 @@ export async function chatCompletion({
                     } else {
                       const content = await FileSystemService.getFileContent(entry.path);
                       const lines = content.split('\n');
-                      lines.forEach((line, i) => {
-                        if (new RegExp(pattern, 'i').test(line)) {
+                      for (let i = 0; i < lines.length; i++) {
+                        if (regex.test(lines[i])) {
                           results.push({
                             file: entry.path.replace(projectPath, '').replace(/^\//, ''),
                             line: i + 1,
-                            content: line.trim(),
+                            content: lines[i].trim(),
                           });
                         }
-                      });
+                        if (results.length >= 200) break;
+                      }
                     }
+                    if (results.length >= 200) break;
                   }
                 };
 
