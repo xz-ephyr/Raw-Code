@@ -158,7 +158,10 @@ export const ChatPage = () => {
   } = useChat({
     transport: new DefaultChatTransport({
       fetch: async (_url: any, options: any) => {
-        const body = JSON.parse(options?.body as string);
+        if (!options?.body) {
+          throw new Error('Request body is missing');
+        }
+        const body = JSON.parse(options.body as string);
         const result = await chatCompletion({
           messages: body.messages,
           modelName: body.model,
@@ -240,7 +243,7 @@ export const ChatPage = () => {
         }
       }
     },
-  }) as any;
+  });
 
   useEffect(() => {
     if (uuid) {
