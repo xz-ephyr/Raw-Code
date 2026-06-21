@@ -36,7 +36,7 @@ export const grepTool = (projectPath?: string) => tool({
               allFiles.push(entry.path);
             }
           }
-          if (allFiles.length > 1000) break; // Increased file limit for smarter search
+          if (allFiles.length > 5000) break;
         }
       };
 
@@ -54,15 +54,15 @@ export const grepTool = (projectPath?: string) => tool({
           continue;
         }
 
-        if (content.length > 100000) continue; // Skip very large files
+        if (content.length > 500000) continue;
 
         const lines = content.split('\n');
         const matches = lines.filter(line => regex.test(line));
         if (matches.length > 0) {
           const relativePath = filePath.replace(projectPath, '').replace(/^[\\/]/, '');
-          results.push({ file_path: relativePath, matches: matches.slice(0, 5) }); // Limit matches per file
+          results.push({ file_path: relativePath, matches: matches.slice(0, 20) });
         }
-        if (results.length >= 20) break; // Limit total results
+        if (results.length >= 100) break;
       }
 
       return { results };

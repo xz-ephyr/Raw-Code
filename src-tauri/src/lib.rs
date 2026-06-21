@@ -114,6 +114,25 @@ fn save_messages(
     db.save_messages(&session_id, messages)
 }
 
+// --- App Config ---
+
+#[tauri::command]
+fn get_app_config(
+    db: tauri::State<'_, Database>,
+    key: String,
+) -> Result<Option<String>, String> {
+    db.get_config(&key)
+}
+
+#[tauri::command]
+fn set_app_config(
+    db: tauri::State<'_, Database>,
+    key: String,
+    value: String,
+) -> Result<(), String> {
+    db.set_config(&key, &value)
+}
+
 fn uuid_v4() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
     let now = SystemTime::now()
@@ -173,6 +192,8 @@ pub fn run() {
             delete_session,
             get_messages,
             save_messages,
+            get_app_config,
+            set_app_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while building tauri application");

@@ -115,7 +115,7 @@ export async function chatCompletion({
         providerOptions,
         abortSignal,
         maxRetries: 2,
-        stopWhen: stepCountIs(5),
+        stopWhen: stepCountIs(25),
         onError({ error }) {
           console.error(`AI stream failed for ${currentModelName}:`, getAIErrorMessage(error));
         },
@@ -280,7 +280,7 @@ export async function chatCompletion({
                 };
 
                 await search(tree);
-                return { results: results.slice(0, 50) }; // Limit results
+                return { results: results.slice(0, 200) };
               } catch (e: any) {
                 return { error: `Grep failed: ${e.message || e}` };
               }

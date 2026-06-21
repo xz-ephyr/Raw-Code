@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { isTauri } from '../lib/tauri';
 
 interface ProjectRow {
   id: string;
@@ -123,5 +124,21 @@ export const DatabaseService = {
       createdAt: m.createdAt || Date.now(),
     }));
     await invoke('save_messages', { sessionId, messages: messagesToSave });
+  },
+
+  // App Config
+  async getConfig(key: string): Promise<string | null> {
+    if (isTauri()) {
+      return invoke<string | null>('get_app_config', { key });
+    }
+    return localStorage.getItem(`xz_config_${key}`);
+  },
+
+  async setConfig(key: string, value: string): Promise<void> {
+    if (isTauri()) {
+      await invoke('set_app_config', { key, value });
+    } else {
+      localStorage.setItem(`xz_config_${key}`, value);
+    }
   },
 };

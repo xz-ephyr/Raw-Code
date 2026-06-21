@@ -5,9 +5,9 @@ import { OnboardingPage, ChatPage, ChatsPage, SchedulePage, PluginsPage, WikiPag
 export default function App() {
   return (
     <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<OnboardingPage />} />
+      <Routes>
+        <Route path="/" element={<OnboardingPage />} />
+        <Route element={<Layout />}>
           <Route path="/thread/:uuid" element={<ChatPage />} />
           <Route path="/chats" element={<ChatsPage />} />
           <Route path="/schedule" element={<SchedulePage />} />
@@ -16,8 +16,8 @@ export default function App() {
           <Route path="/project/:uuid" element={<ChatPage />} />
           <Route path="/project/:folder/:uuid" element={<ChatPage />} />
           <Route path="/chat/:uuid" element={<ChatPage />} />
-        </Routes>
-      </Layout>
+        </Route>
+      </Routes>
     </Router>
   );
 }

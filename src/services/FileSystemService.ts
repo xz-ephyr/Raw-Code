@@ -120,7 +120,6 @@ export const FileSystemService = {
     }
   },
 
-  // Highly compressed tree for AI context (limited to the first 50 lines)
   getCompressedTree: (tree: FileEntry[]): string => {
     const summarize = (entries: FileEntry[], indent = ''): string => {
       return entries
@@ -134,8 +133,7 @@ export const FileSystemService = {
         .join('\n');
     };
 
-    const fullTree = summarize(tree);
-    return fullTree.split('\n').slice(0, 50).join('\n'); // Safety limit
+    return summarize(tree);
   },
 
   getFileContent: async (path: string): Promise<string> => {
