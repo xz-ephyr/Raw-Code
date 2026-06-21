@@ -72,7 +72,7 @@ function getProviders() {
       }),
       opencodezen: createOpenAI({
         apiKey: currentOpencodezenKey,
-        baseURL: localStorage.getItem('opencodezen-base-url') || 'https://api.opencodezen.ai/v1',
+        baseURL: localStorage.getItem('opencodezen-base-url') || 'https://opencode.ai/zen/v1',
       }),
       cerebras: createCerebras({ apiKey: currentCerebrasKey }),
     };
