@@ -246,7 +246,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       </div>
                       {isModelDropdownOpen && (
                         <div className="absolute z-10 mt-1 w-full bg-white border border-neutral-200 rounded-[10px] shadow-lg overflow-hidden">
-                          <div className="overflow-y-auto" style={{ maxHeight: 255 }}>
+                          <div className="overflow-y-auto" style={{ maxHeight: 155 }}>
                             {MODELS.map((model) => (
                               <button
                                 key={model.id}
