@@ -7,7 +7,7 @@ export const createArtifactTool = () => tool({
     type: z.enum(['react', 'html', 'markdown', 'chart', 'sheet', 'slides']),
     title: z.string().describe('Descriptive title for the artifact'),
     content: z.string().describe('The full content of the artifact or file code'),
-    file_path: z
+    path: z
       .string()
       .optional()
       .describe('Relative path within the project (e.g., "src/components/Button.tsx")'),

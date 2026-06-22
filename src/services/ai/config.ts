@@ -1,5 +1,3 @@
-import { z } from 'zod';
-
 export const SYSTEM_PROMPT = `You are Vibe-Coding Agent, a personal assistant and expert developer similar to OpenAI Codex.
 Your goal is to be helpful, concise, and efficient. Always respond with text unless a tool call is explicitly required.
 
@@ -30,58 +28,62 @@ You MUST follow the algorithmic rules for tool usage and the Smart Diff Engine l
 
 export const createArtifactTool = {
   description: 'Create or update an interactive artifact for user preview',
-  parameters: z.object({
-    type: z.enum(['react', 'html', 'markdown', 'chart', 'sheet', 'slides']),
-    title: z.string().describe('Descriptive title for the artifact'),
-    content: z.string().describe('The full content of the artifact or file code'),
-    file_path: z
-      .string()
-      .optional()
-      .describe('Relative path within the project (e.g., "src/components/Button.tsx")'),
-    intent_message: z
-      .string()
-      .optional()
-      .describe('A brief, human-readable status message about what you are creating.'),
-  }),
+  parameters: {
+    type: 'object',
+    properties: {
+      type: { type: 'string', enum: ['react', 'html', 'markdown', 'chart', 'sheet', 'slides'], description: 'Type of artifact' },
+      title: { type: 'string', description: 'Descriptive title for the artifact' },
+      content: { type: 'string', description: 'The full content of the artifact or file code' },
+      path: { type: 'string', description: 'Relative path within the project (e.g., "src/components/Button.tsx")' },
+      intent_message: { type: 'string', description: 'A brief, human-readable status message about what you are creating.' },
+    },
+    required: ['type', 'title', 'content'],
+    additionalProperties: true,
+  },
 };
 
 export const readFileTool = {
   description: 'Read the contents of an existing file in the project workspace',
-  parameters: z.object({
-    file_path: z
-      .string()
-      .describe('Relative path to the file from the project root (e.g., "src/App.tsx")'),
-  }),
+  parameters: {
+    type: 'object',
+    properties: {
+      path: { type: 'string', description: 'Relative path to the file from the project root (e.g., "src/App.tsx")' },
+    },
+    required: ['path'],
+    additionalProperties: true,
+  },
 };
 
 export const writeFileTool = {
   description:
     'Create a new file or completely overwrite an existing file in the project workspace',
-  parameters: z.object({
-    file_path: z
-      .string()
-      .describe(
-        'Relative path to the file from the project root (e.g., "src/components/Card.tsx")'
-      ),
-    content: z.string().describe('The complete content to write to the file'),
-  }),
+  parameters: {
+    type: 'object',
+    properties: {
+      path: { type: 'string', description: 'Relative path to the file from the project root (e.g., "src/components/Card.tsx")' },
+      content: { type: 'string', description: 'The complete content to write to the file' },
+    },
+    required: ['path', 'content'],
+    additionalProperties: true,
+  },
 };
 
 export const editFileTool = {
   description:
     'Edit a specific block of code in an existing file by replacing target_content with replacement_content',
-  parameters: z.object({
-    file_path: z
-      .string()
-      .describe('Relative path to the file from the project root (e.g., "src/index.css")'),
-    target_content: z
-      .string()
-      .describe(
-        'The exact block of code to search for. Must match the file content exactly including whitespace.'
-      ),
-    replacement_content: z.string().describe('The new code block to replace target_content'),
-  }),
+  parameters: {
+    type: 'object',
+    properties: {
+      path: { type: 'string', description: 'Relative path to the file from the project root (e.g., "src/index.css")' },
+      target_content: { type: 'string', description: 'The exact block of code to search for. Must match the file content exactly including whitespace.' },
+      replacement_content: { type: 'string', description: 'The new code block to replace target_content' },
+    },
+    required: ['path', 'target_content', 'replacement_content'],
+    additionalProperties: true,
+  },
 };
+
+import { z } from 'zod';
 
 export const writeToPlanTool = {
   description: 'Write or update a project plan or checklist in plan.md or todo.md',

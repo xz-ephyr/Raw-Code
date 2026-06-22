@@ -24,11 +24,15 @@ export async function contractContext(messages: any[], model: LanguageModel) {
       CONCISE SUMMARY:`,
     });
 
+    // Match the format of input messages (array content vs string content)
+    const hasArrayContent = messages.some(m => Array.isArray(m.content));
+    const summaryContent = `SUMMARY OF PREVIOUS CONVERSATION: ${summary}`;
+    const summaryMsg = hasArrayContent
+      ? { role: 'user' as const, content: [{ type: 'text' as const, text: summaryContent }] }
+      : { role: 'user' as const, content: summaryContent };
+
     return [
-      {
-        role: 'user',
-        content: `SUMMARY OF PREVIOUS CONVERSATION: ${summary}`,
-      },
+      summaryMsg,
       ...messages.slice(-4), // Keep some recent history for continuity
     ];
   } catch (error) {

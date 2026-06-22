@@ -229,12 +229,12 @@ const SCROLL_THRESHOLD = 150;
               const type = args.type || 'markdown';
               const title = args.title || 'Untitled Artifact';
               const content = args.content || '';
-              const file_path = args.file_path;
+              const path = args.path;
               addOrUpdateArtifact(type, title, content);
 
-              if (project && file_path) {
+              if (project && path) {
                 try {
-                  const fullPath = await resolveProjectPath(project.path, file_path);
+                  const fullPath = await resolveProjectPath(project.path, path);
                   if (!fullPath) continue;
                   await FileSystemService.saveFile(fullPath, content);
                   loadProjectContext(project.path);
@@ -243,16 +243,16 @@ const SCROLL_THRESHOLD = 150;
                 }
               }
             } else if (toolName === 'write_file' || toolName === 'edit_file') {
-              const file_path = toolInvocation.args.file_path;
+              const path = toolInvocation.args.path;
               const content = result.content || toolInvocation.args.content;
               if (content) {
-                const ext = file_path.split('.').pop() || '';
+                const ext = path.split('.').pop() || '';
                 const type = ['ts', 'tsx', 'js', 'jsx'].includes(ext)
                   ? 'react'
                   : ['html'].includes(ext)
                     ? 'html'
                     : 'markdown';
-                addOrUpdateArtifact(type, file_path, content);
+                addOrUpdateArtifact(type, path, content);
               }
               if (project) loadProjectContext(project.path);
             } else if (toolName === 'write_to_plan') {

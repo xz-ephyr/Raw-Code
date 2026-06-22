@@ -155,6 +155,10 @@ export async function chatCompletion({
     }
 
     try {
+      if (!processedMessages || processedMessages.length === 0) {
+        throw new Error('Messages array is empty');
+      }
+
       const hasUIMessages = processedMessages.some((m: any) => Array.isArray(m.parts));
       if (hasUIMessages) {
         const withParts = processedMessages.map((m: any) => {
@@ -174,6 +178,14 @@ export async function chatCompletion({
       }
 
       const filteredMessages = processedMessages.filter((m: any) => m.role !== 'system');
+
+      console.log('[tools] write_file has path?', 'path' in (writeFileTool.parameters as any)?.properties);
+
+      console.log('[streamText]', {
+        model: currentModelName,
+        count: filteredMessages.length,
+        sample: filteredMessages[0],
+      });
 
       return streamText({
         model: currentModel,
@@ -202,13 +214,13 @@ export async function chatCompletion({
             description: readFileTool.description,
             parameters: readFileTool.parameters,
             // @ts-expect-error - dynamic types
-            execute: async ({ file_path }: { file_path: string }) => {
+            execute: async ({ path }: { path: string }) => {
               if (!projectPath) return { error: 'Not in project mode.' };
               try {
-                const fullPath = await resolveProjectPath(projectPath, file_path);
-                if (!fullPath) return { error: `Path escapes project: ${file_path}.` };
+                const fullPath = await resolveProjectPath(projectPath, path);
+                if (!fullPath) return { error: `Path escapes project: ${path}.` };
                 const content = await FileSystemService.getFileContent(fullPath);
-                return { content, file_path };
+                return { content, path };
               } catch (e: any) {
                 return { error: `Failed to read: ${e.message || e}` };
               }
@@ -218,14 +230,14 @@ export async function chatCompletion({
             description: writeFileTool.description,
             parameters: writeFileTool.parameters,
             // @ts-expect-error - dynamic types
-            execute: async ({ file_path, content }: { file_path: string; content: string }) => {
+            execute: async ({ path, content }: { path: string; content: string }) => {
               if (!projectPath)
-                return { success: true, is_artifact: true, title: file_path, content };
+                return { success: true, is_artifact: true, title: path, content };
               try {
-                const fullPath = await resolveProjectPath(projectPath, file_path);
-                if (!fullPath) return { error: `Path escapes project: ${file_path}.` };
+                const fullPath = await resolveProjectPath(projectPath, path);
+                if (!fullPath) return { error: `Path escapes project: ${path}.` };
                 await FileSystemService.saveFile(fullPath, content);
-                return { success: true, file_path, content };
+                return { success: true, path, content };
               } catch (e: any) {
                 return { error: `Failed to write: ${e.message || e}` };
               }
@@ -236,18 +248,18 @@ export async function chatCompletion({
             parameters: editFileTool.parameters,
             // @ts-expect-error - dynamic types
             execute: async ({
-              file_path,
+              path,
               target_content,
               replacement_content,
             }: {
-              file_path: string;
+              path: string;
               target_content: string;
               replacement_content: string;
             }) => {
               if (!projectPath) return { error: 'Not in project mode.' };
               try {
-                const fullPath = await resolveProjectPath(projectPath, file_path);
-                if (!fullPath) return { error: `Path escapes project: ${file_path}.` };
+                const fullPath = await resolveProjectPath(projectPath, path);
+                if (!fullPath) return { error: `Path escapes project: ${path}.` };
                 const currentContent = await FileSystemService.getFileContent(fullPath);
 
                 let occurrences = 0;
@@ -258,18 +270,18 @@ export async function chatCompletion({
                 }
                 if (occurrences === 0) {
                   return {
-                    error: `Target content not found in ${file_path}. Your memory might be stale. Please re-read the file and try again.`
+                    error: `Target content not found in ${path}. Your memory might be stale. Please re-read the file and try again.`
                   };
                 }
                 if (occurrences > 1) {
                   return {
-                    error: `Target content found ${occurrences} times in ${file_path}. To avoid clobbering the wrong code, please provide a more unique 'target_content' by including surrounding lines.`
+                    error: `Target content found ${occurrences} times in ${path}. To avoid clobbering the wrong code, please provide a more unique 'target_content' by including surrounding lines.`
                   };
                 }
 
                 const updatedContent = currentContent.replace(target_content, replacement_content);
                 await FileSystemService.saveFile(fullPath, updatedContent);
-                return { success: true, file_path, content: updatedContent };
+                return { success: true, path, content: updatedContent };
               } catch (e: any) {
                 return { error: `Failed to edit: ${e.message || e}` };
               }
