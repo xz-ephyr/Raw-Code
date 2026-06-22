@@ -215,6 +215,8 @@ export default function Sidebar() {
                   <button
                     onClick={handleAddProject}
                     className="text-gray-500 hover:text-black hover:bg-[#e5e5e5] active:bg-[#d4d4d4] p-1 rounded-[4px] transition-all active:scale-95"
+                    aria-label="Add project"
+                    title="Add project"
                   >
                     +
                   </button>

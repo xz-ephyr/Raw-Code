@@ -259,7 +259,8 @@ export const AssistantBubble = React.memo(
               <button
                 onClick={handleCopy}
                 className="hover:text-black transition-colors"
-                title="Copy response"
+                title={copied ? 'Copied!' : 'Copy response'}
+                aria-label={copied ? 'Copied!' : 'Copy response'}
               >
                 <HugeiconRenderer
                   icon={copied ? Tick01Icon : Copy01Icon}
@@ -267,13 +268,28 @@ export const AssistantBubble = React.memo(
                   className={copied ? 'text-green-600' : ''}
                 />
               </button>
-              <button onClick={onThumbsUp} className="hover:text-black transition-colors">
+              <button
+                onClick={onThumbsUp}
+                className="hover:text-black transition-colors"
+                title="Good response"
+                aria-label="Good response"
+              >
                 <HugeiconRenderer icon={ThumbsUpIcon} size={18} />
               </button>
-              <button onClick={onThumbsDown} className="hover:text-black transition-colors">
+              <button
+                onClick={onThumbsDown}
+                className="hover:text-black transition-colors"
+                title="Bad response"
+                aria-label="Bad response"
+              >
                 <HugeiconRenderer icon={ThumbsDownIcon} size={18} />
               </button>
-              <button onClick={onRegenerate} className="hover:text-black transition-colors">
+              <button
+                onClick={onRegenerate}
+                className="hover:text-black transition-colors"
+                title="Regenerate response"
+                aria-label="Regenerate response"
+              >
                 <HugeiconRenderer icon={ArrowTurnBackwardIcon} size={18} />
               </button>
             </div>

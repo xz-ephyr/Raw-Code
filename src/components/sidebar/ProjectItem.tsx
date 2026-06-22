@@ -73,6 +73,7 @@ export default function ProjectItem({ project, onDelete }: ProjectItemProps) {
             onClick={handleNewChat}
             className="p-1 hover:bg-[#e5e5e5] rounded-[4px]"
             title="New Chat"
+            aria-label="New Chat"
           >
             <HugeiconRenderer icon={PencilEdit02Icon} size={14} />
           </button>
@@ -82,6 +83,8 @@ export default function ProjectItem({ project, onDelete }: ProjectItemProps) {
               setShowMenu(!showMenu);
             }}
             className="p-1 hover:bg-[#e5e5e5] rounded-[4px]"
+            title="Project options"
+            aria-label="Project options"
           >
             <HugeiconRenderer icon={MoreVerticalIcon} size={14} />
           </button>
