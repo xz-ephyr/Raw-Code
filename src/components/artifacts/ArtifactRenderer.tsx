@@ -36,6 +36,12 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({
   content,
   mode = 'preview',
 }) => {
+  const safeContent = useMemo(() => {
+    if (type === 'svg') return sanitizeSvg(content);
+    if (type === 'html') return injectHtmlSandbox(content);
+    return content;
+  }, [type, content]);
+
   const getLanguage = (type: string) => {
     switch (type) {
       case 'react':
@@ -76,12 +82,6 @@ export const ArtifactRenderer: React.FC<ArtifactRendererProps> = ({
       </div>
     );
   }
-
-  const safeContent = useMemo(() => {
-    if (type === 'svg') return sanitizeSvg(content);
-    if (type === 'html') return injectHtmlSandbox(content);
-    return content;
-  }, [type, content]);
 
   switch (type) {
     case 'react':

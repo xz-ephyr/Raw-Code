@@ -24,8 +24,9 @@ import { ArrowDown02Icon } from '@hugeicons/core-free-icons';
 export const ChatPage = () => {
   const { uuid } = useParams();
   const projectRouteMatch = useMatch('/project/:uuid');
-  // If on /project/:uuid route, load the project directly by its id
+  const projectFolderMatch = useMatch('/project/:folder/:uuid');
   const projectRouteId = projectRouteMatch?.params?.uuid ?? null;
+  const projectFolderSlug = projectFolderMatch?.params?.folder ?? null;
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
   const [projectContext, setProjectContext] = useState<string>('');
@@ -142,6 +143,10 @@ const SCROLL_THRESHOLD = 150;
               const args = toolInvocation.args || {};
               const content = args.content || '';
               const path = args.path;
+              const type = args.type || 'markdown';
+              const title = args.title || path || 'Untitled Artifact';
+
+              addOrUpdateArtifact(type, title, content);
 
               if (project && path) {
                 try {
@@ -186,7 +191,10 @@ const SCROLL_THRESHOLD = 150;
     return () => window.removeEventListener('model-changed', handler);
   }, []);
 
-  const currentModel = useMemo(() => getModelForChatRequest(uuid), [uuid, modelRevision]);
+  const currentModel = useMemo(() => {
+    void modelRevision;
+    return getModelForChatRequest(uuid);
+  }, [uuid, modelRevision]);
 
   const chat = useChat({
     // eslint-disable-next-line react-hooks/refs
@@ -280,6 +288,25 @@ const SCROLL_THRESHOLD = 150;
             }
             loadProjectContext(p);
           }
+        } else if (projectFolderSlug) {
+          const allProjects = await ChatSessionManager.getProjects();
+          const p = allProjects.find(
+            (proj) => proj.name.toLowerCase().replace(/\s+/g, '-') === projectFolderSlug
+          );
+          if (p) {
+            setProject(p);
+            if (lastProjectIdRef.current !== p.id) {
+              setShowIDEPrompt(true);
+              lastProjectIdRef.current = p.id;
+            }
+            loadProjectContext(p);
+          } else {
+            setProject(null);
+            setShowIDEPrompt(false);
+            setIsIDEOpen(false);
+            setProjectContext('');
+            lastProjectIdRef.current = null;
+          }
         } else {
           setProject(null);
           setShowIDEPrompt(false);
@@ -290,7 +317,7 @@ const SCROLL_THRESHOLD = 150;
       };
       loadSession();
     }
-  }, [uuid, projectRouteId, setMessages]);
+  }, [uuid, projectRouteId, projectFolderSlug, setMessages, loadProjectContext]);
 
   useEffect(() => {
     projectContextRef.current = projectContext;

@@ -93,6 +93,15 @@ app.post('/create_session', async (req, res) => {
   const { title, lastMessage, projectId, existingId } = req.body;
   const id = existingId || uuidv4();
   const createdAt = Date.now();
+
+  // If tied to a project, ensure the project exists first
+  if (projectId) {
+    await query(
+      `INSERT INTO projects (id, name, path, created_at) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
+      [projectId, projectId, '', Date.now()]
+    );
+  }
+
   await query(
     'INSERT INTO chat_sessions (id, title, last_message, project_id, created_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
     [id, title, lastMessage || null, projectId || null, createdAt]
@@ -158,6 +167,12 @@ app.post('/get_messages', async (req, res) => {
 app.post('/save_messages', async (req, res) => {
   const { sessionId, messages } = req.body;
   if (messages.length === 0) return res.json({ success: true });
+
+  // Ensure the session exists — handles stale client state after server restart
+  await query(
+    `INSERT INTO chat_sessions (id, title, created_at) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
+    [sessionId, 'Recovered Session', Date.now()]
+  );
 
   const placeholders: string[] = [];
   const params: any[] = [];

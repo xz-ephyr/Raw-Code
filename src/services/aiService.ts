@@ -14,6 +14,7 @@ import {
   listDirTool,
   grepTool,
 } from './ai/config';
+import { createArtifactTool } from './ai/tools/create_artifact';
 import { FileSystemService } from './FileSystemService';
 import { resolveProjectPath } from '../lib/projectPaths';
 import { API_KEYS, getModelDefinition, getUsedModels, markModelUsed, AI_MODELS, type Provider } from '../config/models';
@@ -214,77 +215,6 @@ export async function chatCompletion({
         sample: filteredMessages[0],
       });
 
-      const isProjectMode = !!projectPath;
-      const projectTools = isProjectMode
-        ? {
-            list_dir: tool({
-              description: listDirTool.description,
-              parameters: listDirTool.parameters,
-              // @ts-expect-error - dynamic types
-              execute: ({ path }: { path: string }) => sequential(async () => {
-                if (!projectPath) return { error: 'Not in project mode.' };
-                try {
-                  const fullPath = await resolveProjectPath(projectPath, path);
-                  if (!fullPath) return { error: `Path escapes project: ${path}.` };
-                  const tree = await FileSystemService.getTree(fullPath);
-                  return {
-                    path,
-                    entries: tree.map((e) => ({
-                      name: e.name,
-                      isDirectory: e.isDirectory,
-                    })),
-                  };
-                } catch (e: any) {
-                  return { error: `Failed to list: ${e.message || e}` };
-                }
-              }),
-            }),
-            grep_tool: tool({
-              description: grepTool.description,
-              parameters: grepTool.parameters,
-              // @ts-expect-error - dynamic types
-              execute: ({ pattern, path }: { pattern: string; path: string }) => sequential(async () => {
-                if (!projectPath) return { error: 'Not in project mode.' };
-                try {
-                  const fullPath = await resolveProjectPath(projectPath, path);
-                  if (!fullPath) return { error: `Path escapes project: ${path}.` };
-
-                  const results: { file: string; line: number; content: string }[] = [];
-                  const tree = await FileSystemService.getTree(fullPath);
-
-                  const regex = new RegExp(pattern, 'i');
-                  const search = async (entries: any[]) => {
-                    for (const entry of entries) {
-                      if (entry.isDirectory) {
-                        await search(entry.children || []);
-                      } else {
-                        const content = await FileSystemService.getFileContent(entry.path);
-                        const lines = content.split('\n');
-                        for (let i = 0; i < lines.length; i++) {
-                          if (regex.test(lines[i])) {
-                            results.push({
-                              file: entry.path.replace(projectPath, '').replace(/^\//, ''),
-                              line: i + 1,
-                              content: lines[i].trim(),
-                            });
-                          }
-                          if (results.length >= 200) break;
-                        }
-                      }
-                      if (results.length >= 200) break;
-                    }
-                  };
-
-                  await search(tree);
-                  return { results: results.slice(0, 200) };
-                } catch (e: any) {
-                  return { error: `Grep failed: ${e.message || e}` };
-                }
-              }),
-            }),
-          }
-        : {};
-
       return streamText({
         model: currentModel,
         system: fullSystemPrompt,
@@ -297,6 +227,7 @@ export async function chatCompletion({
           console.error(`AI stream failed for ${currentModelName}:`, getAIErrorMessage(error));
         },
         tools: {
+          create_artifact: createArtifactTool(),
           read_file: tool({
             description: readFileTool.description,
             parameters: readFileTool.parameters,
@@ -374,6 +305,71 @@ export async function chatCompletion({
               }
             }),
           }),
+          list_dir: tool({
+            description: listDirTool.description,
+            parameters: listDirTool.parameters,
+            // @ts-expect-error - dynamic types
+            execute: ({ path }: { path: string }) => sequential(async () => {
+              if (!projectPath) return { error: 'Not in project mode.' };
+              try {
+                const fullPath = await resolveProjectPath(projectPath, path);
+                if (!fullPath) return { error: `Path escapes project: ${path}.` };
+                const tree = await FileSystemService.getTree(fullPath);
+                return {
+                  path,
+                  entries: tree.map((e) => ({
+                    name: e.name,
+                    isDirectory: e.isDirectory,
+                  })),
+                };
+              } catch (e: any) {
+                return { error: `Failed to list: ${e.message || e}` };
+              }
+            }),
+          }),
+          grep_tool: tool({
+            description: grepTool.description,
+            parameters: grepTool.parameters,
+            // @ts-expect-error - dynamic types
+            execute: ({ pattern, path }: { pattern: string; path: string }) => sequential(async () => {
+              if (!projectPath) return { error: 'Not in project mode.' };
+              try {
+                const fullPath = await resolveProjectPath(projectPath, path);
+                if (!fullPath) return { error: `Path escapes project: ${path}.` };
+
+                const results: { file: string; line: number; content: string }[] = [];
+                const tree = await FileSystemService.getTree(fullPath);
+
+                const regex = new RegExp(pattern, 'i');
+                const search = async (entries: any[]) => {
+                  for (const entry of entries) {
+                    if (entry.isDirectory) {
+                      await search(entry.children || []);
+                    } else {
+                      const content = await FileSystemService.getFileContent(entry.path);
+                      const lines = content.split('\n');
+                      for (let i = 0; i < lines.length; i++) {
+                        if (regex.test(lines[i])) {
+                          results.push({
+                            file: entry.path.replace(projectPath, '').replace(/^\//, ''),
+                            line: i + 1,
+                            content: lines[i].trim(),
+                          });
+                        }
+                        if (results.length >= 200) break;
+                      }
+                    }
+                    if (results.length >= 200) break;
+                  }
+                };
+
+                await search(tree);
+                return { results: results.slice(0, 200) };
+              } catch (e: any) {
+                return { error: `Grep failed: ${e.message || e}` };
+              }
+            }),
+          }),
           write_to_plan: tool({
             description: writeToPlanTool.description,
             parameters: writeToPlanTool.parameters,
@@ -392,7 +388,6 @@ export async function chatCompletion({
               return { success: true, is_artifact: true, title: filename, content };
             }),
           }),
-          ...projectTools,
         },
       });
     } catch (error) {

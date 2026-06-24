@@ -7,7 +7,6 @@ export const COT_INSTRUCTIONS = `### THINKING GUIDELINES
 `;
 
 export function getSmartSystemPrompt(basePrompt: string, projectContext?: string) {
-  const isProjectMode = !!projectContext;
   let prompt = `${basePrompt}\n\n${COT_INSTRUCTIONS}`;
 
   if (projectContext) {

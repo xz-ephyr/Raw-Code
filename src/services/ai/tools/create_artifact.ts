@@ -20,7 +20,7 @@ export const createArtifactTool = () => tool({
   execute: async (args: any) => ({
     success: true,
     type: args.type || 'markdown',
-    title: args.title || 'Untitled Artifact',
+    title: args.title || args.path || `${args.type || 'artifact'}-preview`,
     content: args.content || '',
   }),
 });
