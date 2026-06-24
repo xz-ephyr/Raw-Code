@@ -19,6 +19,14 @@ export const mapUIMessageToLegacyMessage = (m: any): any => {
       .join('');
   }
 
+  // Strip reasoning text that leaks into content from thinking models
+  if (reasoning && content) {
+    const idx = content.indexOf(reasoning);
+    if (idx !== -1) {
+      content = (content.slice(0, idx) + content.slice(idx + reasoning.length)).trim();
+    }
+  }
+
   // Extract toolInvocations from parts
   let toolInvocations = m.toolInvocations;
   if (!toolInvocations && Array.isArray(m.parts)) {

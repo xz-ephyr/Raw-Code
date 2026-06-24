@@ -9,6 +9,7 @@ import { python } from '@codemirror/lang-python';
 import { css } from '@codemirror/lang-css';
 import { json } from '@codemirror/lang-json';
 import { rust } from '@codemirror/lang-rust';
+import { EditorView } from '@codemirror/view';
 
 interface CodeBlockProps {
   content: string;
@@ -46,6 +47,12 @@ const getLanguage = (lang: string) => {
   }
 };
 
+const noPaddingTheme = EditorView.theme({
+  '&': { padding: '0' },
+  '.cm-scroller': { padding: '0' },
+  '.cm-content': { padding: '0' },
+});
+
 export const CodeBlock: React.FC<CodeBlockProps> = ({ content, language }) => {
   const [copied, setCopied] = useState(false);
 
@@ -76,7 +83,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ content, language }) => {
       <CodeMirror
         value={content}
         theme="light"
-        extensions={getLanguage(language || '')}
+        extensions={[...getLanguage(language || ''), noPaddingTheme]}
         readOnly={true}
         basicSetup={{
           lineNumbers: false,
