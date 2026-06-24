@@ -7,22 +7,10 @@ import {
   Copy01Icon,
   Tick01Icon,
   Clock01Icon,
-  PencilEdit01Icon,
-  PencilEdit02Icon,
-  File02Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ArtifactPreviewCard } from '../artifacts/ArtifactPreviewCard';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
-import { ToolCallPill } from './ToolCallPill';
 import { ThoughtLabel } from './ThoughtLabel';
-
-interface ArtifactCardData {
-  title: string;
-  type: string;
-  artifactId: string;
-  content?: string;
-}
 
 interface AssistantBubbleProps {
   content: string;
@@ -30,8 +18,6 @@ interface AssistantBubbleProps {
   model?: string;
   toolInvocations?: any[];
   reasoning?: string;
-  artifactCards?: ArtifactCardData[];
-  onArtifactClick?: (artifactId: string) => void;
   onCopy: () => void;
   onThumbsUp: () => void;
   onThumbsDown: () => void;
@@ -45,8 +31,6 @@ export const AssistantBubble = React.memo(
     model,
     toolInvocations,
     reasoning,
-    artifactCards,
-    onArtifactClick,
     onCopy,
     onThumbsUp,
     onThumbsDown,
@@ -65,8 +49,6 @@ export const AssistantBubble = React.memo(
     const showThinking = isStreaming && !content;
 
     const pendingTools = toolInvocations?.filter((ti) => ti.state !== 'result') || [];
-    const artifactTool = toolInvocations?.find((ti) => ti.toolName === 'create_artifact');
-    const intentMessage = artifactTool?.args?.intent_message;
 
     const showThought = !!reasoning;
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -81,7 +63,6 @@ export const AssistantBubble = React.memo(
       }
     }, [reasoning, toolInvocations, isStreaming]);
 
-    // Split reasoning into sentences for the 1-2 sentence intent constraint
     const sentences = useMemo(() => {
       if (!reasoning) return [];
       return reasoning
@@ -93,29 +74,14 @@ export const AssistantBubble = React.memo(
     return (
       <div className="mb-6 w-full group/bubble">
         <div className="text-base px-4 py-4 break-words flex flex-col gap-2">
-          {intentMessage && (
-            <div className="font-medium text-neutral-800 mb-1">
-              {intentMessage}
-            </div>
-          )}
-
           {hasPendingTool && (
             <div className="flex items-center gap-2 text-neutral-500">
               {pendingTools.map((ti) => {
                 const fileName = ti.args?.file_path || ti.args?.path || ti.args?.title || ti.args?.filename || '';
-                const toolIcon =
-                  ti.toolName === 'write_file' || ti.toolName === 'create_artifact' ? <HugeiconsIcon icon={PencilEdit01Icon} size={13} className="text-neutral-400 shrink-0" /> :
-                  ti.toolName === 'edit_file' ? <HugeiconsIcon icon={PencilEdit02Icon} size={13} className="text-neutral-400 shrink-0" /> :
-                  ti.toolName === 'read_file' ? <HugeiconsIcon icon={File02Icon} size={13} className="text-neutral-400 shrink-0" /> :
-                  null;
                 return (
                   <div key={ti.toolCallId} className="flex items-center gap-1.5 px-2 py-1 bg-neutral-50 rounded-[6px] text-xs font-medium text-neutral-500 border border-neutral-200">
-                    {toolIcon}
                     <span className="thinking-shimmer-text capitalize">
-                      {ti.toolName === 'grep_tool' ? 'searching' :
-                       ti.toolName === 'list_dir' ? 'browsing' :
-                       ti.toolName === 'create_artifact' ? 'creating' :
-                       ti.state === 'result' ? 'done' : 'running'}
+                      {ti.state === 'result' ? 'done' : 'running'}
                     </span>
                     {fileName && <span className="text-neutral-400 font-mono truncate max-w-[160px]">{fileName}</span>}
                   </div>
@@ -166,18 +132,7 @@ export const AssistantBubble = React.memo(
                           </div>
                         ))}
 
-                        {toolInvocations && toolInvocations.length > 0 && (
-                          <div className="flex flex-wrap gap-2 pb-4 pt-2">
-                            {toolInvocations.map((ti, idx) => (
-                              <ToolCallPill
-                                key={ti.toolCallId || idx}
-                                toolName={ti.toolName}
-                                state={ti.state}
-                                args={ti.args}
-                              />
-                            ))}
-                          </div>
-                        )}
+
                       </div>
                     </div>
                   </div>
@@ -191,16 +146,6 @@ export const AssistantBubble = React.memo(
               <MarkdownMessage content={content} />
             </div>
           )}
-
-          {artifactCards?.map((card) => (
-            <ArtifactPreviewCard
-              key={card.artifactId}
-              title={card.title}
-              type={card.type}
-              content={card.content}
-              onClick={() => onArtifactClick?.(card.artifactId)}
-            />
-          ))}
         </div>
 
         {!isStreaming && !hasPendingTool && (

@@ -47,10 +47,11 @@ const getLanguage = (lang: string) => {
   }
 };
 
-const noPaddingTheme = EditorView.theme({
+const codeBlockTheme = EditorView.theme({
   '&': { padding: '0' },
   '.cm-scroller': { padding: '0' },
-  '.cm-content': { padding: '0' },
+  '.cm-content': { padding: '12px 16px' },
+  '.cm-line': { padding: '0' },
 });
 
 export const CodeBlock: React.FC<CodeBlockProps> = ({ content, language }) => {
@@ -83,7 +84,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ content, language }) => {
       <CodeMirror
         value={content}
         theme="light"
-        extensions={[...getLanguage(language || ''), noPaddingTheme]}
+        extensions={[...getLanguage(language || ''), codeBlockTheme]}
         readOnly={true}
         basicSetup={{
           lineNumbers: false,
