@@ -8,11 +8,13 @@ export interface Artifact {
   content: string;
   version: number;
   createdAt: number;
+  versions?: ArtifactVersion[];
 }
 
 export interface ArtifactVersion {
-  artifact: Artifact;
-  timestamp: number;
+  content: string;
+  version: number;
+  createdAt: number;
 }
 
 export const ARTIFACT_MIME_TYPES: Record<ArtifactType, string> = {

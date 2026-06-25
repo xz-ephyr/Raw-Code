@@ -2,13 +2,15 @@ import { useState, useCallback, useMemo } from 'react';
 import type { Artifact } from '../../types/artifact';
 import { ARTIFACT_TYPE_LABELS } from '../../types/artifact';
 import { ArtifactTabs } from './ArtifactTabs';
+import type { TabId } from './ArtifactTabs';
 import { CodePreview } from './CodePreview';
 import { MarkdownPreview } from './MarkdownPreview';
 import { MermaidPreview } from './MermaidPreview';
 import { SvgPreview } from './SvgPreview';
 import { HtmlPreview } from './HtmlPreview';
 import { ReactPreview } from './ReactPreview';
-import { CloseIcon } from './icons';
+import { HistoryTab } from './HistoryTab';
+import { CloseIcon, CopyIcon, DownloadIcon, ShareIcon } from './icons';
 
 interface ArtifactPanelProps {
   artifacts: Artifact[];
@@ -16,9 +18,8 @@ interface ArtifactPanelProps {
   onSelectArtifact: (id: string) => void;
   onClose: () => void;
   onRegenerate: (prompt: string) => void;
+  onRollback: (identifier: string, version: number) => void;
 }
-
-type TabId = 'preview' | 'code' | 'split';
 
 export function ArtifactPanel({
   artifacts,
@@ -26,6 +27,7 @@ export function ArtifactPanel({
   onSelectArtifact,
   onClose,
   onRegenerate,
+  onRollback,
 }: ArtifactPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('preview');
 
@@ -63,6 +65,42 @@ export function ArtifactPanel({
     [onClose]
   );
 
+  const handleCopy = useCallback(async () => {
+    if (activeArtifact) {
+      await navigator.clipboard.writeText(activeArtifact.content);
+    }
+  }, [activeArtifact]);
+
+  const handleDownload = useCallback(() => {
+    if (!activeArtifact) return;
+    const ext = getFileExtension(activeArtifact);
+    const blob = new Blob([activeArtifact.content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${activeArtifact.identifier}.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [activeArtifact]);
+
+  const handleShare = useCallback(async () => {
+    if (!activeArtifact) return;
+    if (navigator.share) {
+      await navigator.share({
+        title: activeArtifact.title,
+        text: activeArtifact.content,
+      });
+    } else {
+      await handleCopy();
+    }
+  }, [activeArtifact, handleCopy]);
+
+  const handleFixWithClaude = useCallback((error: string) => {
+    if (activeArtifact) {
+      onRegenerate(`Fix this ${ARTIFACT_TYPE_LABELS[activeArtifact.type].toLowerCase()} artifact (error: ${error}):\n\n${activeArtifact.content}`);
+    }
+  }, [activeArtifact, onRegenerate]);
+
   if (!activeArtifact) return null;
 
   const renderPreview = () => {
@@ -72,13 +110,13 @@ export function ArtifactPanel({
       case 'markdown':
         return <MarkdownPreview content={activeArtifact.content} />;
       case 'mermaid':
-        return <MermaidPreview content={activeArtifact.content} onError={(err) => onRegenerate?.(`Fix this mermaid diagram: ${err}`)} />;
+        return <MermaidPreview content={activeArtifact.content} onError={handleFixWithClaude} />;
       case 'svg':
         return <SvgPreview content={activeArtifact.content} />;
       case 'html':
-        return <HtmlPreview content={activeArtifact.content} />;
+        return <HtmlPreview content={activeArtifact.content} onError={handleFixWithClaude} />;
       case 'react':
-        return <ReactPreview content={activeArtifact.content} onError={(err) => onRegenerate?.(`Fix this React component: ${err}`)} />;
+        return <ReactPreview content={activeArtifact.content} onError={handleFixWithClaude} />;
       default:
         return <CodePreview content={activeArtifact.content} language={activeArtifact.language} />;
     }
@@ -86,32 +124,54 @@ export function ArtifactPanel({
 
   return (
     <div
-      className="flex flex-col h-full bg-white border-l border-neutral-200"
+      className="flex flex-col h-full bg-white dark:bg-[#1a1a1a] border-l border-neutral-200 dark:border-neutral-700"
       style={{ width: '100%', minWidth: 0 }}
       onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-200 shrink-0">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-200 dark:border-neutral-700 shrink-0">
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <span className="text-xs font-medium text-neutral-400 uppercase tracking-wider shrink-0">
+          <span className="text-xs font-medium text-neutral-400 dark:text-neutral-500 uppercase tracking-wider shrink-0">
             {ARTIFACT_TYPE_LABELS[activeArtifact.type]}
           </span>
-          <span className="text-sm font-medium text-neutral-800 truncate">
+          <span className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
             {activeArtifact.title}
           </span>
           {artifacts.length > 1 && (
-            <span className="text-xs text-neutral-400 shrink-0">
+            <span className="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">
               {currentIndex + 1}/{artifacts.length}
             </span>
           )}
         </div>
         <div className="flex items-center gap-1">
+          <button
+            onClick={handleCopy}
+            className="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+            title="Copy artifact content"
+          >
+            <CopyIcon />
+          </button>
+          <button
+            onClick={handleDownload}
+            className="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+            title="Download artifact"
+          >
+            <DownloadIcon />
+          </button>
+          <button
+            onClick={handleShare}
+            className="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+            title="Share artifact"
+          >
+            <ShareIcon />
+          </button>
+          <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
           {artifacts.length > 1 && (
-            <div className="flex items-center gap-1 mr-2">
+            <div className="flex items-center gap-1 mr-1">
               <button
                 onClick={handlePrevious}
                 disabled={currentIndex <= 0}
-                className="p-1 rounded-md hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed text-neutral-500"
+                className="p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed text-neutral-500 dark:text-neutral-400"
                 title="Previous artifact"
               >
                 <ChevronLeftIcon />
@@ -119,7 +179,7 @@ export function ArtifactPanel({
               <button
                 onClick={handleNext}
                 disabled={currentIndex >= artifacts.length - 1}
-                className="p-1 rounded-md hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed text-neutral-500"
+                className="p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed text-neutral-500 dark:text-neutral-400"
                 title="Next artifact"
               >
                 <ChevronRightIcon />
@@ -128,7 +188,7 @@ export function ArtifactPanel({
           )}
           <button
             onClick={onClose}
-            className="p-1.5 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors"
+            className="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
             title="Close artifact panel (Esc)"
           >
             <CloseIcon />
@@ -149,12 +209,17 @@ export function ArtifactPanel({
         )}
         {activeTab === 'split' && (
           <div className="flex h-full">
-            <div className="flex-1 overflow-auto border-r border-neutral-200">
+            <div className="flex-1 overflow-auto border-r border-neutral-200 dark:border-neutral-700">
               {renderPreview()}
             </div>
             <div className="flex-1 overflow-auto">
               <CodePreview content={activeArtifact.content} language={activeArtifact.language} />
             </div>
+          </div>
+        )}
+        {activeTab === 'history' && (
+          <div className="h-full overflow-auto">
+            <HistoryTab artifact={activeArtifact} onRollback={onRollback} />
           </div>
         )}
       </div>
@@ -176,4 +241,16 @@ function ChevronRightIcon() {
       <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
+}
+
+function getFileExtension(artifact: Artifact): string {
+  switch (artifact.type) {
+    case 'code': return artifact.language || 'txt';
+    case 'html': return 'html';
+    case 'react': return 'tsx';
+    case 'svg': return 'svg';
+    case 'mermaid': return 'mmd';
+    case 'markdown': return 'md';
+    default: return 'txt';
+  }
 }

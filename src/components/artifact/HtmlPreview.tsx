@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, useCallback } from 'react';
 
 interface HtmlPreviewProps {
   content: string;
+  onError?: (error: string) => void;
 }
 
 const CSP_META = `
@@ -28,18 +29,19 @@ function buildSrcdoc(html: string): string {
   return `<!DOCTYPE html><html><head>${CSP_META}</head><body>${cleaned}</body></html>`;
 }
 
-export function HtmlPreview({ content }: HtmlPreviewProps) {
+export function HtmlPreview({ content, onError }: HtmlPreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [iframeError, setIframeError] = useState<string | null>(null);
 
-  const srcdoc = useMemo(() => {
+  const build = useMemo(() => {
     try {
-      return buildSrcdoc(content);
+      return { srcdoc: buildSrcdoc(content), error: null as string | null };
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to build HTML');
-      return '';
+      const msg = e instanceof Error ? e.message : 'Failed to build HTML';
+      if (onError) onError(msg);
+      return { srcdoc: '', error: msg };
     }
-  }, [content]);
+  }, [content, onError]);
 
   const handleLoad = useCallback(() => {
     try {
@@ -47,7 +49,7 @@ export function HtmlPreview({ content }: HtmlPreviewProps) {
       if (iframe?.contentDocument) {
         const hasErrors = iframe.contentDocument.querySelector('script[error]');
         if (hasErrors) {
-          setError('Script execution error in preview');
+          setIframeError('Script execution error in preview');
         }
       }
     } catch {
@@ -55,16 +57,24 @@ export function HtmlPreview({ content }: HtmlPreviewProps) {
     }
   }, []);
 
-  if (error) {
+  const displayError = build.error || iframeError;
+
+  if (displayError) {
     return (
       <div className="p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-medium text-red-800">Preview Error</p>
-          <p className="text-xs text-red-600 mt-1">{error}</p>
+        <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-4">
+          <p className="text-sm font-medium text-red-800 dark:text-red-300">Preview Error</p>
+          <p className="text-xs text-red-600 dark:text-red-400 mt-1">{displayError}</p>
+          <button
+            onClick={() => onError?.(displayError)}
+            className="mt-3 px-3 py-1.5 text-xs font-medium bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+          >
+            Fix with Claude
+          </button>
         </div>
         <details className="mt-4">
-          <summary className="text-xs text-neutral-500 cursor-pointer hover:text-neutral-700">Show source code</summary>
-          <pre className="mt-2 p-4 bg-neutral-50 rounded-lg border border-neutral-200 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96">
+          <summary className="text-xs text-neutral-500 dark:text-neutral-400 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300">Show source code</summary>
+          <pre className="mt-2 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 dark:text-neutral-300">
             {content}
           </pre>
         </details>
@@ -74,10 +84,10 @@ export function HtmlPreview({ content }: HtmlPreviewProps) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 bg-white">
+      <div className="flex-1 bg-white dark:bg-transparent">
         <iframe
           ref={iframeRef}
-          srcDoc={srcdoc}
+          srcDoc={build.srcdoc}
           onLoad={handleLoad}
           sandbox="allow-scripts allow-same-origin"
           title="HTML Preview"

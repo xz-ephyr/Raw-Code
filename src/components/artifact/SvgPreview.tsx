@@ -24,12 +24,12 @@ export function SvgPreview({ content }: SvgPreviewProps) {
   if (error || !svgContent) {
     return (
       <div className="p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-medium text-red-800">
+        <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-4">
+          <p className="text-sm font-medium text-red-800 dark:text-red-300">
             {error ? 'Failed to render SVG' : 'No valid SVG found in content'}
           </p>
         </div>
-        <pre className="mt-4 p-4 bg-neutral-50 rounded-lg border border-neutral-200 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-64">
+        <pre className="mt-4 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-64 dark:text-neutral-300">
           {content}
         </pre>
       </div>

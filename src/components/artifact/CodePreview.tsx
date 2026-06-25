@@ -81,7 +81,7 @@ export function CodePreview({ content, language, readOnly = true }: CodePreviewP
           highlightActiveLine: false,
           highlightActiveLineGutter: false,
         }}
-        className="h-full [&_.cm-editor]:h-full [&_.cm-scroller]:font-mono [&_.cm-scroller]:text-sm"
+        className="h-full [&_.cm-editor]:h-full [&_.cm-scroller]:font-mono [&_.cm-scroller]:text-sm dark:[&_.cm-editor]:bg-[#1a1a1a]"
       />
     </div>
   );

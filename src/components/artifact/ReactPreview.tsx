@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 // @ts-expect-error - @babel/standalone has no types
 import * as Babel from '@babel/standalone';
 
@@ -51,7 +51,7 @@ function transpile(code: string): string {
   }
 }
 
-function buildSrcdoc(transpiledCode: string, _originalCode: string): string {
+function buildSrcdoc(transpiledCode: string): string {
   const escapedCode = transpiledCode
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -155,26 +155,25 @@ function buildSrcdoc(transpiledCode: string, _originalCode: string): string {
 
 export function ReactPreview({ content, onError }: ReactPreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [srcdoc, setSrcdoc] = useState<string>('');
+  const [iframeError, setIframeError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setError(null);
+  const { srcdoc, buildError } = useMemo(() => {
     try {
       const normalized = normalizeCode(content);
       const transpiled = transpile(normalized);
-      const doc = buildSrcdoc(transpiled, content);
-      setSrcdoc(doc);
+      return { srcdoc: buildSrcdoc(transpiled), buildError: null as string | null };
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
-      setError(msg);
-      onError?.(msg);
+      if (onError) onError(msg);
+      return { srcdoc: '', buildError: msg };
     }
   }, [content, onError]);
 
+  const error = buildError || iframeError;
+
   const handleMessage = useCallback((e: MessageEvent) => {
     if (e.data?.type === 'ARTIFACT_ERROR') {
-      setError(e.data.error);
+      setIframeError(e.data.error);
       onError?.(e.data.error);
     }
   }, [onError]);
@@ -185,15 +184,14 @@ export function ReactPreview({ content, onError }: ReactPreviewProps) {
   }, [handleMessage]);
 
   const handleRetry = useCallback(() => {
-    setError(null);
+    setIframeError(null);
     try {
       const normalized = normalizeCode(content);
       const transpiled = transpile(normalized);
-      const doc = buildSrcdoc(transpiled, content);
-      setSrcdoc(doc);
+      buildSrcdoc(transpiled);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
-      setError(msg);
+      setIframeError(msg);
       onError?.(msg);
     }
   }, [content, onError]);
@@ -201,19 +199,27 @@ export function ReactPreview({ content, onError }: ReactPreviewProps) {
   if (error) {
     return (
       <div className="p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-medium text-red-800">Failed to render React component</p>
-          <pre className="mt-2 text-xs text-red-600 whitespace-pre-wrap font-mono">{error}</pre>
-          <button
-            onClick={handleRetry}
-            className="mt-3 px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
-          >
-            Retry
-          </button>
+        <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-4">
+          <p className="text-sm font-medium text-red-800 dark:text-red-300">Failed to render React component</p>
+          <pre className="mt-2 text-xs text-red-600 dark:text-red-400 whitespace-pre-wrap font-mono">{error}</pre>
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={handleRetry}
+              className="px-3 py-1.5 text-xs font-medium bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => onError?.(error)}
+              className="px-3 py-1.5 text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+            >
+              Fix with Claude
+            </button>
+          </div>
         </div>
         <details className="mt-4">
-          <summary className="text-xs text-neutral-500 cursor-pointer hover:text-neutral-700">Show source code</summary>
-          <pre className="mt-2 p-4 bg-neutral-50 rounded-lg border border-neutral-200 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96">
+          <summary className="text-xs text-neutral-500 dark:text-neutral-400 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300">Show source code</summary>
+          <pre className="mt-2 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 dark:text-neutral-300">
             {content}
           </pre>
         </details>
@@ -224,14 +230,14 @@ export function ReactPreview({ content, onError }: ReactPreviewProps) {
   if (!srcdoc) {
     return (
       <div className="p-6 flex items-center justify-center">
-        <div className="text-sm text-neutral-400 py-8">Preparing preview...</div>
+        <div className="text-sm text-neutral-400 dark:text-neutral-500 py-8">Preparing preview...</div>
       </div>
     );
   }
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 bg-white">
+      <div className="flex-1 bg-white dark:bg-transparent">
         <iframe
           ref={iframeRef}
           srcDoc={srcdoc}

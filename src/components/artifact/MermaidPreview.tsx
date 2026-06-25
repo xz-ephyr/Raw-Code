@@ -52,11 +52,17 @@ export function MermaidPreview({ content, onError }: MermaidPreviewProps) {
   if (error) {
     return (
       <div className="p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-medium text-red-800">Failed to render diagram</p>
-          <pre className="mt-2 text-xs text-red-600 whitespace-pre-wrap font-mono">{error}</pre>
+        <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-4">
+          <p className="text-sm font-medium text-red-800 dark:text-red-300">Failed to render diagram</p>
+          <pre className="mt-2 text-xs text-red-600 dark:text-red-400 whitespace-pre-wrap font-mono">{error}</pre>
+          <button
+            onClick={() => onError?.(error)}
+            className="mt-3 px-3 py-1.5 text-xs font-medium bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+          >
+            Fix with Claude
+          </button>
         </div>
-        <pre className="mt-4 p-4 bg-neutral-50 rounded-lg border border-neutral-200 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-64">
+        <pre className="mt-4 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-64 dark:text-neutral-300">
           {content}
         </pre>
       </div>
@@ -66,7 +72,7 @@ export function MermaidPreview({ content, onError }: MermaidPreviewProps) {
   return (
     <div className="p-6 flex items-start justify-center">
       {loading && (
-        <div className="text-sm text-neutral-400 py-8">Rendering diagram...</div>
+        <div className="text-sm text-neutral-400 dark:text-neutral-500 py-8">Rendering diagram...</div>
       )}
       <div
         ref={containerRef}

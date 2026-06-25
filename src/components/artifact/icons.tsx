@@ -49,3 +49,20 @@ export function DownloadIcon({ size = 16 }: { size?: number }) {
     </svg>
   );
 }
+
+export function ShareIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M6 5L10 3M6 11L10 13M3 8C3 6.89543 3.89543 6 5 6C6.10457 6 7 6.89543 7 8C7 9.10457 6.10457 10 5 10C3.89543 10 3 9.10457 3 8ZM9 3C9 1.89543 9.89543 1 11 1C12.1046 1 13 1.89543 13 3C13 4.10457 12.1046 5 11 5C9.89543 5 9 4.10457 9 3ZM9 13C9 11.8954 9.89543 11 11 11C12.1046 11 13 11.8954 13 13C13 14.1046 12.1046 15 11 15C9.89543 15 9 14.1046 9 13Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function HistoryIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M8 4.5V8L10.5 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

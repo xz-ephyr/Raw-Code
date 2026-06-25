@@ -21,6 +21,16 @@ body {
   height: 100%;
 }
 
+:root {
+  --background: #ffffff;
+  --foreground: #141413;
+}
+
+.dark {
+  --background: #111110;
+  --foreground: #faf9f5;
+}
+
 .font-serif-source {
   font-family: 'Lora', serif;
   font-optical-sizing: auto;

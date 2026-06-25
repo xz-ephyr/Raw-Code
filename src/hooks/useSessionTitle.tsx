@@ -13,15 +13,19 @@ const SessionTitleContext = createContext<SessionTitleContextValue | null>(null)
 
 export function SessionTitleProvider({ children }: { children: ReactNode }) {
   const [sessionTitle, setSessionTitle] = useState('');
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [userEdited, setUserEdited] = useState(false);
+  const [, _setSessionId] = useState<string | null>(null);
+  const [, _setUserEdited] = useState(false);
   const generatingRef = useRef(false);
   const pendingRef = useRef<string | null>(null);
+
+  const setSessionId = useCallback((id: string | null) => _setSessionId(id), []);
+  const setUserEdited = useCallback((edited: boolean) => _setUserEdited(edited), []);
 
   const setTitle = useCallback((title: string) => {
     setSessionTitle(title);
   }, []);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const generateSessionTitle = useCallback(async (content: string): Promise<string> => {
     if (generatingRef.current) {
       pendingRef.current = content;
@@ -36,12 +40,14 @@ export function SessionTitleProvider({ children }: { children: ReactNode }) {
       await new Promise((r) => setTimeout(r, 0));
       setSessionTitle(title);
       return title;
+    } catch {
+      return 'New conversation';
     } finally {
       generatingRef.current = false;
       if (pendingRef.current) {
         const next = pendingRef.current;
         pendingRef.current = null;
-        return generateSessionTitle(next);
+        generateSessionTitle(next);
       }
     }
   }, [sessionTitle]);

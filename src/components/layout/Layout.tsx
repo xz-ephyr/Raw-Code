@@ -6,12 +6,12 @@ import { SessionTitleProvider } from '../../hooks/useSessionTitle';
 export default function Layout() {
   return (
     <SessionTitleProvider>
-      <div className="flex flex-col h-screen overflow-hidden">
-        <TitleBar />
-        <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex h-screen overflow-hidden">
+        <div className="flex flex-col shrink-0">
+          <TitleBar />
           <Sidebar />
-          <main className="flex-1 min-w-0 overflow-hidden"><Outlet /></main>
         </div>
+        <main className="flex-1 min-w-0 overflow-hidden"><Outlet /></main>
       </div>
     </SessionTitleProvider>
   );
