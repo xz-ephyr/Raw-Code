@@ -34,6 +34,7 @@ export const AssistantBubble = React.memo(
     model,
     toolInvocations,
     reasoning,
+    hasPartialArtifact,
     onCopy,
     onThumbsUp,
     onThumbsDown,
