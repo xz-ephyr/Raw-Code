@@ -34,6 +34,7 @@ export const AssistantBubble = React.memo(
     model,
     toolInvocations,
     reasoning,
+    artifacts,
     hasPartialArtifact,
     onCopy,
     onThumbsUp,
@@ -143,16 +144,21 @@ export const AssistantBubble = React.memo(
           </div>
         )}
 
-        {hasPartialArtifact && isStreaming && (
-          <ArtifactPreviewCard isStreaming={isStreaming} />
-        )}
-
         {content && (
           <div className="font-normal text-neutral-900">
             <MarkdownMessage content={content} />
           </div>
         )}
       </div>
+
+        {(hasPartialArtifact || (artifacts && artifacts.length > 0)) && (
+          <div className="px-4 pb-2">
+            <ArtifactPreviewCard
+              isStreaming={isStreaming}
+              artifact={artifacts?.[0] || null}
+            />
+          </div>
+        )}
 
         {!isStreaming && !hasPendingTool && (
           <div className="flex items-center gap-3 text-gray-600 px-4">
