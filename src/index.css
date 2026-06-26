@@ -24,6 +24,7 @@ body {
 :root {
   --background: #ffffff;
   --foreground: #141413;
+  --radius: 0.5rem;
 }
 
 .dark {

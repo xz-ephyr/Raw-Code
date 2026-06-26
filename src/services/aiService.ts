@@ -6,6 +6,7 @@ import { createCerebras } from '@ai-sdk/cerebras';
 import { streamText, generateText, stepCountIs, convertToModelMessages } from 'ai';
 import type { OpenAIProvider } from '@ai-sdk/openai';
 import { SYSTEM_PROMPT } from './ai/config';
+import { writeArtifactTool } from './ai/tools/writeArtifactTool';
 import { API_KEYS, getModelDefinition, getUsedModels, markModelUsed, AI_MODELS, type Provider } from '../config/models';
 import { getSmartSystemPrompt } from './ai/contextController';
 import { contractContext } from './ai/contextContractor';
@@ -190,6 +191,9 @@ export async function chatCompletion({
         model: currentModel,
         system: fullSystemPrompt,
         messages: filteredMessages,
+        tools: {
+          writeArtifact: writeArtifactTool,
+        },
         providerOptions,
         abortSignal,
         maxRetries: 2,

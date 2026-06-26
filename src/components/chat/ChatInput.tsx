@@ -136,7 +136,7 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
   };
 
   return (
-    <div className="relative w-full mx-auto transition-all duration-300" style={{ maxWidth: 'min(780px, 100%)' }}>
+    <div className="relative w-full mx-auto transition-all duration-300" style={{ maxWidth: 'min(880px, 100%)' }}>
       {isIdle ? (
         /* ── IDLE STATE: Input sits inside a "shelf" holding box ── */
         <div className="relative">

@@ -106,14 +106,29 @@ export const mapUIMessageToLegacyMessage = (m: any): any => {
   }
 
   // Extract artifacts from content
-  const { artifacts, cleanText } = parseArtifacts(content);
+  const { artifacts: parsedArtifacts, cleanText } = parseArtifacts(content);
+
+  // Extract artifacts from writeArtifact tool calls
+  const toolArtifacts = (toolInvocations || [])
+    .filter((ti: any) => ti.toolName === 'writeArtifact' && ti.args?.identifier && ti.args?.content)
+    .map((ti: any) => ({
+      identifier: ti.args.identifier,
+      type: ti.args.type || 'code',
+      title: ti.args.title || ti.args.identifier,
+      language: ti.args.language,
+      content: ti.args.content,
+      version: 0,
+      createdAt: Date.now(),
+    }));
+
+  const allArtifacts = [...parsedArtifacts, ...toolArtifacts];
 
   return {
     ...m,
     content: cleanText || content,
     reasoning,
     toolInvocations,
-    artifacts,
+    artifacts: allArtifacts,
     hasPartialArtifact: hasPartialArtifact(content),
   };
 };

@@ -7,11 +7,21 @@ export function useArtifacts() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const versionCounterRef = useRef<Record<string, number>>({});
 
+  const processedIdentifiersRef = useRef<Set<string>>(new Set());
+
   const addArtifacts = useCallback((newArtifacts: Artifact[]) => {
+    const deduped = newArtifacts.filter(
+      (a) => !processedIdentifiersRef.current.has(a.identifier)
+    );
+
+    if (deduped.length === 0) return;
+
     setArtifacts((prev) => {
       const updated = [...prev];
 
-      for (const incoming of newArtifacts) {
+      for (const incoming of deduped) {
+        processedIdentifiersRef.current.add(incoming.identifier);
+
         const existingIndex = updated.findIndex(
           (a) => a.identifier === incoming.identifier
         );
@@ -47,8 +57,8 @@ export function useArtifacts() {
       return updated;
     });
 
-    if (newArtifacts.length > 0) {
-      setActiveArtifactId(newArtifacts[0].identifier);
+    if (deduped.length > 0) {
+      setActiveArtifactId(deduped[0].identifier);
       setIsPanelOpen(true);
     }
   }, []);

@@ -77,7 +77,17 @@ export const ChatPage = () => {
 
   const handleChatFinish = useCallback(
     async (event: any) => {
-      const message = mapUIMessageToLegacyMessage(event.message);
+      if (!event?.message) {
+        console.warn('handleChatFinish: event.message is missing', event);
+        return;
+      }
+      let message: any;
+      try {
+        message = mapUIMessageToLegacyMessage(event.message);
+      } catch (e) {
+        console.error('handleChatFinish: mapUIMessageToLegacyMessage failed', e);
+        return;
+      }
       if (message.artifacts?.length > 0) {
         const autoArtifacts = localStorage.getItem('auto_artifacts') !== 'false';
         if (autoArtifacts) {
@@ -197,16 +207,6 @@ export const ChatPage = () => {
   const messages = rawMessages.map(mapUIMessageToLegacyMessage);
 
   useEffect(() => {
-    const latestMsg = messages[messages.length - 1];
-    if (latestMsg?.artifacts?.length > 0) {
-      const autoArtifacts = localStorage.getItem('auto_artifacts') !== 'false';
-      if (autoArtifacts) {
-        addArtifacts(latestMsg.artifacts);
-      }
-    }
-  }, [messages, addArtifacts]);
-
-  useEffect(() => {
     const el = scrollContainerRef.current;
     if (el && isNearBottomRef.current) {
       requestAnimationFrame(() => {
@@ -320,7 +320,7 @@ export const ChatPage = () => {
             className={`flex-1 overflow-y-auto ${messages.length === 0 ? 'flex flex-col items-center justify-start pt-[15vh] p-4' : ''}`}
           >
             {messages.length > 0 && <div className="h-[8px] bg-white dark:bg-[#111110] w-full shrink-0" />}
-            <div className="w-full mx-auto px-4 pb-24" style={{ maxWidth: 'min(780px, 100%)' }}>
+            <div className="w-full mx-auto px-4 pb-24" style={{ maxWidth: 'min(880px, 100%)' }}>
               {messages.map((m: any, i: number) => (
                 <React.Fragment key={m.id || i}>
                   {m.role === 'user' ? (
@@ -385,7 +385,7 @@ export const ChatPage = () => {
           )}
 
           {messages.length > 0 && (
-            <div className="shrink-0 pb-8 w-full mx-auto px-4 bg-white dark:bg-[#111110]" style={{ maxWidth: 'min(780px, 100%)' }}>
+            <div className="shrink-0 pb-8 w-full mx-auto px-4 bg-white dark:bg-[#111110]" style={{ maxWidth: 'min(880px, 100%)' }}>
               <ChatInput
                 onSend={handleSend}
                 isLoading={isLoading}

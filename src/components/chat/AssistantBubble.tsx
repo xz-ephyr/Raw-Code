@@ -12,6 +12,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 import { ThoughtLabel } from './ThoughtLabel';
 import { ArtifactsPreviewCard } from './ArtifactsPreviewCard';
+import { WritingToolShimmer } from './WritingToolShimmer';
 
 interface AssistantBubbleProps {
   content: string;
@@ -82,6 +83,14 @@ export const AssistantBubble = React.memo(
         {hasPendingTool && (
           <div className="flex items-center gap-2 text-neutral-500">
             {pendingTools.map((ti) => {
+              if (ti.toolName === 'writeArtifact') {
+                return (
+                  <WritingToolShimmer
+                    key={ti.toolCallId}
+                    title={ti.args?.title || ti.args?.identifier || ''}
+                  />
+                );
+              }
               const fileName = ti.args?.file_path || ti.args?.path || ti.args?.title || ti.args?.filename || '';
               return (
                 <div key={ti.toolCallId} className="flex items-center gap-1.5 px-2 py-1 bg-neutral-50 rounded-[6px] text-xs font-medium text-neutral-500 border border-neutral-200">

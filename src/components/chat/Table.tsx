@@ -6,7 +6,7 @@ interface TableProps {
 
 export const Table: React.FC<TableProps> = ({ children }) => {
   return (
-    <div className="w-full overflow-x-auto my-4 border border-neutral-200 rounded-lg shadow-sm">
+    <div className="w-full overflow-x-auto my-4 border border-neutral-200 rounded-[8px]">
       <table className="min-w-full divide-y divide-neutral-200 text-sm text-left">
         {children}
       </table>
@@ -33,7 +33,7 @@ export const TableRow: React.FC<{ children: React.ReactNode }> = ({ children }) 
 );
 
 export const TableHeaderCell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <th className="px-4 py-3 border-b border-neutral-200 uppercase tracking-wider text-[11px]">
+  <th className="pl-4 pr-10 py-3 border-b border-neutral-200 uppercase tracking-wider text-[11px]">
     {children}
   </th>
 );
@@ -43,7 +43,7 @@ export const TableHeaderCell: React.FC<{ children: React.ReactNode }> = ({ child
  * when cells contain long content.
  */
 export const TableCell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <td className="px-4 py-3 whitespace-normal text-neutral-600">
+  <td className="pl-4 pr-10 py-3 whitespace-normal text-neutral-600">
     {children}
   </td>
 );
