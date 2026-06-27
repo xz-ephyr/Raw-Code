@@ -147,7 +147,7 @@ export default function Sidebar() {
   return (
     <>
       <div
-        className={`bg-[#f9f9f9] border-r border-[#e5e5e5] h-screen transition-[width] duration-300 ease-in-out flex flex-col shrink-0 ${isCollapsed ? 'w-[48px]' : 'w-[320px]'}`}
+        className={`bg-white border-r border-[#e5e5e5] h-screen transition-[width] duration-300 ease-in-out flex flex-col shrink-0 ${isCollapsed ? 'w-[48px]' : 'w-[320px]'}`}
       >
         <div className={`flex p-2 shrink-0 ${isCollapsed ? 'justify-center' : 'justify-end'}`}>
           <button
