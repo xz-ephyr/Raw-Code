@@ -211,15 +211,15 @@ export function ReactPreview({ content, onError }: ReactPreviewProps) {
             </button>
             <button
               onClick={() => onError?.(error)}
-              className="px-3 py-1.5 text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+              className="px-3 py-1.5 text-xs font-medium bg-muted text-foreground rounded-md hover:bg-accent transition-colors"
             >
               Fix with Claude
             </button>
           </div>
         </div>
         <details className="mt-4">
-          <summary className="text-xs text-neutral-500 dark:text-neutral-400 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300">Show source code</summary>
-          <pre className="mt-2 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 dark:text-neutral-300">
+          <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">Show source code</summary>
+          <pre className="mt-2 p-4 bg-muted rounded-lg border border-border text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 text-foreground">
             {content}
           </pre>
         </details>

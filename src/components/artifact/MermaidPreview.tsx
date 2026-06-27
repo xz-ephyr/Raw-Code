@@ -72,7 +72,7 @@ export function MermaidPreview({ content, onError }: MermaidPreviewProps) {
   return (
     <div className="p-6 flex items-start justify-center">
       {loading && (
-        <div className="text-sm text-neutral-400 dark:text-neutral-500 py-8">Rendering diagram...</div>
+        <div className="text-sm text-muted-foreground py-8">Rendering diagram...</div>
       )}
       <div
         ref={containerRef}
