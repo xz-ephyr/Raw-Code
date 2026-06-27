@@ -29,7 +29,7 @@ export function SvgPreview({ content }: SvgPreviewProps) {
             {error ? 'Failed to render SVG' : 'No valid SVG found in content'}
           </p>
         </div>
-        <pre className="mt-4 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-64 dark:text-neutral-300">
+        <pre className="mt-4 p-4 bg-muted rounded-lg border border-border text-xs font-mono whitespace-pre-wrap overflow-auto max-h-64 text-foreground">
           {content}
         </pre>
       </div>
