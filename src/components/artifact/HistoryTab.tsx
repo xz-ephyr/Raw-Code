@@ -35,7 +35,7 @@ export function HistoryTab({ artifact, onRollback }: HistoryTabProps) {
       {[...versions].reverse().map((version) => (
         <div
           key={version.version}
-          className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-muted border border-transparent hover:border-border transition-all"
+          className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800/50 border border-transparent hover:border-border transition-all"
         >
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-muted-foreground">v{version.version}</span>
