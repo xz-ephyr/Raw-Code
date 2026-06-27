@@ -49,6 +49,10 @@ export const AssistantBubble = React.memo(
     const [isReasoningOpen, setIsReasoningOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
+    const hasPendingTool = toolInvocations?.some((ti) => ti.state !== 'result');
+    const hasWriteArtifact = toolInvocations?.some((ti) => ti.toolName === 'writeArtifact');
+    const hasOtherPendingTool = toolInvocations?.some((ti) => ti.toolName !== 'writeArtifact' && ti.state !== 'result');
+
     // ── Simulated streaming sequence ──
     const [phase, setPhase] = useState<'idle' | 'intention' | 'shimmer' | 'explanation' | 'done'>('idle');
     const [intentionLen, setIntentionLen] = useState(0);
@@ -124,9 +128,6 @@ export const AssistantBubble = React.memo(
       setTimeout(() => setCopied(false), 2000);
     };
 
-    const hasPendingTool = toolInvocations?.some((ti) => ti.state !== 'result');
-    const hasWriteArtifact = toolInvocations?.some((ti) => ti.toolName === 'writeArtifact');
-    const hasOtherPendingTool = toolInvocations?.some((ti) => ti.toolName !== 'writeArtifact' && ti.state !== 'result');
     const showThinking = isStreaming && !content;
 
     const pendingTools = toolInvocations?.filter((ti) => ti.state !== 'result') || [];
