@@ -51,18 +51,18 @@ export const MarkdownPreview = memo(function MarkdownPreview({ content }: Markdo
           },
           h1({ children }) {
             return (
-              <h1 className="text-2xl font-semibold mb-4 mt-6 text-neutral-900 dark:text-neutral-100">{children}</h1>
+              <h1 className="text-2xl font-semibold mb-4 mt-6 text-foreground">{children}</h1>
             );
           },
           h2({ children }) {
-            return <h2 className="text-xl font-semibold mb-3 mt-5 text-neutral-900 dark:text-neutral-100">{children}</h2>;
+            return <h2 className="text-xl font-semibold mb-3 mt-5 text-foreground">{children}</h2>;
           },
           h3({ children }) {
-            return <h3 className="text-lg font-semibold mb-3 mt-4 text-neutral-900 dark:text-neutral-100">{children}</h3>;
+            return <h3 className="text-lg font-semibold mb-3 mt-4 text-foreground">{children}</h3>;
           },
           h4({ children }) {
             return (
-              <h4 className="text-base font-semibold mb-2 mt-4 text-neutral-900 dark:text-neutral-100">{children}</h4>
+              <h4 className="text-base font-semibold mb-2 mt-4 text-foreground">{children}</h4>
             );
           },
           table({ children, ...props }) {
@@ -103,7 +103,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({ content }: Markdo
             );
           },
           hr() {
-            return <hr className="my-6 border-neutral-200" />;
+            return <hr className="my-6 border-border" />;
           },
         }}
       >
