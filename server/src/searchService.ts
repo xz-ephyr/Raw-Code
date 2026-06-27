@@ -3,8 +3,8 @@ import { query } from './db.js';
 
 const TAVILY_URL = 'https://api.tavily.com';
 const FIRECRAWL_URL = 'https://api.firecrawl.dev';
-const BRAVE_URL = 'https://api.search.brave.com';
 const GOOGLE_URL = 'https://www.googleapis.com/customsearch/v1';
+const EXA_URL = 'https://api.exa.ai';
 
 const TTL: Record<string, number> = {
   webSearch: 5 * 60 * 1000,
@@ -138,87 +138,7 @@ async function firecrawlScrape(url: string, formats: string[]) {
   return data.data || null;
 }
 
-async function braveSearch(query: string, maxResults: number) {
-  const apiKey = await getConfig('search-brave-api-key');
-  if (!apiKey) throw new Error('Brave Search API key not configured');
 
-  const res = await fetch(`${BRAVE_URL}/res/v1/web/search?q=${encodeURIComponent(query)}&count=${Math.min(maxResults, 5)}`, {
-    headers: { 'X-Subscription-Token': apiKey },
-  });
-
-  if (!res.ok) throw new Error(`Brave API error (${res.status})`);
-  const data = await res.json();
-
-  return {
-    results: (data.web?.results || []).map((r: any) => ({
-      title: r.title || '',
-      url: r.url || '',
-      snippet: r.description || '',
-      content: '',
-      publishedDate: r.age || '',
-      source: 'brave',
-    })),
-    totalResults: data.web?.results?.length || 0,
-    answer: '',
-  };
-}
-
-async function braveImageSearch(query: string, maxResults: number, safeSearch: boolean) {
-  const apiKey = await getConfig('search-brave-api-key');
-  if (!apiKey) throw new Error('Brave Search API key not configured');
-
-  const safe = safeSearch ? 'strict' : 'off';
-  const res = await fetch(
-    `${BRAVE_URL}/res/v1/images/search?q=${encodeURIComponent(query)}&count=${Math.min(maxResults, 5)}&safesearch=${safe}`,
-    { headers: { 'X-Subscription-Token': apiKey } },
-  );
-
-  if (!res.ok) throw new Error(`Brave Image API error (${res.status})`);
-  const data = await res.json();
-
-  return {
-    results: (data.results || []).map((r: any) => ({
-      title: r.title || '',
-      imageUrl: r.url || '',
-      sourceUrl: r.page_url || r.source_url || '',
-      width: r.width || 0,
-      height: r.height || 0,
-    })),
-    totalResults: data.results?.length || 0,
-  };
-}
-
-async function braveNewsSearch(query: string, maxResults: number, freshness: string) {
-  const apiKey = await getConfig('search-brave-api-key');
-  if (!apiKey) throw new Error('Brave Search API key not configured');
-
-  const freshnessMap: Record<string, string> = {
-    hour: 'pd',
-    day: 'pd',
-    week: 'pw',
-    month: 'pm',
-  };
-
-  const res = await fetch(
-    `${BRAVE_URL}/res/v1/news/search?q=${encodeURIComponent(query)}&count=${Math.min(maxResults, 5)}&freshness=${freshnessMap[freshness] || 'pw'}`,
-    { headers: { 'X-Subscription-Token': apiKey } },
-  );
-
-  if (!res.ok) throw new Error(`Brave News API error (${res.status})`);
-  const data = await res.json();
-
-  return {
-    results: (data.results || []).map((r: any) => ({
-      title: r.title || '',
-      url: r.url || '',
-      snippet: r.description || '',
-      content: '',
-      publishedDate: r.published_date || r.age || '',
-      source: 'brave-news',
-    })),
-    totalResults: data.results?.length || 0,
-  };
-}
 
 async function googleSearch(query: string, maxResults: number) {
   const apiKey = await getConfig('search-google-api-key');
@@ -246,6 +166,83 @@ async function googleSearch(query: string, maxResults: number) {
   };
 }
 
+async function exaSearch(query: string, maxResults: number) {
+  const apiKey = await getConfig('search-exa-api-key');
+  if (!apiKey) throw new Error('Exa API key not configured');
+
+  const res = await fetch(`${EXA_URL}/search`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    },
+    body: JSON.stringify({
+      query,
+      numResults: Math.min(maxResults, 5),
+      type: 'auto',
+      contents: { text: true, highlights: true },
+    }),
+  });
+
+  if (!res.ok) throw new Error(`Exa API error (${res.status})`);
+  const data = await res.json();
+
+  return {
+    results: (data.results || []).map((r: any) => ({
+      title: r.title || '',
+      url: r.url || '',
+      snippet: (r.highlights || []).join(' ') || (r.text || '').slice(0, 500),
+      content: r.text || '',
+      publishedDate: r.publishedDate || '',
+      source: 'exa',
+    })),
+    totalResults: data.results?.length || 0,
+    answer: '',
+  };
+}
+
+async function exaNewsSearch(query: string, maxResults: number, freshness: string) {
+  const apiKey = await getConfig('search-exa-api-key');
+  if (!apiKey) throw new Error('Exa API key not configured');
+
+  const now = new Date();
+  const hoursMap: Record<string, number> = { hour: 1, day: 24, week: 168, month: 720 };
+  const hours = hoursMap[freshness] || 168;
+  const startDate = new Date(now.getTime() - hours * 60 * 60 * 1000).toISOString();
+
+  const res = await fetch(`${EXA_URL}/search`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    },
+    body: JSON.stringify({
+      query,
+      numResults: Math.min(maxResults, 5),
+      type: 'auto',
+      category: 'news',
+      startPublishedDate: startDate,
+      contents: { highlights: true },
+    }),
+  });
+
+  if (!res.ok) throw new Error(`Exa News API error (${res.status})`);
+  const data = await res.json();
+
+  return {
+    results: (data.results || []).map((r: any) => ({
+      title: r.title || '',
+      url: r.url || '',
+      snippet: (r.highlights || []).join(' '),
+      content: '',
+      publishedDate: r.publishedDate || '',
+      source: 'exa-news',
+    })),
+    totalResults: data.results?.length || 0,
+    answer: '',
+  };
+}
+
 export async function webSearch(params: { query: string; maxResults: number; site?: string }) {
   const cached = await getCache('webSearch', params);
   if (cached) return cached;
@@ -258,11 +255,11 @@ export async function webSearch(params: { query: string; maxResults: number; sit
     case 'firecrawl':
       result = await firecrawlSearch(query, params.maxResults);
       break;
-    case 'brave':
-      result = await braveSearch(query, params.maxResults);
-      break;
     case 'google':
       result = await googleSearch(query, params.maxResults);
+      break;
+    case 'exa':
+      result = await exaSearch(query, params.maxResults);
       break;
     case 'tavily':
     default:
@@ -407,26 +404,8 @@ export async function imageSearch(params: { query: string; maxResults: number; s
   const cached = await getCache('imageSearch', params);
   if (cached) return cached;
 
-  let result;
-  let provider = '';
-
-  const googleKey = await getConfig('search-google-api-key');
-  const googleCx = await getConfig('search-google-cx');
-  if (googleKey && googleCx) {
-    try {
-      result = await googleImageSearch(params.query, params.maxResults, params.safeSearch);
-      provider = 'google';
-    } catch {
-      /* fall through */
-    }
-  }
-
-  if (!result) {
-    result = await braveImageSearch(params.query, params.maxResults, params.safeSearch);
-    provider = 'brave';
-  }
-
-  await setCache('imageSearch', params, provider, result);
+  const result = await googleImageSearch(params.query, params.maxResults, params.safeSearch);
+  await setCache('imageSearch', params, 'google', result);
   return result;
 }
 
@@ -437,19 +416,19 @@ export async function newsSearch(params: { query: string; maxResults: number; fr
   let result;
   let provider = '';
 
-  const tavilyKey = await getConfig('search-api-key');
-  if (tavilyKey) {
+  const exaKey = await getConfig('search-exa-api-key');
+  if (exaKey) {
     try {
-      result = await tavilyNewsSearch(params.query, params.maxResults, params.freshness);
-      provider = 'tavily';
+      result = await exaNewsSearch(params.query, params.maxResults, params.freshness);
+      provider = 'exa';
     } catch {
-      /* fall through */
+      /* fall through to Tavily */
     }
   }
 
   if (!result) {
-    result = await braveNewsSearch(params.query, params.maxResults, params.freshness);
-    provider = 'brave';
+    result = await tavilyNewsSearch(params.query, params.maxResults, params.freshness);
+    provider = 'tavily';
   }
 
   await setCache('newsSearch', params, provider, result);
