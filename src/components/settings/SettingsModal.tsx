@@ -146,7 +146,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-semibold text-foreground">Default Page</label>
                   <select
-                    className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-ring transition-all appearance-none cursor-pointer"
+                    className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-black transition-all appearance-none cursor-pointer"
                     defaultValue={localStorage.getItem('default_page') || 'chats'}
                     onChange={(e) => localStorage.setItem('default_page', e.target.value)}
                   >
@@ -169,7 +169,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       defaultChecked={localStorage.getItem('show_timestamps') !== 'false'}
                       onChange={(e) => localStorage.setItem('show_timestamps', String(e.target.checked))}
                     />
-                    <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-foreground" />
+                    <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black" />
                   </label>
                 </div>
 
@@ -187,7 +187,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       defaultChecked={localStorage.getItem('auto_drafts') !== 'false'}
                       onChange={(e) => localStorage.setItem('auto_drafts', String(e.target.checked))}
                     />
-                    <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-foreground" />
+                    <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black" />
                   </label>
                 </div>
               </div>
@@ -211,7 +211,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         </div>
                         <input
                           type={showKeys[providerId] ? 'text' : 'password'}
-                          className="h-9 bg-muted rounded-[8px] pl-8 pr-9 outline-none text-sm w-full border border-border focus:border-ring transition-colors"
+                          className="h-9 bg-muted rounded-[8px] pl-8 pr-9 outline-none text-sm w-full border border-border focus:border-neutral-400 transition-colors"
                           placeholder={`Enter ${PROVIDER_LABELS[providerId]} Key`}
                           value={keys[providerId]}
                           onChange={(e) => setKeys({ ...keys, [providerId]: e.target.value })}
@@ -235,7 +235,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       Model Mode
                     </label>
                     <select
-                      className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-ring transition-all appearance-none cursor-pointer"
+                      className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-black transition-all appearance-none cursor-pointer"
                       value={modelMode}
                       onChange={(e) => setModelMode(e.target.value as typeof modelMode)}
                     >
@@ -295,7 +295,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   <button
                     onClick={handleSaveApiKeys}
                     disabled={isSaving}
-                    className="px-6 py-2 text-sm font-bold text-background bg-foreground hover:bg-foreground/90 rounded-[10px] transition-all flex items-center gap-2 shadow-lg shadow-black/5 active:scale-[0.98] disabled:opacity-50"
+                    className="px-6 py-2 text-sm font-bold text-white bg-black hover:bg-neutral-800 rounded-[10px] transition-all flex items-center gap-2 shadow-lg shadow-black/5 active:scale-[0.98] disabled:opacity-50"
                   >
                     {isSaving ? (
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -324,7 +324,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-semibold text-foreground">Search Provider</label>
                       <select
-                        className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-ring transition-all appearance-none cursor-pointer"
+                        className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-black transition-all appearance-none cursor-pointer"
                         value={searchConfig['search-provider'] || 'tavily'}
                         onChange={(e) => setSearchConfig(p => ({ ...p, 'search-provider': e.target.value }))}
                       >
@@ -342,7 +342,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         <div className="relative">
                           <input
                           type={showSearchKeys['tavily'] ? 'text' : 'password'}
-                             className="h-9 bg-muted rounded-[8px] pl-3 pr-9 outline-none text-sm w-full border border-border focus:border-ring transition-colors"
+                             className="h-9 bg-muted rounded-[8px] pl-3 pr-9 outline-none text-sm w-full border border-border focus:border-neutral-400 transition-colors"
                              placeholder={searchConfig['search-api-key'] ? '••••••••••••••••' : 'Enter Tavily API Key'}
                              value={searchConfig['search-api-key'] || ''}
                              onChange={(e) => setSearchConfig(p => ({ ...p, 'search-api-key': e.target.value }))}
@@ -363,7 +363,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         <div className="relative">
                           <input
                             type={showSearchKeys['exa'] ? 'text' : 'password'}
-                            className="h-9 bg-muted rounded-[8px] pl-3 pr-9 outline-none text-sm w-full border border-border focus:border-ring transition-colors"
+                            className="h-9 bg-muted rounded-[8px] pl-3 pr-9 outline-none text-sm w-full border border-border focus:border-neutral-400 transition-colors"
                             placeholder={searchConfig['search-exa-api-key'] ? '••••••••••••••••' : 'Enter Exa API Key'}
                             value={searchConfig['search-exa-api-key'] || ''}
                             onChange={(e) => setSearchConfig(p => ({ ...p, 'search-exa-api-key': e.target.value }))}
@@ -384,7 +384,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         <div className="relative">
                           <input
                             type={showSearchKeys['firecrawl'] ? 'text' : 'password'}
-                             className="h-9 bg-muted rounded-[8px] pl-3 pr-9 outline-none text-sm w-full border border-border focus:border-ring transition-colors"
+                             className="h-9 bg-muted rounded-[8px] pl-3 pr-9 outline-none text-sm w-full border border-border focus:border-neutral-400 transition-colors"
                              placeholder={searchConfig['search-firecrawl-api-key'] ? '••••••••••••••••' : 'Enter Firecrawl API Key'}
                              value={searchConfig['search-firecrawl-api-key'] || ''}
                              onChange={(e) => setSearchConfig(p => ({ ...p, 'search-firecrawl-api-key': e.target.value }))}
@@ -416,7 +416,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                               <div className="relative">
                                 <input
                                   type={showSearchKeys['google'] ? 'text' : 'password'}
-                                   className="h-9 bg-muted rounded-[8px] pl-3 pr-9 outline-none text-sm w-full border border-border focus:border-ring transition-colors"
+                                   className="h-9 bg-muted rounded-[8px] pl-3 pr-9 outline-none text-sm w-full border border-border focus:border-neutral-400 transition-colors"
                                    placeholder={searchConfig['search-google-api-key'] ? '••••••••••••••••' : 'Enter Google API Key'}
                                    value={searchConfig['search-google-api-key'] || ''}
                                    onChange={(e) => setSearchConfig(p => ({ ...p, 'search-google-api-key': e.target.value }))}
@@ -434,7 +434,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                               <label className="text-[12px] font-medium text-muted-foreground ml-1">CX (Engine ID)</label>
                               <input
                                 type="text"
-                                className="h-9 bg-muted rounded-[8px] pl-3 pr-3 outline-none text-sm w-full border border-border focus:border-ring transition-colors"
+                                className="h-9 bg-muted rounded-[8px] pl-3 pr-3 outline-none text-sm w-full border border-border focus:border-neutral-400 transition-colors"
                                 placeholder={searchConfig['search-google-cx'] ? '••••••••••••••••' : 'Enter CX (Engine ID)'}
                                 value={searchConfig['search-google-cx'] || ''}
                                 onChange={(e) => setSearchConfig(p => ({ ...p, 'search-google-cx': e.target.value }))}
@@ -458,7 +458,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                           setIsSaving(false);
                         }}
                         disabled={isSaving}
-                        className="mt-4 px-6 py-2 text-sm font-bold text-background bg-foreground hover:bg-foreground/90 rounded-[10px] transition-all flex items-center gap-2 shadow-lg shadow-black/5 active:scale-[0.98] disabled:opacity-50"
+                        className="mt-4 px-6 py-2 text-sm font-bold text-white bg-black hover:bg-neutral-800 rounded-[10px] transition-all flex items-center gap-2 shadow-lg shadow-black/5 active:scale-[0.98] disabled:opacity-50"
                       >
                         {isSaving ? (
                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -476,7 +476,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-semibold text-foreground">Sidebar on Startup</label>
                   <select
-                    className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-ring transition-all appearance-none cursor-pointer"
+                    className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-black transition-all appearance-none cursor-pointer"
                     defaultValue={localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true' ? 'collapsed' : 'expanded'}
                     onChange={(e) => {
                       localStorage.setItem(SIDEBAR_STORAGE_KEY, String(e.target.value === 'collapsed'));
@@ -513,7 +513,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         localStorage.setItem('thinking_default', String(e.target.checked));
                       }}
                     />
-                    <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-foreground" />
+                    <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black" />
                   </label>
                 </div>
 
@@ -531,7 +531,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         localStorage.setItem('auto_artifacts', String(e.target.checked));
                       }}
                     />
-                    <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-foreground" />
+                    <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black" />
                   </label>
                 </div>
               </div>
@@ -563,7 +563,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       a.click();
                       URL.revokeObjectURL(url);
                     }}
-                    className="w-full px-4 py-2.5 text-sm font-semibold text-foreground bg-muted hover:bg-accent rounded-[10px] transition-colors text-left"
+                    className="w-full px-4 py-2.5 text-sm font-semibold text-foreground bg-muted hover:bg-neutral-200 rounded-[10px] transition-colors text-left"
                   >
                     Export All Data
                   </button>
@@ -588,7 +588,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         localStorage.removeItem('onboarding_completed');
                       }
                     }}
-                    className="w-full px-4 py-2.5 text-sm font-semibold text-foreground bg-muted hover:bg-accent rounded-[10px] transition-colors text-left"
+                    className="w-full px-4 py-2.5 text-sm font-semibold text-foreground bg-muted hover:bg-neutral-200 rounded-[10px] transition-colors text-left"
                   >
                     Reset Onboarding
                   </button>
