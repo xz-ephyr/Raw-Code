@@ -88,7 +88,7 @@ export function getAIErrorMessage(error: unknown) {
   }
 }
 
-const MAX_STEPS = 25;
+const MAX_STEPS = 6;
 
 function getConfiguredProviders(): Set<Provider> {
   const configured = new Set<Provider>();

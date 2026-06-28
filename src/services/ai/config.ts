@@ -62,10 +62,11 @@ Search for recent news articles. Results are filtered by freshness (hour/day/wee
 - Always cite the source and date.
 
 Guidelines:
+- **LIMIT searches to 1–2 calls max per response.** Do not search more than twice. If you need information, search once (or twice max if the first was insufficient). Never make 3+ searches.
 - Prefer \`webSearch\` first, then \`fetchPage\` for deeper reading.
 - Cite sources by including the URL in your response.
 - Summarize the relevant information — do not dump raw results.
-- If a search returns no results, try a different query.
+- If a search returns no results, try a different query **only once**.
 - Do NOT search for things you confidently know from training data.
 - ONE domain per \`webSearch\` call. For multiple domains, issue parallel calls.
 - 5 results max per search call. Need more? Use parallel searches with specific queries.

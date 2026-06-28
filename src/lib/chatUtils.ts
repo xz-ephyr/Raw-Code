@@ -4,12 +4,21 @@ import { parseArtifacts } from './artifactParser';
 const artifactMetadataRegex = /^\s*\*\s*(?:Type|Identifier|Title):\s*`[^`]+`\s*$/gim;
 const artifactInlineRegex = /^\s*`identifier`:\s*`[^`]+`\s*\*\s*`type`:\s*`[^`]+`\s*\*\s*`title`:\s*`[^`]+`/i;
 
+// Strip search result content that leaks into reasoning (URLs, result listings, etc.)
+const searchResultRegex = /(?:^|\n)(?:Results?|Search results?)(?:\s*\d*)?:.*(?:\n|$)/gi;
+const urlInReasoningRegex = /(?:^|\n)\s*[-•*]\s*https?:\/\/\S+/gm;
+const resultBlockRegex = /(?:^|\n)(?:\d+\.\s*\[.*?\]\(.*?\)|\[\d+\]:\s*https?:\/\/\S+)/gm;
+
 export function cleanReasoning(reasoning: string): string {
-  return reasoning
+  let cleaned = reasoning
     .split('\n')
     .filter((line) => !artifactMetadataRegex.test(line) && !artifactInlineRegex.test(line))
-    .join('\n')
-    .trim();
+    .join('\n');
+  cleaned = cleaned.replace(searchResultRegex, '');
+  cleaned = cleaned.replace(urlInReasoningRegex, '');
+  cleaned = cleaned.replace(resultBlockRegex, '');
+  cleaned = cleaned.replace(/https?:\/\/\S+/g, '');
+  return cleaned.trim();
 }
 
 export function hasPartialArtifact(content: string): boolean {
