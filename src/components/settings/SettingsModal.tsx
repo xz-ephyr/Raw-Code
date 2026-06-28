@@ -15,6 +15,7 @@ import {
   MODELS,
 } from '../../config/models';
 import { refreshProviders } from '../../services/aiService';
+import { DatabaseService } from '../../services/DatabaseService';
 import { useToast } from '../ui/Toast';
 import { useZoomContext } from '../layout/ZoomProvider';
 
@@ -37,6 +38,7 @@ const SIDEBAR_STORAGE_KEY = 'sidebar_collapsed';
 const tabs = [
   { id: 'general', label: 'General', icon: Settings02Icon },
   { id: 'api-keys', label: 'API Keys', icon: Key01Icon },
+  { id: 'web-search', label: 'Web & Search', icon: GlobeIcon },
   { id: 'appearance', label: 'Appearance', icon: ViewIcon },
   { id: 'behavior', label: 'Behavior', icon: ZapIcon },
   { id: 'storage', label: 'Storage', icon: FolderLibraryIcon },
@@ -98,16 +100,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[4px] z-50">
-      <div className="bg-background rounded-[16px] w-[min(1100px,95vw)] h-[85vh] min-h-[500px] shadow-2xl border border-neutral-100 flex flex-col overflow-hidden">
+      <div className="bg-white rounded-[16px] w-[min(1100px,95vw)] h-[85vh] min-h-[500px] shadow-2xl border border-neutral-100 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between shrink-0">
-          <h2 className="text-[18px] font-bold text-card-foreground flex items-center gap-2">
+          <h2 className="text-[18px] font-bold text-neutral-800 flex items-center gap-2">
             <HugeiconsIcon icon={Settings02Icon} size={20} className="text-neutral-500" />
             Settings
           </h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-foreground hover:bg-neutral-100 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
           >
             <HugeiconsIcon icon={Cancel01Icon} size={18} />
           </button>
@@ -141,7 +143,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             {activeTab === 'general' && (
               <div className="space-y-6">
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-foreground">Default Page</label>
+                  <label className="text-sm font-semibold text-neutral-700">Default Page</label>
                   <select
                     className="h-10 bg-neutral-50 rounded-[10px] px-3 text-sm outline-none w-full border border-neutral-200 focus:border-black transition-all appearance-none cursor-pointer"
                     defaultValue={localStorage.getItem('default_page') || 'chats'}
@@ -156,7 +158,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="text-sm font-semibold text-foreground">Message Timestamps</label>
+                    <label className="text-sm font-semibold text-neutral-700">Message Timestamps</label>
                     <p className="text-xs text-neutral-500 mt-0.5">Show time stamps below chat messages.</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -166,13 +168,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       defaultChecked={localStorage.getItem('show_timestamps') !== 'false'}
                       onChange={(e) => localStorage.setItem('show_timestamps', String(e.target.checked))}
                     />
-                    <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black" />
+                    <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black" />
                   </label>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="text-sm font-semibold text-foreground">Auto-save Drafts</label>
+                    <label className="text-sm font-semibold text-neutral-700">Auto-save Drafts</label>
                     <p className="text-xs text-neutral-500 mt-0.5">Automatically save unsent messages as drafts.</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -182,7 +184,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       defaultChecked={localStorage.getItem('auto_drafts') !== 'false'}
                       onChange={(e) => localStorage.setItem('auto_drafts', String(e.target.checked))}
                     />
-                    <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black" />
+                    <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black" />
                   </label>
                 </div>
               </div>
@@ -225,7 +227,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
                 <div className="border-t border-neutral-100 pt-5 space-y-5">
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
                       <HugeiconsIcon icon={ZapIcon} size={16} />
                       Model Mode
                     </label>
@@ -243,7 +245,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
                       <HugeiconsIcon icon={GlobeIcon} size={16} />
                       Default Model
                     </label>
@@ -262,7 +264,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         </svg>
                       </div>
                       {isModelDropdownOpen && (
-                        <div className="absolute z-10 mt-1 w-full bg-background border border-neutral-200 rounded-[10px] shadow-lg overflow-hidden">
+                        <div className="absolute z-10 mt-1 w-full bg-white border border-neutral-200 rounded-[10px] shadow-lg overflow-hidden">
                           <div className="overflow-y-auto thin-scrollbar" style={{ maxHeight: 155 }}>
                             {MODELS.map((model) => (
                               <button
@@ -317,7 +319,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-foreground">Search Provider</label>
+                      <label className="text-sm font-semibold text-neutral-700">Search Provider</label>
                       <select
                         className="h-10 bg-neutral-50 rounded-[10px] px-3 text-sm outline-none w-full border border-neutral-200 focus:border-black transition-all appearance-none cursor-pointer"
                         value={searchConfig['search-provider'] || 'tavily'}
@@ -399,7 +401,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
                       <div className="border-t border-neutral-100 pt-4">
                         <details className="group">
-                          <summary className="text-sm font-medium text-neutral-600 cursor-pointer hover:text-card-foreground list-none flex items-center gap-2">
+                          <summary className="text-sm font-medium text-neutral-600 cursor-pointer hover:text-neutral-800 list-none flex items-center gap-2">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-transform group-open:rotate-90">
                               <polyline points="9 18 15 12 9 6" />
                             </svg>
@@ -466,12 +468,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </div>
             )}
 
-=======
->>>>>>> parent of 94ff0f9 (feat: add dark/light mode toggle in Settings → General tab)
             {activeTab === 'appearance' && (
               <div className="space-y-6">
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-foreground">Sidebar on Startup</label>
+                  <label className="text-sm font-semibold text-neutral-700">Sidebar on Startup</label>
                   <select
                     className="h-10 bg-neutral-50 rounded-[10px] px-3 text-sm outline-none w-full border border-neutral-200 focus:border-black transition-all appearance-none cursor-pointer"
                     defaultValue={localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true' ? 'collapsed' : 'expanded'}
@@ -488,7 +488,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-foreground">Zoom Level</label>
+                  <label className="text-sm font-semibold text-neutral-700">Zoom Level</label>
                   <ZoomControl />
                 </div>
               </div>
@@ -498,7 +498,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="text-sm font-semibold text-foreground">Enable Thinking by Default</label>
+                    <label className="text-sm font-semibold text-neutral-700">Enable Thinking by Default</label>
                     <p className="text-xs text-neutral-500 mt-0.5">Show reasoning traces on supported models.</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -510,13 +510,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         localStorage.setItem('thinking_default', String(e.target.checked));
                       }}
                     />
-                    <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black" />
+                    <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black" />
                   </label>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="text-sm font-semibold text-foreground">Auto-create Artifacts</label>
+                    <label className="text-sm font-semibold text-neutral-700">Auto-create Artifacts</label>
                     <p className="text-xs text-neutral-500 mt-0.5">Automatically preview UI code as artifacts.</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -528,7 +528,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         localStorage.setItem('auto_artifacts', String(e.target.checked));
                       }}
                     />
-                    <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black" />
+                    <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black" />
                   </label>
                 </div>
               </div>
@@ -537,7 +537,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             {activeTab === 'storage' && (
               <div className="space-y-6">
                 <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-100">
-                  <h4 className="text-sm font-semibold text-foreground mb-2">Local Database</h4>
+                  <h4 className="text-sm font-semibold text-neutral-700 mb-2">Local Database</h4>
                   <p className="text-xs text-neutral-500">
                     Your projects, chats, and messages are stored locally in SQLite. This data never leaves your machine.
                   </p>
@@ -560,7 +560,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       a.click();
                       URL.revokeObjectURL(url);
                     }}
-                    className="w-full px-4 py-2.5 text-sm font-semibold text-foreground bg-neutral-100 hover:bg-neutral-200 rounded-[10px] transition-colors text-left"
+                    className="w-full px-4 py-2.5 text-sm font-semibold text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-[10px] transition-colors text-left"
                   >
                     Export All Data
                   </button>
@@ -585,7 +585,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         localStorage.removeItem('onboarding_completed');
                       }
                     }}
-                    className="w-full px-4 py-2.5 text-sm font-semibold text-foreground bg-neutral-100 hover:bg-neutral-200 rounded-[10px] transition-colors text-left"
+                    className="w-full px-4 py-2.5 text-sm font-semibold text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-[10px] transition-colors text-left"
                   >
                     Reset Onboarding
                   </button>
@@ -634,7 +634,7 @@ function ZoomControl() {
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1 w-44 bg-background border border-neutral-200 rounded-xl shadow-xl py-2 z-50">
+        <div className="absolute left-0 top-full mt-1 w-44 bg-white border border-neutral-200 rounded-xl shadow-xl py-2 z-50">
           <div className="px-4 py-1.5 text-[11px] font-bold text-neutral-400 uppercase tracking-widest">
             Zoom
           </div>
@@ -648,8 +648,8 @@ function ZoomControl() {
                 }}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                   zoom === level
-                    ? 'bg-neutral-100 text-foreground font-medium'
-                    : 'text-neutral-600 hover:bg-neutral-50 hover:text-foreground'
+                    ? 'bg-neutral-100 text-neutral-700 font-medium'
+                    : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-700'
                 }`}
               >
                 {Math.round(level * 100)}%
@@ -662,7 +662,7 @@ function ZoomControl() {
                 resetZoom();
                 setIsOpen(false);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-xs text-neutral-500 hover:bg-neutral-50 hover:text-foreground transition-colors"
+              className="w-full text-left px-3 py-2 rounded-lg text-xs text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors"
             >
               Reset to 100%
             </button>

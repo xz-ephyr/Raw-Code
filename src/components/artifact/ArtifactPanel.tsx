@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { Artifact } from '../../types/artifact';
 import { ARTIFACT_TYPE_LABELS } from '../../types/artifact';
-import { ArtifactTabs } from './ArtifactTabs';
 import type { TabId } from './ArtifactTabs';
 import { CodePreview } from './CodePreview';
 import { MarkdownPreview } from './MarkdownPreview';
@@ -26,7 +25,7 @@ export function ArtifactPanel({
   onSelectArtifact,
   onClose,
   onRegenerate,
-  onRollback,
+  onRollback: _onRollback,
 }: ArtifactPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('preview');
 
