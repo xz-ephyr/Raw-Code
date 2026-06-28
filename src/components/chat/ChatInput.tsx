@@ -155,14 +155,7 @@ export default function ChatInput({ onSend, onStop, isLoading, isThinkingEnabled
         <div className="flex flex-col px-3 py-1.5 bg-transparent gap-1">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-0.5">
-              {isActive ? (
-                <>
-                  <button type="button" className="flex items-center gap-1 px-2 py-1.5 text-xs text-neutral-600 rounded-md hover:bg-neutral-200/60 transition-colors whitespace-nowrap" title="Upload file or photos"><HugeiconsIcon icon={Attachment01Icon} size={16} /><span>File or Photos</span></button>
-                  <button type="button" className="flex items-center gap-1 px-2 py-1.5 text-xs text-neutral-600 rounded-md hover:bg-neutral-200/60 transition-colors whitespace-nowrap" title="Take a screenshot"><HugeiconsIcon icon={CameraAdd01Icon} size={16} /><span>Take a Screenshots</span></button>
-                </>
-              ) : (
-                <ToolbarDropdown />
-              )}
+              <ToolbarDropdown />
             </div>
             <SendButton isLoading={isLoading} onStop={onStop} onSend={handleSend} hasValue={!!value.trim()} />
           </div>

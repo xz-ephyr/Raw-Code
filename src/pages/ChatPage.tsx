@@ -85,7 +85,7 @@ const ChatMessageRow = memo(function ChatMessageRow({
   }, [prevUserContent, handleSend]);
 
   const handleOpenMsgArtifact = useCallback(() => {
-    if (artifacts?.length > 0) {
+    if (artifacts && artifacts.length > 0) {
       onOpenArtifact(artifacts[0]);
     }
   }, [artifacts, onOpenArtifact]);
@@ -106,7 +106,7 @@ const ChatMessageRow = memo(function ChatMessageRow({
           contentBeforeTool={contentBeforeTool}
           contentAfterTool={contentAfterTool}
           onOpenArtifact={
-            artifacts?.length > 0 ? handleOpenMsgArtifact : undefined
+            artifacts && artifacts.length > 0 ? handleOpenMsgArtifact : undefined
           }
           onCopy={handleMsgCopy}
           onThumbsUp={handleThumbsUp}
@@ -303,6 +303,17 @@ export const ChatPage = () => {
   } = chat;
 
   const isLoading = status === 'submitted' || status === 'streaming';
+
+  useEffect(() => {
+    if (isLoading) {
+      document.body.style.userSelect = 'none';
+    } else {
+      document.body.style.userSelect = '';
+    }
+    return () => {
+      document.body.style.userSelect = '';
+    };
+  }, [isLoading]);
 
   useEffect(() => {
     clearArtifacts();
