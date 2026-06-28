@@ -61,8 +61,8 @@ export default function ModelList({ currentModel }: ModelListProps) {
         <HugeiconsIcon icon={ArrowDown01Icon} size={12} />
       </button>
       {isOpen && (
-        <div className="absolute bottom-full mb-1 right-0 w-56 bg-white border border-neutral-200 rounded-xl shadow-xl z-[9999] overflow-hidden">
-          <div className="overflow-y-auto thin-scrollbar" style={{ maxHeight: '95px' }}>
+        <div className="absolute top-full mt-1 right-0 w-56 bg-white border border-neutral-200 rounded-xl shadow-xl z-[9999] overflow-hidden">
+          <div className="overflow-y-auto thin-scrollbar" style={{ maxHeight: '190px' }}>
             {groups.map(group => (
               <div key={group.provider}>
                 <div className="px-3 py-1 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">

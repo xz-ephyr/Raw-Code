@@ -246,7 +246,7 @@ export const ChatsPage = () => {
                 placeholder="Search conversations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-neutral-50 rounded-[8px] py-3 pl-12 pr-4 text-sm placeholder:text-neutral-400"
+                className="w-full bg-neutral-50 rounded-[8px] py-3 pl-12 pr-4 text-sm focus:outline-none placeholder:text-neutral-400"
               />
             </div>
 
