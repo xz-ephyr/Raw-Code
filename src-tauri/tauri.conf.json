@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "xz",
+  "productName": "Raw Code",
   "version": "0.15.0",
   "identifier": "ai.xz.desktop",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "xz",
+        "title": "Raw Code",
         "width": 1280,
         "height": 820,
         "minWidth": 960,
@@ -41,8 +41,8 @@
       "icons/icon.ico"
     ],
     "category": "Productivity",
-    "shortDescription": "xz - Autonomous Research Workstation",
-    "longDescription": "xz is an autonomous research and content generation desktop application."
+    "shortDescription": "Raw Code - Autonomous Research Workstation",
+    "longDescription": "Raw Code is an autonomous research and content generation desktop application."
   },
   "plugins": {
     "updater": {

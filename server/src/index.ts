@@ -293,7 +293,7 @@ app.post('/websearch', async (req, res) => {
 async function start() {
   await migrate();
   app.listen(PORT, () => {
-    console.log(`xz server running on http://localhost:${PORT}`);
+    console.log(`raw-code server running on http://localhost:${PORT}`);
   });
 }
 

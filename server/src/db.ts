@@ -10,7 +10,7 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-const db = new Database(path.join(DATA_DIR, 'xz.db'));
+const db = new Database(path.join(DATA_DIR, 'raw-code.db'));
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 

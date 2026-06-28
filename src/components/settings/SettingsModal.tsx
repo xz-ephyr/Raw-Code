@@ -556,7 +556,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = 'xz-backup.json';
+                      a.download = 'raw-code-backup.json';
                       a.click();
                       URL.revokeObjectURL(url);
                     }}

@@ -158,7 +158,7 @@ export const DatabaseService = {
     try {
       return await request<string | null>('get_app_config', { key });
     } catch {
-      return localStorage.getItem(`xz_config_${key}`);
+      return localStorage.getItem(`rc_config_${key}`);
     }
   },
 
@@ -166,7 +166,7 @@ export const DatabaseService = {
     try {
       await request('set_app_config', { key, value });
     } catch {
-      localStorage.setItem(`xz_config_${key}`, value);
+      localStorage.setItem(`rc_config_${key}`, value);
     }
   },
 };

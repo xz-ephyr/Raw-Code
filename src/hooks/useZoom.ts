@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const ZOOM_STORAGE_KEY = 'xz::zoom-level';
+const ZOOM_STORAGE_KEY = 'raw-code::zoom-level';
 const DEFAULT_ZOOM = 1.0;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2.0;
