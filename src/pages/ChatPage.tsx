@@ -41,7 +41,14 @@ function useMediaQuery(query: string): boolean {
 }
 
 const ChatMessageRow = memo(function ChatMessageRow({
-  message,
+  role,
+  content,
+  artifacts,
+  toolInvocations,
+  reasoning,
+  parts,
+  contentBeforeTool,
+  contentAfterTool,
   currentModel,
   isStreaming,
   prevUserContent,
@@ -51,7 +58,14 @@ const ChatMessageRow = memo(function ChatMessageRow({
   onThumbsDown,
   handleSend,
 }: {
-  message: any;
+  role: string;
+  content: string;
+  artifacts?: any[];
+  toolInvocations?: any[];
+  reasoning?: string;
+  parts?: any[];
+  contentBeforeTool?: string;
+  contentAfterTool?: string;
   currentModel: string | undefined;
   isStreaming: boolean;
   prevUserContent?: string;
@@ -61,7 +75,7 @@ const ChatMessageRow = memo(function ChatMessageRow({
   onThumbsDown: () => void;
   handleSend: (content: string) => void;
 }) {
-  const handleMsgCopy = useCallback(() => onCopy(message.content), [message.content, onCopy]);
+  const handleMsgCopy = useCallback(() => onCopy(content), [content, onCopy]);
   const handleThumbsUp = useCallback(() => onThumbsUp(), [onThumbsUp]);
   const handleThumbsDown = useCallback(() => onThumbsDown(), [onThumbsDown]);
   const handleMsgRegenerate = useCallback(() => {
@@ -71,28 +85,28 @@ const ChatMessageRow = memo(function ChatMessageRow({
   }, [prevUserContent, handleSend]);
 
   const handleOpenMsgArtifact = useCallback(() => {
-    if (message.artifacts?.length > 0) {
-      onOpenArtifact(message.artifacts[0]);
+    if (artifacts?.length > 0) {
+      onOpenArtifact(artifacts[0]);
     }
-  }, [message.artifacts, onOpenArtifact]);
+  }, [artifacts, onOpenArtifact]);
 
   return (
     <React.Fragment>
-      {message.role === 'user' ? (
-        <UserBubble content={message.content} />
+      {role === 'user' ? (
+        <UserBubble content={content} />
       ) : (
         <AssistantBubble
-          content={message.content}
+          content={content}
           model={currentModel}
           isStreaming={isStreaming}
-          toolInvocations={message.toolInvocations}
-          reasoning={message.reasoning}
-          parts={message.parts}
-          artifacts={message.artifacts}
-          contentBeforeTool={message.contentBeforeTool}
-          contentAfterTool={message.contentAfterTool}
+          toolInvocations={toolInvocations}
+          reasoning={reasoning}
+          parts={parts}
+          artifacts={artifacts}
+          contentBeforeTool={contentBeforeTool}
+          contentAfterTool={contentAfterTool}
           onOpenArtifact={
-            message.artifacts?.length > 0 ? handleOpenMsgArtifact : undefined
+            artifacts?.length > 0 ? handleOpenMsgArtifact : undefined
           }
           onCopy={handleMsgCopy}
           onThumbsUp={handleThumbsUp}
@@ -552,7 +566,14 @@ export const ChatPage = () => {
                 return (
                   <ChatMessageRow
                     key={m.id || i}
-                    message={m}
+                    role={m.role}
+                    content={m.content}
+                    artifacts={m.artifacts}
+                    toolInvocations={m.toolInvocations}
+                    reasoning={m.reasoning}
+                    parts={m.parts}
+                    contentBeforeTool={m.contentBeforeTool}
+                    contentAfterTool={m.contentAfterTool}
                     currentModel={currentModel}
                     isStreaming={i === lastAssistantIndex}
                     prevUserContent={prevUserContent}
