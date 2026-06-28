@@ -331,6 +331,7 @@ export const ChatPage = () => {
   }, [isLoading]);
 
   useEffect(() => {
+    titleGeneratedRef.current = false;
     clearArtifacts();
     if (uuid) {
       const loadSession = async () => {
