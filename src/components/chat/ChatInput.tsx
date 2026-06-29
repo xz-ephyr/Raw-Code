@@ -16,12 +16,25 @@ interface ChatInputProps {
 
 function ToolbarDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const items = [
-    { icon: Attachment01Icon, label: 'File or Photos', title: 'Upload file or photos' },
+    { icon: Attachment01Icon, label: 'Add file or photos', title: 'Upload file or photos' },
     { icon: CameraAdd01Icon, label: 'Take a Screenshots', title: 'Take a screenshot' },
   ];
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
   return (
-    <div className="relative">
+    <div className="relative" ref={ref}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -32,12 +45,12 @@ function ToolbarDropdown() {
         <HugeiconsIcon icon={PlusSignIcon} size={18} />
       </button>
       {isOpen && (
-        <div className="absolute bottom-full mb-2 left-0 w-52 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 z-50">
+        <div className="absolute bottom-full mb-1 left-0 w-[213px] bg-white border border-neutral-200 rounded-xl shadow-xl z-[9999] overflow-hidden">
           {items.map((item, i) => (
             <button
               key={i}
               type="button"
-              className="w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 text-neutral-700 flex items-center gap-2"
+              className="w-full text-left px-3 py-2 text-xs hover:bg-neutral-50 text-neutral-700 flex items-center gap-2 rounded-md"
               title={item.title}
             >
               <HugeiconsIcon icon={item.icon} size={16} />

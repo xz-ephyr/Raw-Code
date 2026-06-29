@@ -15,6 +15,7 @@ interface ChatInputContainerProps {
   onCreateProject?: () => void;
   currentProjectName?: string;
   currentModel?: string;
+  idle?: boolean;
   children?: ReactNode;
 }
 
@@ -27,6 +28,7 @@ export default function ChatInputContainer({
   onCreateProject,
   currentProjectName,
   currentModel,
+  idle,
   children,
 }: ChatInputContainerProps) {
   const [isProjectOpen, setIsProjectOpen] = useState(false);
@@ -70,58 +72,70 @@ export default function ChatInputContainer({
 
   return (
     <div className="relative w-full mx-auto" style={{ maxWidth: 'min(880px, 100%)' }}>
-      <div className="relative">
-        <div
-          className="absolute left-0 right-0 bg-neutral-200 dark:bg-neutral-700 rounded-[12px]"
-          style={{ height: '155px', top: 0 }}
-        >
-          <div className="absolute bottom-2 left-2">
-            <div className="relative" ref={projectRef}>
-              <button
-                type="button"
-                onClick={() => setIsProjectOpen(!isProjectOpen)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-neutral-500 dark:text-neutral-400 hover:bg-neutral-300/50 dark:hover:bg-neutral-600/50 transition-colors text-sm"
-                title="Projects"
-                aria-label="Projects"
-              >
-                <HugeiconsIcon icon={Folder02Icon} size={16} />
-                <span>{displayName}</span>
-                <HugeiconsIcon icon={isProjectOpen ? ArrowUp01Icon : ArrowDown01Icon} size={14} />
-              </button>
-              {isProjectOpen && (
-                <div className="absolute top-full mt-1 left-0 w-56 bg-white border border-neutral-200 rounded-xl shadow-lg py-1 z-50 max-h-64 overflow-y-auto">
-                  {projects.length === 0 ? (
-                    <div className="px-4 py-3 text-xs text-neutral-400">No projects yet</div>
-                  ) : (
-                    projects.map((project) => (
-                      <button
-                        key={project.id}
-                        type="button"
-                        onClick={() => handleProjectClick(project)}
-                        className="w-full text-left px-4 py-2.5 text-xs hover:bg-neutral-50 text-neutral-700 flex items-center gap-2.5"
-                      >
-                        <HugeiconsIcon icon={Folder02Icon} size={15} className="text-neutral-400 shrink-0" />
-                        <span className="truncate">{project.name}</span>
-                      </button>
-                    ))
-                  )}
-                  <div className="h-px bg-neutral-200 my-1" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsProjectOpen(false);
-                      onCreateProject?.();
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-xs hover:bg-neutral-50 text-neutral-700 flex items-center gap-2.5"
-                  >
-                    <HugeiconsIcon icon={PlusSignIcon} size={15} className="text-neutral-400 shrink-0" />
-                    <span>Create New</span>
-                  </button>
-                </div>
-              )}
+      {idle ? (
+        <div className="relative">
+          <div
+            className="absolute left-0 right-0 bg-neutral-200 dark:bg-neutral-700 rounded-[12px]"
+            style={{ height: '155px', top: 0 }}
+          >
+            <div className="absolute bottom-2 left-2">
+              <div className="relative" ref={projectRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsProjectOpen(!isProjectOpen)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-neutral-500 dark:text-neutral-400 hover:bg-neutral-300/50 dark:hover:bg-neutral-600/50 transition-colors text-sm"
+                  title="Projects"
+                  aria-label="Projects"
+                >
+                  <HugeiconsIcon icon={Folder02Icon} size={16} />
+                  <span>{displayName}</span>
+                  <HugeiconsIcon icon={isProjectOpen ? ArrowUp01Icon : ArrowDown01Icon} size={14} />
+                </button>
+                {isProjectOpen && (
+                  <div className="absolute top-full mt-1 left-0 w-56 bg-white border border-neutral-200 rounded-xl shadow-lg py-1 z-50 max-h-64 overflow-y-auto">
+                    {projects.length === 0 ? (
+                      <div className="px-4 py-3 text-xs text-neutral-400">No projects yet</div>
+                    ) : (
+                      projects.map((project) => (
+                        <button
+                          key={project.id}
+                          type="button"
+                          onClick={() => handleProjectClick(project)}
+                          className="w-full text-left px-4 py-2.5 text-xs hover:bg-neutral-50 text-neutral-700 flex items-center gap-2.5"
+                        >
+                          <HugeiconsIcon icon={Folder02Icon} size={15} className="text-neutral-400 shrink-0" />
+                          <span className="truncate">{project.name}</span>
+                        </button>
+                      ))
+                    )}
+                    <div className="h-px bg-neutral-200 my-1" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProjectOpen(false);
+                        onCreateProject?.();
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-xs hover:bg-neutral-50 text-neutral-700 flex items-center gap-2.5"
+                    >
+                      <HugeiconsIcon icon={PlusSignIcon} size={15} className="text-neutral-400 shrink-0" />
+                      <span>Create New</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+          <ChatInput
+            onSend={onSend}
+            onStop={onStop}
+            isLoading={isLoading}
+            isThinkingEnabled={isThinkingEnabled}
+            onToggleThinking={onToggleThinking}
+            currentModel={currentModel}
+          />
+          {children}
         </div>
+      ) : (
         <ChatInput
           onSend={onSend}
           onStop={onStop}
@@ -130,8 +144,7 @@ export default function ChatInputContainer({
           onToggleThinking={onToggleThinking}
           currentModel={currentModel}
         />
-      </div>
-      {children}
+      )}
     </div>
   );
 }

@@ -61,7 +61,7 @@ export default function ModelList({ currentModel }: ModelListProps) {
         <HugeiconsIcon icon={ArrowDown01Icon} size={12} />
       </button>
       {isOpen && (
-        <div className="absolute top-full mt-1 right-0 w-56 bg-white border border-neutral-200 rounded-xl shadow-xl z-[9999] overflow-hidden">
+        <div className="absolute bottom-full mb-1 right-0 w-[229px] bg-white border border-neutral-200 rounded-xl shadow-xl z-[9999] overflow-hidden">
           <div className="overflow-y-auto thin-scrollbar" style={{ maxHeight: '190px' }}>
             {groups.map(group => (
               <div key={group.provider}>
@@ -69,11 +69,11 @@ export default function ModelList({ currentModel }: ModelListProps) {
                   {group.label}
                 </div>
                 {group.models.map(model => (
-                  <button
+                    <button
                     key={model.id}
                     type="button"
                     onClick={() => handleSelect(model.id)}
-                    className={`w-full text-left px-3 py-1 text-xs transition-colors flex items-center gap-2 ${
+                    className={`w-full text-left px-3 py-1 text-xs transition-colors flex items-center gap-2 rounded-md ${
                       model.id === currentModel
                         ? 'text-neutral-900 bg-neutral-100'
                         : 'text-neutral-600 hover:bg-neutral-50'

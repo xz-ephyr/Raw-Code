@@ -126,6 +126,7 @@ export function MessageList({
                 Hello, how can I help?
               </h1>
               <ChatInputContainer
+                idle={true}
                 onSend={onSend}
                 isLoading={isLoading}
                 onStop={onStop}
@@ -153,8 +154,9 @@ export function MessageList({
       )}
 
       {hasMessages && (
-        <div className="shrink-0 w-full mx-auto px-4 bg-white dark:bg-[#111110]">
+        <div className="shrink-0 w-full mx-auto px-4 pb-3 bg-white dark:bg-[#111110]">
           <ChatInputContainer
+            idle={false}
             onSend={onSend}
             isLoading={isLoading}
             onStop={onStop}
