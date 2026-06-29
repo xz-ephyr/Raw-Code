@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ChevronsDownUpIcon, InternetIcon } from '@hugeicons/core-free-icons';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+
+const REMARK_PLUGINS = [remarkGfm];
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -102,7 +104,7 @@ function SearchingHeader({
  * The expand/collapse of the outer panel is controlled by the parent
  * (AssistantBubble) — this component is always visible content within it.
  */
-export function ThinkingTimeline({
+export const ThinkingTimeline = React.memo(function ThinkingTimeline({
   steps,
   isStreaming,
 }: ThinkingTimelineProps) {
@@ -123,7 +125,7 @@ export function ThinkingTimeline({
               {/* Reasoning text */}
               <div className="flex flex-col gap-1 flex-1 min-w-0 pb-3">
                 <div className="text-[14px] leading-relaxed text-neutral-500 [&>p]:my-0">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>
                     {step.reasoning || ''}
                   </ReactMarkdown>
                 </div>
@@ -204,7 +206,7 @@ export function ThinkingTimeline({
       })}
     </div>
   );
-}
+});
 
 // ── Hook to build timeline steps from raw props ────────────────────
 
