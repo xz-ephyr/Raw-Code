@@ -212,7 +212,6 @@ export const ChatPage = () => {
   }, [isLoading]);
 
   useEffect(() => {
-    titleGeneratedRef.current = false;
     clearArtifacts();
     if (uuid) {
       const loadSession = async () => {
@@ -266,6 +265,7 @@ export const ChatPage = () => {
   }, [setMessages]);
 
   const titleGeneratedRef = useRef(false);
+  const lastUuidRef = useRef<string | undefined>();
 
   const handleSend = useCallback(
     async (content: string) => {
@@ -307,6 +307,11 @@ export const ChatPage = () => {
       }
 
       sendMessage({ text: content });
+
+      if (lastUuidRef.current !== uuid) {
+        titleGeneratedRef.current = false;
+        lastUuidRef.current = uuid;
+      }
 
       if (!titleGeneratedRef.current && uuid && uuid !== 'new') {
         const session = await ChatSessionManager.getSession(uuid).catch(() => null);

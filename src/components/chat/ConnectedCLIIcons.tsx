@@ -4,7 +4,7 @@ import { CLIModelInjector } from '../../services/CLIModelInjector';
 import { CLIIcon } from './CLIIcon';
 
 export function ConnectedCLIIcons() {
-  const [hasOpenCode, setHasOpenCode] = useState(false);
+  const [hasOpenCode, setHasOpenCode] = useState(() => CLIBridgeService.getBridges().length > 0);
   const [expanded, setExpanded] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -12,7 +12,6 @@ export function ConnectedCLIIcons() {
     const unsub = CLIBridgeService.onBridgesChange((bridges) => {
       setHasOpenCode(bridges.length > 0);
     });
-    setHasOpenCode(CLIBridgeService.getBridges().length > 0);
     return unsub;
   }, []);
 

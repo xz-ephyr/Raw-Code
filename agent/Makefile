@@ -1,6 +1,6 @@
 .PHONY: all build run clean test lint
 
-APP_NAME := xz-agent
+APP_NAME := rawcode-agent
 BUILD_DIR := build
 
 all: build

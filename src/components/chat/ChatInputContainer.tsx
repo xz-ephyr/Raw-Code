@@ -1,4 +1,4 @@
-import { type ReactNode, useState, useEffect, useCallback, useRef } from 'react';
+import { type ReactNode, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Folder02Icon, ArrowDown01Icon, ArrowUp01Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
@@ -38,18 +38,12 @@ export default function ChatInputContainer({
   const projectRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  const loadProjects = useCallback(async () => {
-    try {
-      const all = await ChatSessionManager.getProjects();
-      setProjects(all);
-    } catch { /* ignore */ }
-  }, []);
-
   useEffect(() => {
-    if (isProjectOpen) {
-      loadProjects();
-    }
-  }, [isProjectOpen, loadProjects]);
+    if (!isProjectOpen) return;
+    ChatSessionManager.getProjects().then(all => {
+      setProjects(all);
+    });
+  }, [isProjectOpen]);
 
   useEffect(() => {
     if (!isProjectOpen) return;

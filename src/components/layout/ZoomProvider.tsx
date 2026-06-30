@@ -27,9 +27,11 @@ export function ZoomProvider({ children }: { children: ReactNode }) {
   const zoomOutRef = useRef(zoomOut);
   const resetZoomRef = useRef(resetZoom);
 
-  zoomInRef.current = zoomIn;
-  zoomOutRef.current = zoomOut;
-  resetZoomRef.current = resetZoom;
+  useEffect(() => {
+    zoomInRef.current = zoomIn;
+    zoomOutRef.current = zoomOut;
+    resetZoomRef.current = resetZoom;
+  });
 
   useEffect(() => {
     zoomRef.current = zoom;

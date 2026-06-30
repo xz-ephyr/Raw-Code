@@ -16,8 +16,10 @@ export const ChatsPage = () => {
   }, []);
 
   useEffect(() => {
-    refreshChats();
-  }, [refreshChats]);
+    ChatSessionManager.getAll().then(allChats => {
+      setChats(allChats);
+    });
+  }, []);
 
   const filteredChats = useMemo(() => {
     return chats

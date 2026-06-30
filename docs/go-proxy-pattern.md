@@ -25,7 +25,7 @@ Result returned → streamText() feeds it back to model
 
 ## Why This is Fast
 
-- Go agent runs as a local process on `127.0.0.1:3002` — HTTP round trip is **~1–5ms**
+- Go agent runs as a local process on `127.0.0.1:3002` — HTTP round trip is **~2–10ms** (can spike to ~20ms on Windows loopback under load)
 - Model generates tokens at **~100–1000ms+** per step — tool overhead is noise
 - Go executor uses goroutines for parallel directory walks, grep, and recursive operations
 - Single source of truth — tool implementations live in Go, not duplicated in TypeScript
@@ -76,6 +76,8 @@ func (s *Server) handleExecuteTool(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
+> **Security note:** The `/api/tools/execute` endpoint has no authentication — any local process can invoke any Go tool. This is acceptable because the agent is bound to `127.0.0.1` and intended for local development only. If the endpoint is ever exposed beyond localhost, add API-key or token-based auth middleware.
+
 The Go `Executor.Execute()` method already does handler lookup + execution + error handling:
 
 ```go
@@ -103,7 +105,9 @@ func (e *Executor) Execute(ctx context.Context, call api.ToolCall) api.ToolCall 
 **File:** `src/services/tools/goProxy.ts`
 
 ```typescript
-const AGENT_URL = () => import.meta.env.VITE_AGENT_URL || 'http://localhost:3002';
+const AGENT_URL = import.meta.env.VITE_AGENT_URL || 'http://localhost:3002';
+const MAX_RETRIES = 2;
+const BASE_DELAY_MS = 200;
 
 interface GoToolResult {
   result: any;
@@ -111,16 +115,35 @@ interface GoToolResult {
   durationMs: number;
 }
 
+/** Fetch with simple exponential backoff for transient failures. */
+async function fetchWithRetry(url: string, opts: RequestInit, retries: number): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url, opts);
+    if (res.ok || attempt >= retries) return res;
+    await new Promise(r => setTimeout(r, BASE_DELAY_MS * (1 << attempt)));
+  }
+}
+
 export async function callGoTool(tool: string, params: Record<string, any>): Promise<any> {
-  const res = await fetch(`${AGENT_URL()}/api/tools/execute`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tool, params }),
-  });
+  const res = await fetchWithRetry(
+    `${AGENT_URL}/api/tools/execute`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tool, params }),
+    },
+    MAX_RETRIES,
+  );
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || `Go agent error (${res.status})`);
+    let errMsg: string;
+    try {
+      const body = await res.json();
+      errMsg = body.error || res.statusText;
+    } catch {
+      errMsg = res.statusText;
+    }
+    throw new Error(errMsg);
   }
 
   const data: GoToolResult = await res.json();
@@ -337,9 +360,9 @@ streamText({ model, tools })
 |---|---|
 | Model generates tool call JSON | ~200–2000ms |
 | TypeScript dispatches | <1ms |
-| HTTP POST to Go agent | ~1–5ms |
+| HTTP POST to Go agent | ~2–10ms |
 | Go tool executes | ~1–500ms (file read: 1ms, grep dir: 10–500ms) |
-| HTTP response | ~1–5ms |
+| HTTP response | ~2–10ms |
 | streamText() feeds result to model | <1ms |
 | Model generates next tokens | ~200–2000ms |
 | **Total per tool call** | **~400–2500ms** (dominated by model, not Go proxy) |

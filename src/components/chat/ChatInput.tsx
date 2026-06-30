@@ -15,11 +15,11 @@ interface ChatInputProps {
 }
 
 const NTABS = [
-  { icon: CursorMagicSelection04Icon, label: 'Plan' },
-  { icon: Bug02Icon, label: 'Debugs' },
-  { icon: TeamWorkIcon, label: 'Teamwork' },
-  { icon: HandsClappingIcon, label: 'Grill Me' },
-  { icon: QuillWrite02Icon, label: 'Super Mode' },
+  { icon: CursorMagicSelection04Icon, label: 'Plan', desc: 'Strategic planning and roadmap' },
+  { icon: Bug02Icon, label: 'Debugs', desc: 'Identify and fix issues' },
+  { icon: TeamWorkIcon, label: 'Teamwork', desc: 'Collaborate with your team' },
+  { icon: HandsClappingIcon, label: 'Grill Me', desc: 'Tough questions and feedback' },
+  { icon: QuillWrite02Icon, label: 'Super Mode', desc: 'Enhanced AI capabilities' },
 ];
 
 function NTabDropdown({ isIdle }: { isIdle?: boolean }) {
@@ -45,10 +45,10 @@ function NTabDropdown({ isIdle }: { isIdle?: boolean }) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 px-2 py-1 rounded-[6px] text-neutral-500 hover:bg-neutral-200/60 hover:text-neutral-700 transition-colors text-xs"
+        className="flex items-center gap-1 px-2 py-1 rounded-[6px] text-black hover:bg-neutral-200/60 transition-colors text-xs"
         title={tab.label}
       >
-        <HugeiconsIcon icon={tab.icon} size={14} />
+        <HugeiconsIcon icon={tab.icon} size={16} className="text-neutral-700" />
         <span className="max-w-[80px] truncate">{tab.label}</span>
       </button>
       {isOpen && (
@@ -61,11 +61,14 @@ function NTabDropdown({ isIdle }: { isIdle?: boolean }) {
               className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center gap-2 rounded-md ${
                 i === currentTab
                   ? 'text-neutral-900 bg-neutral-100'
-                  : 'text-neutral-600 hover:bg-neutral-50'
+                  : 'text-neutral-900 hover:bg-neutral-50'
               }`}
             >
-              <HugeiconsIcon icon={t.icon} size={16} />
-              <span>{t.label}</span>
+              <HugeiconsIcon icon={t.icon} size={18} className="text-neutral-700" />
+              <div className="flex flex-col">
+                <span>{t.label}</span>
+                <span className="text-[10px] text-neutral-600">{t.desc}</span>
+              </div>
             </button>
           ))}
         </div>

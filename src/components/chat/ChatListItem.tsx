@@ -41,7 +41,6 @@ export function ChatListItem({ chat, onDelete, onArchive, onRename }: ChatListIt
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMenuOpen]);
 
   const handleRename = (e: React.MouseEvent) => {
