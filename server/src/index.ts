@@ -61,7 +61,7 @@ app.post('/save_project_files', async (req, res) => {
     });
   } catch (e: any) {
     console.error('Error in save_project_files:', e);
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: 'Failed to save project files' });
   }
 
   res.json({ success: true });

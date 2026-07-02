@@ -16,15 +16,8 @@ Top 5 Highest-Impact Fixes:
 - **File Path**: `server/src/index.ts` (Lines 44-53)
 - **Severity**: Critical
 - **Category**: Database query inefficiencies
-- **Description**: `save_project_files` executes an `INSERT...ON CONFLICT` query inside a `for` loop for every file. For a project with 1,000 files, this performs 1,000 individual round-trips to SQLite without a transaction, which is extremely slow and blocks the Node.js event loop.
-- **Suggested Fix**: Wrap the loop in a transaction or use a single bulk insert statement.
-  ```typescript
-  const insert = db.prepare('INSERT INTO project_files ...');
-  const transaction = db.transaction((files) => {
-    for (const f of files) insert.run(...);
-  });
-  transaction(files);
-  ```
+- **Description**: `save_project_files` executes an `INSERT...ON CONFLICT` query inside a `for` loop for every file. Although wrapped in a `transaction()` block, calling individual `querySync` executions N times still incurs overhead and potential event-loop churn during massive imports.
+- **Suggested Fix**: Maintain usage of `transaction()`, but consider moving to a single bulk insert statement or optimizing statement preparation outside the loop.
 
 ---
 
@@ -56,9 +49,9 @@ Top 5 Highest-Impact Fixes:
 ### Architecture & Refinement
 - **File Path**: `server/src/db.ts` (Lines 16-25)
 - **Severity**: Medium
-- **Category**: Memory leaks
-- **Description**: `stmtCache` is a standard `Map` that stores every prepared statement indefinitely. If the application generates dynamic SQL (though not currently the case), this would lead to an unbounded memory leak.
-- **Suggested Fix**: Implement a simple LRU cache or set a maximum size for the statement cache.
+- **Category**: Memory management
+- **Description**: `stmtCache` is currently bounded by `STMT_CACHE_LIMIT` (100 entries), which prevents unbounded growth. However, if the application were to generate high-volume dynamic SQL, the current FIFO-style eviction would cause significant cache churn.
+- **Suggested Fix**: Implement a true LRU behavior by refreshing entry position on cache hits in the `prepare` function.
 
 ---
 
@@ -79,8 +72,8 @@ Top 5 Highest-Impact Fixes:
 ---
 
 ## Top 5 Quick Wins
-1. ✅ **Transaction in `save_project_files`**: Implemented bulk synchronous transactions to prevent event-loop blocking.
-2. ✅ **Project Context Caching**: Implemented 30s TTL cache for file system scans in `ChatPage.tsx`.
-3. ✅ **Statement Cache Cap**: Added 100-statement LRU-style limit to backend `stmtCache`.
-4. ✅ **Fetch Timeout in `searchService`**: Added 8-second timeouts to all external search providers.
-5. ✅ **TypeScript Stability**: Fixed missing dependencies and type errors discovered during the audit.
+1. ✅ **Optimized `save_project_files`**: Utilized synchronous `transaction()` blocks for bulk file operations.
+2. ✅ **Project Context Caching**: Implemented 30s TTL cache for expensive file system scans in `ChatPage.tsx`.
+3. ✅ **Statement Cache Limit**: Capped `stmtCache` at 100 entries to manage memory footprint.
+4. ✅ **Fetch Timeout in `searchService`**: Added 8-second timeouts to prevent hanging on external provider failures.
+5. ✅ **TypeScript Stability**: Resolved missing dependencies and strict type errors found during the audit.

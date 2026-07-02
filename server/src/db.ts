@@ -19,17 +19,27 @@ const stmtCache = new Map<string, Database.Statement>();
 
 function prepare(sql: string): Database.Statement {
   let stmt = stmtCache.get(sql);
-  if (!stmt) {
-    if (stmtCache.size >= STMT_CACHE_LIMIT) {
-      const firstKey = stmtCache.keys().next().value;
-      if (firstKey !== undefined) stmtCache.delete(firstKey);
-    }
-    stmt = db.prepare(sql);
+  if (stmt) {
+    // True LRU: move to newest position on hit
+    stmtCache.delete(sql);
     stmtCache.set(sql, stmt);
+    return stmt;
   }
+
+  if (stmtCache.size >= STMT_CACHE_LIMIT) {
+    const firstKey = stmtCache.keys().next().value;
+    if (firstKey !== undefined) stmtCache.delete(firstKey);
+  }
+  stmt = db.prepare(sql);
+  stmtCache.set(sql, stmt);
   return stmt;
 }
 
+/**
+ * Executes the given function within a synchronous database transaction.
+ * IMPORTANT: The callback MUST be synchronous. better-sqlite3 transactions
+ * will commit immediately upon the function returning.
+ */
 export function transaction<T>(fn: () => T): T {
   return db.transaction(fn)();
 }

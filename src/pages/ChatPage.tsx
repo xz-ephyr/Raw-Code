@@ -124,9 +124,23 @@ export const ChatPage = () => {
       const session = await ChatSessionManager.getSession(uuid);
       if (!session?.projectId) return undefined;
 
-      // Check cache first (TTL: 30 seconds)
+      const now = Date.now();
+      const MAX_CACHE_ENTRIES = 5;
+      const CACHE_TTL = 30000;
+
+      // 1. Prune expired entries and manage size
+      const entries = Object.entries(projectContextCacheRef.current);
+      if (entries.length >= MAX_CACHE_ENTRIES || entries.some(([, v]) => now - v.timestamp > CACHE_TTL)) {
+        const sorted = entries
+          .filter(([, v]) => now - v.timestamp <= CACHE_TTL)
+          .sort((a, b) => (b[1] as any).timestamp - (a[1] as any).timestamp);
+
+        projectContextCacheRef.current = Object.fromEntries(sorted.slice(0, MAX_CACHE_ENTRIES - 1));
+      }
+
+      // 2. Check cache
       const cached = projectContextCacheRef.current[session.projectId];
-      if (cached && Date.now() - cached.timestamp < 30000) {
+      if (cached && now - cached.timestamp < CACHE_TTL) {
         return cached.context;
       }
 
@@ -320,6 +334,12 @@ export const ChatPage = () => {
       };
 
       if (uuid) {
+        // Invalidate specific session cache on new send to ensure freshness if files changed externally
+        const session = await ChatSessionManager.getSession(uuid).catch(() => null);
+        if (session?.projectId) {
+          delete projectContextCacheRef.current[session.projectId];
+        }
+
         DatabaseService.saveMessages(uuid, [userMsg]).catch((e) =>
           console.error('Failed to save user message to DB:', e)
         );
@@ -361,6 +381,7 @@ export const ChatPage = () => {
 
   const handleAddProject = useCallback(async () => {
     try {
+      projectContextCacheRef.current = {}; // Invalidate cache on project mutations
       let newProject: Project | null = null;
       let folderName = '';
       if (isTauri()) {

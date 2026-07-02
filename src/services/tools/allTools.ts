@@ -19,7 +19,7 @@ import { listProcessesTool } from './system/listProcesses';
 import { resolvePathTool } from './system/resolvePath';
 import { httpRequestTool } from './network/httpRequest';
 import { checkUrlTool } from './network/checkUrl';
-import { webSearchTool, fetchPageTool, imageSearchTool, newsSearchTool } from './web/webSearchTool';
+import { webSearchTool, fetchPageTool, imageSearchTool, newsSearchTool } from '../ai/tools/webSearchTool';
 
 export const allTools = [
   readFileTool,

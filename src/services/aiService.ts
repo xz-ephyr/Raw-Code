@@ -196,8 +196,9 @@ export async function chatCompletion({
         messages: filteredMessages,
         tools: {
           writeArtifact: writeArtifactTool,
-          ...allTools.reduce((acc, tool) => {
-            acc[tool.name] = tool;
+          ...allTools.reduce((acc, t) => {
+            const name = (t as any).name || (t as any).toolName;
+            if (name) acc[name] = t;
             return acc;
           }, {} as any),
         },
