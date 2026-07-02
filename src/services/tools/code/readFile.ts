@@ -1,15 +1,6 @@
 import { z } from 'zod';
 import type { ToolDef } from '../types';
-import { isTauri } from '../../../lib/tauri';
-
-async function loadFs() {
-  if (!isTauri()) return null;
-  try {
-    return await import('@tauri-apps/plugin-fs');
-  } catch {
-    return null;
-  }
-}
+import { callGoTool } from '../goProxy';
 
 export const readFileTool: ToolDef = {
   name: 'read_file',
@@ -19,9 +10,6 @@ export const readFileTool: ToolDef = {
     path: z.string().describe('Absolute path to the file to read.'),
   }),
   execute: async ({ path }) => {
-    const mod = await loadFs();
-    if (!mod) throw new Error('Filesystem access requires the Tauri desktop app');
-    const content = await mod.readTextFile(path);
-    return { path, content, length: content.length, lines: content.split('\n').length };
+    return callGoTool('read_file', { path });
   },
 };

@@ -7,12 +7,7 @@ import { streamText, generateText, stepCountIs, convertToModelMessages } from 'a
 import type { OpenAIProvider } from '@ai-sdk/openai';
 import { SYSTEM_PROMPT } from './ai/config';
 import { writeArtifactTool } from './ai/tools/writeArtifactTool';
-import {
-  webSearchTool,
-  fetchPageTool,
-  imageSearchTool,
-  newsSearchTool,
-} from './ai/tools/webSearchTool';
+import { allTools } from './tools/allTools';
 import { API_KEYS, getModelDefinition, getUsedModels, markModelUsed, getAIModels, type Provider } from '../config/models';
 import { getSmartSystemPrompt, type ProjectContext } from './ai/contextController';
 import { contractContext } from './ai/contextContractor';
@@ -201,10 +196,10 @@ export async function chatCompletion({
         messages: filteredMessages,
         tools: {
           writeArtifact: writeArtifactTool,
-          webSearch: webSearchTool,
-          fetchPage: fetchPageTool,
-          imageSearch: imageSearchTool,
-          newsSearch: newsSearchTool,
+          ...allTools.reduce((acc, tool) => {
+            acc[tool.name] = tool;
+            return acc;
+          }, {} as any),
         },
         providerOptions,
         abortSignal,

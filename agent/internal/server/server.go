@@ -89,6 +89,7 @@ func (s *Server) registerRoutes() {
 	s.router.HandleFunc("/api/clis/{name}", s.handleCLIInfo).Methods("GET")
 	s.router.HandleFunc("/api/chat", s.handleChatProxy).Methods("POST")
 	s.router.HandleFunc("/api/workflows", s.handleListWorkflows).Methods("GET")
+	s.router.HandleFunc("/api/tools/execute", s.handleExecuteTool).Methods("POST")
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
@@ -230,5 +231,35 @@ func (s *Server) handleListWorkflows(w http.ResponseWriter, r *http.Request) {
 			{"name": "research_and_summarize", "description": "Search the web and create a summary"},
 			{"name": "codebase_audit", "description": "Search codebase for patterns and report findings"},
 		},
+	})
+}
+
+func (s *Server) handleExecuteTool(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Tool   string         `json:"tool"`
+		Params map[string]any `json:"params"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	call := api.ToolCall{
+		Tool:   req.Tool,
+		Params: req.Params,
+	}
+	result := s.executor.Execute(r.Context(), call)
+
+	if result.Error != "" {
+		writeJSON(w, http.StatusOK, map[string]any{
+			"error":  result.Error,
+			"result": nil,
+		})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"error":      nil,
+		"result":     result.Result,
+		"durationMs": result.Duration,
 	})
 }
