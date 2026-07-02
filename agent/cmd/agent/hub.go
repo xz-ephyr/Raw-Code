@@ -20,7 +20,7 @@ type AgentHub struct {
 	Server       *server.Server
 }
 
-func NewAgentHub(expressURL string) *AgentHub {
+func NewAgentHub(expressURL string, apiKey string) *AgentHub {
 	// Infrastructure
 	express := infra.NewExpressClient(expressURL)
 	tauri := infra.NewTauriShell()
@@ -39,7 +39,7 @@ func NewAgentHub(expressURL string) *AgentHub {
 	orch.RegisterDefaultWorkflows()
 
 	// HTTP server
-	srv := server.New(tm, reg, exec, pool, orch, express, tauri, 4)
+	srv := server.New(tm, reg, exec, pool, orch, express, tauri, apiKey, 4)
 
 	hub := &AgentHub{
 		TaskManager:  tm,
