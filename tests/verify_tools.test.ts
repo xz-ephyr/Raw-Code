@@ -1,10 +1,14 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { callGoTool } from '../src/services/tools/goProxy';
 
 // Mock fetch for proxy testing
 global.fetch = vi.fn();
 
 describe('Go Tool Proxy', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should delegate tool calls to the Go agent', async () => {
     const mockResponse = {
       ok: true,
@@ -41,5 +45,44 @@ describe('Go Tool Proxy', () => {
 
     await expect(callGoTool('read_file', { path: '/missing.txt' }))
       .rejects.toThrow('file not found');
+  });
+
+  it('should retry idempotent calls on transient failure', async () => {
+    const mockSuccess = {
+      ok: true,
+      json: () => Promise.resolve({
+        result: { content: 'recovered' },
+        error: null,
+        durationMs: 5
+      })
+    };
+    const mockFailure = {
+      ok: false,
+      statusText: 'Service Unavailable'
+    };
+
+    // First call fails, second succeeds
+    (global.fetch as any)
+      .mockResolvedValueOnce(mockFailure)
+      .mockResolvedValueOnce(mockSuccess);
+
+    const result = await callGoTool('read_file', { path: '/retry.txt' });
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(result.content).toBe('recovered');
+  });
+
+  it('should NOT retry non-idempotent calls', async () => {
+    const mockFailure = {
+      ok: false,
+      statusText: 'Service Unavailable'
+    };
+
+    (global.fetch as any).mockResolvedValue(mockFailure);
+
+    await expect(callGoTool('run_command', { command: 'rm -rf /' }, { idempotent: false }))
+      .rejects.toThrow('Service Unavailable');
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });

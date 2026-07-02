@@ -11,6 +11,6 @@ export const editFileTool: ToolDef = {
     diff: z.string().describe('The diff to apply in Git merge format.'),
   }),
   execute: async ({ path, diff }) => {
-    return callGoTool('edit_file', { path, diff });
+    return callGoTool('edit_file', { path, diff }, { idempotent: false });
   },
 };

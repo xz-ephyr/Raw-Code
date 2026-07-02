@@ -11,6 +11,6 @@ export const writeFileTool: ToolDef = {
     content: z.string().describe('The content to write to the file.'),
   }),
   execute: async ({ path, content }) => {
-    return callGoTool('write_file', { path, content });
+    return callGoTool('write_file', { path, content }, { idempotent: false });
   },
 };

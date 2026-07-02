@@ -126,7 +126,7 @@ export const ChatPage = () => {
 
       const now = Date.now();
       const MAX_CACHE_ENTRIES = 5;
-      const CACHE_TTL = 30000;
+      const CACHE_TTL = 30000; // 30 second staleness window
 
       // 1. Prune expired entries and manage size
       const entries = Object.entries(projectContextCacheRef.current);

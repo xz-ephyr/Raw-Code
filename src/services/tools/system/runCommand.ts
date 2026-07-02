@@ -9,9 +9,18 @@ export const runCommandTool: ToolDef = {
   inputSchema: z.object({
     command: z.string().describe('The full shell command to execute.'),
     cwd: z.string().optional().describe('The working directory to run the command in.'),
-    timeout: z.number().optional().default(30000).describe('Timeout in milliseconds.'),
+    timeout: z.number().int().positive().max(300000).optional().default(30000).describe('Timeout in milliseconds (max 300,000).'),
   }),
   execute: async ({ command, cwd, timeout }) => {
-    return callGoTool('run_command', { command, cwd, timeout });
+    // Map cwd to workdir and convert timeout to seconds for the Go executor
+    return callGoTool(
+      'run_command',
+      {
+        command,
+        workdir: cwd,
+        timeout: Math.floor((timeout ?? 30000) / 1000)
+      },
+      { idempotent: false, timeout: (timeout ?? 30000) + 5000 }
+    );
   },
 };

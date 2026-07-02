@@ -22,7 +22,9 @@ func main() {
 		expressURL = "http://localhost:3001"
 	}
 
-	hub := NewAgentHub(expressURL)
+	apiKey := os.Getenv("AGENT_API_KEY")
+
+	hub := NewAgentHub(expressURL, apiKey)
 	srv := hub.Server(port)
 
 	go func() {

@@ -8,7 +8,7 @@ export const gitLogTool: ToolDef = {
   category: 'git',
   inputSchema: z.object({
     path: z.string().describe('Absolute path to the git repository.'),
-    limit: z.number().optional().default(10).describe('Limit the number of log entries.'),
+    limit: z.number().int().positive().max(100).optional().default(10).describe('Limit the number of log entries (max 100).'),
   }),
   execute: async ({ path, limit }) => {
     return callGoTool('git_log', { path, limit });
