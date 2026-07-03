@@ -22,7 +22,7 @@ func imageSearchTool() ToolDef {
 		Handler: func(ctx context.Context, e *Executor, params map[string]any) (any, error) {
 			query, _ := params["query"].(string)
 			if query == "" {
-				return nil, fmt.Errorf("query is required")
+				return nil, fmtError("query is required")
 			}
 			maxResults, _ := params["max_results"].(float64)
 			if maxResults == 0 {

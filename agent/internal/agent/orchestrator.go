@@ -150,6 +150,7 @@ func (o *Orchestrator) runWorkflowTask(t *task.Task) {
 }
 
 func resolveVar(template string, key string, val any) string {
+	placeholder := fmt.Sprintf("$%s", key)
 	str := fmt.Sprintf("%v", val)
 	result := ""
 	for i := 0; i < len(template); i++ {

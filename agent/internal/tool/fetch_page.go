@@ -21,7 +21,7 @@ func fetchPageTool() ToolDef {
 		Handler: func(ctx context.Context, e *Executor, params map[string]any) (any, error) {
 			url, _ := params["url"].(string)
 			if url == "" {
-				return nil, fmt.Errorf("url is required")
+				return nil, fmtError("url is required")
 			}
 			format, _ := params["format"].(string)
 			if format == "" {

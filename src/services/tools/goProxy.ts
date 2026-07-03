@@ -12,13 +12,17 @@ interface GoToolResult {
 /** Fetch with simple exponential backoff for transient failures. */
 async function fetchWithRetry(
   url: string,
-  opts: RequestInit,
+  baseOpts: RequestInit,
   retries: number,
-  idempotent: boolean
+  idempotent: boolean,
+  timeoutMs: number
 ): Promise<Response> {
   for (let attempt = 0; ; attempt++) {
     try {
-      const res = await fetch(url, opts);
+      const res = await fetch(url, {
+        ...baseOpts,
+        signal: AbortSignal.timeout(timeoutMs),
+      });
       if (res.ok || !idempotent || attempt >= retries) return res;
     } catch (e) {
       if (!idempotent || attempt >= retries) throw e;
@@ -43,10 +47,10 @@ export async function callGoTool(
         'x-api-key': AGENT_API_KEY,
       },
       body: JSON.stringify({ tool, params }),
-      signal: AbortSignal.timeout(timeout),
     },
     MAX_RETRIES,
-    idempotent
+    idempotent,
+    timeout
   );
 
   if (!res.ok) {

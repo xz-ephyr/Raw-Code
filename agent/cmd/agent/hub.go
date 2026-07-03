@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"github.com/xz-ephyr/raw-code/agent/internal/agent"
 	"github.com/xz-ephyr/raw-code/agent/internal/infra"
 	"github.com/xz-ephyr/raw-code/agent/internal/server"
@@ -59,7 +58,6 @@ func NewAgentHub(expressURL string, apiKey string) *AgentHub {
 	return hub
 }
 
-func (h *AgentHub) Listen(port string) *http.Server {
-	addr := ":" + port
-	return h.Server.Listen(addr)
+func (h *AgentHub) Server(port string) *AgentHub {
+	return h
 }

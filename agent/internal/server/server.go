@@ -248,6 +248,9 @@ func (s *Server) handleListWorkflows(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleExecuteTool(w http.ResponseWriter, r *http.Request) {
+	// Limit request body to 10MB to prevent OOM
+	r.Body = http.MaxBytesReader(w, r.Body, 10*1024*1024)
+
 	var req struct {
 		Tool   string         `json:"tool"`
 		Params map[string]any `json:"params"`
@@ -257,14 +260,28 @@ func (s *Server) handleExecuteTool(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Tool == "" {
+		writeError(w, http.StatusBadRequest, "tool name is required")
+		return
+	}
+
 	call := api.ToolCall{
 		Tool:   req.Tool,
 		Params: req.Params,
 	}
+
+	// Verify tool existence before execution for proper 404 response
+	if _, ok := s.toolRegistry.GetHandler(req.Tool); !ok {
+		writeError(w, http.StatusNotFound, "unknown tool: "+req.Tool)
+		return
+	}
+
 	result := s.executor.Execute(r.Context(), call)
 
 	if result.Error != "" {
-		writeJSON(w, http.StatusOK, map[string]any{
+		// Map internal execution errors to 500 or 400 if it was a validation error
+		// For now keeping it simple with 500 for execution failures
+		writeJSON(w, http.StatusInternalServerError, map[string]any{
 			"error":  result.Error,
 			"result": nil,
 		})
