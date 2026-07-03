@@ -52,6 +52,7 @@ async function tavilySearch(query: string, maxResults: number, searchDepth = 'ba
   const res = await fetch(`${TAVILY_URL}/search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(8000),
     body: JSON.stringify({
       api_key: apiKey,
       query,
@@ -93,6 +94,7 @@ async function firecrawlSearch(query: string, maxResults: number) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
+    signal: AbortSignal.timeout(8000),
     body: JSON.stringify({
       query,
       limit: Math.min(maxResults, 5),
@@ -130,6 +132,7 @@ async function firecrawlScrape(url: string, formats: string[]) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
+    signal: AbortSignal.timeout(15000),
     body: JSON.stringify({ url, formats }),
   });
 
@@ -147,6 +150,7 @@ async function googleSearch(query: string, maxResults: number) {
 
   const res = await fetch(
     `${GOOGLE_URL}?key=${encodeURIComponent(apiKey)}&cx=${encodeURIComponent(cx)}&q=${encodeURIComponent(query)}&num=${Math.min(maxResults, 5)}`,
+    { signal: AbortSignal.timeout(8000) }
   );
 
   if (!res.ok) throw new Error(`Google API error (${res.status})`);
@@ -176,6 +180,7 @@ async function exaSearch(query: string, maxResults: number) {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     },
+    signal: AbortSignal.timeout(8000),
     body: JSON.stringify({
       query,
       numResults: Math.min(maxResults, 5),
@@ -216,6 +221,7 @@ async function exaNewsSearch(query: string, maxResults: number, freshness: strin
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     },
+    signal: AbortSignal.timeout(8000),
     body: JSON.stringify({
       query,
       numResults: Math.min(maxResults, 5),
@@ -363,6 +369,7 @@ async function googleImageSearch(query: string, maxResults: number, safeSearch: 
   const safe = safeSearch ? '&safe=active' : '';
   const res = await fetch(
     `${GOOGLE_URL}?key=${encodeURIComponent(apiKey)}&cx=${encodeURIComponent(cx)}&q=${encodeURIComponent(query)}&num=${Math.min(maxResults, 5)}&searchType=image${safe}`,
+    { signal: AbortSignal.timeout(8000) }
   );
 
   if (!res.ok) throw new Error(`Google Image API error (${res.status})`);
@@ -394,6 +401,7 @@ async function tavilyNewsSearch(query: string, maxResults: number, freshness: st
   const res = await fetch(`${TAVILY_URL}/search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(8000),
     body: JSON.stringify({
       api_key: apiKey,
       query,

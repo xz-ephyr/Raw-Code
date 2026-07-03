@@ -22,8 +22,14 @@ func main() {
 		expressURL = "http://localhost:3001"
 	}
 
-	hub := NewAgentHub(expressURL)
+	apiKey := os.Getenv("AGENT_API_KEY")
+
+	hub := NewAgentHub(expressURL, apiKey)
 	srv := hub.Server(port)
+
+	if apiKey == "" {
+		fmt.Println("WARNING: AGENT_API_KEY is not set. Privileged endpoints are unprotected.")
+	}
 
 	go func() {
 		fmt.Printf("xz agent framework running on http://localhost:%s\n", port)

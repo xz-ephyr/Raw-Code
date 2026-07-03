@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
-import { query, migrate } from './db.js';
+import { query, migrate, transaction, querySync } from './db.js';
 
 const app = express();
 app.use(cors());
@@ -52,9 +52,18 @@ app.post('/save_project_files', async (req, res) => {
   const now = Date.now();
   const upsert = `INSERT INTO project_files (project_id, file_path, content, updated_at) VALUES ($1, $2, $3, $4)
                   ON CONFLICT (project_id, file_path) DO UPDATE SET content = EXCLUDED.content, updated_at = EXCLUDED.updated_at`;
-  for (const f of files) {
-    await query(upsert, [projectId, f.path, f.content, now]);
+
+  try {
+    transaction(() => {
+      for (const f of files) {
+        querySync(upsert, [projectId, f.path, f.content, now]);
+      }
+    });
+  } catch (e: any) {
+    console.error('Error in save_project_files:', e);
+    return res.status(500).json({ error: 'Failed to save project files' });
   }
+
   res.json({ success: true });
 });
 

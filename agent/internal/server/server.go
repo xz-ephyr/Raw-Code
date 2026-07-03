@@ -24,6 +24,7 @@ type Server struct {
 	orchestrator *agent.Orchestrator
 	express      *infra.ExpressClient
 	tauri        *infra.TauriShell
+	apiKey       string
 	startTime    time.Time
 	workerCount  int
 }
@@ -36,6 +37,7 @@ func New(
 	orch *agent.Orchestrator,
 	exp *infra.ExpressClient,
 	ts *infra.TauriShell,
+	apiKey string,
 	workerCount int,
 ) *Server {
 	s := &Server{
@@ -47,6 +49,7 @@ func New(
 		orchestrator: orch,
 		express:      exp,
 		tauri:        ts,
+		apiKey:       apiKey,
 		startTime:    time.Now(),
 		workerCount:  workerCount,
 	}
@@ -78,17 +81,28 @@ func (s *Server) Listen(addr string) *http.Server {
 	return s.http
 }
 
+func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if s.apiKey != "" && r.Header.Get("x-api-key") != s.apiKey {
+			writeError(w, http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		next(w, r)
+	}
+}
+
 func (s *Server) registerRoutes() {
 	s.router.HandleFunc("/health", s.handleHealth).Methods("GET")
 	s.router.HandleFunc("/api/tools", s.handleListTools).Methods("GET")
-	s.router.HandleFunc("/api/tasks", s.handleSubmitTask).Methods("POST")
+	s.router.HandleFunc("/api/tasks", s.auth(s.handleSubmitTask)).Methods("POST")
 	s.router.HandleFunc("/api/tasks/{id}", s.handleGetTask).Methods("GET")
-	s.router.HandleFunc("/api/tasks/{id}/cancel", s.handleCancelTask).Methods("POST")
+	s.router.HandleFunc("/api/tasks/{id}/cancel", s.auth(s.handleCancelTask)).Methods("POST")
 	s.router.HandleFunc("/api/tasks", s.handleListTasks).Methods("GET")
 	s.router.HandleFunc("/api/clis", s.handleDetectCLIs).Methods("GET")
 	s.router.HandleFunc("/api/clis/{name}", s.handleCLIInfo).Methods("GET")
-	s.router.HandleFunc("/api/chat", s.handleChatProxy).Methods("POST")
+	s.router.HandleFunc("/api/chat", s.auth(s.handleChatProxy)).Methods("POST")
 	s.router.HandleFunc("/api/workflows", s.handleListWorkflows).Methods("GET")
+	s.router.HandleFunc("/api/tools/execute", s.auth(s.handleExecuteTool)).Methods("POST")
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
@@ -230,5 +244,52 @@ func (s *Server) handleListWorkflows(w http.ResponseWriter, r *http.Request) {
 			{"name": "research_and_summarize", "description": "Search the web and create a summary"},
 			{"name": "codebase_audit", "description": "Search codebase for patterns and report findings"},
 		},
+	})
+}
+
+func (s *Server) handleExecuteTool(w http.ResponseWriter, r *http.Request) {
+	// Limit request body to 10MB to prevent OOM
+	r.Body = http.MaxBytesReader(w, r.Body, 10*1024*1024)
+
+	var req struct {
+		Tool   string         `json:"tool"`
+		Params map[string]any `json:"params"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Tool == "" {
+		writeError(w, http.StatusBadRequest, "tool name is required")
+		return
+	}
+
+	call := api.ToolCall{
+		Tool:   req.Tool,
+		Params: req.Params,
+	}
+
+	// Verify tool existence before execution for proper 404 response
+	if _, ok := s.toolRegistry.GetHandler(req.Tool); !ok {
+		writeError(w, http.StatusNotFound, "unknown tool: "+req.Tool)
+		return
+	}
+
+	result := s.executor.Execute(r.Context(), call)
+
+	if result.Error != "" {
+		// Map internal execution errors to 500 or 400 if it was a validation error
+		// For now keeping it simple with 500 for execution failures
+		writeJSON(w, http.StatusInternalServerError, map[string]any{
+			"error":  result.Error,
+			"result": nil,
+		})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"error":      nil,
+		"result":     result.Result,
+		"durationMs": result.Duration,
 	})
 }

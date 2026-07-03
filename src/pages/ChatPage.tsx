@@ -30,6 +30,7 @@ export const ChatPage = () => {
   const previousModelRef = useRef<string | null>(null);
   const isThinkingEnabledRef = useRef(false);
   const currentModelRef = useRef<string | null>(null);
+  const projectContextCacheRef = useRef<Record<string, { context: ProjectContext; timestamp: number }>>({});
   const { addToast } = useToast();
   const { setTitle: setSessionTitle, setSessionId, setIsTitleGenerating } = useSessionTitle();
   const isMobile = useMediaQuery(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -118,12 +119,35 @@ export const ChatPage = () => {
 
   const getProjectContext = useCallback(async (): Promise<ProjectContext | undefined> => {
     if (!uuid || uuid === 'new') return undefined;
+
     try {
       const session = await ChatSessionManager.getSession(uuid);
       if (!session?.projectId) return undefined;
+
+      const now = Date.now();
+      const MAX_CACHE_ENTRIES = 5;
+      const CACHE_TTL = 30000; // 30 second staleness window
+
+      // 1. Prune expired entries and manage size
+      const entries = Object.entries(projectContextCacheRef.current);
+      if (entries.length >= MAX_CACHE_ENTRIES || entries.some(([, v]) => now - v.timestamp > CACHE_TTL)) {
+        const sorted = entries
+          .filter(([, v]) => now - v.timestamp <= CACHE_TTL)
+          .sort((a, b) => (b[1] as any).timestamp - (a[1] as any).timestamp);
+
+        projectContextCacheRef.current = Object.fromEntries(sorted.slice(0, MAX_CACHE_ENTRIES - 1));
+      }
+
+      // 2. Check cache
+      const cached = projectContextCacheRef.current[session.projectId];
+      if (cached && now - cached.timestamp < CACHE_TTL) {
+        return cached.context;
+      }
+
       const projects = await DatabaseService.getProjects();
       const project = projects.find(p => p.id === session.projectId);
       if (!project) return undefined;
+
       const pc = await FileSystemService.getProjectContent(project.path, project.id);
       let files = pc.tree;
       if (pc.contents.length > 0) {
@@ -137,7 +161,16 @@ export const ChatPage = () => {
       if (pc.skippedBinary > 0) notes.push(`${pc.skippedBinary} binary file(s) excluded.`);
       if (pc.skippedSize > 0) notes.push(`${pc.skippedSize} file(s) too large to include.`);
       if (notes.length > 0) files += '\n\n_Notes: ' + notes.join(' ') + '_';
-      return { name: project.name, path: project.path, files };
+
+      const context = { name: project.name, path: project.path, files };
+
+      // Update cache
+      projectContextCacheRef.current[session.projectId] = {
+        context,
+        timestamp: Date.now()
+      };
+
+      return context;
     } catch {
       return undefined;
     }
@@ -265,7 +298,7 @@ export const ChatPage = () => {
   }, [setMessages]);
 
   const titleGeneratedRef = useRef(false);
-  const lastUuidRef = useRef<string | undefined>();
+  const lastUuidRef = useRef<string | undefined>(undefined);
 
   const handleSend = useCallback(
     async (content: string) => {
@@ -301,6 +334,12 @@ export const ChatPage = () => {
       };
 
       if (uuid) {
+        // Invalidate specific session cache on new send to ensure freshness if files changed externally
+        const session = await ChatSessionManager.getSession(uuid).catch(() => null);
+        if (session?.projectId) {
+          delete projectContextCacheRef.current[session.projectId];
+        }
+
         DatabaseService.saveMessages(uuid, [userMsg]).catch((e) =>
           console.error('Failed to save user message to DB:', e)
         );
@@ -342,6 +381,7 @@ export const ChatPage = () => {
 
   const handleAddProject = useCallback(async () => {
     try {
+      projectContextCacheRef.current = {}; // Invalidate cache on project mutations
       let newProject: Project | null = null;
       let folderName = '';
       if (isTauri()) {
