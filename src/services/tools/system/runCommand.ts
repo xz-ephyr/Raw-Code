@@ -13,14 +13,17 @@ export const runCommandTool: ToolDef = {
   }),
   execute: async ({ command, cwd, timeout }) => {
     // Map cwd to workdir and convert timeout to seconds for the Go executor
+    // Use Math.ceil to round up so sub-second values become at least 1 second
+    const timeoutMs = timeout ?? 30000;
+    const timeoutSec = Math.max(1, Math.ceil(timeoutMs / 1000));
     return callGoTool(
       'run_command',
       {
         command,
         workdir: cwd,
-        timeout: Math.floor((timeout ?? 30000) / 1000)
+        timeout: timeoutSec
       },
-      { idempotent: false, timeout: (timeout ?? 30000) + 5000 }
+      { idempotent: false, timeout: timeoutMs + 5000 }
     );
   },
 };
