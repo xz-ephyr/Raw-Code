@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/xz-ephyr/raw-code/agent/internal/agent"
 	"github.com/xz-ephyr/raw-code/agent/internal/infra"
 	"github.com/xz-ephyr/raw-code/agent/internal/server"
@@ -17,7 +19,7 @@ type AgentHub struct {
 	Orchestrator *agent.Orchestrator
 	Express      *infra.ExpressClient
 	Tauri        *infra.TauriShell
-	Server       *server.Server
+	AgentServer  *server.Server
 }
 
 func NewAgentHub(expressURL string, apiKey string) *AgentHub {
@@ -49,7 +51,7 @@ func NewAgentHub(expressURL string, apiKey string) *AgentHub {
 		Orchestrator: orch,
 		Express:      express,
 		Tauri:        tauri,
-		Server:       srv,
+		AgentServer:  srv,
 	}
 
 	// Start the worker pool
@@ -58,6 +60,6 @@ func NewAgentHub(expressURL string, apiKey string) *AgentHub {
 	return hub
 }
 
-func (h *AgentHub) Server(port string) *AgentHub {
-	return h
+func (h *AgentHub) Start(port string) *http.Server {
+	return h.AgentServer.Listen(":" + port)
 }
