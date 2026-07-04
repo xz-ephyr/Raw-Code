@@ -111,23 +111,25 @@ export const AssistantBubble = React.memo(
             </>
           )}
 
-          {phase !== 'idle' ? (
+          {phase === 'idle' || phase === 'done' ? (
+            content && (
+              <div className="font-normal text-neutral-100 leading-[1.2]">
+                <MarkdownMessage content={content} sources={allSources} />
+              </div>
+            )
+          ) : (
             <>
               {streamedIntention && (
                 <div className="font-normal text-neutral-100 stagger-item stagger-0 leading-[1.2]">
                   <MarkdownMessage content={streamedIntention} sources={allSources} />
                 </div>
               )}
-              {(phase === 'explanation' || phase === 'done') && streamedExplanation && (
+              {phase === 'explanation' && streamedExplanation && (
                 <div className="font-normal text-neutral-100 stagger-item stagger-2 leading-[1.2]">
                   <MarkdownMessage content={streamedExplanation} sources={allSources} />
                 </div>
               )}
             </>
-          ) : content && (
-            <div className="font-normal text-neutral-100 leading-[1.2]">
-              <MarkdownMessage content={content} sources={allSources} />
-            </div>
           )}
         </div>
 

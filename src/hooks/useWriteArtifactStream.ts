@@ -13,7 +13,10 @@ export function useWriteArtifactStream(
   const [explanationLen, setExplanationLen] = useState(0);
   const prevIntentionRef = useRef('');
   const prevExplanationRef = useRef('');
+  const contentAfterToolRef = useRef(contentAfterTool);
+  contentAfterToolRef.current = contentAfterTool;
 
+  // Idle → intention/shimmer/done
   useEffect(() => {
     if (!hasWriteArtifact || !contentBeforeTool) return;
     if (phase === 'idle') {
@@ -33,6 +36,7 @@ export function useWriteArtifactStream(
     }
   }, [hasWriteArtifact, contentBeforeTool, phase, content, contentAfterTool]);
 
+  // Intention reveal animation
   useEffect(() => {
     if (phase !== 'intention' || !contentBeforeTool) return;
     const total = contentBeforeTool.length;
@@ -49,15 +53,27 @@ export function useWriteArtifactStream(
     return () => clearTimeout(t);
   }, [phase, contentBeforeTool, intentionLen]);
 
+  // Shimmer → explanation (or done if nothing to explain)
   useEffect(() => {
     if (phase !== 'shimmer') return;
     startTransition(() => setExplanationLen(0));
-    const t = setTimeout(() => setPhase('explanation'), 600);
+    const t = setTimeout(() => {
+      if (!contentAfterToolRef.current) {
+        startTransition(() => setPhase('done'));
+      } else {
+        startTransition(() => setPhase('explanation'));
+      }
+    }, 600);
     return () => clearTimeout(t);
   }, [phase]);
 
+  // Explanation reveal animation
   useEffect(() => {
-    if (phase !== 'explanation' || !contentAfterTool) return;
+    if (phase !== 'explanation') return;
+    if (!contentAfterTool) {
+      startTransition(() => setPhase('done'));
+      return;
+    }
     const total = contentAfterTool.length;
     if (total === 0) { startTransition(() => setPhase('done')); return; }
     if (explanationLen >= total) { startTransition(() => setPhase('done')); return; }
