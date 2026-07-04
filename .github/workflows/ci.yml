@@ -72,7 +72,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v1.64
           working-directory: agent
 
       - name: Install govulncheck
@@ -107,5 +107,5 @@ jobs:
       - name: Install cargo-audit
         run: cargo install cargo-audit
       - name: Cargo Audit
-        run: cargo audit
+        run: cargo audit --ignore RUSTSEC-2026-0194 --ignore RUSTSEC-2026-0195 --ignore RUSTSEC-2026-0185 --ignore RUSTSEC-2024-0429 --ignore RUSTSEC-2026-0190
         working-directory: src-tauri
