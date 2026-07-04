@@ -44,12 +44,19 @@ export const AssistantBubble = React.memo(
     onThumbsDown,
     onRegenerate,
   }: AssistantBubbleProps) => {
-    const [isReasoningOpen, setIsReasoningOpen] = useState(false);
+    const [isReasoningOpen, setIsReasoningOpen] = useState(true);
 
     const hasWriteArtifact = toolInvocations?.some((ti) => ti.toolName === 'writeArtifact');
 
     const timelineSteps = useTimelineSteps(reasoning, toolInvocations, isStreaming, parts, !!content);
     const hasTimeline = timelineSteps.length > 0;
+
+    const isThinkingActive = isStreaming && !content;
+    useEffect(() => {
+      if (isThinkingActive) {
+        setIsReasoningOpen(true);
+      }
+    }, [isThinkingActive]);
     const allSources = useAggregatedSources(toolInvocations);
 
     const {
