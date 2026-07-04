@@ -3,7 +3,6 @@ import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 import { ArrowDown02Icon } from '@hugeicons/core-free-icons';
 import { ChatMessageRow } from './ChatMessageRow';
 import ChatInputContainer from './ChatInputContainer';
-import { ConnectedCLIIcons } from './ConnectedCLIIcons';
 
 const SCROLL_THRESHOLD = 150;
 
@@ -126,9 +125,6 @@ export function MessageList({
               <h1 className="text-[38px] font-serif-source mb-[10px] text-neutral-200 text-center">
                 Hello, how can I help?
               </h1>
-              <div className="mb-3">
-                <ConnectedCLIIcons />
-              </div>
               <ChatInputContainer
                 idle={true}
                 onSend={onSend}

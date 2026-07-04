@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowDown01Icon, CheckmarkCircle01Icon, AiCloudIcon } from '@hugeicons/core-free-icons';
-import { MODELS, CLI_MODELS, getModelDefinition, SELECTED_MODEL_STORAGE_KEY } from '@core/config/models';
-import { CLIModelInjector } from '@/services/CLIModelInjector';
-import { CLIIcon } from './CLIIcon';
+import { MODELS, getModelDefinition, SELECTED_MODEL_STORAGE_KEY } from '@core/config/models';
 
 const PROVIDER_LABELS: Record<string, string> = {
   google: 'Google',
@@ -12,7 +10,6 @@ const PROVIDER_LABELS: Record<string, string> = {
   mistral: 'Mistral',
   openrouter: 'OpenRouter',
   cerebras: 'Cerebras',
-  cli: 'Connected CLI',
 };
 
 const PROVIDER_ORDER = ['google', 'groq', 'opencodezen', 'mistral', 'openrouter', 'cerebras'];
@@ -25,7 +22,6 @@ interface ModelListProps {
 
 export default function ModelList({ currentModel, showThinkingOnly, isIdle }: ModelListProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [cliModels, setCliModels] = useState<typeof CLI_MODELS>([]);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,22 +35,6 @@ export default function ModelList({ currentModel, showThinkingOnly, isIdle }: Mo
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  useEffect(() => {
-    const unsub = CLIModelInjector.onModelsChange((models) => {
-      CLI_MODELS.length = 0;
-      CLI_MODELS.push(
-        ...models.map((m) => ({
-          id: m.id,
-          provider: 'cli' as const,
-          label: m.name,
-          cliId: m.cliId,
-        }))
-      );
-      setCliModels([...CLI_MODELS]);
-    });
-    return unsub;
-  }, []);
-
   const handleSelect = (modelId: string) => {
     localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, modelId);
     window.dispatchEvent(new CustomEvent('model-changed'));
@@ -63,22 +43,15 @@ export default function ModelList({ currentModel, showThinkingOnly, isIdle }: Mo
 
   const currentDef = getModelDefinition(currentModel);
 
-  const effectiveCLIModels = cliModels.length > 0 ? cliModels : CLI_MODELS;
-
   const filteredModels = showThinkingOnly
-    ? [...MODELS.filter(m => m.supportsThinking), ...effectiveCLIModels]
+    ? MODELS.filter(m => m.supportsThinking)
     : MODELS;
 
-  const groups = [
-    ...(effectiveCLIModels.length > 0
-      ? [{ provider: 'cli' as const, label: PROVIDER_LABELS.cli, models: effectiveCLIModels }]
-      : []),
-    ...PROVIDER_ORDER.map((provider) => ({
-      provider,
-      label: PROVIDER_LABELS[provider] || provider,
-      models: filteredModels.filter((m) => m.provider === provider),
-    })).filter((g) => g.models.length > 0),
-  ];
+  const groups = PROVIDER_ORDER.map((provider) => ({
+    provider,
+    label: PROVIDER_LABELS[provider] || provider,
+    models: filteredModels.filter((m) => m.provider === provider),
+  })).filter((g) => g.models.length > 0);
 
   return (
     <div className="relative" ref={ref}>
@@ -110,16 +83,9 @@ export default function ModelList({ currentModel, showThinkingOnly, isIdle }: Mo
                          : 'text-neutral-400 hover:bg-neutral-900'
                     }`}
                   >
-                    {model.cliId ? (
-                      <CLIIcon cliId={model.cliId} size={14} className="shrink-0" />
-                    ) : (
-                      <HugeiconsIcon icon={AiCloudIcon} size={14} className="shrink-0 text-neutral-500" />
-                    )}
+                    <HugeiconsIcon icon={AiCloudIcon} size={14} className="shrink-0 text-neutral-500" />
                     <span className="truncate">{model.label}</span>
-                    {model.cliId && (
-                      <span className="text-[10px] text-green-600 font-medium ml-auto shrink-0">Free</span>
-                    )}
-                    {!model.cliId && model.supportsThinking && (
+                    {model.supportsThinking && (
                       <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-blue-500 shrink-0 ml-auto" />
                     )}
                   </button>
