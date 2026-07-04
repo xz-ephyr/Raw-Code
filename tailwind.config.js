@@ -3,6 +3,8 @@ module.exports = {
   content: [
     "./src/**/*.{js,ts,jsx,tsx}",
     "!./src/services/bridges/**",
+    "!./src/services/ai/**",
+    "!./src/services/tools/**",
   ],
   theme: {
     extend: {
