@@ -50,7 +50,7 @@ export const ChatsPage = () => {
   }, [refreshChats]);
 
   return (
-    <div className="flex-1 bg-[#1a1a1a] overflow-y-auto thin-scrollbar">
+    <div className="flex-1 bg-[#2a2a2a] overflow-y-auto thin-scrollbar">
       <div className="mx-auto px-6 py-12" style={{ maxWidth: 'min(800px, 100%)' }}>
         <div className="flex flex-col gap-6 mb-8">
           <div className="flex items-center justify-between">

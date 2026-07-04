@@ -32,7 +32,7 @@ export const OnboardingPage = () => {
 
   if (loading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-[#1a1a1a]">
+      <div className="h-screen w-full flex items-center justify-center bg-[#2a2a2a]">
         <div className="w-6 h-6 border-2 border-neutral-700 border-t-black rounded-full animate-spin" />
       </div>
     );
@@ -125,7 +125,7 @@ export const OnboardingPage = () => {
   };
 
   return (
-    <div className="h-screen w-full flex flex-col bg-[#1a1a1a] overflow-y-auto thin-scrollbar">
+    <div className="h-screen w-full flex flex-col bg-[#2a2a2a] overflow-y-auto thin-scrollbar">
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-2xl flex flex-col items-center gap-8">
           {showProgress && (

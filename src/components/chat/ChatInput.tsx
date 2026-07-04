@@ -52,7 +52,7 @@ function NTabDropdown({ isIdle }: { isIdle?: boolean }) {
         <span className="max-w-[80px] truncate">{tab.label}</span>
       </button>
       {isOpen && (
-        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 w-[220px] bg-[#1a1a1a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden`}>
+        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 w-[220px] bg-[#2a2a2a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden`}>
           {NTABS.map((t, i) => (
             <button
               key={i}
@@ -115,7 +115,7 @@ function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, isIdle }: { isTh
         <HugeiconsIcon icon={Add01Icon} size={18} />
       </button>
       {isOpen && (
-        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 w-[213px] bg-[#1a1a1a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999]`}>
+        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 w-[213px] bg-[#2a2a2a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999]`}>
           {items.map((item, i) => (
             <button
               key={i}
@@ -149,7 +149,7 @@ function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, isIdle }: { isTh
               <HugeiconsIcon icon={ArrowRight01Icon} size={14} className="text-neutral-500" />
             </div>
             {isSkillsOpen && (
-              <div className="absolute left-full ml-1 top-0 w-[180px] bg-[#1a1a1a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden">
+              <div className="absolute left-full ml-1 top-0 w-[180px] bg-[#2a2a2a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden">
                 <div className="px-3 py-2 text-xs text-neutral-500">Skills and templates</div>
               </div>
             )}

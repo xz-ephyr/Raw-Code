@@ -140,7 +140,7 @@ const ProjectItem = React.memo(({ project, onDelete }: ProjectItemProps) => {
 
       {showMenu && menuPos && (
           <div
-                  className="fixed w-32 bg-[#1a1a1a] border border-neutral-700 rounded-xl shadow-lg py-1 z-[9999]"
+                  className="fixed w-32 bg-[#2a2a2a] border border-neutral-700 rounded-xl shadow-lg py-1 z-[9999]"
             style={{ top: menuPos.top, left: menuPos.left }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -181,7 +181,7 @@ const ProjectItem = React.memo(({ project, onDelete }: ProjectItemProps) => {
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
                       onBlur={() => setEditingSessionId(null)}
-                      className="w-full bg-[#1a1a1a] border border-neutral-300 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-2 focus:ring-white"
+                      className="w-full bg-[#2a2a2a] border border-neutral-300 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-2 focus:ring-white"
                     />
                   </form>
                 ) : (
@@ -205,7 +205,7 @@ const ProjectItem = React.memo(({ project, onDelete }: ProjectItemProps) => {
               </div>
               {sessionMenuId === session.id && sessionMenuPos && (
                 <div
-            className="fixed w-32 bg-[#1a1a1a] border border-neutral-700 rounded-xl shadow-lg py-1 z-[9999]"
+            className="fixed w-32 bg-[#2a2a2a] border border-neutral-700 rounded-xl shadow-lg py-1 z-[9999]"
                   style={{ top: sessionMenuPos.top, left: sessionMenuPos.left }}
                   onClick={(e) => e.stopPropagation()}
                 >

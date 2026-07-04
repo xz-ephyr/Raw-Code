@@ -69,7 +69,7 @@ export function ChatSearchBar({ searchQuery, onSearchChange, filter, onFilterCha
 
         {isFilterOpen && filterMenuPos && (
           <div
-            className="fixed w-52 bg-[#1a1a1a] border border-neutral-700 rounded-2xl shadow-xl shadow-black/30 py-2 z-[9999]"
+            className="fixed w-52 bg-[#2a2a2a] border border-neutral-700 rounded-2xl shadow-xl shadow-black/30 py-2 z-[9999]"
             style={{ top: filterMenuPos.top, left: filterMenuPos.left }}
           >
             <div className="px-4 py-2 text-[11px] font-bold text-neutral-500 uppercase tracking-widest">

@@ -50,7 +50,7 @@ export function ThinkingIndicator({ model, reasoning }: ThinkingIndicatorProps) 
         }`}
       >
         <div className="overflow-hidden">
-          <div className="max-w-[720px] rounded-lg border border-neutral-700/60 bg-[#1a1a1a] px-5 py-4 text-[15px] leading-relaxed text-neutral-400 shadow-sm relative">
+          <div className="max-w-[720px] rounded-lg border border-neutral-700/60 bg-[#2a2a2a] px-5 py-4 text-[15px] leading-relaxed text-neutral-400 shadow-sm relative">
             <div className="absolute left-0 top-3 bottom-3 w-0.5 bg-blue-500 rounded-r-full" />
             <div className="h-[45px] overflow-y-auto no-scrollbar thinking-pad-mask relative flex flex-col gap-2 pt-1">
               {reasoning ? (

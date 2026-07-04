@@ -86,7 +86,7 @@ export default function ChatInputContainer({
                   <HugeiconsIcon icon={isProjectOpen ? ArrowUp01Icon : ArrowDown01Icon} size={14} />
                 </button>
                 {isProjectOpen && (
-                  <div className="absolute top-full mt-1 left-0 w-56 bg-[#1a1a1a] border border-neutral-700 rounded-xl shadow-lg py-1 z-50 max-h-64 overflow-y-auto">
+                  <div className="absolute top-full mt-1 left-0 w-56 bg-[#2a2a2a] border border-neutral-700 rounded-xl shadow-lg py-1 z-50 max-h-64 overflow-y-auto">
                     {projects.length === 0 ? (
                       <div className="px-4 py-3 text-xs text-neutral-500">No projects yet</div>
                     ) : (

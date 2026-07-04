@@ -5,7 +5,7 @@ interface HtmlPreviewProps {
   onError?: (error: string) => void;
 }
 
-const DARK_STYLE = '<style>body { background: #1a1a1a; color: #d4d4d4; }</style>';
+const DARK_STYLE = '<style>body { background: #2a2a2a; color: #d4d4d4; }</style>';
 
 const CSP_META = `
 <meta http-equiv="Content-Security-Policy" content="
@@ -88,7 +88,7 @@ export function HtmlPreview({ content, onError }: HtmlPreviewProps) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 bg-[#1a1a1a]">
+      <div className="flex-1 bg-[#2a2a2a]">
         <iframe
           ref={iframeRef}
           srcDoc={build.srcdoc}

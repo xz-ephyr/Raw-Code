@@ -29,7 +29,7 @@ function SourcesFooter({ sources }: { sources: TimelineSource[] }) {
             target="_blank"
             rel="noopener noreferrer"
             title={src.title || src.url}
-            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#1a1a1a] hover:bg-neutral-800 
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#2a2a2a] hover:bg-neutral-800 
                        border border-neutral-700 transition-colors no-underline -ml-1 first:ml-0
                        shadow-sm hover:shadow-md"
           >

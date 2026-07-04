@@ -21,7 +21,7 @@ export const TableHead: React.FC<{ children: React.ReactNode }> = ({ children })
 );
 
 export const TableBody: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <tbody className="bg-[#1a1a1a] divide-y divide-neutral-800">
+  <tbody className="bg-[#2a2a2a] divide-y divide-neutral-800">
     {children}
   </tbody>
 );

@@ -100,7 +100,7 @@ export function ChatListItem({ chat, onDelete, onArchive, onRename }: ChatListIt
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 onBlur={() => setIsEditing(false)}
-                className="w-full bg-[#1a1a1a] border border-neutral-600 rounded px-2 py-1 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white"
+                className="w-full bg-[#2a2a2a] border border-neutral-600 rounded px-2 py-1 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white"
               />
             </form>
           ) : (
@@ -128,7 +128,7 @@ export function ChatListItem({ chat, onDelete, onArchive, onRename }: ChatListIt
 
         {isMenuOpen && menuPos && (
           <div
-            className="fixed w-40 bg-[#1a1a1a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 py-1.5 z-[9999]"
+            className="fixed w-40 bg-[#2a2a2a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 py-1.5 z-[9999]"
             style={{ top: menuPos.top, left: menuPos.left }}
           >
             <button

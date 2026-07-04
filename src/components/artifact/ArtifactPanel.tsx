@@ -111,7 +111,7 @@ export function ArtifactPanel({
 
   return (
     <div
-      className="flex flex-col h-full bg-[#1a1a1a] border-l border-neutral-700"
+      className="flex flex-col h-full bg-[#2a2a2a] border-l border-neutral-700"
       style={{ width: '100%', minWidth: 0 }}
       onKeyDown={handleKeyDown}
       tabIndex={-1}

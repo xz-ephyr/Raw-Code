@@ -18,7 +18,7 @@ export const PluginsPage = () => {
   }, []);
 
   return (
-    <div className="flex-1 bg-[#1a1a1a] overflow-y-auto thin-scrollbar">
+    <div className="flex-1 bg-[#2a2a2a] overflow-y-auto thin-scrollbar">
       <div className="mx-auto px-6 py-12" style={{ maxWidth: 'min(1200px, 100%)' }}>
         <div className="relative w-full h-[200px] rounded-lg overflow-hidden">
           <div

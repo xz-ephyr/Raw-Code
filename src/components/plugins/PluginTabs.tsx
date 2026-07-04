@@ -54,7 +54,7 @@ export const PluginTabs = () => {
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-all ${
               activeTab === tab.id
-                ? 'bg-[#1a1a1a] text-neutral-100 border border-neutral-700 border-b-[#1a1a1a] -mb-px'
+                ? 'bg-[#2a2a2a] text-neutral-100 border border-neutral-700 border-b-[#2a2a2a] -mb-px'
                 : 'bg-neutral-800 text-neutral-400 hover:text-neutral-300 border border-transparent'
             }`}
           >
@@ -63,7 +63,7 @@ export const PluginTabs = () => {
           </button>
         ))}
       </div>
-      <div className="border border-neutral-700 rounded-b-lg rounded-tr-lg bg-[#1a1a1a] p-6">
+      <div className="border border-neutral-700 rounded-b-lg rounded-tr-lg bg-[#2a2a2a] p-6">
         <h3 className="text-lg font-semibold text-neutral-100">{content.title}</h3>
         <p className="mt-1 text-sm text-neutral-400">{content.description}</p>
         <ul className="mt-4 space-y-2">

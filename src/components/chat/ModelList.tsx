@@ -65,7 +65,7 @@ export default function ModelList({ currentModel, showThinkingOnly, isIdle }: Mo
         <HugeiconsIcon icon={ArrowDown01Icon} size={12} />
       </button>
       {isOpen && (
-        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} right-0 w-[229px] bg-[#1a1a1a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden`}>
+        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} right-0 w-[229px] bg-[#2a2a2a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden`}>
           <div className="overflow-y-auto thin-scrollbar" style={{ maxHeight: '190px' }}>
             {groups.map((group) => (
               <div key={group.provider}>
