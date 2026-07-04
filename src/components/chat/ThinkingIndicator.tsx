@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Idea01Icon, ArrowDown01Icon } from '@hugeicons/core-free-icons';
-import { useThinkingTimer } from '../../hooks/useThinkingTimer';
+import { useThinkingTimer } from '@/hooks/useThinkingTimer';
 
 interface ThinkingIndicatorProps {
   model?: string;

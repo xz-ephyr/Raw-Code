@@ -1,7 +1,7 @@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { CheckmarkCircle01Icon, Key01Icon, FolderLibraryIcon } from '@hugeicons/core-free-icons';
-import { StepStatus } from '../../hooks/useOnboarding';
-import { Project } from '../../types/chat';
+import { StepStatus } from '@/hooks/useOnboarding';
+import { Project } from '@/types/chat';
 
 interface ReadyStepProps {
   stepStatuses: Record<string, StepStatus>;

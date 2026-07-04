@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { FolderLibraryIcon, Download01Icon } from '@hugeicons/core-free-icons';
-import { ChatSessionManager } from '../../services/ChatSessionManager';
-import { FileSystemService } from '../../services/FileSystemService';
-import { isTauri } from '../../lib/tauri';
-import { Project } from '../../types/chat';
+import { ChatSessionManager } from '@/services/ChatSessionManager';
+import { FileSystemService } from '@core/workspace/FileSystemService';
+import { isTauri } from '@/lib/tauri';
+import { Project } from '@/types/chat';
 
 interface ProjectSetupStepProps {
   onComplete: () => void;

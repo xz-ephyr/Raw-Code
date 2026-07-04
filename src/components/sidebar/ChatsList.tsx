@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ChatSession } from '../../types/chat';
-import { ChatSessionManager } from '../../services/ChatSessionManager';
+import { ChatSession } from '@/types/chat';
+import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { Link } from 'react-router-dom';
 
 export default function ChatsList({ collapsed }: { collapsed: boolean }) {

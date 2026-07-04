@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Folder02Icon, ArrowDown01Icon, ArrowUp01Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
 import ChatInput from './ChatInput';
-import { ChatSessionManager } from '../../services/ChatSessionManager';
-import type { Project } from '../../types/chat';
+import { ChatSessionManager } from '@/services/ChatSessionManager';
+import type { Project } from '@/types/chat';
 
 interface ChatInputContainerProps {
   onSend: (message: string) => void;

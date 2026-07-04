@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowDown01Icon, CheckmarkCircle01Icon, AiCloudIcon } from '@hugeicons/core-free-icons';
-import { MODELS, CLI_MODELS, getModelDefinition, SELECTED_MODEL_STORAGE_KEY } from '../../config/models';
-import { CLIModelInjector } from '../../services/CLIModelInjector';
+import { MODELS, CLI_MODELS, getModelDefinition, SELECTED_MODEL_STORAGE_KEY } from '@core/config/models';
+import { CLIModelInjector } from '@/services/CLIModelInjector';
 import { CLIIcon } from './CLIIcon';
 
 const PROVIDER_LABELS: Record<string, string> = {

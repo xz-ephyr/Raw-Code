@@ -9,9 +9,9 @@ import {
   getStoredSelectedModel,
   API_KEYS,
   MODELS,
-} from '../../../config/models';
-import { refreshProviders } from '../../../services/aiService';
-import { PasswordInput } from '../../ui/PasswordInput';
+} from '@core/config/models';
+import { refreshProviders } from '@core/models/aiService';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 
 const PROVIDER_LABELS: Record<string, string> = {
   google: 'Google Gemini',

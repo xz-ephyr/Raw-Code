@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { CLIBridgeService } from '../../services/CLIBridgeService';
-import { CLIModelInjector } from '../../services/CLIModelInjector';
+import { CLIBridgeService } from '@/services/CLIBridgeService';
+import { CLIModelInjector } from '@/services/CLIModelInjector';
 import { CLIIcon } from './CLIIcon';
 
 export function ConnectedCLIIcons() {

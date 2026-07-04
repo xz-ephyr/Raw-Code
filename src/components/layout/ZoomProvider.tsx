@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useCallback, type ReactNode } from 'react';
-import { useZoom } from '../../hooks/useZoom';
-import { isTauri } from '../../lib/tauri';
+import { useZoom } from '@/hooks/useZoom';
+import { isTauri } from '@/lib/tauri';
 
 interface ZoomContextValue {
   zoom: number;

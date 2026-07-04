@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import type { Artifact } from '../../types/artifact';
-import { ARTIFACT_TYPE_LABELS } from '../../types/artifact';
+import type { Artifact } from '@/types/artifact';
+import { ARTIFACT_TYPE_LABELS } from '@/types/artifact';
 import type { TabId } from './ArtifactTabs';
 import { CodePreview } from './CodePreview';
 import { MarkdownPreview } from './MarkdownPreview';

@@ -1,7 +1,7 @@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { GoogleDocIcon, Download01Icon } from '@hugeicons/core-free-icons';
-import { ARTIFACT_TYPE_LABELS } from '../../types/artifact';
-import type { Artifact } from '../../types/artifact';
+import { ARTIFACT_TYPE_LABELS } from '@/types/artifact';
+import type { Artifact } from '@/types/artifact';
 import { useCallback } from 'react';
 
 interface ArtifactsPreviewCardProps {

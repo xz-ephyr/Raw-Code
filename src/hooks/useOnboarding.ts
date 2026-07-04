@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DatabaseService } from '../services/DatabaseService';
-import { ChatSessionManager } from '../services/ChatSessionManager';
+import { DatabaseService } from '@core/utils/DatabaseService';
+import { ChatSessionManager } from '@/services/ChatSessionManager';
 
 export type StepId = 'welcome' | 'project' | 'model' | 'preferences' | 'ready';
 

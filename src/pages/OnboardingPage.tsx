@@ -7,7 +7,7 @@ import { ProjectSetupStep } from '../components/onboarding/ProjectSetupStep';
 import { ModelSetupStep } from '../components/onboarding/ModelSetupStep';
 import { PreferencesStep } from '../components/onboarding/PreferencesStep';
 import { ReadyStep } from '../components/onboarding/ReadyStep';
-import { ChatSessionManager } from '../services/ChatSessionManager';
+import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { Project } from '../types/chat';
 
 export const OnboardingPage = () => {

@@ -1,4 +1,4 @@
-import { useToast } from '../../ui/Toast';
+import { useToast } from '@/components/ui/Toast';
 
 export function StorageTab() {
   const { confirmAsync } = useToast();

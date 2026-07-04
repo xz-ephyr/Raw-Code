@@ -1,4 +1,4 @@
-import type { Artifact } from '../../types/artifact';
+import type { Artifact } from '@/types/artifact';
 
 interface HistoryTabProps {
   artifact: Artifact;

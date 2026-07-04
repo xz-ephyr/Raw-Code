@@ -7,7 +7,7 @@ import {
   useTimelineSteps,
   useAggregatedSources,
 } from './ThinkingTimeline';
-import { useWriteArtifactStream } from '../../hooks/useWriteArtifactStream';
+import { useWriteArtifactStream } from '@/hooks/useWriteArtifactStream';
 import { BubbleActions } from './BubbleActions';
 
 interface AssistantBubbleProps {
