@@ -5,7 +5,7 @@ interface HtmlPreviewProps {
   onError?: (error: string) => void;
 }
 
-const DARK_STYLE = '<style>body { background: #111110; color: #d4d4d4; }</style>';
+const DARK_STYLE = '<style>body { background: #1a1a1a; color: #d4d4d4; }</style>';
 
 const CSP_META = `
 <meta http-equiv="Content-Security-Policy" content="
@@ -78,7 +78,7 @@ export function HtmlPreview({ content, onError }: HtmlPreviewProps) {
         </div>
         <details className="mt-4">
           <summary className="text-xs text-neutral-400 cursor-pointer hover:text-neutral-300">Show source code</summary>
-          <pre className="mt-2 p-4 bg-neutral-900 rounded-lg border border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 text-neutral-300">
+          <pre className="mt-2 p-4 bg-neutral-800 rounded-lg border border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 text-neutral-300">
             {content}
           </pre>
         </details>
@@ -88,7 +88,7 @@ export function HtmlPreview({ content, onError }: HtmlPreviewProps) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 bg-[#111110]">
+      <div className="flex-1 bg-[#1a1a1a]">
         <iframe
           ref={iframeRef}
           srcDoc={build.srcdoc}

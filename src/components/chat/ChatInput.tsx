@@ -52,7 +52,7 @@ function NTabDropdown({ isIdle }: { isIdle?: boolean }) {
         <span className="max-w-[80px] truncate">{tab.label}</span>
       </button>
       {isOpen && (
-        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 w-[220px] bg-[#111110] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden`}>
+        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 w-[220px] bg-[#1a1a1a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden`}>
           {NTABS.map((t, i) => (
             <button
               key={i}
@@ -61,7 +61,7 @@ function NTabDropdown({ isIdle }: { isIdle?: boolean }) {
               className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center gap-2 rounded-md ${
                 i === currentTab
                   ? 'text-white bg-neutral-800'
-                  : 'text-white hover:bg-neutral-900'
+                  : 'text-white hover:bg-neutral-800'
               }`}
             >
               <HugeiconsIcon icon={t.icon} size={18} className="text-neutral-300" />
@@ -115,19 +115,19 @@ function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, isIdle }: { isTh
         <HugeiconsIcon icon={Add01Icon} size={18} />
       </button>
       {isOpen && (
-        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 w-[213px] bg-[#111110] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999]`}>
+        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 w-[213px] bg-[#1a1a1a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999]`}>
           {items.map((item, i) => (
             <button
               key={i}
               type="button"
-              className="w-full text-left px-3 py-2 text-xs hover:bg-neutral-900 text-neutral-300 flex items-center gap-2 rounded-md"
+              className="w-full text-left px-3 py-2 text-xs hover:bg-neutral-800 text-neutral-300 flex items-center gap-2 rounded-md"
               title={item.title}
             >
               <HugeiconsIcon icon={item.icon} size={16} />
               <span>{item.label}</span>
             </button>
           ))}
-          <div className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-300 rounded-md cursor-pointer hover:bg-neutral-900" onClick={onToggleThinking}>
+          <div className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-300 rounded-md cursor-pointer hover:bg-neutral-800" onClick={onToggleThinking}>
             <HugeiconsIcon icon={Atom02Icon} size={16} />
             <span className="flex-1">Reasoning</span>
             <button
@@ -141,7 +141,7 @@ function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, isIdle }: { isTh
           <div className="h-px bg-neutral-700 mx-3" />
           <div className="relative" ref={skillsRef}>
             <div
-              className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-300 rounded-md cursor-pointer hover:bg-neutral-900"
+              className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-300 rounded-md cursor-pointer hover:bg-neutral-800"
               onClick={() => setIsSkillsOpen(!isSkillsOpen)}
             >
               <HugeiconsIcon icon={HandBag01Icon} size={16} />
@@ -149,7 +149,7 @@ function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, isIdle }: { isTh
               <HugeiconsIcon icon={ArrowRight01Icon} size={14} className="text-neutral-500" />
             </div>
             {isSkillsOpen && (
-              <div className="absolute left-full ml-1 top-0 w-[180px] bg-[#111110] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden">
+              <div className="absolute left-full ml-1 top-0 w-[180px] bg-[#1a1a1a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden">
                 <div className="px-3 py-2 text-xs text-neutral-500">Skills and templates</div>
               </div>
             )}
@@ -254,7 +254,7 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
 
   return (
     <div className="relative w-full mx-auto" style={{ maxWidth: 'min(880px, 100%)' }}>
-      <div className="bg-neutral-900 rounded-[12px] relative z-10 border border-neutral-700/60 shadow-sm">
+      <div className="bg-neutral-800 rounded-[12px] relative z-10 border border-neutral-700/60 shadow-sm">
         <ThinScrollbar className="max-h-[145px]">
           <textarea
             {...commonTextareaProps}

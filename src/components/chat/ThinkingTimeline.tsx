@@ -84,8 +84,8 @@ function SearchingHeader({
       <span
         className={
           isRunning
-            ? 'thinking-shimmer-text text-sm font-medium text-white'
-            : 'text-sm font-medium text-white/60'
+            ? 'thinking-shimmer-text text-xs font-medium text-white font-inter'
+            : 'text-xs font-medium text-white/60 font-inter'
         }
       >
         Searching
@@ -112,7 +112,7 @@ function ThinkingStep({ reasoning, isActive, isStreaming }: {
   const showEllipsis = isActive && isStreaming;
   return (
     <div className="flex flex-col gap-1 flex-1 min-w-0 pb-3">
-      <div className="text-[14px] leading-relaxed text-white/90 [&>p]:my-0">
+      <div className="text-[12px] leading-relaxed text-white/90 [&>p]:my-0 font-inter">
         <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>
           {reasoning || ''}
         </ReactMarkdown>

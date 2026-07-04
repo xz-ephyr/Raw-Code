@@ -15,19 +15,19 @@ export const Table: React.FC<TableProps> = ({ children }) => {
 };
 
 export const TableHead: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <thead className="bg-neutral-900/80 font-semibold text-neutral-300">
+  <thead className="bg-neutral-800/80 font-semibold text-neutral-300">
     {children}
   </thead>
 );
 
 export const TableBody: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <tbody className="bg-[#111110] divide-y divide-neutral-800">
+  <tbody className="bg-[#1a1a1a] divide-y divide-neutral-800">
     {children}
   </tbody>
 );
 
 export const TableRow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <tr className="hover:bg-neutral-900/50 transition-colors">
+  <tr className="hover:bg-neutral-800/50 transition-colors">
     {children}
   </tr>
 );

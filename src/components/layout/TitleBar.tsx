@@ -55,7 +55,7 @@ export default function TitleBar() {
   const displayTitle = sessionTitle || 'New conversation';
 
   return (
-    <div className="group flex items-center h-9 px-4 bg-[#111110] shrink-0 select-none">
+    <div className="group flex items-center h-9 px-4 bg-[#1a1a1a] shrink-0 select-none">
       {isEditing ? (
         <input
           ref={inputRef}
@@ -63,7 +63,7 @@ export default function TitleBar() {
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={handleSubmitEdit}
           onKeyDown={handleKeyDown}
-          className="w-full max-w-[400px] bg-[#111110] border border-neutral-600 rounded-[6px] px-2 py-0.5 text-sm font-semibold text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-400/30"
+          className="w-full max-w-[400px] bg-[#1a1a1a] border border-neutral-600 rounded-[6px] px-2 py-0.5 text-sm font-semibold text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-400/30"
         />
       ) : isTitleGenerating ? (
         <div className="flex items-center gap-2 w-full">

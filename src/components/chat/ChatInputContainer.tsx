@@ -86,7 +86,7 @@ export default function ChatInputContainer({
                   <HugeiconsIcon icon={isProjectOpen ? ArrowUp01Icon : ArrowDown01Icon} size={14} />
                 </button>
                 {isProjectOpen && (
-                  <div className="absolute top-full mt-1 left-0 w-56 bg-[#111110] border border-neutral-700 rounded-xl shadow-lg py-1 z-50 max-h-64 overflow-y-auto">
+                  <div className="absolute top-full mt-1 left-0 w-56 bg-[#1a1a1a] border border-neutral-700 rounded-xl shadow-lg py-1 z-50 max-h-64 overflow-y-auto">
                     {projects.length === 0 ? (
                       <div className="px-4 py-3 text-xs text-neutral-500">No projects yet</div>
                     ) : (
@@ -95,7 +95,7 @@ export default function ChatInputContainer({
                           key={project.id}
                           type="button"
                           onClick={() => handleProjectClick(project)}
-                          className="w-full text-left px-4 py-2.5 text-xs hover:bg-neutral-900 text-neutral-300 flex items-center gap-2.5"
+                          className="w-full text-left px-4 py-2.5 text-xs hover:bg-neutral-800 text-neutral-300 flex items-center gap-2.5"
                         >
                           <HugeiconsIcon icon={Folder02Icon} size={15} className="text-neutral-500 shrink-0" />
                           <span className="truncate">{project.name}</span>
@@ -109,7 +109,7 @@ export default function ChatInputContainer({
                         setIsProjectOpen(false);
                         onCreateProject?.();
                       }}
-                      className="w-full text-left px-4 py-2.5 text-xs hover:bg-neutral-900 text-neutral-300 flex items-center gap-2.5"
+                      className="w-full text-left px-4 py-2.5 text-xs hover:bg-neutral-800 text-neutral-300 flex items-center gap-2.5"
                     >
                       <HugeiconsIcon icon={PlusSignIcon} size={15} className="text-neutral-500 shrink-0" />
                       <span>Create New</span>

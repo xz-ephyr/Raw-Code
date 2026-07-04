@@ -64,9 +64,9 @@ export const CodeBlock = React.memo(function CodeBlock({ content, language }: Co
   };
 
   return (
-    <div className="relative w-full rounded-[6px] overflow-hidden my-4 bg-neutral-900">
+    <div className="relative w-full rounded-[6px] overflow-hidden my-4 bg-neutral-800">
       {language && (
-        <div className="px-4 py-1.5 text-[11px] uppercase tracking-wide text-neutral-400 bg-neutral-900">
+        <div className="px-4 py-1.5 text-[11px] uppercase tracking-wide text-neutral-400 bg-neutral-800">
           {language}
         </div>
       )}

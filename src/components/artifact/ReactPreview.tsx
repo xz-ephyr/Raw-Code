@@ -82,7 +82,7 @@ function buildSrcdoc(transpiledCode: string): string {
 <script src="https://unpkg.com/recharts@2.12.0/umd/Recharts.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #111110; color: #d4d4d4; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a1a; color: #d4d4d4; }
   #root { min-height: 100vh; }
   .error-card {
     padding: 20px; margin: 16px; border-radius: 8px;
@@ -91,7 +91,7 @@ function buildSrcdoc(transpiledCode: string): string {
   .error-card p { color: #fca5a5; font-size: 14px; margin-bottom: 12px; }
   .error-card .error-message {
     font-family: monospace; font-size: 12px;
-    color: #fca5a5; background: #111110;
+    color: #fca5a5; background: #1a1a1a;
     padding: 8px; border-radius: 4px;
     white-space: pre-wrap; word-break: break-word;
   }
@@ -220,7 +220,7 @@ export function ReactPreview({ content, onError }: ReactPreviewProps) {
         </div>
         <details className="mt-4">
           <summary className="text-xs text-neutral-400 cursor-pointer hover:text-neutral-300">Show source code</summary>
-          <pre className="mt-2 p-4 bg-neutral-900 rounded-lg border border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 text-neutral-300">
+          <pre className="mt-2 p-4 bg-neutral-800 rounded-lg border border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 text-neutral-300">
             {content}
           </pre>
         </details>
@@ -238,7 +238,7 @@ export function ReactPreview({ content, onError }: ReactPreviewProps) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 bg-[#111110]">
+      <div className="flex-1 bg-[#1a1a1a]">
         <iframe
           ref={iframeRef}
           srcDoc={srcdoc}

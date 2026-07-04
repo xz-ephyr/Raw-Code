@@ -8,6 +8,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['"Bricolage Grotesque"', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
       },
       colors: {
         background: "var(--background)",

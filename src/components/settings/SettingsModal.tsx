@@ -31,7 +31,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[4px] z-50">
-      <div className="bg-[#111110] rounded-[16px] w-[min(1100px,95vw)] h-[85vh] min-h-[500px] shadow-2xl shadow-black/30 border border-neutral-800 flex flex-col overflow-hidden">
+      <div className="bg-[#1a1a1a] rounded-[16px] w-[min(1100px,95vw)] h-[85vh] min-h-[500px] shadow-2xl shadow-black/30 border border-neutral-800 flex flex-col overflow-hidden">
         <div className="px-6 py-4 border-b border-neutral-800 flex items-center justify-between shrink-0">
           <h2 className="text-[18px] font-bold text-neutral-200 flex items-center gap-2">
             <HugeiconsIcon icon={Settings02Icon} size={20} className="text-neutral-400" />

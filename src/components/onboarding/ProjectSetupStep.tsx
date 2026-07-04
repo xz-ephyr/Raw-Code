@@ -81,7 +81,7 @@ export function ProjectSetupStep({ onComplete, onSkip }: ProjectSetupStepProps) 
       <button
         onClick={handleCreateProject}
         disabled={isCreating}
-        className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-neutral-700 hover:border-neutral-400 transition-colors bg-neutral-900/50 hover:bg-neutral-800 text-left"
+        className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-neutral-700 hover:border-neutral-400 transition-colors bg-neutral-800/50 hover:bg-neutral-800 text-left"
       >
         <div className="w-10 h-10 rounded-lg bg-neutral-800 flex items-center justify-center shrink-0">
           <HugeiconsIcon icon={Download01Icon} size={18} className="text-neutral-500" />

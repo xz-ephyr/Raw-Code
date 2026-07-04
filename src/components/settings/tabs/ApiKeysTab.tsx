@@ -111,7 +111,7 @@ export function ApiKeysTab() {
               </svg>
             </div>
             {isModelDropdownOpen && (
-              <div className="absolute z-10 mt-1 w-full bg-[#111110] border border-neutral-700 rounded-[10px] shadow-lg shadow-black/30 overflow-hidden">
+              <div className="absolute z-10 mt-1 w-full bg-[#1a1a1a] border border-neutral-700 rounded-[10px] shadow-lg shadow-black/30 overflow-hidden">
                 <div className="overflow-y-auto thin-scrollbar" style={{ maxHeight: 155 }}>
                   {MODELS.map((model) => (
                     <button

@@ -164,7 +164,7 @@ export default function Sidebar() {
   return (
     <>
       <div
-        className={`bg-[#111110] border-r border-[#404040] h-screen transition-[width] duration-300 ease-in-out flex flex-col shrink-0 ${isCollapsed ? 'w-[48px]' : 'w-[320px]'}`}
+        className={`bg-[#1a1a1a] border-r border-[#404040] h-screen transition-[width] duration-300 ease-in-out flex flex-col shrink-0 ${isCollapsed ? 'w-[48px]' : 'w-[320px]'}`}
       >
         <div className={`flex items-center shrink-0 ${isCollapsed ? 'p-2 justify-center' : 'pl-4 pr-2 py-2'}`}>
           {!isCollapsed && (

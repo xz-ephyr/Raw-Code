@@ -92,7 +92,7 @@ export const AssistantBubble = React.memo(
                 <div className="overflow-hidden min-h-0">
                     <div
                       ref={timelineScrollRef}
-                      className="overflow-y-auto no-scrollbar flex flex-col gap-2 max-h-[45vh] rounded-lg bg-neutral-900/90 p-3"
+                      className="overflow-y-auto no-scrollbar flex flex-col gap-2 max-h-[45vh] rounded-lg bg-neutral-800/90 p-3"
                     >
                       <ThinkingTimeline
                         steps={timelineSteps}

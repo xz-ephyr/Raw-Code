@@ -41,7 +41,7 @@ export function ReadyStep({ stepStatuses, projects, onFinish, isFinishing }: Rea
             className={`flex items-center gap-3 p-3 rounded-xl border text-left ${
               item.done
                 ? 'border-green-200 bg-green-900/20'
-                : 'border-neutral-800 bg-neutral-900/50'
+                : 'border-neutral-800 bg-neutral-800/50'
             }`}
           >
             <div

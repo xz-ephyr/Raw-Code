@@ -143,7 +143,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
       {confirm && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30">
-          <div className="bg-[#111110] rounded-xl shadow-2xl shadow-black/30 p-6 max-w-sm w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-[#1a1a1a] rounded-xl shadow-2xl shadow-black/30 p-6 max-w-sm w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
             <p className="text-sm text-neutral-300 leading-relaxed">{confirm.message}</p>
             <div className="flex justify-end gap-3 mt-5">
               <button

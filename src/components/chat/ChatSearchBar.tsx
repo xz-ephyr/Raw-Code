@@ -51,7 +51,7 @@ export function ChatSearchBar({ searchQuery, onSearchChange, filter, onFilterCha
           placeholder="Search conversations..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full bg-neutral-900 rounded-[8px] py-3 pl-12 pr-4 text-sm focus:outline-none placeholder:text-neutral-500"
+          className="w-full bg-neutral-800 rounded-[8px] py-3 pl-12 pr-4 text-sm focus:outline-none placeholder:text-neutral-500"
         />
       </div>
 
@@ -69,7 +69,7 @@ export function ChatSearchBar({ searchQuery, onSearchChange, filter, onFilterCha
 
         {isFilterOpen && filterMenuPos && (
           <div
-            className="fixed w-52 bg-[#111110] border border-neutral-700 rounded-2xl shadow-xl shadow-black/30 py-2 z-[9999]"
+            className="fixed w-52 bg-[#1a1a1a] border border-neutral-700 rounded-2xl shadow-xl shadow-black/30 py-2 z-[9999]"
             style={{ top: filterMenuPos.top, left: filterMenuPos.left }}
           >
             <div className="px-4 py-2 text-[11px] font-bold text-neutral-500 uppercase tracking-widest">
@@ -77,7 +77,7 @@ export function ChatSearchBar({ searchQuery, onSearchChange, filter, onFilterCha
             </div>
             <button
               onClick={() => selectFilter('active')}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm text-neutral-300 hover:bg-neutral-900 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 text-sm text-neutral-300 hover:bg-neutral-800 transition-colors"
             >
               <span className={cn('font-medium', filter === 'active' ? 'text-white' : 'text-neutral-400')}>
                 Active Chats
@@ -88,7 +88,7 @@ export function ChatSearchBar({ searchQuery, onSearchChange, filter, onFilterCha
             </button>
             <button
               onClick={() => selectFilter('archived')}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm text-neutral-300 hover:bg-neutral-900 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 text-sm text-neutral-300 hover:bg-neutral-800 transition-colors"
             >
               <span className={cn('font-medium', filter === 'archived' ? 'text-white' : 'text-neutral-400')}>
                 Archived Chats

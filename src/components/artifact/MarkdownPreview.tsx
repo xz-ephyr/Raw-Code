@@ -85,7 +85,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({ content }: Markdo
           },
           blockquote({ children }) {
             return (
-              <blockquote className="border-l-4 border-neutral-600 pl-4 py-1 italic text-neutral-400 mb-4 bg-neutral-900/50 rounded-r-lg">
+              <blockquote className="border-l-4 border-neutral-600 pl-4 py-1 italic text-neutral-400 mb-4 bg-neutral-800/50 rounded-r-lg">
                 {children}
               </blockquote>
             );

@@ -29,7 +29,7 @@ export function WelcomeStep({ onFullSetup, onQuickStart }: WelcomeStepProps) {
         ].map((feature) => (
           <div
             key={feature.title}
-            className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 text-center"
+            className="rounded-xl border border-neutral-800 bg-neutral-800/50 p-4 text-center"
           >
             <div className="text-sm font-semibold text-neutral-200">{feature.title}</div>
             <div className="text-xs text-neutral-400 mt-1">{feature.desc}</div>

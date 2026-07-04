@@ -4,7 +4,7 @@ import { CopyButton } from './CopyButton';
 export const UserBubble = React.memo(({ content }: { content: string }) => {
   return (
     <div className="flex flex-col items-end mb-2 group w-full">
-      <div className="relative bg-neutral-900 rounded-[12px] text-[15px] max-w-[85%] text-white">
+      <div className="relative bg-neutral-800 rounded-[12px] text-[15px] max-w-[85%] text-white">
         <div className="px-5 py-3 whitespace-pre-wrap break-words leading-relaxed">
           {content}
         </div>

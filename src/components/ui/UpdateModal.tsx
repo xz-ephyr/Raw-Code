@@ -27,9 +27,9 @@ export default function UpdateModal({ update, onInstall, onLater }: UpdateModalP
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30">
-      <div className="bg-[#111110] rounded-xl shadow-2xl shadow-black/30 p-6 max-w-md w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[#1a1a1a] rounded-xl shadow-2xl shadow-black/30 p-6 max-w-md w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-start gap-4">
-          <div className="shrink-0 w-10 h-10 rounded-full bg-neutral-900 flex items-center justify-center">
+          <div className="shrink-0 w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />

@@ -35,7 +35,7 @@ export function ZoomControl() {
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1 w-44 bg-[#111110] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 py-2 z-50">
+        <div className="absolute left-0 top-full mt-1 w-44 bg-[#1a1a1a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 py-2 z-50">
           <div className="px-4 py-1.5 text-[11px] font-bold text-neutral-500 uppercase tracking-widest">
             Zoom
           </div>
