@@ -26,8 +26,11 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        persist-credentials: false
 
     - name: Initialize CodeQL
+      id: init
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
@@ -38,13 +41,13 @@ jobs:
 
     # Rust and Go need to be built if they aren't using autobuild
     - name: Build Go
-      if: matrix.language == 'go'
+      if: matrix.language == 'go' && (steps.init.outputs.build-mode == 'manual')
       run: |
         cd agent
         go build ./...
 
     - name: Build Rust
-      if: matrix.language == 'rust'
+      if: matrix.language == 'rust' && (steps.init.outputs.build-mode == 'manual')
       run: |
         sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
         cd src-tauri

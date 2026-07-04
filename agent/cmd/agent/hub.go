@@ -60,6 +60,8 @@ func NewAgentHub(expressURL string, apiKey string) *AgentHub {
 	return hub
 }
 
-func (h *AgentHub) Start(port string) *http.Server {
+// SetupServer configures and returns the underlying HTTP server.
+// The caller is responsible for calling ListenAndServe on the returned server.
+func (h *AgentHub) SetupServer(port string) *http.Server {
 	return h.AgentServer.Listen(":" + port)
 }

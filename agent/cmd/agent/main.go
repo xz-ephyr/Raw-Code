@@ -25,7 +25,7 @@ func main() {
 	apiKey := os.Getenv("AGENT_API_KEY")
 
 	hub := NewAgentHub(expressURL, apiKey)
-	srv := hub.Start(port)
+	srv := hub.SetupServer(port)
 
 	if apiKey == "" {
 		fmt.Println("WARNING: AGENT_API_KEY is not set. Privileged endpoints are unprotected.")
