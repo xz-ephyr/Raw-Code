@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { ToolDef } from '../../types';
-import { callGoTool } from '../../utils/goProxy';
+import type { ToolDef } from '@core/types';
+import { callGoTool } from '@core/utils/goProxy';
 
 export const codeSearchTool: ToolDef = {
   name: 'code_search',

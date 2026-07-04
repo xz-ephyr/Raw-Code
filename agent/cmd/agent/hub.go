@@ -1,24 +1,23 @@
 package main
 
 import (
-	"github.com/xz-ephyr/raw-code/agent/internal/orchestrator"
+	"github.com/xz-ephyr/raw-code/agent/internal/agent"
 	"github.com/xz-ephyr/raw-code/agent/internal/infra"
 	"github.com/xz-ephyr/raw-code/agent/internal/server"
 	"github.com/xz-ephyr/raw-code/agent/internal/task"
-	"github.com/xz-ephyr/raw-code/agent/internal/tools"
-	"github.com/xz-ephyr/raw-code/agent/internal/executor"
+	"github.com/xz-ephyr/raw-code/agent/internal/tool"
 	"github.com/xz-ephyr/raw-code/agent/internal/worker"
 )
 
 type AgentHub struct {
 	TaskManager  *task.Manager
-	ToolRegistry *tools.Registry
-	Executor     *executor.Executor
+	ToolRegistry *tool.Registry
+	Executor     *tool.Executor
 	Pool         *worker.Pool
-	Orchestrator *orchestrator.Orchestrator
+	Orchestrator *agent.Orchestrator
 	Express      *infra.ExpressClient
 	Tauri        *infra.TauriShell
-	HttpServer   *server.Server
+	Server       *server.Server
 }
 
 func NewAgentHub(expressURL string, apiKey string) *AgentHub {
@@ -28,15 +27,15 @@ func NewAgentHub(expressURL string, apiKey string) *AgentHub {
 
 	// Core
 	tm := task.NewManager()
-	reg := tools.NewRegistry()
+	reg := tool.NewRegistry()
 	reg.RegisterDefaults()
-	exec := executor.NewExecutor(reg, expressURL)
+	exec := tool.NewExecutor(reg, expressURL)
 
 	// Worker pool
 	pool := worker.NewPool(4, tm, exec)
 
 	// Orchestrator
-	orch := orchestrator.NewOrchestrator(tm, reg, exec, pool)
+	orch := agent.NewOrchestrator(tm, reg, exec, pool)
 	orch.RegisterDefaultWorkflows()
 
 	// HTTP server
@@ -50,7 +49,7 @@ func NewAgentHub(expressURL string, apiKey string) *AgentHub {
 		Orchestrator: orch,
 		Express:      express,
 		Tauri:        tauri,
-		HttpServer:   srv,
+		Server:       srv,
 	}
 
 	// Start the worker pool

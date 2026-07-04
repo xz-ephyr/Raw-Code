@@ -6,11 +6,10 @@ import (
 	"time"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
-	"github.com/xz-ephyr/raw-code/agent/internal/orchestrator"
+	"github.com/xz-ephyr/raw-code/agent/internal/agent"
 	"github.com/xz-ephyr/raw-code/agent/internal/infra"
 	"github.com/xz-ephyr/raw-code/agent/internal/task"
-	"github.com/xz-ephyr/raw-code/agent/internal/tools"
-	"github.com/xz-ephyr/raw-code/agent/internal/executor"
+	"github.com/xz-ephyr/raw-code/agent/internal/tool"
 	"github.com/xz-ephyr/raw-code/agent/internal/worker"
 	"github.com/xz-ephyr/raw-code/agent/pkg/api"
 )
@@ -19,10 +18,10 @@ type Server struct {
 	router       *mux.Router
 	http         *http.Server
 	taskManager  *task.Manager
-	toolRegistry *tools.Registry
-	executor     *executor.Executor
+	toolRegistry *tool.Registry
+	executor     *tool.Executor
 	pool         *worker.Pool
-	orchestrator *orchestrator.Orchestrator
+	orchestrator *agent.Orchestrator
 	express      *infra.ExpressClient
 	tauri        *infra.TauriShell
 	apiKey       string
@@ -32,10 +31,10 @@ type Server struct {
 
 func New(
 	tm *task.Manager,
-	reg *tools.Registry,
-	exec *executor.Executor,
+	reg *tool.Registry,
+	exec *tool.Executor,
 	pool *worker.Pool,
-	orch *orchestrator.Orchestrator,
+	orch *agent.Orchestrator,
 	exp *infra.ExpressClient,
 	ts *infra.TauriShell,
 	apiKey string,
@@ -136,16 +135,13 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleListTools(w http.ResponseWriter, r *http.Request) {
 	category := r.URL.Query().Get("category")
-	var tlist []api.ToolDefinition
+	var tools []api.ToolDefinition
 	if category != "" {
-		tlist = s.toolRegistry.ListByCategory(category)
+		tools = s.toolRegistry.ListByCategory(category)
 	} else {
-		tlist = s.toolRegistry.List()
+		tools = s.toolRegistry.List()
 	}
-	if tlist == nil {
-		tlist = []api.ToolDefinition{}
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"tools": tlist, "count": len(tlist)})
+	writeJSON(w, http.StatusOK, map[string]any{"tools": tools, "count": len(tools)})
 }
 
 func (s *Server) handleSubmitTask(w http.ResponseWriter, r *http.Request) {

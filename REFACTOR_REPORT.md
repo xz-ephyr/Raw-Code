@@ -23,7 +23,7 @@ Currently, the codebase is split into three main parts:
 | `src/services/tools/` | Tool Definitions (TS) | `core/tools/` |
 | `src/config/models.ts` | Model Metadata | `core/config/` |
 | `src/services/FileSystemService.ts` | Workspace Indexing Logic | `core/workspace/` |
-| `agent/internal/tools/` | Tool Execution (Go) | `agent/` (Auth. Backend) |
+| `agent/internal/tool/` | Tool Execution (Go) | `agent/` (Auth. Backend) |
 | `server/` | Database & Search | `agent/` or `core/` (TBD) |
 
 ## 3. Problems & Sluggishness
@@ -41,7 +41,7 @@ Currently, the codebase is split into three main parts:
 
 ## 5. Final Target Folder Structure
 
-```text
+```
 /
 ├── src/ (Frontend)
 │   ├── app/
@@ -57,8 +57,7 @@ Currently, the codebase is split into three main parts:
 └── agent/ (Execution Layer - Go)
     ├── cmd/
     ├── internal/orchestrator
-    ├── internal/executor
-    └── internal/tools
+    └── internal/executor
 ```
 
 ## 6. Role of Go `agent/`

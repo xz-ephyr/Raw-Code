@@ -10,4 +10,3 @@ export * from './utils/DatabaseService';
 export * from './utils/WebSearchService';
 export * from './utils/goProxy';
 export { allTools } from './tools/allTools';
-export * from './utils/env';
