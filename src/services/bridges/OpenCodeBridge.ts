@@ -4,10 +4,16 @@ const OPCODE_SERVER_URL = 'http://localhost:3080';
 
 export class OpenCodeBridge implements CLIBridge {
   id = 'opencode';
+  onReconnected?: () => void;
+  onDisconnected?: () => void;
   private ws: WebSocket | null = null;
   private isConnected_ = false;
+  private wasEverConnected = false;
   private connectResolve: (() => void) | null = null;
   private connectReject: ((e: Error) => void) | null = null;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 10;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   async connect(): Promise<void> {
     if (this.isConnected_) return;
@@ -20,9 +26,12 @@ export class OpenCodeBridge implements CLIBridge {
         this.ws = new WebSocket(`ws://localhost:3080/ws`);
         this.ws.onopen = () => {
           this.isConnected_ = true;
+          this.wasEverConnected = true;
+          this.reconnectAttempts = 0;
           if (this.connectResolve) this.connectResolve();
           this.connectResolve = null;
           this.connectReject = null;
+          this.onReconnected?.();
         };
         this.ws.onerror = () => {
           this.isConnected_ = false;
@@ -32,18 +41,23 @@ export class OpenCodeBridge implements CLIBridge {
         };
         this.ws.onclose = () => {
           this.isConnected_ = false;
-          this.reconnect();
+          if (this.wasEverConnected) this.onDisconnected?.();
+          this.scheduleReconnect();
         };
       } catch (e) {
         reject(e);
         this.connectResolve = null;
         this.connectReject = null;
-        this.reconnect();
+        this.scheduleReconnect();
       }
     });
   }
 
   async disconnect(): Promise<void> {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.ws) {
       this.ws.onclose = null;
       this.ws.close();
@@ -119,8 +133,13 @@ export class OpenCodeBridge implements CLIBridge {
     }
   }
 
-  private reconnect() {
+  private scheduleReconnect() {
     if (this.connectResolve || this.connectReject) return;
-    setTimeout(() => this.connect().catch(() => {}), 2000);
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) return;
+    this.reconnectAttempts++;
+    const delay = Math.min(2000 * Math.pow(2, this.reconnectAttempts - 1), 30000);
+    this.reconnectTimer = setTimeout(() => {
+      this.connect().catch(() => {});
+    }, delay);
   }
 }

@@ -52,17 +52,17 @@ export function MermaidPreview({ content, onError }: MermaidPreviewProps) {
   if (error) {
     return (
       <div className="p-6">
-        <div className="rounded-lg border border-red-200 bg-red-900/20 border-red-800 p-4">
-          <p className="text-sm font-medium text-red-800 text-red-300">Failed to render diagram</p>
-          <pre className="mt-2 text-xs text-red-600 text-red-400 whitespace-pre-wrap font-mono">{error}</pre>
+        <div className="rounded-lg bg-red-900/20 border border-red-800 p-4">
+          <p className="text-sm font-medium text-red-300">Failed to render diagram</p>
+          <pre className="mt-2 text-xs text-red-400 whitespace-pre-wrap font-mono">{error}</pre>
           <button
             onClick={() => onError?.(error)}
-            className="mt-3 px-3 py-1.5 text-xs font-medium bg-red-100 bg-red-800 text-red-700 text-red-300 rounded-md hover:bg-red-200 hover:bg-red-700 transition-colors"
+            className="mt-3 px-3 py-1.5 text-xs font-medium bg-red-800 text-red-300 rounded-md hover:bg-red-700 transition-colors"
           >
             Fix with Claude
           </button>
         </div>
-        <pre className="mt-4 p-4 bg-neutral-900 bg-neutral-900 rounded-lg border border-neutral-700 border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-64 text-neutral-300">
+        <pre className="mt-4 p-4 bg-neutral-900 rounded-lg border border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-64 text-neutral-300">
           {content}
         </pre>
       </div>

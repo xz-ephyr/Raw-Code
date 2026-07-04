@@ -148,7 +148,7 @@ export function ChatListItem({ chat, onDelete, onArchive, onRename }: ChatListIt
             <div className="h-px bg-neutral-800 my-1.5" />
             <button
               onClick={handleDelete}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-900/30 transition-colors"
             >
               <HugeiconRenderer icon={Delete02Icon} size={16} className="text-red-400" />
               <span>Delete</span>

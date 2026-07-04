@@ -46,16 +46,16 @@ export function ConnectedCLIIcons() {
       {!expanded ? (
         <button
           onClick={handleToggle}
-          className="w-6 h-6 rounded-full bg-neutral-800 border border-white flex items-center justify-center hover:bg-neutral-700 transition-all relative"
+          className="w-6 h-6 rounded-full bg-neutral-800 border border-neutral-600 flex items-center justify-center hover:bg-neutral-700 transition-all relative"
           title="opencode"
         >
           <CLIIcon cliId="opencode" size={14} />
           {bridge.isConnected() && (
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-neutral-800" />
           )}
         </button>
       ) : (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-blue-50 border-blue-200 text-blue-700 transition-all cursor-default">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-blue-900/30 border-blue-800 text-blue-300 transition-all cursor-default">
           <CLIIcon cliId="opencode" size={12} />
           opencode
         </span>

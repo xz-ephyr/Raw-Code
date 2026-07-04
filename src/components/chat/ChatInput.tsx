@@ -171,7 +171,7 @@ function ThinkingPill({
     <button
       type="button"
       onClick={onToggleThinking}
-      className={`group flex items-center gap-2 bg-blue-100 text-blue-900 ${size === 'normal' ? 'px-4 py-1.5 text-sm' : 'px-3 py-1 text-xs'} rounded-md font-medium cursor-pointer transition-all active:scale-95`}
+      className={`group flex items-center gap-2 bg-blue-900/30 text-blue-300 ${size === 'normal' ? 'px-4 py-1.5 text-sm' : 'px-3 py-1 text-xs'} rounded-md font-medium cursor-pointer transition-all active:scale-95`}
       aria-label="Disable thinking mode"
       title="Disable thinking mode"
     >

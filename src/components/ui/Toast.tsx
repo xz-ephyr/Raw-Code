@@ -6,6 +6,7 @@ interface Toast {
   id: string;
   message: string;
   type: ToastType;
+  duration?: number;
 }
 
 interface ConfirmState {
@@ -72,9 +73,10 @@ const iconStyles: Record<ToastType, string> = {
 
 const ToastItem = memo(function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) => void }) {
   useEffect(() => {
-    const timer = setTimeout(() => onRemove(toast.id), 4000);
+    if (!toast.duration) return;
+    const timer = setTimeout(() => onRemove(toast.id), toast.duration);
     return () => clearTimeout(timer);
-  }, [toast.id, onRemove]);
+  }, [toast.id, toast.duration, onRemove]);
 
   return (
     <div
@@ -109,11 +111,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const addToast = useCallback((message: string, type: ToastType = 'info', duration?: number) => {
     const id = String(++idCounter.current);
-    setToasts((prev) => [...prev, { id, message, type }]);
-    if (duration && duration > 0) {
-      setTimeout(() => removeToast(id), duration);
-    }
-  }, [removeToast]);
+    setToasts((prev) => [...prev, { id, message, type, duration }]);
+  }, []);
 
   const confirmAsync = useCallback((message: string): Promise<boolean> => {
     return new Promise((resolve) => {

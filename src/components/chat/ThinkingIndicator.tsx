@@ -29,8 +29,8 @@ export function ThinkingIndicator({ model, reasoning }: ThinkingIndicatorProps) 
         className="group flex items-center gap-2.5 rounded-md bg-transparent p-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-neutral-600 w-fit transition-opacity hover:opacity-80"
         aria-label={isExpanded ? 'Hide reasoning process' : 'Show reasoning process'}
       >
-        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-50 border border-blue-100">
-           <HugeiconsIcon icon={Idea01Icon} size={14} className="text-blue-600 animate-pulse" />
+        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-900/30 border border-blue-800">
+           <HugeiconsIcon icon={Idea01Icon} size={14} className="text-blue-400 animate-pulse" />
         </div>
         <span className="text-[15px] font-medium text-neutral-400">
            {label}

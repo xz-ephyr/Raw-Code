@@ -25,15 +25,27 @@ class CLIBridgeServiceImpl {
 
   async connect(): Promise<void> {
     const bridge = new OpenCodeBridge();
+    bridge.onReconnected = () => {
+      if (!this.bridges.has('opencode')) {
+        this.bridges.set('opencode', bridge);
+        console.log('[CLI] Connected to opencode');
+        window.dispatchEvent(new CustomEvent('opencode-connected'));
+        this.notify();
+      }
+    };
+    bridge.onDisconnected = () => {
+      window.dispatchEvent(new CustomEvent('opencode-disconnected'));
+    };
     try {
       await bridge.connect();
       if (bridge.isConnected()) {
         this.bridges.set('opencode', bridge);
         console.log('[CLI] Connected to opencode');
+        window.dispatchEvent(new CustomEvent('opencode-connected'));
         this.notify();
       }
     } catch {
-      // Will retry via WebSocket's internal reconnect
+      // Will retry via WebSocket's internal reconnect, and onReconnected will register the bridge
     }
   }
 

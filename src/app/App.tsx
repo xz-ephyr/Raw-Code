@@ -4,6 +4,7 @@ import Layout from '@/components/layout/Layout';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { isTauri } from '@/lib/tauri';
 import UpdateModal from '@/components/ui/UpdateModal';
+import { BridgeNotifications } from '@/components/chat/BridgeNotifications';
 import { CLIBridgeService } from '@/services/CLIBridgeService';
 import { CLIModelInjector } from '@/services/CLIModelInjector';
 
@@ -83,6 +84,7 @@ export default function App() {
         </Route>
       </Routes>
 
+      <BridgeNotifications />
       {updateInfo && (
         <UpdateModal
           update={updateInfo}

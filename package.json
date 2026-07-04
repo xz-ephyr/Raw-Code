@@ -14,6 +14,7 @@
     "tauri:build": "tauri build",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md,json}\"",
+    "dev:all": "concurrently -n server,opencode,frontend \"npm run server\" \"opencode serve --port 3080\" \"npm run dev\"",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
@@ -75,6 +76,7 @@
     "@typescript-eslint/parser": "^8.24.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^10.0.3",
     "eslint": "^9.20.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "fallow": "^2.89.0",

@@ -82,16 +82,16 @@ function buildSrcdoc(transpiledCode: string): string {
 <script src="https://unpkg.com/recharts@2.12.0/umd/Recharts.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #111110; color: #d4d4d4; }
   #root { min-height: 100vh; }
   .error-card {
     padding: 20px; margin: 16px; border-radius: 8px;
-    border: 1px solid #fecaca; background: #fef2f2;
+    border: 1px solid #7f1d1d; background: #1a1a1a;
   }
-  .error-card p { color: #991b1b; font-size: 14px; margin-bottom: 12px; }
+  .error-card p { color: #fca5a5; font-size: 14px; margin-bottom: 12px; }
   .error-card .error-message {
     font-family: monospace; font-size: 12px;
-    color: #dc2626; background: #fff;
+    color: #fca5a5; background: #111110;
     padding: 8px; border-radius: 4px;
     white-space: pre-wrap; word-break: break-word;
   }
@@ -200,27 +200,27 @@ export function ReactPreview({ content, onError }: ReactPreviewProps) {
   if (error) {
     return (
       <div className="p-6">
-        <div className="rounded-lg border border-red-200 bg-red-900/20 border-red-800 p-4">
-          <p className="text-sm font-medium text-red-800 text-red-300">Failed to render React component</p>
-          <pre className="mt-2 text-xs text-red-600 text-red-400 whitespace-pre-wrap font-mono">{error}</pre>
+        <div className="rounded-lg bg-red-900/20 border border-red-800 p-4">
+          <p className="text-sm font-medium text-red-300">Failed to render React component</p>
+          <pre className="mt-2 text-xs text-red-400 whitespace-pre-wrap font-mono">{error}</pre>
           <div className="flex gap-2 mt-3">
             <button
               onClick={handleRetry}
-              className="px-3 py-1.5 text-xs font-medium bg-red-100 bg-red-800 text-red-700 text-red-300 rounded-md hover:bg-red-200 hover:bg-red-700 transition-colors"
+              className="px-3 py-1.5 text-xs font-medium bg-red-800 text-red-300 rounded-md hover:bg-red-700 transition-colors"
             >
               Retry
             </button>
             <button
               onClick={() => onError?.(error)}
-              className="px-3 py-1.5 text-xs font-medium bg-neutral-800 bg-neutral-800 text-neutral-300 text-neutral-300 rounded-md hover:bg-neutral-200 hover:bg-neutral-700 transition-colors"
+              className="px-3 py-1.5 text-xs font-medium bg-neutral-800 text-neutral-300 rounded-md hover:bg-neutral-700 transition-colors"
             >
               Fix with Claude
             </button>
           </div>
         </div>
         <details className="mt-4">
-          <summary className="text-xs text-neutral-400 text-neutral-400 cursor-pointer hover:text-neutral-700 hover:text-neutral-300">Show source code</summary>
-          <pre className="mt-2 p-4 bg-neutral-900 bg-neutral-900 rounded-lg border border-neutral-700 border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 text-neutral-300">
+          <summary className="text-xs text-neutral-400 cursor-pointer hover:text-neutral-300">Show source code</summary>
+          <pre className="mt-2 p-4 bg-neutral-900 rounded-lg border border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 text-neutral-300">
             {content}
           </pre>
         </details>
@@ -238,7 +238,7 @@ export function ReactPreview({ content, onError }: ReactPreviewProps) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 bg-[#111110] bg-transparent">
+      <div className="flex-1 bg-[#111110]">
         <iframe
           ref={iframeRef}
           srcDoc={srcdoc}
