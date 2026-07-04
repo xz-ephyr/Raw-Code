@@ -1,4 +1,4 @@
-import { StepId, StepInfo, StepStatus } from '../../hooks/useOnboarding';
+import { StepId, StepInfo, StepStatus } from '@/hooks/useOnboarding';
 
 interface ProgressBarProps {
   steps: StepInfo[];

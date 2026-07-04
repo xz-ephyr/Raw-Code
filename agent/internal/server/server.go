@@ -6,10 +6,11 @@ import (
 	"time"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
-	"github.com/xz-ephyr/raw-code/agent/internal/agent"
+	"github.com/xz-ephyr/raw-code/agent/internal/orchestrator"
 	"github.com/xz-ephyr/raw-code/agent/internal/infra"
 	"github.com/xz-ephyr/raw-code/agent/internal/task"
-	"github.com/xz-ephyr/raw-code/agent/internal/tool"
+	"github.com/xz-ephyr/raw-code/agent/internal/tools"
+	"github.com/xz-ephyr/raw-code/agent/internal/executor"
 	"github.com/xz-ephyr/raw-code/agent/internal/worker"
 	"github.com/xz-ephyr/raw-code/agent/pkg/api"
 )
@@ -18,10 +19,10 @@ type Server struct {
 	router       *mux.Router
 	http         *http.Server
 	taskManager  *task.Manager
-	toolRegistry *tool.Registry
-	executor     *tool.Executor
+	toolRegistry *tools.Registry
+	executor     *executor.Executor
 	pool         *worker.Pool
-	orchestrator *agent.Orchestrator
+	orchestrator *orchestrator.Orchestrator
 	express      *infra.ExpressClient
 	tauri        *infra.TauriShell
 	apiKey       string
@@ -31,10 +32,10 @@ type Server struct {
 
 func New(
 	tm *task.Manager,
-	reg *tool.Registry,
-	exec *tool.Executor,
+	reg *tools.Registry,
+	exec *executor.Executor,
 	pool *worker.Pool,
-	orch *agent.Orchestrator,
+	orch *orchestrator.Orchestrator,
 	exp *infra.ExpressClient,
 	ts *infra.TauriShell,
 	apiKey string,
@@ -135,13 +136,13 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleListTools(w http.ResponseWriter, r *http.Request) {
 	category := r.URL.Query().Get("category")
-	var tools []api.ToolDefinition
+	var tlist []api.ToolDefinition
 	if category != "" {
-		tools = s.toolRegistry.ListByCategory(category)
+		tlist = s.toolRegistry.ListByCategory(category)
 	} else {
-		tools = s.toolRegistry.List()
+		tlist = s.toolRegistry.List()
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"tools": tools, "count": len(tools)})
+	writeJSON(w, http.StatusOK, map[string]any{"tools": tlist, "count": len(tlist)})
 }
 
 func (s *Server) handleSubmitTask(w http.ResponseWriter, r *http.Request) {

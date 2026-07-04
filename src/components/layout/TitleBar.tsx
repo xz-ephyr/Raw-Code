@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useSessionTitle } from '../../hooks/useSessionTitle';
-import { ChatSessionManager } from '../../services/ChatSessionManager';
+import { useSessionTitle } from '@/hooks/useSessionTitle';
+import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { useParams } from 'react-router-dom';
 
 export default function TitleBar() {

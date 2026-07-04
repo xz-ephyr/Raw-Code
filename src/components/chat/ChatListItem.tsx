@@ -6,8 +6,8 @@ import {
   PencilEdit02Icon,
   MoreVerticalIcon,
 } from '@hugeicons/core-free-icons';
-import { ChatSession } from '../../types/chat';
-import { cn } from '../../lib/utils';
+import { ChatSession } from '@/types/chat';
+import { cn } from '@/lib/utils';
 import { useToast } from '../ui/Toast';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 

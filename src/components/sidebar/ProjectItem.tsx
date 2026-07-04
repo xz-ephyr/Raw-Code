@@ -9,8 +9,8 @@ import {
   Delete02Icon,
   ArchiveIcon,
 } from '@hugeicons/core-free-icons';
-import { Project, ChatSession } from '../../types/chat';
-import { ChatSessionManager } from '../../services/ChatSessionManager';
+import { Project, ChatSession } from '@/types/chat';
+import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 
 interface ProjectItemProps {

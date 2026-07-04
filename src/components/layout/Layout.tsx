@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../sidebar/Sidebar';
-import { SessionTitleProvider } from '../../contexts/SessionTitleContext';
+import { SessionTitleProvider } from '@/contexts/SessionTitleContext';
 
 export default function Layout() {
   return (

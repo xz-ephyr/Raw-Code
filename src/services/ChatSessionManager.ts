@@ -1,5 +1,5 @@
-import { ChatSession, Project } from '../types/chat';
-import { DatabaseService } from './DatabaseService';
+import { ChatSession, Project } from '@/types/chat';
+import { DatabaseService } from '@core/utils/DatabaseService';
 
 export const ChatSessionManager = {
   getAll: async (projectId?: string | null): Promise<ChatSession[]> => {

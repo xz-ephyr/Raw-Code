@@ -1,4 +1,4 @@
-import { useThinkingTimer } from '../../hooks/useThinkingTimer';
+import { useThinkingTimer } from '@/hooks/useThinkingTimer';
 
 interface ThoughtLabelProps {
   isActivelyThinking: boolean;

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search01Icon, FilterMailIcon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/utils';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 
 interface ChatSearchBarProps {

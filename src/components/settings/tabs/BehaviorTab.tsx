@@ -1,4 +1,4 @@
-import { ToggleSwitch } from '../../ui/ToggleSwitch';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
 export function BehaviorTab() {
   return (

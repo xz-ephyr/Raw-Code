@@ -5,20 +5,20 @@ import (
 	"log"
 	"sync"
 	"github.com/xz-ephyr/raw-code/agent/internal/task"
-	"github.com/xz-ephyr/raw-code/agent/internal/tool"
+	"github.com/xz-ephyr/raw-code/agent/internal/executor"
 )
 
 type Pool struct {
 	size    int
 	tasks   chan *task.Task
 	manager *task.Manager
-	exec    *tool.Executor
+	exec    *executor.Executor
 	wg      sync.WaitGroup
 	ctx     context.Context
 	cancel  context.CancelFunc
 }
 
-func NewPool(size int, manager *task.Manager, exec *tool.Executor) *Pool {
+func NewPool(size int, manager *task.Manager, exec *executor.Executor) *Pool {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Pool{
 		size:    size,

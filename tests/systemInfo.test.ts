@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { systemInfoTool, getOS, getBrowserInfo } from '../src/services/tools/system/systemInfo';
+import { systemInfoTool, getOS, getBrowserInfo } from '../core/tools/system/systemInfo';
 
 describe('getOS', () => {
   beforeEach(() => {

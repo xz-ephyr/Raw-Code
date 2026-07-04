@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChatSession } from '../types/chat';
-import { ChatSessionManager } from '../services/ChatSessionManager';
+import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { ChatListItem } from '../components/chat/ChatListItem';
 import { ChatSearchBar } from '../components/chat/ChatSearchBar';
 import { ChatsEmptyState } from '../components/chat/ChatsEmptyState';

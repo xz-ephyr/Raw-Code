@@ -15,10 +15,10 @@ import {
 import SidebarTab from './SidebarTab';
 import ProjectItem from './ProjectItem';
 import { SettingsModal } from '../settings/SettingsModal';
-import { ChatSessionManager } from '../../services/ChatSessionManager';
-import { FileSystemService } from '../../services/FileSystemService';
-import { Project } from '../../types/chat';
-import { isTauri } from '../../lib/tauri';
+import { ChatSessionManager } from '@/services/ChatSessionManager';
+import { FileSystemService } from '@core/workspace/FileSystemService';
+import { Project } from '@/types/chat';
+import { isTauri } from '@/lib/tauri';
 import { useToast } from '../ui/Toast';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 

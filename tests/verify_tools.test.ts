@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { callGoTool } from '../src/services/tools/goProxy';
+import { callGoTool } from '../core/utils/goProxy';
 
 // Mock fetch for proxy testing
 global.fetch = vi.fn();

@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/utils';
 
 interface SidebarTabProps {
   iconElement: ReactNode;

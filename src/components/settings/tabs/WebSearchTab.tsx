@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { DatabaseService } from '../../../services/DatabaseService';
-import { PasswordInput } from '../../ui/PasswordInput';
+import { DatabaseService } from '@core/utils/DatabaseService';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 
 export function WebSearchTab() {
   const [searchConfig, setSearchConfig] = useState<Record<string, string>>({});

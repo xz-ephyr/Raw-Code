@@ -1,4 +1,4 @@
-import type { CLIBridge, CommandResult, ModelInfo, AuthStatus } from '../../types/cli';
+import type { CLIBridge, CommandResult, ModelInfo, AuthStatus } from '@/types/cli';
 
 const OPCODE_SERVER_URL = 'http://localhost:3080';
 

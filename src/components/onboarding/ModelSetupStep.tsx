@@ -9,7 +9,7 @@ import {
   getStoredSelectedModel,
   API_KEYS,
   MODELS,
-} from '../../config/models';
+} from '@core/config/models';
 
 interface ModelSetupStepProps {
   onComplete: () => void;
