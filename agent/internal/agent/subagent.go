@@ -89,7 +89,6 @@ func (sm *SubAgentManager) runSubAgent(ctx context.Context, sub *SubAgent) {
 	tools := sm.selectTools(sub.Request.ToolScope)
 	toolCalls := sm.planToolCalls(sub.Request.Task, tools)
 
-	var allResults []api.ToolCall
 	for i := 0; i < sub.Request.MaxSteps; i++ {
 		if len(toolCalls) == 0 {
 			break
@@ -107,7 +106,6 @@ func (sm *SubAgentManager) runSubAgent(ctx context.Context, sub *SubAgent) {
 		}
 		wg.Wait()
 
-		allResults = append(allResults, results...)
 		sub.Steps++
 
 		// Check if results contain info sufficient to answer

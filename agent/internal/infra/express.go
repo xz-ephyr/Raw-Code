@@ -33,7 +33,7 @@ func (c *ExpressClient) HealthCheck(ctx context.Context) error {
 		return fmt.Errorf("express backend unreachable: %w", err)
 	}
 	defer resp.Body.Close()
-	io.Copy(io.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, resp.Body)
 	return nil
 }
 
@@ -65,7 +65,7 @@ func (c *ExpressClient) SetConfig(ctx context.Context, key, value string) error 
 		return fmt.Errorf("set config request failed: %w", err)
 	}
 	defer resp.Body.Close()
-	io.Copy(io.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, resp.Body)
 	return nil
 }
 

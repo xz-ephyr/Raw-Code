@@ -37,7 +37,7 @@ func findFilesTool() ToolDef {
 			}
 
 			var matches []string
-			filepath.Walk(root, func(fp string, info os.FileInfo, err error) error {
+			_ = filepath.Walk(root, func(fp string, info os.FileInfo, err error) error {
 				if err != nil {
 					return nil
 				}
