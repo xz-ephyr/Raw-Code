@@ -15,11 +15,6 @@ import (
 	"github.com/xz-ephyr/raw-code/agent/pkg/api"
 )
 
-type ExecutorInterface interface {
-	Execute(ctx context.Context, call api.ToolCall) api.ToolCall
-	GetExpressURL() string
-}
-
 type ToolHandler func(context.Context, ExecutorInterface, map[string]any) (any, error)
 
 type ToolDef struct {

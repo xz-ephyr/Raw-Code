@@ -1,5 +1,5 @@
-import { isTauri } from '@/lib/tauri';
-import { DatabaseService } from '@core/utils/DatabaseService';
+import { isTauri } from '../utils/env';
+import { DatabaseService } from '../utils/DatabaseService';
 
 export interface FileEntry {
   name: string;

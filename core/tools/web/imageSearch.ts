@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { ToolDef } from '@core/types';
-import { WebSearchService } from '@core/utils/WebSearchService';
+import type { ToolDef } from '../../types';
+import { WebSearchService } from '../../utils/WebSearchService';
 
 export const imageSearchTool: ToolDef = {
   name: 'image_search',

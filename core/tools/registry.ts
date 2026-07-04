@@ -1,4 +1,4 @@
-import type { ToolDef, ToolCategory } from '@core/types';
+import type { ToolDef, ToolCategory } from '../types';
 
 export class ToolRegistry {
   private tools = new Map<string, ToolDef>();

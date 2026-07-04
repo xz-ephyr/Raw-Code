@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ToolDef } from '@core/types';
+import type { ToolDef } from '../../types';
 
 export const checkUrlTool: ToolDef = {
   name: 'check_url',

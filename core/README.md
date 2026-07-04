@@ -17,5 +17,5 @@ The `core/` layer contains the shared agent architecture, prompts, model routing
 Import from `@core` to access the core logic.
 
 ```typescript
-import { chatCompletion } from '@core/models/aiService';
+import { chatCompletion } from '../models/aiService';
 ```

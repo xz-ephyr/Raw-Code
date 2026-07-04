@@ -1,6 +1,6 @@
 import { tool, zodSchema } from 'ai';
 import { z } from 'zod';
-import { WebSearchService } from '@core/utils/WebSearchService';
+import { WebSearchService } from '../../utils/WebSearchService';
 
 export const webSearchTool = tool({
   description: 'Search the web for current information. Use when you need up-to-date data, recent news, documentation, or facts beyond your training cutoff. ONE domain per search.',

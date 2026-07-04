@@ -142,6 +142,9 @@ func (s *Server) handleListTools(w http.ResponseWriter, r *http.Request) {
 	} else {
 		tlist = s.toolRegistry.List()
 	}
+	if tlist == nil {
+		tlist = []api.ToolDefinition{}
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"tools": tlist, "count": len(tlist)})
 }
 

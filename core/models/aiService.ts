@@ -5,12 +5,12 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createCerebras } from '@ai-sdk/cerebras';
 import { streamText, generateText, stepCountIs, convertToModelMessages } from 'ai';
 import type { OpenAIProvider } from '@ai-sdk/openai';
-import { SYSTEM_PROMPT } from '@core/prompt/systemPrompt';
-import { writeArtifactTool } from '@core/tools/writeArtifactTool';
-import { allTools } from '@core/tools/allTools';
-import { API_KEYS, getModelDefinition, getUsedModels, markModelUsed, getAIModels, type Provider } from '@core/config/models';
-import { getSmartSystemPrompt, type ProjectContext } from '@core/memory/contextController';
-import { contractContext } from '@core/memory/contextContractor';
+import { SYSTEM_PROMPT } from '../prompt/systemPrompt';
+import { writeArtifactTool } from '../tools/writeArtifactTool';
+import { allTools } from '../tools/allTools';
+import { API_KEYS, getModelDefinition, getUsedModels, markModelUsed, getAIModels, type Provider } from '../config/models';
+import { getSmartSystemPrompt, type ProjectContext } from '../memory/contextController';
+import { contractContext } from '../memory/contextContractor';
 
 let cachedProviders: {
   google: ReturnType<typeof createGoogleGenerativeAI>;
@@ -96,19 +96,38 @@ function getConfiguredProviders(): Set<Provider> {
   return configured;
 }
 
-function buildFallbackChain(primaryModelName: string, sessionId?: string): string[] {
+export function buildFallbackChain(primaryModelName: string, sessionId?: string): string[] {
   const used = sessionId ? getUsedModels(sessionId) : [];
   const configuredProviders = getConfiguredProviders();
-  return [
-    primaryModelName,
-    ...getAIModels().filter((m: string) => {
+  const primaryDef = getModelDefinition(primaryModelName);
+
+  const others = getAIModels()
+    .filter((m: string) => {
       if (m === primaryModelName) return false;
       if (used.includes(m)) return false;
       const def = getModelDefinition(m);
       if (!def) return false;
       return configuredProviders.has(def.provider);
-    }),
-  ];
+    })
+    .sort((a, b) => {
+      const defA = getModelDefinition(a)!;
+      const defB = getModelDefinition(b)!;
+
+      // 1. Prioritize models with the same 'supportsThinking' status as the primary model
+      const aMatchesThinking = defA.supportsThinking === primaryDef?.supportsThinking;
+      const bMatchesThinking = defB.supportsThinking === primaryDef?.supportsThinking;
+      if (aMatchesThinking && !bMatchesThinking) return -1;
+      if (!aMatchesThinking && bMatchesThinking) return 1;
+
+      // 2. Prioritize 'google' provider for reliability/daily resets
+      if (defA.provider === 'google' && defB.provider !== 'google') return -1;
+      if (defA.provider !== 'google' && defB.provider === 'google') return 1;
+
+      return 0;
+    })
+    .slice(0, 5); // Limit to top 5 fallbacks
+
+  return [primaryModelName, ...others];
 }
 
 export async function chatCompletion({

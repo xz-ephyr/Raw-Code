@@ -58,3 +58,7 @@ func NewAgentHub(expressURL string, apiKey string) *AgentHub {
 
 	return hub
 }
+
+func (h *AgentHub) Server(port string) *AgentHub {
+	return h
+}
