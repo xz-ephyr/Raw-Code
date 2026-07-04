@@ -62,19 +62,19 @@ export function HtmlPreview({ content, onError }: HtmlPreviewProps) {
   if (displayError) {
     return (
       <div className="p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-4">
-          <p className="text-sm font-medium text-red-800 dark:text-red-300">Preview Error</p>
-          <p className="text-xs text-red-600 dark:text-red-400 mt-1">{displayError}</p>
+        <div className="rounded-lg border border-red-200 bg-red-900/20 border-red-800 p-4">
+          <p className="text-sm font-medium text-red-800 text-red-300">Preview Error</p>
+          <p className="text-xs text-red-600 text-red-400 mt-1">{displayError}</p>
           <button
             onClick={() => onError?.(displayError)}
-            className="mt-3 px-3 py-1.5 text-xs font-medium bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+            className="mt-3 px-3 py-1.5 text-xs font-medium bg-red-100 bg-red-800 text-red-700 text-red-300 rounded-md hover:bg-red-200 hover:bg-red-700 transition-colors"
           >
             Fix with Claude
           </button>
         </div>
         <details className="mt-4">
-          <summary className="text-xs text-neutral-500 dark:text-neutral-400 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300">Show source code</summary>
-          <pre className="mt-2 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 dark:text-neutral-300">
+          <summary className="text-xs text-neutral-400 text-neutral-400 cursor-pointer hover:text-neutral-700 hover:text-neutral-300">Show source code</summary>
+          <pre className="mt-2 p-4 bg-neutral-900 bg-neutral-900 rounded-lg border border-neutral-700 border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 text-neutral-300">
             {content}
           </pre>
         </details>
@@ -84,7 +84,7 @@ export function HtmlPreview({ content, onError }: HtmlPreviewProps) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 bg-white dark:bg-transparent">
+      <div className="flex-1 bg-[#111110] bg-transparent">
         <iframe
           ref={iframeRef}
           srcDoc={build.srcdoc}

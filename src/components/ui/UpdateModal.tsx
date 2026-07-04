@@ -27,7 +27,7 @@ export default function UpdateModal({ update, onInstall, onLater }: UpdateModalP
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30">
-      <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[#111110] rounded-xl shadow-2xl shadow-black/30 p-6 max-w-md w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-start gap-4">
           <div className="shrink-0 w-10 h-10 rounded-full bg-neutral-900 flex items-center justify-center">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -37,16 +37,16 @@ export default function UpdateModal({ update, onInstall, onLater }: UpdateModalP
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-semibold text-neutral-900">Update Available</h2>
-            <p className="text-sm text-neutral-500 mt-1">
+            <h2 className="text-lg font-semibold text-neutral-100">Update Available</h2>
+            <p className="text-sm text-neutral-400 mt-1">
               v{update.currentVersion} → v{update.version}
             </p>
           </div>
         </div>
 
         {update.body && (
-          <div className="mt-4 p-3 bg-neutral-50 rounded-lg border border-neutral-200 max-h-40 overflow-y-auto">
-            <p className="text-xs text-neutral-500 leading-relaxed whitespace-pre-wrap">{update.body}</p>
+          <div className="mt-4 p-3 bg-neutral-800 rounded-lg border border-neutral-700 max-h-40 overflow-y-auto">
+            <p className="text-xs text-neutral-400 leading-relaxed whitespace-pre-wrap">{update.body}</p>
           </div>
         )}
 
@@ -54,14 +54,14 @@ export default function UpdateModal({ update, onInstall, onLater }: UpdateModalP
           <button
             onClick={onLater}
             disabled={installing}
-            className="px-4 py-2 text-sm font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 disabled:opacity-50 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-medium text-neutral-400 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 rounded-lg transition-colors"
           >
             Later
           </button>
           <button
             onClick={handleInstall}
             disabled={installing}
-            className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 rounded-lg transition-colors inline-flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-neutral-700 hover:bg-neutral-600 disabled:opacity-50 rounded-lg transition-colors inline-flex items-center gap-2"
           >
             {installing ? (
               <>

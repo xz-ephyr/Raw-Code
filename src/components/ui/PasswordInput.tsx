@@ -21,7 +21,7 @@ export function PasswordInput({ value, onChange, placeholder, showKeyIcon = fals
       )}
       <input
         type={visible ? 'text' : 'password'}
-        className={`h-9 bg-neutral-50 rounded-[8px] outline-none text-sm w-full border border-neutral-200 focus:border-neutral-400 transition-colors ${showKeyIcon ? 'pl-8 pr-9' : 'pl-3 pr-9'}`}
+        className={`h-9 bg-neutral-800 rounded-[8px] outline-none text-sm w-full border border-neutral-700 focus:border-neutral-500 transition-colors ${showKeyIcon ? 'pl-8 pr-9' : 'pl-3 pr-9'}`}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -29,7 +29,7 @@ export function PasswordInput({ value, onChange, placeholder, showKeyIcon = fals
       <button
         type="button"
         onClick={() => setVisible(!visible)}
-        className="absolute right-2 top-2 text-neutral-400 hover:text-neutral-600 p-0.5"
+        className="absolute right-2 top-2 text-neutral-400 hover:text-neutral-300 p-0.5"
       >
         <HugeiconsIcon icon={visible ? ViewOffSlashIcon : ViewIcon} size={15} />
       </button>

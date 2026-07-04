@@ -46,7 +46,7 @@ export function ConnectedCLIIcons() {
       {!expanded ? (
         <button
           onClick={handleToggle}
-          className="w-6 h-6 rounded-full bg-neutral-100 border border-white flex items-center justify-center hover:bg-neutral-200 transition-all relative"
+          className="w-6 h-6 rounded-full bg-neutral-800 border border-white flex items-center justify-center hover:bg-neutral-700 transition-all relative"
           title="opencode"
         >
           <CLIIcon cliId="opencode" size={14} />

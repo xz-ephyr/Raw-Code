@@ -57,7 +57,7 @@ async function tavilySearch(query: string, maxResults: number, searchDepth = 'ba
       api_key: apiKey,
       query,
       search_depth: searchDepth,
-      max_results: Math.min(maxResults, 5),
+      max_results: Math.min(maxResults, 10),
       include_answer: true,
       include_raw_content: false,
       ...(topic ? { topic } : {}),
@@ -97,7 +97,7 @@ async function firecrawlSearch(query: string, maxResults: number) {
     signal: AbortSignal.timeout(8000),
     body: JSON.stringify({
       query,
-      limit: Math.min(maxResults, 5),
+      limit: Math.min(maxResults, 10),
       scrapeOptions: { formats: ['markdown'] },
     }),
   });
@@ -149,7 +149,7 @@ async function googleSearch(query: string, maxResults: number) {
   if (!apiKey || !cx) throw new Error('Google Custom Search not configured');
 
   const res = await fetch(
-    `${GOOGLE_URL}?key=${encodeURIComponent(apiKey)}&cx=${encodeURIComponent(cx)}&q=${encodeURIComponent(query)}&num=${Math.min(maxResults, 5)}`,
+    `${GOOGLE_URL}?key=${encodeURIComponent(apiKey)}&cx=${encodeURIComponent(cx)}&q=${encodeURIComponent(query)}&num=${Math.min(maxResults, 10)}`,
     { signal: AbortSignal.timeout(8000) }
   );
 
@@ -183,7 +183,7 @@ async function exaSearch(query: string, maxResults: number) {
     signal: AbortSignal.timeout(8000),
     body: JSON.stringify({
       query,
-      numResults: Math.min(maxResults, 5),
+      numResults: Math.min(maxResults, 10),
       type: 'auto',
       contents: { text: true, highlights: true },
     }),
@@ -224,7 +224,7 @@ async function exaNewsSearch(query: string, maxResults: number, freshness: strin
     signal: AbortSignal.timeout(8000),
     body: JSON.stringify({
       query,
-      numResults: Math.min(maxResults, 5),
+      numResults: Math.min(maxResults, 10),
       type: 'auto',
       category: 'news',
       startPublishedDate: startDate,
@@ -368,7 +368,7 @@ async function googleImageSearch(query: string, maxResults: number, safeSearch: 
 
   const safe = safeSearch ? '&safe=active' : '';
   const res = await fetch(
-    `${GOOGLE_URL}?key=${encodeURIComponent(apiKey)}&cx=${encodeURIComponent(cx)}&q=${encodeURIComponent(query)}&num=${Math.min(maxResults, 5)}&searchType=image${safe}`,
+    `${GOOGLE_URL}?key=${encodeURIComponent(apiKey)}&cx=${encodeURIComponent(cx)}&q=${encodeURIComponent(query)}&num=${Math.min(maxResults, 10)}&searchType=image${safe}`,
     { signal: AbortSignal.timeout(8000) }
   );
 
@@ -406,7 +406,7 @@ async function tavilyNewsSearch(query: string, maxResults: number, freshness: st
       api_key: apiKey,
       query,
       search_depth: 'advanced',
-      max_results: Math.min(maxResults, 5),
+      max_results: Math.min(maxResults, 10),
       include_answer: true,
       include_raw_content: false,
       topic: 'news',

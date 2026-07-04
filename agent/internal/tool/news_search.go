@@ -15,7 +15,7 @@ func newsSearchTool() ToolDef {
 			Category:    "research",
 			Parameters: map[string]api.ParamDef{
 				"query":       {Type: "string", Description: "The news search query", Required: true},
-				"max_results": {Type: "number", Description: "Max articles (1-10)", Required: false, Default: 5},
+				"max_results": {Type: "number", Description: "Max articles (1-10)", Required: false, Default: 8},
 				"freshness":   {Type: "string", Description: "Time range for news", Required: false, Default: "week", Enum: []string{"hour", "day", "week", "month"}},
 			},
 		},

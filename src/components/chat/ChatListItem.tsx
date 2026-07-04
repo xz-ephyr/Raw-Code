@@ -86,7 +86,7 @@ export function ChatListItem({ chat, onDelete, onArchive, onRename }: ChatListIt
     <div
       className={cn(
         'group relative w-full rounded-[6px] transition-all duration-200',
-        'hover:bg-[#f5f5f5] active:bg-[#eeeeee]',
+        'hover:bg-[#333333] active:bg-[#292929]',
         'flex items-center gap-3 px-3 py-1.5',
         isMenuOpen ? 'z-20' : 'z-0 hover:z-10'
       )}
@@ -100,12 +100,12 @@ export function ChatListItem({ chat, onDelete, onArchive, onRename }: ChatListIt
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 onBlur={() => setIsEditing(false)}
-                className="w-full bg-white border border-neutral-300 rounded px-2 py-1 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full bg-[#111110] border border-neutral-600 rounded px-2 py-1 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white"
               />
             </form>
           ) : (
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-neutral-900 truncate">{chat.title}</span>
+              <span className="text-sm font-medium text-white truncate">{chat.title}</span>
               {chat.lastMessage && (
                 <span className="text-xs text-neutral-500 truncate mt-0.5">{chat.lastMessage}</span>
               )}
@@ -118,8 +118,8 @@ export function ChatListItem({ chat, onDelete, onArchive, onRename }: ChatListIt
         <button
           onClick={toggleMenu}
           className={cn(
-            'p-1.5 hover:bg-neutral-200 rounded-md text-neutral-500 transition-all opacity-0 group-hover:opacity-100',
-            isMenuOpen && 'opacity-100 bg-neutral-200'
+            'p-1.5 hover:bg-neutral-700 rounded-md text-neutral-500 transition-all opacity-0 group-hover:opacity-100',
+            isMenuOpen && 'opacity-100 bg-neutral-700'
           )}
           aria-label="Chat actions"
         >
@@ -128,24 +128,24 @@ export function ChatListItem({ chat, onDelete, onArchive, onRename }: ChatListIt
 
         {isMenuOpen && menuPos && (
           <div
-            className="fixed w-40 bg-white border border-neutral-200 rounded-xl shadow-xl py-1.5 z-[9999]"
+            className="fixed w-40 bg-[#111110] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 py-1.5 z-[9999]"
             style={{ top: menuPos.top, left: menuPos.left }}
           >
             <button
               onClick={handleRename}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-300 hover:bg-neutral-900 transition-colors"
             >
-              <HugeiconRenderer icon={PencilEdit02Icon} size={16} className="text-neutral-400" />
+              <HugeiconRenderer icon={PencilEdit02Icon} size={16} className="text-neutral-500" />
               <span>Rename</span>
             </button>
             <button
               onClick={handleArchive}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-300 hover:bg-neutral-900 transition-colors"
             >
-              <HugeiconRenderer icon={ArchiveIcon} size={16} className="text-neutral-400" />
+              <HugeiconRenderer icon={ArchiveIcon} size={16} className="text-neutral-500" />
               <span>{chat.archived ? 'Unarchive' : 'Archive'}</span>
             </button>
-            <div className="h-px bg-neutral-100 my-1.5" />
+            <div className="h-px bg-neutral-800 my-1.5" />
             <button
               onClick={handleDelete}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"

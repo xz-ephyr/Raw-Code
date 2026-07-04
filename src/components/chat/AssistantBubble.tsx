@@ -90,15 +90,15 @@ export const AssistantBubble = React.memo(
                 }`}
               >
                 <div className="overflow-hidden min-h-0">
-                  <div
-                    ref={timelineScrollRef}
-                    className="overflow-y-auto no-scrollbar flex flex-col gap-2 max-h-[45vh]"
-                  >
-                    <ThinkingTimeline
-                      steps={timelineSteps}
-                      isStreaming={isStreaming}
-                    />
-                  </div>
+                    <div
+                      ref={timelineScrollRef}
+                      className="overflow-y-auto no-scrollbar flex flex-col gap-2 max-h-[45vh] rounded-lg bg-neutral-900/90 p-3"
+                    >
+                      <ThinkingTimeline
+                        steps={timelineSteps}
+                        isStreaming={isStreaming}
+                      />
+                    </div>
                 </div>
               </div>
             </>
@@ -107,18 +107,18 @@ export const AssistantBubble = React.memo(
           {phase !== 'idle' ? (
             <>
               {streamedIntention && (
-                <div className="font-normal text-neutral-900 stagger-item stagger-0 leading-[1.2]">
+                <div className="font-normal text-neutral-100 stagger-item stagger-0 leading-[1.2]">
                   <MarkdownMessage content={streamedIntention} sources={allSources} />
                 </div>
               )}
               {(phase === 'explanation' || phase === 'done') && streamedExplanation && (
-                <div className="font-normal text-neutral-900 stagger-item stagger-2 leading-[1.2]">
+                <div className="font-normal text-neutral-100 stagger-item stagger-2 leading-[1.2]">
                   <MarkdownMessage content={streamedExplanation} sources={allSources} />
                 </div>
               )}
             </>
           ) : content && (
-            <div className="font-normal text-neutral-900 leading-[1.2]">
+            <div className="font-normal text-neutral-100 leading-[1.2]">
               <MarkdownMessage content={content} sources={allSources} />
             </div>
           )}

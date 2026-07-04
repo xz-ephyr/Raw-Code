@@ -23,8 +23,8 @@ export const ThoughtLabel = ({
       <span
         className={
           isActivelyThinking
-            ? 'thinking-shimmer-text text-base font-medium cursor-pointer'
-            : 'text-base font-medium text-neutral-400 cursor-pointer'
+            ? 'thinking-shimmer-text text-base font-medium cursor-pointer text-white'
+            : 'text-base font-medium text-white/60 cursor-pointer'
         }
       >
         {label}

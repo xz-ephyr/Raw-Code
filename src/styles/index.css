@@ -5,7 +5,7 @@
 html {
   height: 100%;
   scrollbar-width: thin;
-  scrollbar-color: #e5e5e5 transparent;
+  scrollbar-color: #404040 transparent;
 }
 html::-webkit-scrollbar {
   width: 4px;
@@ -15,11 +15,11 @@ html::-webkit-scrollbar-track {
   background: transparent;
 }
 html::-webkit-scrollbar-thumb {
-  background: #e5e5e5;
+  background: #404040;
   border-radius: 2px;
 }
 html::-webkit-scrollbar-thumb:hover {
-  background: #d4d4d4;
+  background: #525252;
 }
 
 body {
@@ -38,22 +38,9 @@ body {
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #141413;
-  --radius: 0.5rem;
-}
-
-.dark {
   --background: #111110;
   --foreground: #faf9f5;
-}
-.dark ::-webkit-scrollbar-thumb,
-html.dark::-webkit-scrollbar-thumb {
-  background: #404040;
-}
-.dark ::-webkit-scrollbar-thumb:hover,
-html.dark::-webkit-scrollbar-thumb:hover {
-  background: #525252;
+  --radius: 0.5rem;
 }
 
 .font-serif-source {
@@ -65,7 +52,7 @@ html.dark::-webkit-scrollbar-thumb:hover {
 
 .thin-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #e5e5e5 transparent;
+  scrollbar-color: #404040 transparent;
 }
 .thin-scrollbar::-webkit-scrollbar {
   width: 4px;
@@ -75,19 +62,10 @@ html.dark::-webkit-scrollbar-thumb:hover {
   background: transparent;
 }
 .thin-scrollbar::-webkit-scrollbar-thumb {
-  background: #e5e5e5;
+  background: #404040;
   border-radius: 2px;
 }
 .thin-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #d4d4d4;
-}
-.dark .thin-scrollbar {
-  scrollbar-color: #404040 transparent;
-}
-.dark .thin-scrollbar::-webkit-scrollbar-thumb {
-  background: #404040;
-}
-.dark .thin-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #525252;
 }
 
@@ -130,7 +108,7 @@ html.dark::-webkit-scrollbar-thumb:hover {
 .cm-editor {
   font-size: 13px;
   line-height: 1.6;
-  background: #fafafa;
+  background: #1a1a1a;
 }
 .cm-editor .cm-scroller {
   padding: 10px 0;
@@ -139,7 +117,7 @@ html.dark::-webkit-scrollbar-thumb:hover {
   outline: none;
 }
 .cm-editor .cm-gutters {
-  background: #fafafa;
+  background: #1a1a1a;
 }
 
 @media (prefers-reduced-motion: reduce) {

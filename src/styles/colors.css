@@ -1,0 +1,39 @@
+{
+  "background": {
+    "light": "#111110",
+    "dark": "#111110",
+    "editor": "#1a1a1a",
+    "darkEditor": "#1a1a1a",
+    "thinkingIndicator": "#1a1a1a"
+  },
+  "foreground": {
+    "light": "#faf9f5",
+    "dark": "#faf9f5"
+  },
+  "sidebar": {
+    "hover": "#2a2a2a",
+    "activeTab": "#404040",
+    "activeItem": "#2a2a2a",
+    "buttonHover": "#404040",
+    "buttonActive": "#525252",
+    "tabHover": "#2a2a2a"
+  },
+  "chatList": {
+    "hover": "#333333",
+    "active": "#292929"
+  },
+  "border": {
+    "sidebar": "#404040",
+    "divider": "#404040"
+  },
+  "scrollbar": {
+    "thumb": "#404040",
+    "thumbHover": "#525252",
+    "thumbDark": "#404040",
+    "thumbHoverDark": "#525252"
+  },
+  "settings": {
+    "activeTab": "#404040",
+    "tabHover": "#2a2a2a"
+  }
+}

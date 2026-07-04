@@ -5,9 +5,9 @@ export function StorageTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-100">
-        <h4 className="text-sm font-semibold text-neutral-700 mb-2">Local Database</h4>
-        <p className="text-xs text-neutral-500">
+      <div className="bg-neutral-800 p-4 rounded-xl border border-neutral-800">
+        <h4 className="text-sm font-semibold text-neutral-300 mb-2">Local Database</h4>
+        <p className="text-xs text-neutral-400">
           Your projects, chats, and messages are stored locally in SQLite. This data never leaves your machine.
         </p>
       </div>
@@ -28,7 +28,7 @@ export function StorageTab() {
             a.click();
             URL.revokeObjectURL(url);
           }}
-          className="w-full px-4 py-2.5 text-sm font-semibold text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-[10px] transition-colors text-left"
+          className="w-full px-4 py-2.5 text-sm font-semibold text-neutral-300 bg-neutral-800 hover:bg-neutral-700 rounded-[10px] transition-colors text-left"
         >
           Export All Data
         </button>
@@ -42,7 +42,7 @@ export function StorageTab() {
               }
             }
           }}
-          className="w-full px-4 py-2.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-[14px] transition-colors text-left"
+          className="w-full px-4 py-2.5 text-sm font-semibold text-red-400 bg-red-900/20 hover:bg-red-900/30 rounded-[14px] transition-colors text-left"
         >
           Clear Chat History
         </button>
@@ -53,7 +53,7 @@ export function StorageTab() {
               localStorage.removeItem('onboarding_completed');
             }
           }}
-          className="w-full px-4 py-2.5 text-sm font-semibold text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-[10px] transition-colors text-left"
+          className="w-full px-4 py-2.5 text-sm font-semibold text-neutral-300 bg-neutral-800 hover:bg-neutral-700 rounded-[10px] transition-colors text-left"
         >
           Reset Onboarding
         </button>

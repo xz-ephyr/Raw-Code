@@ -15,7 +15,7 @@ func webSearchTool() ToolDef {
 			Category:    "research",
 			Parameters: map[string]api.ParamDef{
 				"query":       {Type: "string", Description: "The search query", Required: true},
-				"max_results": {Type: "number", Description: "Max results (1-10)", Required: false, Default: 5},
+				"max_results": {Type: "number", Description: "Max results (1-10)", Required: false, Default: 8},
 				"site":        {Type: "string", Description: "Restrict search to a specific domain (e.g. developer.mozilla.org)", Required: false},
 			},
 		},

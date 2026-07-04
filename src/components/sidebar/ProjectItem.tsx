@@ -102,16 +102,16 @@ const ProjectItem = React.memo(({ project, onDelete }: ProjectItemProps) => {
   return (
     <div className="mb-1">
       <div
-        className="flex items-center gap-3 p-2 hover:bg-[#f2f3f6] rounded-[8px] cursor-pointer group"
+        className="flex items-center gap-3 p-2 hover:bg-[#2a2a2a] rounded-[8px] cursor-pointer group"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <HugeiconRenderer icon={Folder02Icon} />
-        <span className="text-sm font-semibold text-gray-700 flex-1 truncate">{project.name}</span>
+        <span className="text-sm font-semibold text-neutral-300 flex-1 truncate">{project.name}</span>
 
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={handleNewChat}
-            className="p-1 hover:bg-[#e5e5e5] rounded-[6px]"
+            className="p-1 hover:bg-[#404040] rounded-[6px]"
             title="New Chat"
             aria-label="New Chat"
           >
@@ -124,7 +124,7 @@ const ProjectItem = React.memo(({ project, onDelete }: ProjectItemProps) => {
               setMenuPos({ top: rect.bottom + 4, left: rect.right - 128 });
               setShowMenu(!showMenu);
             }}
-            className="p-1 hover:bg-[#e5e5e5] rounded-[6px]"
+            className="p-1 hover:bg-[#404040] rounded-[6px]"
             title="Project options"
             aria-label="Project options"
           >
@@ -140,7 +140,7 @@ const ProjectItem = React.memo(({ project, onDelete }: ProjectItemProps) => {
 
       {showMenu && menuPos && (
           <div
-            className="fixed w-32 bg-white border border-neutral-200 rounded-xl shadow-lg py-1 z-[9999]"
+                  className="fixed w-32 bg-[#111110] border border-neutral-200 rounded-xl shadow-lg py-1 z-[9999]"
             style={{ top: menuPos.top, left: menuPos.left }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -164,7 +164,7 @@ const ProjectItem = React.memo(({ project, onDelete }: ProjectItemProps) => {
           {sessions.filter(s => !s.archived).map((session) => (
             <Fragment key={session.id}>
               <div
-                className={`group flex items-center text-sm py-1 px-2 hover:bg-[#f2f3f6] rounded-[8px] cursor-pointer active:scale-[0.99] transition-transform ${uuid === session.id ? 'bg-[#f2f3f6] text-black' : 'text-gray-600'}`}
+                className={`group flex items-center text-sm py-1 px-2 hover:bg-[#2a2a2a] rounded-[8px] cursor-pointer active:scale-[0.99] transition-transform ${uuid === session.id ? 'bg-[#2a2a2a] text-white' : 'text-neutral-500'}`}
                 onClick={() => {
                   const slug = project.name.toLowerCase().replace(/\s+/g, '-');
                   navigate(`/project/${slug}/${session.id}`);
@@ -181,7 +181,7 @@ const ProjectItem = React.memo(({ project, onDelete }: ProjectItemProps) => {
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
                       onBlur={() => setEditingSessionId(null)}
-                      className="w-full bg-white border border-neutral-300 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full bg-[#111110] border border-neutral-300 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-2 focus:ring-white"
                     />
                   </form>
                 ) : (
@@ -205,7 +205,7 @@ const ProjectItem = React.memo(({ project, onDelete }: ProjectItemProps) => {
               </div>
               {sessionMenuId === session.id && sessionMenuPos && (
                 <div
-                  className="fixed w-32 bg-white border border-neutral-200 rounded-xl shadow-lg py-1 z-[9999]"
+            className="fixed w-32 bg-[#111110] border border-neutral-200 rounded-xl shadow-lg py-1 z-[9999]"
                   style={{ top: sessionMenuPos.top, left: sessionMenuPos.left }}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -220,7 +220,7 @@ const ProjectItem = React.memo(({ project, onDelete }: ProjectItemProps) => {
                     }}
                     className="w-full text-left px-3 py-1.5 text-xs text-neutral-700 hover:bg-neutral-50 flex items-center gap-2"
                   >
-                    <HugeiconRenderer icon={PencilEdit02Icon} size={13} className="text-neutral-400" />
+                    <HugeiconRenderer icon={PencilEdit02Icon} size={13} className="text-neutral-500" />
                     Rename
                   </button>
                   <button
@@ -228,7 +228,7 @@ const ProjectItem = React.memo(({ project, onDelete }: ProjectItemProps) => {
                     onClick={(e) => handleArchiveSession(e, session.id)}
                     className="w-full text-left px-3 py-1.5 text-xs text-neutral-700 hover:bg-neutral-50 flex items-center gap-2"
                   >
-                    <HugeiconRenderer icon={ArchiveIcon} size={13} className="text-neutral-400" />
+                    <HugeiconRenderer icon={ArchiveIcon} size={13} className="text-neutral-500" />
                     Archive
                   </button>
                   <div className="h-px bg-neutral-100 my-1" />

@@ -15,7 +15,7 @@ func imageSearchTool() ToolDef {
 			Category:    "research",
 			Parameters: map[string]api.ParamDef{
 				"query":       {Type: "string", Description: "The image search query", Required: true},
-				"max_results": {Type: "number", Description: "Max images (1-20)", Required: false, Default: 5},
+				"max_results": {Type: "number", Description: "Max images (1-20)", Required: false, Default: 8},
 				"safe_search": {Type: "boolean", Description: "Enable safe search filtering", Required: false, Default: true},
 			},
 		},

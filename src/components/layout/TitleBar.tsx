@@ -55,7 +55,7 @@ export default function TitleBar() {
   const displayTitle = sessionTitle || 'New conversation';
 
   return (
-    <div className="group flex items-center h-9 px-4 bg-white shrink-0 select-none">
+    <div className="group flex items-center h-9 px-4 bg-[#111110] shrink-0 select-none">
       {isEditing ? (
         <input
           ref={inputRef}
@@ -63,11 +63,11 @@ export default function TitleBar() {
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={handleSubmitEdit}
           onKeyDown={handleKeyDown}
-          className="w-full max-w-[400px] bg-white border border-neutral-300 rounded-[6px] px-2 py-0.5 text-sm font-semibold text-neutral-800 focus:outline-none focus:ring-1 focus:ring-neutral-400/30"
+          className="w-full max-w-[400px] bg-[#111110] border border-neutral-600 rounded-[6px] px-2 py-0.5 text-sm font-semibold text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-400/30"
         />
       ) : isTitleGenerating ? (
         <div className="flex items-center gap-2 w-full">
-          <div className="h-3.5 w-44 rounded bg-gradient-to-r from-neutral-300 via-neutral-200 to-neutral-300 bg-[length:200%_100%] animate-shimmer" />
+          <div className="h-3.5 w-44 rounded bg-gradient-to-r from-neutral-600 via-neutral-700 to-neutral-600 bg-[length:200%_100%] animate-shimmer" />
           <span className="text-[11px] text-neutral-400">Generating title...</span>
         </div>
       ) : (
@@ -76,8 +76,8 @@ export default function TitleBar() {
           className="flex items-center gap-1.5 w-full min-w-0 cursor-text"
           title="Click to rename"
         >
-          <span className="text-sm font-semibold text-gray-700 truncate">{displayTitle}</span>
-          <span className="shrink-0 text-neutral-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+          <span className="text-sm font-semibold text-neutral-300 truncate">{displayTitle}</span>
+          <span className="shrink-0 text-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M11.5 1.5L14.5 4.5L5.5 13.5L1.5 14.5L2.5 10.5L11.5 1.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
               <path d="M9 4L12 7" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />

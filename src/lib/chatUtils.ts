@@ -164,16 +164,18 @@ export const mapUIMessageToLegacyMessage = (m: any): any => {
       }
     );
     if (writeToolPartIdx >= 0) {
-      contentBeforeTool = m.parts
+      const rawBefore = m.parts
         .slice(0, writeToolPartIdx)
         .filter((p: any) => p.type === 'text')
         .map((p: any) => p.text)
         .join('');
-      contentAfterTool = m.parts
+      const rawAfter = m.parts
         .slice(writeToolPartIdx + 1)
         .filter((p: any) => p.type === 'text')
         .map((p: any) => p.text)
         .join('');
+      contentBeforeTool = extractThinkTags(rawBefore).cleanContent;
+      contentAfterTool = extractThinkTags(rawAfter).cleanContent;
     }
   }
 

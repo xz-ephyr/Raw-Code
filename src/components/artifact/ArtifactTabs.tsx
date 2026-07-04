@@ -14,7 +14,7 @@ const tabs: { id: TabId; label: string; icon: typeof EyeIcon }[] = [
 
 export function ArtifactTabs({ activeTab, onTabChange }: ArtifactTabsProps) {
   return (
-    <div className="flex border-b border-neutral-200 dark:border-neutral-700 shrink-0">
+    <div className="flex border-b border-neutral-700 shrink-0">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         const Icon = tab.icon;
@@ -24,8 +24,8 @@ export function ArtifactTabs({ activeTab, onTabChange }: ArtifactTabsProps) {
             onClick={() => onTabChange(tab.id)}
             className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 transition-colors ${
               isActive
-                ? 'border-neutral-800 dark:border-neutral-200 text-neutral-800 dark:text-neutral-200'
-                : 'border-transparent text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
+                ? 'border-neutral-200 text-neutral-200'
+                : 'border-transparent text-neutral-400 hover:text-neutral-300 hover:border-neutral-600'
             }`}
           >
             <Icon size={14} />

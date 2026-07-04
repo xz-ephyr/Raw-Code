@@ -439,11 +439,11 @@ export const ChatPage = () => {
   const panelRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-white dark:bg-[#111110] relative">
+    <div className="flex flex-col h-screen overflow-hidden bg-[#111110] relative">
       {uuid !== 'new' && messages.length > 0 && <TitleBar />}
       <div className="flex flex-1 min-h-0">
         <div
-          className={`flex flex-col min-w-0 bg-white dark:bg-[#111110] relative ${
+          className={`flex flex-col min-w-0 bg-[#111110] relative ${
             isMobile && isPanelOpen
               ? 'hidden'
               : 'flex-1'
@@ -485,7 +485,7 @@ export const ChatPage = () => {
               aria-valuemax={PANEL_MAX_WIDTH}
               className="w-[5px] shrink-0 cursor-col-resize bg-transparent relative flex items-center justify-center group/divider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-inset"
             >
-              <div className="w-px h-full bg-neutral-200 dark:bg-neutral-700 group-hover/divider:bg-neutral-400 dark:group-hover/divider:bg-neutral-500 group-active/divider:bg-neutral-500 dark:group-active/divider:bg-neutral-400 transition-colors" />
+               <div className="w-px h-full bg-neutral-700 group-hover/divider:bg-neutral-500 group-active/divider:bg-neutral-400 transition-colors" />
             </div>
             {isMobile && (
               <div className="absolute inset-0 z-50 bg-black/30" onClick={closePanel} />

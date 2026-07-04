@@ -105,7 +105,7 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, sources 
   }, [hasCitations, sources]);
 
   return (
-    <div className="text-[15px] leading-relaxed break-words text-neutral-900 [&>p]:my-0">
+    <div className="text-[15px] leading-relaxed break-words text-neutral-100 [&>p]:my-0">
       <ReactMarkdown
         remarkPlugins={REMARK_PLUGINS}
         components={components}
@@ -134,7 +134,7 @@ const markdownComponents = {
     }
     return (
       <code
-        className="rounded bg-neutral-100/80 border border-neutral-200/50 px-1.5 py-0.5 text-[0.85em] text-neutral-800 font-mono"
+        className="rounded bg-neutral-800/80 border border-neutral-700/50 px-1.5 py-0.5 text-[0.85em] text-neutral-200 font-mono"
         {...props}
       >
         {children}
@@ -155,18 +155,18 @@ const markdownComponents = {
   },
   h1({ children }: any) {
     return (
-      <h1 className="text-2xl font-semibold mb-4 mt-6 text-neutral-900">{children}</h1>
+      <h1 className="text-2xl font-semibold mb-4 mt-6 text-neutral-100">{children}</h1>
     );
   },
   h2({ children }: any) {
-    return <h2 className="text-xl font-semibold mb-3 mt-5 text-neutral-900">{children}</h2>;
+    return <h2 className="text-xl font-semibold mb-3 mt-5 text-neutral-100">{children}</h2>;
   },
   h3({ children }: any) {
-    return <h3 className="text-lg font-semibold mb-3 mt-4 text-neutral-900">{children}</h3>;
+    return <h3 className="text-lg font-semibold mb-3 mt-4 text-neutral-100">{children}</h3>;
   },
   h4({ children }: any) {
     return (
-      <h4 className="text-base font-semibold mb-2 mt-4 text-neutral-900">{children}</h4>
+      <h4 className="text-base font-semibold mb-2 mt-4 text-neutral-100">{children}</h4>
     );
   },
   table({ children, ...props }: any) {
@@ -189,7 +189,7 @@ const markdownComponents = {
   },
   blockquote({ children }: any) {
     return (
-      <blockquote className="border-l-4 border-neutral-300 pl-4 py-1 italic text-neutral-600 mb-4 bg-neutral-50/50 rounded-r-lg">
+      <blockquote className="border-l-4 border-neutral-600 pl-4 py-1 italic text-neutral-400 mb-4 bg-neutral-900/50 rounded-r-lg">
         {children}
       </blockquote>
     );
@@ -200,21 +200,21 @@ const markdownComponents = {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-600 hover:text-blue-700 hover:underline font-medium"
+        className="text-blue-400 hover:text-blue-300 hover:underline font-medium"
       >
         {children}
       </a>
     );
   },
   hr() {
-    return <hr className="my-6 border-neutral-200" />;
+    return <hr className="my-6 border-neutral-700" />;
   },
   img({ src, alt }: any) {
     return (
       <img
         src={src}
         alt={alt || ''}
-        className="inline-block max-h-48 w-auto rounded border border-neutral-200 my-1 mr-2"
+        className="inline-block max-h-48 w-auto rounded border border-neutral-700 my-1 mr-2"
         loading="lazy"
       />
     );

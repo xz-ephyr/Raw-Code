@@ -21,7 +21,7 @@ const SidebarTab = React.memo(
         className={cn(
           'flex items-center py-1.5 px-2 rounded-[8px] cursor-pointer active:scale-[0.99] transition-transform w-full',
           collapsed ? 'justify-center' : 'gap-3',
-          active ? 'bg-[#e5e5e5]' : 'hover:bg-[#f2f3f6]'
+          active ? 'bg-[#404040]' : 'hover:bg-[#2a2a2a]'
         )}
       >
         <div className="shrink-0 flex items-center justify-center w-[18px] h-[18px]">

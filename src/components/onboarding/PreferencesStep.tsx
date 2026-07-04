@@ -75,8 +75,8 @@ export function PreferencesStep({ onComplete, onSkip }: PreferencesStepProps) {
   return (
     <div className="flex flex-col max-w-lg mx-auto gap-6 py-4 w-full">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-neutral-900">AI Memory & Preferences</h2>
-        <p className="text-neutral-500 text-sm mt-1">
+        <h2 className="text-2xl font-bold text-neutral-100">AI Memory & Preferences</h2>
+        <p className="text-neutral-400 text-sm mt-1">
           Help the AI understand how you like to work. These settings are stored locally.
         </p>
       </div>
@@ -94,12 +94,12 @@ export function PreferencesStep({ onComplete, onSkip }: PreferencesStepProps) {
                 onClick={() => setPrefs(prev => ({ ...prev, style: opt.id }))}
                 className={`p-3 rounded-xl border text-left transition-all ${
                   prefs.style === opt.id
-                    ? 'border-black bg-neutral-50'
-                    : 'border-neutral-100 hover:border-neutral-200'
+                    ? 'border-black bg-neutral-800'
+                    : 'border-neutral-800 hover:border-neutral-700'
                 }`}
               >
-                <div className="text-sm font-semibold text-neutral-800">{opt.label}</div>
-                <div className="text-[11px] text-neutral-500 mt-0.5">{opt.desc}</div>
+                <div className="text-sm font-semibold text-neutral-200">{opt.label}</div>
+                <div className="text-[11px] text-neutral-400 mt-0.5">{opt.desc}</div>
               </button>
             ))}
           </div>
@@ -117,19 +117,19 @@ export function PreferencesStep({ onComplete, onSkip }: PreferencesStepProps) {
                 onClick={() => setPrefs(prev => ({ ...prev, expertise: opt.id }))}
                 className={`p-3 rounded-xl border text-left transition-all ${
                   prefs.expertise === opt.id
-                    ? 'border-black bg-neutral-50'
-                    : 'border-neutral-100 hover:border-neutral-200'
+                    ? 'border-black bg-neutral-800'
+                    : 'border-neutral-800 hover:border-neutral-700'
                 }`}
               >
-                <div className="text-sm font-semibold text-neutral-800">{opt.label}</div>
-                <div className="text-[11px] text-neutral-500 mt-0.5">{opt.desc}</div>
+                <div className="text-sm font-semibold text-neutral-200">{opt.label}</div>
+                <div className="text-[11px] text-neutral-400 mt-0.5">{opt.desc}</div>
               </button>
             ))}
           </div>
         </div>
 
         <div className="space-y-3">
-          <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+          <label className="text-sm font-semibold text-neutral-300 flex items-center gap-2">
             <HugeiconsIcon icon={FolderLibraryIcon} size={16} />
             Coding Focus Areas
           </label>
@@ -140,8 +140,8 @@ export function PreferencesStep({ onComplete, onSkip }: PreferencesStepProps) {
                 onClick={() => toggleFocus(item)}
                 className={`px-3 py-1.5 rounded-[8px] text-xs font-medium border transition-all ${
                   prefs.focus.includes(item)
-                    ? 'border-black bg-black text-white'
-                    : 'border-neutral-200 text-neutral-600 hover:border-neutral-300'
+                    ? 'border-black bg-neutral-700 text-white'
+                    : 'border-neutral-700 text-neutral-400 hover:border-neutral-600'
                 }`}
               >
                 {item}
@@ -152,20 +152,20 @@ export function PreferencesStep({ onComplete, onSkip }: PreferencesStepProps) {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+<label className="text-sm font-semibold text-neutral-300 flex items-center gap-2">
               <HugeiconsIcon icon={PencilEdit02Icon} size={16} />
               Custom Instructions
             </label>
             <button
               onClick={() => setShowCustom(!showCustom)}
-              className="text-xs text-neutral-500 hover:text-neutral-700 underline underline-offset-2"
+              className="text-xs text-neutral-400 hover:text-neutral-300 underline underline-offset-2"
             >
               {showCustom ? 'Hide' : 'Add'}
             </button>
           </div>
           {showCustom && (
             <textarea
-              className="w-full h-24 bg-neutral-50 rounded-xl px-4 py-3 text-sm border border-neutral-200 outline-none focus:border-neutral-400 transition-colors resize-none"
+              className="w-full h-24 bg-neutral-800 rounded-xl px-4 py-3 text-sm border border-neutral-700 outline-none focus:border-neutral-400 transition-colors resize-none"
               placeholder="e.g. I prefer TypeScript over JavaScript, always use functional components with hooks..."
               value={prefs.customInstructions}
               onChange={(e) => setPrefs(prev => ({ ...prev, customInstructions: e.target.value }))}
@@ -180,13 +180,13 @@ export function PreferencesStep({ onComplete, onSkip }: PreferencesStepProps) {
       <div className="flex gap-3 pt-2">
         <button
           onClick={onSkip}
-          className="flex-1 py-2.5 rounded-xl border border-neutral-200 text-neutral-600 font-medium text-sm hover:bg-neutral-50 transition-all"
+          className="flex-1 py-2.5 rounded-xl border border-neutral-700 text-neutral-400 font-medium text-sm hover:bg-neutral-800 transition-all"
         >
           Skip
         </button>
         <button
           onClick={handleSave}
-          className="flex-1 py-2.5 rounded-xl bg-black text-white font-medium text-sm hover:bg-neutral-800 transition-all active:scale-[0.98]"
+          className="flex-1 py-2.5 rounded-xl bg-neutral-700 text-white font-medium text-sm hover:bg-neutral-600 transition-all active:scale-[0.98]"
         >
           Save & Continue
         </button>

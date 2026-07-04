@@ -40,7 +40,7 @@ export function InlineSourcePill({ url, title, snippet }: InlineSourcePillProps)
         onMouseEnter={show}
         onMouseLeave={hide}
         onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-white hover:bg-neutral-100 border border-neutral-300 transition-colors no-underline shadow-sm hover:shadow-md cursor-pointer"
+        className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-[#111110] hover:bg-neutral-800 border border-neutral-600 transition-colors no-underline shadow-sm hover:shadow-md cursor-pointer"
         title={title || domain}
       >
         <img src={faviconUrl} alt="" width={10} height={10} className="rounded" loading="lazy" />
@@ -52,11 +52,11 @@ export function InlineSourcePill({ url, title, snippet }: InlineSourcePillProps)
           onMouseLeave={hide}
           className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 pointer-events-auto"
         >
-          <span className="block bg-white border border-neutral-200 rounded-lg shadow-lg p-3 min-w-[220px] max-w-[320px]">
-            <span className="block text-xs font-medium text-neutral-800 truncate mb-0.5">{title || domain}</span>
-            {snippet && <span className="block text-[11px] text-neutral-500 truncate mb-0.5">{snippet}</span>}
-            {domain && <span className="block text-[11px] text-neutral-400 truncate">{domain}</span>}
-            <span className="block absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 w-2 h-2 bg-white border-l border-b border-neutral-200" />
+          <span className="block bg-[#111110] border border-neutral-700 rounded-lg shadow-lg p-3 min-w-[220px] max-w-[320px]">
+            <span className="block text-xs font-medium text-neutral-200 truncate mb-0.5">{title || domain}</span>
+            <span className="block text-[11px] text-neutral-500 truncate mb-0.5">{snippet}</span>
+            <span className="block text-[11px] text-neutral-500 truncate">{domain}</span>
+            <span className="block absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 w-2 h-2 bg-[#111110] border-l border-b border-neutral-700" />
           </span>
         </span>
       )}

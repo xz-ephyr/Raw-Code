@@ -50,11 +50,11 @@ export const ChatsPage = () => {
   }, [refreshChats]);
 
   return (
-    <div className="flex-1 bg-white overflow-y-auto thin-scrollbar">
+    <div className="flex-1 bg-[#111110] overflow-y-auto thin-scrollbar">
       <div className="mx-auto px-6 py-12" style={{ maxWidth: 'min(800px, 100%)' }}>
         <div className="flex flex-col gap-6 mb-8">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-semibold text-neutral-900 tracking-tight">Chats</h1>
+            <h1 className="text-3xl font-semibold text-neutral-100 tracking-tight">Chats</h1>
           </div>
           <ChatSearchBar
             searchQuery={searchQuery}

@@ -70,7 +70,7 @@ function SearchingHeader({
   return (
     <div
       className={`flex items-center gap-2 px-2 pr-3 py-0.5 rounded-[6px] cursor-pointer select-none transition-all active:scale-[0.98] group/searchheader ${
-        isRunning ? 'bg-blue-50 active:bg-blue-100' : 'hover:bg-neutral-50 active:bg-neutral-100'
+        isRunning ? 'bg-blue-900/40 active:bg-blue-900/60' : 'hover:bg-white/10 active:bg-white/15'
       }`}
       onClick={onToggle}
     >
@@ -78,27 +78,27 @@ function SearchingHeader({
         <HugeiconsIcon
           icon={InternetIcon}
           size={12}
-          className={isRunning ? 'text-blue-500' : 'text-neutral-400'}
+          className={isRunning ? 'text-blue-400' : 'text-white/50'}
         />
       </div>
       <span
         className={
           isRunning
-            ? 'thinking-shimmer-text text-sm font-medium'
-            : 'text-sm font-medium text-neutral-500'
+            ? 'thinking-shimmer-text text-sm font-medium text-white'
+            : 'text-sm font-medium text-white/60'
         }
       >
         Searching
       </span>
       {query && (
-        <span className="text-sm font-medium text-neutral-600 truncate max-w-[400px]">
+        <span className="text-sm font-medium text-white/70 truncate max-w-[400px]">
           &ldquo;{query}&rdquo;
         </span>
       )}
       <HugeiconsIcon
         icon={ChevronsDownUpIcon}
         size={12}
-        className="text-neutral-400 ml-auto opacity-0 group-hover/searchheader:opacity-100 transition-opacity cursor-pointer"
+        className="text-white/40 ml-auto opacity-0 group-hover/searchheader:opacity-100 transition-opacity cursor-pointer"
       />
     </div>
   );
@@ -112,13 +112,13 @@ function ThinkingStep({ reasoning, isActive, isStreaming }: {
   const showEllipsis = isActive && isStreaming;
   return (
     <div className="flex flex-col gap-1 flex-1 min-w-0 pb-3">
-      <div className="text-[14px] leading-relaxed text-neutral-500 [&>p]:my-0">
+      <div className="text-[14px] leading-relaxed text-white/90 [&>p]:my-0">
         <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>
           {reasoning || ''}
         </ReactMarkdown>
       </div>
       {showEllipsis && (
-        <div className="text-[13px] leading-relaxed text-neutral-400 animate-pulse">...</div>
+        <div className="text-[13px] leading-relaxed text-white/50 animate-pulse">...</div>
       )}
     </div>
   );
@@ -135,7 +135,7 @@ function SearchingStep({ step, isExpanded, onToggle }: {
       <SearchingHeader query={step.query || ''} isRunning={!!step.isRunning} onToggle={onToggle} />
 
       {step.isRunning && (
-        <div className="flex items-center gap-1.5 px-2 text-xs text-neutral-400 animate-pulse">
+        <div className="flex items-center gap-1.5 px-2 text-xs text-white/50 animate-pulse">
           <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
           Fetching results...
         </div>
@@ -148,14 +148,14 @@ function SearchingStep({ step, isExpanded, onToggle }: {
           }`}
         >
           <div className="overflow-hidden min-h-0">
-            <div className="border border-neutral-200 rounded-[6px] overflow-y-auto max-h-[240px] thin-scrollbar mx-[5px]">
+            <div className="border border-white/10 rounded-[6px] overflow-y-auto max-h-[240px] thin-scrollbar mx-[5px]">
               {sources.map((src, sIdx) => (
                 <a
                   key={sIdx}
                   href={src.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-2 h-[36px] rounded-[6px] hover:bg-neutral-100 transition-colors no-underline"
+                  className="flex items-center gap-3 px-2 h-[36px] rounded-[6px] hover:bg-white/10 transition-colors no-underline"
                 >
                   <img
                     src={`https://www.google.com/s2/favicons?domain=${getDomain(src.url)}&sz=16`}
@@ -164,7 +164,7 @@ function SearchingStep({ step, isExpanded, onToggle }: {
                     height={16}
                     className="rounded shrink-0"
                   />
-                  <span className="text-sm text-neutral-700 truncate">{src.title || src.url}</span>
+                  <span className="text-sm text-white/80 truncate">{src.title || src.url}</span>
                 </a>
               ))}
             </div>
@@ -221,6 +221,30 @@ export const ThinkingTimeline = React.memo(function ThinkingTimeline({
 
 // ── Hook to build timeline steps from raw props ────────────────────
 
+function extractThinkTagsFromText(text: string): { clean: string; thinking: string } {
+  const thinkingParts: string[] = [];
+  let clean = text;
+
+  const fullRegex = /<think>([\s\S]*?)<\/think>/gi;
+  let match: RegExpExecArray | null;
+  const regex = new RegExp(fullRegex.source, 'gi');
+  while ((match = regex.exec(text)) !== null) {
+    thinkingParts.push(match[1].trim());
+    clean = clean.replace(match[0], '');
+  }
+
+  if (!text.includes('</think>')) {
+    const incompleteRegex = /<think>([\s\S]*?)$/i;
+    const incompleteMatch = incompleteRegex.exec(clean);
+    if (incompleteMatch) {
+      thinkingParts.push(incompleteMatch[1].trim());
+      clean = clean.replace(incompleteMatch[0], '');
+    }
+  }
+
+  return { clean: clean.trim(), thinking: thinkingParts.join('\n') };
+}
+
 function buildStepsFromParts(
   parts: any[],
   toolInvocations: any[] | undefined,
@@ -248,6 +272,9 @@ function buildStepsFromParts(
     if (part.type === 'reasoning') {
       const text = part.reasoning || (part as any).text || '';
       if (text) reasoningBuf.push(text);
+    } else if (part.type === 'text') {
+      const { thinking } = extractThinkTagsFromText(part.text || '');
+      if (thinking) reasoningBuf.push(thinking);
     } else if (part.type === 'dynamic-tool' || part.type.startsWith('tool-')) {
       const toolName = part.toolName || part.type.replace(/^tool-/, '');
       if (toolName === 'writeArtifact') continue;

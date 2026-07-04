@@ -57,10 +57,10 @@ const iconMap: Record<ToastType, React.ReactNode> = {
 };
 
 const toastStyles: Record<ToastType, string> = {
-  info: 'bg-blue-50 border-blue-200 text-blue-800',
-  success: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-  error: 'bg-red-50 border-red-200 text-red-700',
-  warning: 'bg-amber-50 border-amber-200 text-amber-800',
+  info: 'bg-blue-900/20 border-blue-800 text-blue-400',
+  success: 'bg-emerald-900/20 border-emerald-800 text-emerald-400',
+  error: 'bg-red-900/20 border-red-800 text-red-400',
+  warning: 'bg-amber-900/20 border-amber-800 text-amber-400',
 };
 
 const iconStyles: Record<ToastType, string> = {
@@ -144,18 +144,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
       {confirm && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
-            <p className="text-sm text-neutral-700 leading-relaxed">{confirm.message}</p>
+          <div className="bg-[#111110] rounded-xl shadow-2xl shadow-black/30 p-6 max-w-sm w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
+            <p className="text-sm text-neutral-300 leading-relaxed">{confirm.message}</p>
             <div className="flex justify-end gap-3 mt-5">
               <button
                 onClick={() => handleConfirm(false)}
-                className="px-4 py-2 text-sm font-medium text-neutral-600 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-neutral-400 bg-neutral-800 hover:bg-neutral-700 rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleConfirm(true)}
-                className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-neutral-700 hover:bg-neutral-600 rounded-lg transition-colors"
               >
                 Confirm
               </button>

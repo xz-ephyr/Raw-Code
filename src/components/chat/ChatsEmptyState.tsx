@@ -10,10 +10,10 @@ interface ChatsEmptyStateProps {
 export function ChatsEmptyState({ searchQuery, filter }: ChatsEmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in duration-500">
-      <div className="w-20 h-20 bg-neutral-50 rounded-full flex items-center justify-center text-neutral-200 mb-6 border border-neutral-100 shadow-sm">
+      <div className="w-20 h-20 bg-neutral-900 rounded-full flex items-center justify-center text-neutral-200 mb-6 border border-neutral-800 shadow-sm">
         <HugeiconRenderer icon={searchQuery ? Search01Icon : Folder01Icon} size={36} />
       </div>
-      <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+      <h3 className="text-xl font-semibold text-white mb-2">
         {searchQuery
           ? 'No matches found'
           : filter === 'archived'
