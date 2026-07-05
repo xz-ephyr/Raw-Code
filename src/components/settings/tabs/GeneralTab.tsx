@@ -4,9 +4,9 @@ export function GeneralTab() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-neutral-300">Default Page</label>
+        <label className="text-sm font-semibold text-foreground">Default Page</label>
         <select
-          className="h-10 bg-neutral-800 rounded-[10px] px-3 text-sm outline-none w-full border border-neutral-700 focus:border-white transition-all appearance-none cursor-pointer"
+          className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-ring transition-all appearance-none cursor-pointer"
           defaultValue={localStorage.getItem('default_page') || 'chats'}
           onChange={(e) => localStorage.setItem('default_page', e.target.value)}
         >
@@ -14,7 +14,7 @@ export function GeneralTab() {
           <option value="thread">New thread</option>
           <option value="last">Last open session</option>
         </select>
-        <p className="text-xs text-neutral-400">Which page to show on launch.</p>
+        <p className="text-xs text-muted-foreground">Which page to show on launch.</p>
       </div>
 
       <ToggleSwitch

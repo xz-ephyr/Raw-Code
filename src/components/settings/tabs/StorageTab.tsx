@@ -5,9 +5,9 @@ export function StorageTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-neutral-800 p-4 rounded-xl border border-neutral-800">
-        <h4 className="text-sm font-semibold text-neutral-300 mb-2">Local Database</h4>
-        <p className="text-xs text-neutral-400">
+      <div className="bg-muted p-4 rounded-xl border border-border">
+        <h4 className="text-sm font-semibold text-foreground mb-2">Local Database</h4>
+        <p className="text-xs text-muted-foreground">
           Your projects, chats, and messages are stored locally in SQLite. This data never leaves your machine.
         </p>
       </div>
@@ -28,7 +28,7 @@ export function StorageTab() {
             a.click();
             URL.revokeObjectURL(url);
           }}
-          className="w-full px-4 py-2.5 text-sm font-semibold text-neutral-300 bg-neutral-800 hover:bg-neutral-700 rounded-[10px] transition-colors text-left"
+          className="w-full px-4 py-2.5 text-sm font-semibold text-foreground bg-muted hover:bg-accent rounded-[10px] transition-colors text-left"
         >
           Export All Data
         </button>
@@ -53,7 +53,7 @@ export function StorageTab() {
               localStorage.removeItem('onboarding_completed');
             }
           }}
-          className="w-full px-4 py-2.5 text-sm font-semibold text-neutral-300 bg-neutral-800 hover:bg-neutral-700 rounded-[10px] transition-colors text-left"
+          className="w-full px-4 py-2.5 text-sm font-semibold text-foreground bg-muted hover:bg-accent rounded-[10px] transition-colors text-left"
         >
           Reset Onboarding
         </button>

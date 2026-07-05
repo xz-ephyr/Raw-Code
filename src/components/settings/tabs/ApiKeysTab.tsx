@@ -73,12 +73,12 @@ export function ApiKeysTab() {
 
       <div className="border-t border-border pt-5 space-y-5">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+          <label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
             <HugeiconsIcon icon={ZapIcon} size={16} />
             Model Mode
           </label>
           <select
-            className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-black transition-all appearance-none cursor-pointer"
+            className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-ring transition-all appearance-none cursor-pointer"
             value={modelMode}
             onChange={(e) => setModelMode(e.target.value as typeof modelMode)}
           >
@@ -142,7 +142,7 @@ export function ApiKeysTab() {
         <button
           onClick={handleSaveApiKeys}
           disabled={isSaving}
-          className="px-6 py-2 text-sm font-bold text-foreground bg-neutral-700 hover:bg-muted rounded-[10px] transition-all flex items-center gap-2 shadow-lg shadow-black/30 active:scale-[0.98] disabled:opacity-50"
+          className="px-6 py-2 text-sm font-bold text-accent-foreground bg-accent hover:bg-muted rounded-[10px] transition-all flex items-center gap-2 shadow-lg shadow-black/30 active:scale-[0.98] disabled:opacity-50"
         >
           {isSaving ? (
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

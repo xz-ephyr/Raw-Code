@@ -125,7 +125,7 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
             Model Mode
           </label>
           <select
-            className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-black transition-all appearance-none cursor-pointer"
+            className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-ring transition-all appearance-none cursor-pointer"
             value={modelMode}
             onChange={(e) => setModelMode(e.target.value as typeof modelMode)}
           >

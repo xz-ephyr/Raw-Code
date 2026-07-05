@@ -43,13 +43,13 @@ export function AppearanceTab() {
           <option value="expanded">Expanded</option>
           <option value="collapsed">Collapsed</option>
         </select>
-        <p className="text-xs text-neutral-400">
+        <p className="text-xs text-muted-foreground">
           Changes apply immediately on next load.
         </p>
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-neutral-300">Zoom Level</label>
+        <label className="text-sm font-semibold text-foreground">Zoom Level</label>
         <ZoomControl />
       </div>
     </div>

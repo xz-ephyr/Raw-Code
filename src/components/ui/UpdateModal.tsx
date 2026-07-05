@@ -54,14 +54,14 @@ export default function UpdateModal({ update, onInstall, onLater }: UpdateModalP
           <button
             onClick={onLater}
             disabled={installing}
-            className="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted hover:bg-neutral-700 disabled:opacity-50 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted hover:bg-accent disabled:opacity-50 rounded-lg transition-colors"
           >
             Later
           </button>
           <button
             onClick={handleInstall}
             disabled={installing}
-            className="px-4 py-2 text-sm font-medium text-foreground bg-neutral-700 hover:bg-neutral-600 disabled:opacity-50 rounded-lg transition-colors inline-flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-accent-foreground bg-accent hover:bg-accent/80 disabled:opacity-50 rounded-lg transition-colors inline-flex items-center gap-2"
           >
             {installing ? (
               <>

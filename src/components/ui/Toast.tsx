@@ -148,13 +148,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <div className="flex justify-end gap-3 mt-5">
               <button
                 onClick={() => handleConfirm(false)}
-                className="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted hover:bg-neutral-700 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted hover:bg-accent rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleConfirm(true)}
-                className="px-4 py-2 text-sm font-medium text-foreground bg-neutral-700 hover:bg-neutral-600 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-accent-foreground bg-accent hover:bg-accent/80 rounded-lg transition-colors"
               >
                 Confirm
               </button>

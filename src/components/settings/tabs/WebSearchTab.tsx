@@ -33,7 +33,7 @@ export function WebSearchTab() {
 
   if (!searchKeysLoaded) {
     return (
-      <div className="flex items-center justify-center py-12 text-neutral-400 text-sm">Loading...</div>
+      <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">Loading...</div>
     );
   }
 
@@ -49,9 +49,9 @@ export function WebSearchTab() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-neutral-300">Search Provider</label>
+        <label className="text-sm font-semibold text-foreground">Search Provider</label>
         <select
-          className="h-10 bg-neutral-800 rounded-[10px] px-3 text-sm outline-none w-full border border-neutral-700 focus:border-black transition-all appearance-none cursor-pointer"
+          className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-ring transition-all appearance-none cursor-pointer"
           value={searchConfig['search-provider'] || 'tavily'}
           onChange={(e) => setSearchConfig(p => ({ ...p, 'search-provider': e.target.value }))}
         >
@@ -60,10 +60,10 @@ export function WebSearchTab() {
           <option value="firecrawl">Firecrawl</option>
           <option value="google">Google Custom Search</option>
         </select>
-        <p className="text-xs text-neutral-400">Provider used for general web search.</p>
+        <p className="text-xs text-muted-foreground">Provider used for general web search.</p>
       </div>
 
-      <div className="border-t border-neutral-800 pt-4 space-y-4">
+      <div className="border-t border-border pt-4 space-y-4">
         <SearchKeyField
           label="Tavily API Key"
           hint="Get a free key at tavily.com"
@@ -87,13 +87,13 @@ export function WebSearchTab() {
           onChange={(v) => setSearchConfig(p => ({ ...p, 'search-firecrawl-api-key': v }))}
         />
 
-        <div className="border-t border-neutral-800 pt-4">
+        <div className="border-t border-border pt-4">
           <details className="group">
-            <summary className="text-sm font-medium text-neutral-400 cursor-pointer hover:text-neutral-200 list-none flex items-center gap-2">
+            <summary className="text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground list-none flex items-center gap-2">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-transform group-open:rotate-90">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
-              Google Custom Search <span className="text-neutral-400 font-normal">(fallback)</span>
+              Google Custom Search <span className="text-muted-foreground font-normal">(fallback)</span>
             </summary>
             <div className="mt-3 space-y-3 pl-4">
               <SearchKeyField
@@ -102,10 +102,10 @@ export function WebSearchTab() {
                 onChange={(v) => setSearchConfig(p => ({ ...p, 'search-google-api-key': v }))}
               />
               <div className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-medium text-neutral-600 ml-1">CX (Engine ID)</label>
+                <label className="text-[12px] font-medium text-muted-foreground ml-1">CX (Engine ID)</label>
                 <input
                   type="text"
-                  className="h-9 bg-neutral-800 rounded-[8px] pl-3 pr-3 outline-none text-sm w-full border border-neutral-700 focus:border-neutral-400 transition-colors"
+                  className="h-9 bg-muted rounded-[8px] pl-3 pr-3 outline-none text-sm w-full border border-border focus:border-ring transition-colors"
                   placeholder={searchConfig['search-google-cx'] ? '••••••••••••••••' : 'Enter CX (Engine ID)'}
                   value={searchConfig['search-google-cx'] || ''}
                   onChange={(e) => setSearchConfig(p => ({ ...p, 'search-google-cx': e.target.value }))}
@@ -116,11 +116,11 @@ export function WebSearchTab() {
         </div>
       </div>
 
-      <div className="flex justify-end pt-2 border-t border-neutral-800">
+      <div className="flex justify-end pt-2 border-t border-border">
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="mt-4 px-6 py-2 text-sm font-bold text-white bg-neutral-700 hover:bg-neutral-800 rounded-[10px] transition-all flex items-center gap-2 shadow-lg shadow-black/30 active:scale-[0.98] disabled:opacity-50"
+          className="mt-4 px-6 py-2 text-sm font-bold text-accent-foreground bg-accent hover:bg-muted rounded-[10px] transition-all flex items-center gap-2 shadow-lg shadow-black/30 active:scale-[0.98] disabled:opacity-50"
         >
           {isSaving ? (
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -141,15 +141,15 @@ function SearchKeyField({ label, subtitle, hint, value, onChange }: {
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-<label className="text-[12px] font-medium text-neutral-400 ml-1">
-        {label} {subtitle && <span className="text-neutral-400">({subtitle})</span>}
+<label className="text-[12px] font-medium text-muted-foreground ml-1">
+        {label} {subtitle && <span className="text-muted-foreground">({subtitle})</span>}
       </label>
       <PasswordInput
         value={value}
         onChange={onChange}
         placeholder={value ? '••••••••••••••••' : `Enter ${label}`}
       />
-      {hint && <p className="text-xs text-neutral-400">{hint}</p>}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
