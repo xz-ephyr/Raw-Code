@@ -72,8 +72,8 @@ export function ProjectSetupStep({ onComplete, onSkip }: ProjectSetupStepProps) 
   return (
     <div className="flex flex-col max-w-lg mx-auto gap-6 py-4 w-full">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-neutral-100">Connect a Project</h2>
-        <p className="text-neutral-400 text-sm mt-1">
+        <h2 className="text-2xl font-bold text-foreground">Connect a Project</h2>
+        <p className="text-muted-foreground text-sm mt-1">
           Give the AI context by connecting your codebase.
         </p>
       </div>
@@ -81,22 +81,22 @@ export function ProjectSetupStep({ onComplete, onSkip }: ProjectSetupStepProps) 
       <button
         onClick={handleCreateProject}
         disabled={isCreating}
-        className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-neutral-700 hover:border-neutral-400 transition-colors bg-neutral-800/50 hover:bg-neutral-800 text-left"
+        className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-border hover:border-border transition-colors bg-muted/50 hover:bg-muted text-left"
       >
-        <div className="w-10 h-10 rounded-lg bg-neutral-800 flex items-center justify-center shrink-0">
-          <HugeiconsIcon icon={Download01Icon} size={18} className="text-neutral-500" />
+        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+          <HugeiconsIcon icon={Download01Icon} size={18} className="text-muted-foreground" />
         </div>
         <div>
-          <div className="text-sm font-semibold text-neutral-200">
+          <div className="text-sm font-semibold text-foreground">
             {isCreating ? 'Opening folder picker...' : 'Add an existing project'}
           </div>
-          <div className="text-xs text-neutral-400">Choose a folder from your computer</div>
+          <div className="text-xs text-muted-foreground">Choose a folder from your computer</div>
         </div>
       </button>
 
       {projects.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider px-1">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
             — or select a previous project —
           </div>
           {projects.map((project) => (
@@ -105,16 +105,16 @@ export function ProjectSetupStep({ onComplete, onSkip }: ProjectSetupStepProps) 
               onClick={() => handleSelect(project.id)}
               className={`flex items-center gap-3 p-3 rounded-xl border w-full text-left transition-all ${
                 selectedProjectId === project.id
-                  ? 'border-black bg-neutral-800'
-                  : 'border-neutral-800 hover:border-neutral-700'
+                  ? 'border-ring bg-muted'
+                  : 'border-border hover:border-border'
               }`}
             >
-              <div className="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center shrink-0">
-                <HugeiconsIcon icon={FolderLibraryIcon} size={16} className="text-neutral-500" />
+              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <HugeiconsIcon icon={FolderLibraryIcon} size={16} className="text-muted-foreground" />
               </div>
               <div>
-                <div className="text-sm font-medium text-neutral-200">{project.name}</div>
-                <div className="text-xs text-neutral-400 truncate max-w-[300px]">{project.path}</div>
+                <div className="text-sm font-medium text-foreground">{project.name}</div>
+                <div className="text-xs text-muted-foreground truncate max-w-[300px]">{project.path}</div>
               </div>
             </button>
           ))}
@@ -124,13 +124,13 @@ export function ProjectSetupStep({ onComplete, onSkip }: ProjectSetupStepProps) 
       <div className="flex gap-3 pt-2">
         <button
           onClick={onSkip}
-          className="flex-1 py-2.5 rounded-xl border border-neutral-700 text-neutral-400 font-medium text-sm hover:bg-neutral-800 transition-all"
+          className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground font-medium text-sm hover:bg-muted transition-all"
         >
           Skip for now
         </button>
         <button
           onClick={handleConfirm}
-          className="flex-1 py-2.5 rounded-xl bg-neutral-700 text-white font-medium text-sm hover:bg-neutral-600 transition-all active:scale-[0.98] disabled:opacity-40"
+          className="flex-1 py-2.5 rounded-xl bg-accent text-accent-foreground font-medium text-sm hover:bg-accent/80 transition-all active:scale-[0.98] disabled:opacity-40"
         >
           Continue
         </button>

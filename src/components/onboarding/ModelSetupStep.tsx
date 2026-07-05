@@ -73,8 +73,8 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
   return (
     <div className="flex flex-col max-w-lg mx-auto gap-6 py-4 w-full">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-neutral-100">Configure AI Model</h2>
-        <p className="text-neutral-400 text-sm mt-1">
+        <h2 className="text-2xl font-bold text-foreground">Configure AI Model</h2>
+        <p className="text-muted-foreground text-sm mt-1">
           Set up your AI provider to start coding with AI assistance.
         </p>
       </div>
@@ -89,16 +89,16 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
       <div className="space-y-4">
         {Object.keys(PROVIDER_LABELS).map((providerId) => (
           <div key={providerId} className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-neutral-300 ml-1">
+            <label className="text-sm font-medium text-foreground ml-1">
               {PROVIDER_LABELS[providerId]}
             </label>
             <div className="relative">
-              <div className="absolute left-3 top-2.5 text-neutral-400">
+              <div className="absolute left-3 top-2.5 text-muted-foreground">
                 <HugeiconsIcon icon={Key01Icon} size={14} />
               </div>
               <input
                 type={showKeys[providerId] ? 'text' : 'password'}
-                className="h-10 bg-neutral-800 rounded-[10px] pl-9 pr-10 outline-none text-sm w-full border border-neutral-700 focus:border-neutral-400 transition-colors"
+                className="h-10 bg-muted rounded-[10px] pl-9 pr-10 outline-none text-sm w-full border border-border focus:border-muted-foreground transition-colors"
                 placeholder={`Enter ${PROVIDER_LABELS[providerId]} API Key`}
                 value={keys[providerId]}
                 onChange={(e) => setKeys({ ...keys, [providerId]: e.target.value })}
@@ -106,7 +106,7 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
               <button
                 type="button"
                 onClick={() => toggleShowKey(providerId)}
-                className="absolute right-2.5 top-2 text-neutral-400 hover:text-neutral-400"
+                className="absolute right-2.5 top-2 text-muted-foreground hover:text-muted-foreground"
               >
                 <HugeiconsIcon
                   icon={showKeys[providerId] ? ViewOffSlashIcon : ViewIcon}
@@ -118,14 +118,14 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
         ))}
       </div>
 
-      <div className="space-y-4 pt-2 border-t border-neutral-800">
+      <div className="space-y-4 pt-2 border-t border-border">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-neutral-300 flex items-center gap-2">
+          <label className="text-sm font-semibold text-foreground flex items-center gap-2">
             <HugeiconsIcon icon={ZapIcon} size={16} />
             Model Mode
           </label>
           <select
-            className="h-10 bg-neutral-800 rounded-[10px] px-3 text-sm outline-none w-full border border-neutral-700 focus:border-black transition-all appearance-none cursor-pointer"
+            className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-black transition-all appearance-none cursor-pointer"
             value={modelMode}
             onChange={(e) => setModelMode(e.target.value as typeof modelMode)}
           >
@@ -135,13 +135,13 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-neutral-300 flex items-center gap-2">
+          <label className="text-sm font-semibold text-foreground flex items-center gap-2">
             <HugeiconsIcon icon={GlobeIcon} size={16} />
             Default Model
           </label>
           <div className="relative" ref={modelDropdownRef}>
             <div
-              className="h-10 bg-neutral-800 rounded-[10px] px-3 text-sm outline-none w-full border border-neutral-700 flex items-center cursor-pointer"
+              className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border flex items-center cursor-pointer"
               onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
             >
               <span className="flex-1 truncate">
@@ -150,16 +150,16 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
                   return def ? `${def.label} (${PROVIDER_LABELS[def.provider] || def.provider})` : selectedModel;
                 })()}
               </span>
-              <HugeiconsIcon icon={ArrowDown01Icon} size={16} className="text-neutral-400 shrink-0" />
+              <HugeiconsIcon icon={ArrowDown01Icon} size={16} className="text-muted-foreground shrink-0" />
             </div>
             {isModelDropdownOpen && (
-              <div className="absolute z-10 mt-1 w-full bg-[#2a2a2a] border border-neutral-700 rounded-[10px] shadow-lg shadow-black/30 overflow-hidden">
+              <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-[10px] shadow-lg shadow-black/30 overflow-hidden">
                 <div className="overflow-y-auto thin-scrollbar" style={{ maxHeight: 190 }}>
                   {MODELS.map((model) => (
                     <button
                       key={model.id}
-                      className={`w-full px-3 py-2 text-sm text-left hover:bg-neutral-800 transition-colors flex items-center gap-2 ${
-                        selectedModel === model.id ? 'bg-neutral-800 font-medium' : ''
+                      className={`w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors flex items-center gap-2 ${
+                        selectedModel === model.id ? 'bg-muted font-medium' : ''
                       }`}
                       onClick={() => {
                         setSelectedModel(model.id);
@@ -167,7 +167,7 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
                       }}
                     >
                       <span className="flex-1 truncate">{model.label}</span>
-                      <span className="text-[11px] text-neutral-400 shrink-0">{PROVIDER_LABELS[model.provider] || model.provider}</span>
+                      <span className="text-[11px] text-muted-foreground shrink-0">{PROVIDER_LABELS[model.provider] || model.provider}</span>
                       {model.supportsThinking && (
                         <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-blue-500 shrink-0 ml-auto" />
                       )}
@@ -183,13 +183,13 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
       <div className="flex gap-3 pt-2">
         <button
           onClick={onSkip}
-          className="flex-1 py-2.5 rounded-xl border border-neutral-700 text-neutral-400 font-medium text-sm hover:bg-neutral-800 transition-all"
+          className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground font-medium text-sm hover:bg-muted transition-all"
         >
           Skip for now
         </button>
         <button
           onClick={handleSave}
-          className="flex-1 py-2.5 rounded-xl bg-neutral-700 text-white font-medium text-sm hover:bg-neutral-600 transition-all active:scale-[0.98]"
+          className="flex-1 py-2.5 rounded-xl bg-accent text-accent-foreground font-medium text-sm hover:bg-accent/80 transition-all active:scale-[0.98]"
         >
           {hasAnyKey ? 'Save & Continue' : 'Continue without API key'}
         </button>

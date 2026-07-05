@@ -143,18 +143,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
       {confirm && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30">
-          <div className="bg-[#2a2a2a] rounded-xl shadow-2xl shadow-black/30 p-6 max-w-sm w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
-            <p className="text-sm text-neutral-300 leading-relaxed">{confirm.message}</p>
+          <div className="bg-card rounded-xl shadow-2xl shadow-black/30 p-6 max-w-sm w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
+            <p className="text-sm text-foreground leading-relaxed">{confirm.message}</p>
             <div className="flex justify-end gap-3 mt-5">
               <button
                 onClick={() => handleConfirm(false)}
-                className="px-4 py-2 text-sm font-medium text-neutral-400 bg-neutral-800 hover:bg-neutral-700 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted hover:bg-neutral-700 rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleConfirm(true)}
-                className="px-4 py-2 text-sm font-medium text-white bg-neutral-700 hover:bg-neutral-600 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-foreground bg-neutral-700 hover:bg-neutral-600 rounded-lg transition-colors"
               >
                 Confirm
               </button>

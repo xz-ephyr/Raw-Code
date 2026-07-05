@@ -18,7 +18,7 @@ export const PluginsPage = () => {
   }, []);
 
   return (
-    <div className="flex-1 bg-[#2a2a2a] overflow-y-auto thin-scrollbar">
+    <div className="flex-1 bg-background overflow-y-auto thin-scrollbar">
       <div className="mx-auto px-6 py-12" style={{ maxWidth: 'min(1200px, 100%)' }}>
         <div className="relative w-full h-[200px] rounded-lg overflow-hidden">
           <div
@@ -28,7 +28,7 @@ export const PluginsPage = () => {
             {CARDS.map((card, i) => (
               <div
                 key={i}
-                className={`min-w-0 w-full h-full shrink-0 bg-gradient-to-br ${card.color} flex items-center justify-center text-white`}
+                className={`min-w-0 w-full h-full shrink-0 bg-gradient-to-br ${card.color} flex items-center justify-center text-foreground`}
               >
                 <div className="text-center">
                   <h1 className="text-4xl font-bold tracking-tight">{card.title}</h1>

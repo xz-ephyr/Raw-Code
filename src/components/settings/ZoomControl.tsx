@@ -24,9 +24,9 @@ export function ZoomControl() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-[10px] text-sm border border-neutral-700 bg-neutral-800 hover:bg-neutral-800 transition-colors"
+        className="flex items-center gap-2 px-3 py-2 rounded-[10px] text-sm border border-border bg-muted hover:bg-muted transition-colors"
       >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-neutral-400">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-muted-foreground">
           <circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.2" />
           <path d="M9 9L12.5 12.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
           <path d="M6 4V8M4 6H8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
@@ -35,8 +35,8 @@ export function ZoomControl() {
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1 w-44 bg-[#2a2a2a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 py-2 z-50">
-          <div className="px-4 py-1.5 text-[11px] font-bold text-neutral-500 uppercase tracking-widest">
+        <div className="absolute left-0 top-full mt-1 w-44 bg-popover border border-border rounded-xl shadow-xl shadow-black/30 py-2 z-50">
+          <div className="px-4 py-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
             Zoom
           </div>
           <div className="px-2 py-1 flex flex-col gap-0.5">
@@ -49,21 +49,21 @@ export function ZoomControl() {
                 }}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                   zoom === level
-                    ? 'bg-neutral-800 text-neutral-300 font-medium'
-                    : 'text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300'
+                    ? 'bg-muted text-foreground font-medium'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
                 {Math.round(level * 100)}%
               </button>
             ))}
           </div>
-          <div className="border-t border-neutral-800 mt-1 pt-1 px-2">
+          <div className="border-t border-border mt-1 pt-1 px-2">
             <button
               onClick={() => {
                 resetZoom();
                 setIsOpen(false);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-xs text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300 transition-colors"
+              className="w-full text-left px-3 py-2 rounded-lg text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             >
               Reset to 100%
             </button>

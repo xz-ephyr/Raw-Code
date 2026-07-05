@@ -99,7 +99,7 @@ export const AssistantBubble = React.memo(
                 <div className="overflow-hidden min-h-0">
                     <div
                       ref={timelineScrollRef}
-                      className="overflow-y-auto no-scrollbar flex flex-col gap-2 max-h-[45vh] rounded-lg bg-neutral-800/90 p-3"
+                      className="overflow-y-auto no-scrollbar flex flex-col gap-2 max-h-[45vh] rounded-lg bg-muted/90 p-3"
                     >
                       <ThinkingTimeline
                         steps={timelineSteps}
@@ -113,19 +113,19 @@ export const AssistantBubble = React.memo(
 
           {phase === 'idle' || phase === 'done' ? (
             content && (
-              <div className="font-normal text-neutral-100 leading-[1.2]">
+              <div className="font-normal text-foreground leading-[1.2]">
                 <MarkdownMessage content={content} sources={allSources} />
               </div>
             )
           ) : (
             <>
               {streamedIntention && (
-                <div className="font-normal text-neutral-100 stagger-item stagger-0 leading-[1.2]">
+                <div className="font-normal text-foreground stagger-item stagger-0 leading-[1.2]">
                   <MarkdownMessage content={streamedIntention} sources={allSources} />
                 </div>
               )}
               {phase === 'explanation' && streamedExplanation && (
-                <div className="font-normal text-neutral-100 stagger-item stagger-2 leading-[1.2]">
+                <div className="font-normal text-foreground stagger-item stagger-2 leading-[1.2]">
                   <MarkdownMessage content={streamedExplanation} sources={allSources} />
                 </div>
               )}

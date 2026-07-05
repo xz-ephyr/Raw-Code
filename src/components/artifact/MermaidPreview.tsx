@@ -62,7 +62,7 @@ export function MermaidPreview({ content, onError }: MermaidPreviewProps) {
             Fix with Claude
           </button>
         </div>
-        <pre className="mt-4 p-4 bg-neutral-800 rounded-lg border border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-64 text-neutral-300">
+        <pre className="mt-4 p-4 bg-muted rounded-lg border border-border text-xs font-mono whitespace-pre-wrap overflow-auto max-h-64 text-foreground">
           {content}
         </pre>
       </div>
@@ -72,7 +72,7 @@ export function MermaidPreview({ content, onError }: MermaidPreviewProps) {
   return (
     <div className="p-6 flex items-start justify-center">
       {loading && (
-        <div className="text-sm text-neutral-400 text-neutral-500 py-8">Rendering diagram...</div>
+        <div className="text-sm text-muted-foreground py-8">Rendering diagram...</div>
       )}
       <div
         ref={containerRef}

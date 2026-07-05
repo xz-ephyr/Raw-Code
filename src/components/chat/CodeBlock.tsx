@@ -64,9 +64,9 @@ export const CodeBlock = React.memo(function CodeBlock({ content, language }: Co
   };
 
   return (
-    <div className="relative w-full rounded-[6px] overflow-hidden my-4 bg-neutral-800">
+    <div className="relative w-full rounded-[6px] overflow-hidden my-4 bg-muted">
       {language && (
-        <div className="px-4 py-1.5 text-[11px] uppercase tracking-wide text-neutral-400 bg-neutral-800">
+        <div className="px-4 py-1.5 text-[11px] uppercase tracking-wide text-muted-foreground bg-muted">
           {language}
         </div>
       )}
@@ -75,7 +75,7 @@ export const CodeBlock = React.memo(function CodeBlock({ content, language }: Co
         className={`absolute top-1 right-1 p-1.5 rounded-[6px] transition-colors z-10 ${
           copied
             ? 'bg-green-900/30 text-green-400'
-            : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200'
+            : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground'
         }`}
         title="Copy code"
       >

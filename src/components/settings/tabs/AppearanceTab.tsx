@@ -18,23 +18,23 @@ export function AppearanceTab() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-neutral-300">Theme</label>
+        <label className="text-sm font-semibold text-foreground">Theme</label>
         <button
           onClick={toggleTheme}
-          className="h-10 bg-neutral-800 rounded-[10px] px-4 text-sm outline-none w-full border border-neutral-700 focus:border-white transition-all flex items-center justify-between"
+          className="h-10 bg-muted rounded-[10px] px-4 text-sm outline-none w-full border border-border focus:border-ring transition-all flex items-center justify-between"
         >
           <span className="flex items-center gap-2">
             <HugeiconsIcon icon={theme === 'dark' ? Moon02Icon : Sun03Icon} size={16} />
             {theme === 'dark' ? 'Dark' : 'Light'}
           </span>
-          <span className="text-xs text-neutral-400">Toggle</span>
+          <span className="text-xs text-muted-foreground">Toggle</span>
         </button>
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold text-neutral-300">Sidebar on Startup</label>
+        <label className="text-sm font-semibold text-foreground">Sidebar on Startup</label>
         <select
-          className="h-10 bg-neutral-800 rounded-[10px] px-3 text-sm outline-none w-full border border-neutral-700 focus:border-white transition-all appearance-none cursor-pointer"
+          className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-ring transition-all appearance-none cursor-pointer"
           defaultValue={localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true' ? 'collapsed' : 'expanded'}
           onChange={(e) => {
             localStorage.setItem(SIDEBAR_STORAGE_KEY, String(e.target.value === 'collapsed'));

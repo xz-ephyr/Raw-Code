@@ -77,7 +77,7 @@ export default function ChatInputContainer({
                 <button
                   type="button"
                   onClick={() => setIsProjectOpen(!isProjectOpen)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-neutral-400 hover:bg-neutral-600/50 transition-colors text-sm"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-muted-foreground hover:bg-muted transition-colors text-sm"
                   title="Projects"
                   aria-label="Projects"
                 >
@@ -86,32 +86,32 @@ export default function ChatInputContainer({
                   <HugeiconsIcon icon={isProjectOpen ? ArrowUp01Icon : ArrowDown01Icon} size={14} />
                 </button>
                 {isProjectOpen && (
-                  <div className="absolute top-full mt-1 left-0 w-56 bg-[#2a2a2a] border border-neutral-700 rounded-xl shadow-lg py-1 z-50 max-h-64 overflow-y-auto">
+                  <div className="absolute top-full mt-1 left-0 w-56 bg-card border border-border rounded-xl shadow-lg py-1 z-50 max-h-64 overflow-y-auto">
                     {projects.length === 0 ? (
-                      <div className="px-4 py-3 text-xs text-neutral-500">No projects yet</div>
+                      <div className="px-4 py-3 text-xs text-muted-foreground">No projects yet</div>
                     ) : (
                       projects.map((project) => (
                         <button
                           key={project.id}
                           type="button"
                           onClick={() => handleProjectClick(project)}
-                          className="w-full text-left px-4 py-2.5 text-xs hover:bg-neutral-800 text-neutral-300 flex items-center gap-2.5"
+                          className="w-full text-left px-4 py-2.5 text-xs hover:bg-muted text-foreground flex items-center gap-2.5"
                         >
-                          <HugeiconsIcon icon={Folder02Icon} size={15} className="text-neutral-500 shrink-0" />
+                          <HugeiconsIcon icon={Folder02Icon} size={15} className="text-muted-foreground shrink-0" />
                           <span className="truncate">{project.name}</span>
                         </button>
                       ))
                     )}
-                    <div className="h-px bg-neutral-700 my-1" />
+                    <div className="h-px bg-border my-1" />
                     <button
                       type="button"
                       onClick={() => {
                         setIsProjectOpen(false);
                         onCreateProject?.();
                       }}
-                      className="w-full text-left px-4 py-2.5 text-xs hover:bg-neutral-800 text-neutral-300 flex items-center gap-2.5"
+                      className="w-full text-left px-4 py-2.5 text-xs hover:bg-muted text-foreground flex items-center gap-2.5"
                     >
-                      <HugeiconsIcon icon={PlusSignIcon} size={15} className="text-neutral-500 shrink-0" />
+                      <HugeiconsIcon icon={PlusSignIcon} size={15} className="text-muted-foreground shrink-0" />
                       <span>Create New</span>
                     </button>
                   </div>

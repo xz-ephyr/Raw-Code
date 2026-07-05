@@ -212,15 +212,15 @@ export function ReactPreview({ content, onError }: ReactPreviewProps) {
             </button>
             <button
               onClick={() => onError?.(error)}
-              className="px-3 py-1.5 text-xs font-medium bg-neutral-800 text-neutral-300 rounded-md hover:bg-neutral-700 transition-colors"
+              className="px-3 py-1.5 text-xs font-medium bg-muted text-foreground rounded-md hover:bg-accent transition-colors"
             >
               Fix with Claude
             </button>
           </div>
         </div>
         <details className="mt-4">
-          <summary className="text-xs text-neutral-400 cursor-pointer hover:text-neutral-300">Show source code</summary>
-          <pre className="mt-2 p-4 bg-neutral-800 rounded-lg border border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 text-neutral-300">
+          <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">Show source code</summary>
+          <pre className="mt-2 p-4 bg-muted rounded-lg border border-border text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 text-foreground">
             {content}
           </pre>
         </details>
@@ -231,14 +231,14 @@ export function ReactPreview({ content, onError }: ReactPreviewProps) {
   if (!srcdoc) {
     return (
       <div className="p-6 flex items-center justify-center">
-        <div className="text-sm text-neutral-400 text-neutral-500 py-8">Preparing preview...</div>
+        <div className="text-sm text-muted-foreground py-8">Preparing preview...</div>
       </div>
     );
   }
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 bg-[#2a2a2a]">
+      <div className="flex-1 bg-background">
         <iframe
           ref={iframeRef}
           srcDoc={srcdoc}

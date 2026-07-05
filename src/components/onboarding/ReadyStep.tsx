@@ -28,8 +28,8 @@ export function ReadyStep({ stepStatuses, projects, onFinish, isFinishing }: Rea
       </div>
 
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-neutral-100">You're all set!</h1>
-        <p className="text-neutral-400 text-sm">
+        <h1 className="text-3xl font-bold text-foreground">You're all set!</h1>
+        <p className="text-muted-foreground text-sm">
           Everything is ready. Start your first conversation with the AI.
         </p>
       </div>
@@ -41,12 +41,12 @@ export function ReadyStep({ stepStatuses, projects, onFinish, isFinishing }: Rea
             className={`flex items-center gap-3 p-3 rounded-xl border text-left ${
               item.done
                 ? 'border-green-200 bg-green-900/20'
-                : 'border-neutral-800 bg-neutral-800/50'
+                : 'border-border bg-muted/50'
             }`}
           >
             <div
               className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                item.done ? 'bg-green-900/30 text-green-400' : 'bg-neutral-800 text-neutral-400'
+                item.done ? 'bg-green-900/30 text-green-400' : 'bg-muted text-muted-foreground'
               }`}
             >
               <HugeiconsIcon icon={item.icon} size={16} strokeWidth={1.5} />
@@ -54,7 +54,7 @@ export function ReadyStep({ stepStatuses, projects, onFinish, isFinishing }: Rea
             <div>
               <div
                 className={`text-sm font-medium ${
-                  item.done ? 'text-green-400' : 'text-neutral-400'
+                  item.done ? 'text-green-400' : 'text-muted-foreground'
                 }`}
               >
                 {item.done ? 'Done' : 'Skipped'} — {item.label}
@@ -67,7 +67,7 @@ export function ReadyStep({ stepStatuses, projects, onFinish, isFinishing }: Rea
       <button
         onClick={onFinish}
         disabled={isFinishing}
-        className="w-full max-w-xs py-3 rounded-xl bg-neutral-700 text-white font-semibold text-sm hover:bg-neutral-600 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full max-w-xs py-3 rounded-xl bg-accent text-accent-foreground font-semibold text-sm hover:bg-accent/80 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {isFinishing ? (
           <>

@@ -18,15 +18,15 @@ export function ProgressBar({ steps, activeStep, stepStatuses }: ProgressBarProp
           <div key={step.id} className="flex flex-col items-center">
             <div className="flex items-center">
               {i > 0 && (
-                <div className={`w-8 h-0.5 ${isDone ? 'bg-green-400' : 'bg-neutral-700'}`} />
+                <div className={`w-8 h-0.5 ${isDone ? 'bg-green-400' : 'bg-muted'}`} />
               )}
               <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
                   isDone
                     ? 'bg-green-500'
                     : isActive
-                      ? 'bg-neutral-200'
-                      : 'bg-neutral-700'
+                      ? 'bg-foreground'
+                      : 'bg-muted'
                 }`}
               >
                 {isDone && (
@@ -38,7 +38,7 @@ export function ProgressBar({ steps, activeStep, stepStatuses }: ProgressBarProp
             </div>
             <span
               className={`text-[11px] font-medium whitespace-nowrap leading-none mt-1.5 ${
-                isActive ? 'text-neutral-200' : isDone ? 'text-green-400' : 'text-neutral-400'
+                isActive ? 'text-foreground' : isDone ? 'text-green-400' : 'text-muted-foreground'
               }`}
             >
               {step.label}

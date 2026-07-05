@@ -77,8 +77,8 @@ export function HtmlPreview({ content, onError }: HtmlPreviewProps) {
           </button>
         </div>
         <details className="mt-4">
-          <summary className="text-xs text-neutral-400 cursor-pointer hover:text-neutral-300">Show source code</summary>
-          <pre className="mt-2 p-4 bg-neutral-800 rounded-lg border border-neutral-700 text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 text-neutral-300">
+          <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">Show source code</summary>
+          <pre className="mt-2 p-4 bg-muted rounded-lg border border-border text-xs font-mono whitespace-pre-wrap overflow-auto max-h-96 text-foreground">
             {content}
           </pre>
         </details>
@@ -88,7 +88,7 @@ export function HtmlPreview({ content, onError }: HtmlPreviewProps) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 bg-[#2a2a2a]">
+      <div className="flex-1 bg-background">
         <iframe
           ref={iframeRef}
           srcDoc={build.srcdoc}

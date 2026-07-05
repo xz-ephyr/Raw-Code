@@ -439,11 +439,11 @@ export const ChatPage = () => {
   const panelRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#2a2a2a] relative">
+    <div className="flex flex-col h-screen overflow-hidden bg-background relative">
       {uuid !== 'new' && messages.length > 0 && <TitleBar />}
       <div className="flex flex-1 min-h-0">
         <div
-          className={`flex flex-col min-w-0 bg-[#2a2a2a] relative ${
+          className={`flex flex-col min-w-0 bg-background relative ${
             isMobile && isPanelOpen
               ? 'hidden'
               : 'flex-1'

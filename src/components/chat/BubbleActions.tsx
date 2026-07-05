@@ -29,8 +29,8 @@ function SourcesFooter({ sources }: { sources: TimelineSource[] }) {
             target="_blank"
             rel="noopener noreferrer"
             title={src.title || src.url}
-            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#2a2a2a] hover:bg-neutral-800 
-                       border border-neutral-700 transition-colors no-underline -ml-1 first:ml-0
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-card hover:bg-muted 
+                       border border-border transition-colors no-underline -ml-1 first:ml-0
                        shadow-sm hover:shadow-md"
           >
             <img src={faviconUrl} alt={domain} width={12} height={12} className="rounded" loading="lazy" />
@@ -40,8 +40,8 @@ function SourcesFooter({ sources }: { sources: TimelineSource[] }) {
       {remaining > 0 && (
         <span
           className="inline-flex items-center justify-center w-5 h-5 rounded-full -ml-1
-                     bg-neutral-800 border border-neutral-700 
-                     text-[10px] font-medium text-neutral-500 shrink-0"
+                      bg-muted border border-border 
+                     text-[10px] font-medium text-muted-foreground shrink-0"
           title={`${remaining} more source${remaining > 1 ? 's' : ''}`}
         >
           +{remaining}
@@ -70,11 +70,11 @@ export function BubbleActions({ allSources, model, onCopy, onThumbsUp, onThumbsD
   };
 
   return (
-    <div className="flex items-center gap-3 text-neutral-400 px-4">
+    <div className="flex items-center gap-3 text-muted-foreground px-4">
       <button
         type="button"
         onClick={handleCopy}
-        className="hover:text-white transition-colors"
+        className="hover:text-foreground transition-colors"
         title={copied ? 'Copied!' : 'Copy response'}
         aria-label={copied ? 'Copied!' : 'Copy response'}
       >
@@ -87,7 +87,7 @@ export function BubbleActions({ allSources, model, onCopy, onThumbsUp, onThumbsD
       <button
         type="button"
         onClick={onThumbsUp}
-        className="hover:text-white transition-colors"
+        className="hover:text-foreground transition-colors"
         title="Good response"
         aria-label="Good response"
       >
@@ -96,7 +96,7 @@ export function BubbleActions({ allSources, model, onCopy, onThumbsUp, onThumbsD
       <button
         type="button"
         onClick={onThumbsDown}
-        className="hover:text-white transition-colors"
+        className="hover:text-foreground transition-colors"
         title="Bad response"
         aria-label="Bad response"
       >
@@ -105,7 +105,7 @@ export function BubbleActions({ allSources, model, onCopy, onThumbsUp, onThumbsD
       <button
         type="button"
         onClick={onRegenerate}
-        className="hover:text-white transition-colors"
+        className="hover:text-foreground transition-colors"
         title="Regenerate response"
         aria-label="Regenerate response"
       >
@@ -114,13 +114,13 @@ export function BubbleActions({ allSources, model, onCopy, onThumbsUp, onThumbsD
 
       {allSources.length > 0 && (
         <>
-          <div className="w-px h-5 bg-neutral-700 mx-1" />
+          <div className="w-px h-5 bg-border mx-1" />
           <SourcesFooter sources={allSources} />
         </>
       )}
 
       {model && (
-        <span className="text-xs text-neutral-500">{model}</span>
+        <span className="text-xs text-muted-foreground">{model}</span>
       )}
     </div>
   );

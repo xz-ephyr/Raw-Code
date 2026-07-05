@@ -29,7 +29,7 @@ export const CopyButton = ({
        * Ensured visibility on mobile by removing opacity-0 for small screens,
        * while maintaining hover effect on larger viewports.
        */
-      className={`${alwaysVisible ? '' : 'md:opacity-0 md:group-hover:opacity-100'} p-1 mt-1 text-neutral-400 hover:text-white transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm`}
+      className={`${alwaysVisible ? '' : 'md:opacity-0 md:group-hover:opacity-100'} p-1 mt-1 text-muted-foreground hover:text-white transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm`}
     >
       {copied ? (
         <HugeiconsIcon

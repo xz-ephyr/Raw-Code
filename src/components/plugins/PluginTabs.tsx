@@ -54,8 +54,8 @@ export const PluginTabs = () => {
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-all ${
               activeTab === tab.id
-                ? 'bg-[#2a2a2a] text-neutral-100 border border-neutral-700 border-b-[#2a2a2a] -mb-px'
-                : 'bg-neutral-800 text-neutral-400 hover:text-neutral-300 border border-transparent'
+                ? 'bg-card text-foreground border border-border border-b-card -mb-px'
+                : 'bg-muted text-muted-foreground hover:text-foreground border border-transparent'
             }`}
           >
             <HugeiconsIcon icon={tab.icon} size={16} />
@@ -63,13 +63,13 @@ export const PluginTabs = () => {
           </button>
         ))}
       </div>
-      <div className="border border-neutral-700 rounded-b-lg rounded-tr-lg bg-[#2a2a2a] p-6">
-        <h3 className="text-lg font-semibold text-neutral-100">{content.title}</h3>
-        <p className="mt-1 text-sm text-neutral-400">{content.description}</p>
+      <div className="border border-border rounded-b-lg rounded-tr-lg bg-card p-6">
+        <h3 className="text-lg font-semibold text-foreground">{content.title}</h3>
+        <p className="mt-1 text-sm text-muted-foreground">{content.description}</p>
         <ul className="mt-4 space-y-2">
           {content.items.map((item, i) => (
-            <li key={i} className="flex items-center gap-2 text-sm text-neutral-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-neutral-600 shrink-0" />
+            <li key={i} className="flex items-center gap-2 text-sm text-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground shrink-0" />
               {item}
             </li>
           ))}

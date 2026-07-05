@@ -45,29 +45,29 @@ function NTabDropdown({ isIdle }: { isIdle?: boolean }) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 px-2 py-1 rounded-[6px] text-white hover:bg-neutral-700/60 transition-colors text-xs"
+        className="flex items-center gap-1 px-2 py-1 rounded-[6px] text-foreground hover:bg-muted transition-colors text-xs"
         title={tab.label}
       >
-        <HugeiconsIcon icon={tab.icon} size={16} className="text-neutral-300" />
+        <HugeiconsIcon icon={tab.icon} size={16} className="text-foreground" />
         <span className="max-w-[80px] truncate">{tab.label}</span>
       </button>
       {isOpen && (
-        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 w-[220px] bg-[#2a2a2a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden`}>
+        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 w-[220px] bg-card border border-border rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden`}>
           {NTABS.map((t, i) => (
             <button
               key={i}
               type="button"
               onClick={() => { setCurrentTab(i); setIsOpen(false); }}
               className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center gap-2 rounded-md ${
-                i === currentTab
-                  ? 'text-white bg-neutral-800'
-                  : 'text-white hover:bg-neutral-800'
-              }`}
+                 i === currentTab
+                   ? 'text-foreground bg-muted'
+                   : 'text-foreground hover:bg-muted'
+               }`}
             >
-              <HugeiconsIcon icon={t.icon} size={18} className="text-neutral-300" />
+              <HugeiconsIcon icon={t.icon} size={18} className="text-foreground" />
               <div className="flex flex-col">
                 <span>{t.label}</span>
-                <span className="text-[10px] text-neutral-400">{t.desc}</span>
+                <span className="text-[10px] text-muted-foreground">{t.desc}</span>
               </div>
             </button>
           ))}
@@ -108,26 +108,26 @@ function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, isIdle }: { isTh
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-neutral-700/60 transition-colors text-white"
+        className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-muted transition-colors text-foreground"
         aria-label="Add content"
         title="Add content"
       >
         <HugeiconsIcon icon={Add01Icon} size={18} />
       </button>
       {isOpen && (
-        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 w-[213px] bg-[#2a2a2a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999]`}>
+        <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 w-[213px] bg-card border border-border rounded-xl shadow-xl shadow-black/30 z-[9999]`}>
           {items.map((item, i) => (
             <button
               key={i}
               type="button"
-              className="w-full text-left px-3 py-2 text-xs hover:bg-neutral-800 text-neutral-300 flex items-center gap-2 rounded-md"
+              className="w-full text-left px-3 py-2 text-xs hover:bg-muted text-foreground flex items-center gap-2 rounded-md"
               title={item.title}
             >
               <HugeiconsIcon icon={item.icon} size={16} />
               <span>{item.label}</span>
             </button>
           ))}
-          <div className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-300 rounded-md cursor-pointer hover:bg-neutral-800" onClick={onToggleThinking}>
+          <div className="flex items-center gap-2 px-3 py-2 text-xs text-foreground rounded-md cursor-pointer hover:bg-muted" onClick={onToggleThinking}>
             <HugeiconsIcon icon={Atom02Icon} size={16} />
             <span className="flex-1">Reasoning</span>
             <button
@@ -138,19 +138,19 @@ function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, isIdle }: { isTh
               <span className={`absolute top-[3px] left-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${isThinkingEnabled ? 'translate-x-4' : ''}`} />
             </button>
           </div>
-          <div className="h-px bg-neutral-700 mx-3" />
+          <div className="h-px bg-border mx-3" />
           <div className="relative" ref={skillsRef}>
             <div
-              className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-300 rounded-md cursor-pointer hover:bg-neutral-800"
+              className="flex items-center gap-2 px-3 py-2 text-xs text-foreground rounded-md cursor-pointer hover:bg-muted"
               onClick={() => setIsSkillsOpen(!isSkillsOpen)}
             >
               <HugeiconsIcon icon={HandBag01Icon} size={16} />
               <span className="flex-1">Skills and templates</span>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={14} className="text-neutral-500" />
+              <HugeiconsIcon icon={ArrowRight01Icon} size={14} className="text-muted-foreground" />
             </div>
             {isSkillsOpen && (
-              <div className="absolute left-full ml-1 top-0 w-[180px] bg-[#2a2a2a] border border-neutral-700 rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden">
-                <div className="px-3 py-2 text-xs text-neutral-500">Skills and templates</div>
+              <div className="absolute left-full ml-1 top-0 w-[180px] bg-card border border-border rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden">
+                <div className="px-3 py-2 text-xs text-muted-foreground">Skills and templates</div>
               </div>
             )}
           </div>
@@ -201,7 +201,7 @@ function SendButton({
       type="button"
       onClick={isLoading ? onStop : onSend}
       disabled={!hasValue && !isLoading}
-      className="p-1.5 text-white rounded-full bg-neutral-700 disabled:opacity-50 transition-opacity hover:opacity-90 active:scale-95"
+      className="p-1.5 text-foreground rounded-full bg-muted disabled:opacity-50 transition-opacity hover:opacity-90 active:scale-95"
       aria-label={label}
       title={label}
     >
