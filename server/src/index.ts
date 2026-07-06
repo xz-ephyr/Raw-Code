@@ -88,6 +88,24 @@ app.post('/get_project_file_content', async (req, res) => {
   res.json({ path: filePath, content: result.rows[0].content });
 });
 
+// --- IDE Files ---
+
+app.post('/get_ide_files', async (_req, res) => {
+  const result = await query('SELECT tree FROM ide_files WHERE id = $1', ['default']);
+  if (result.rows.length === 0) return res.json({ tree: null });
+  res.json({ tree: result.rows[0].tree });
+});
+
+app.post('/save_ide_files', async (req, res) => {
+  const { tree } = req.body;
+  if (!tree) return res.status(400).json({ error: 'tree required' });
+  await query(
+    'INSERT INTO ide_files (id, tree, updated_at) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET tree = EXCLUDED.tree, updated_at = EXCLUDED.updated_at',
+    ['default', JSON.stringify(tree), Date.now()]
+  );
+  res.json({ success: true });
+});
+
 // --- Sessions ---
 
 app.post('/get_sessions', async (req, res) => {

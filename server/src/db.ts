@@ -130,6 +130,12 @@ export async function migrate() {
       updated_at INTEGER NOT NULL,
       PRIMARY KEY (project_id, file_path)
     );
+
+    CREATE TABLE IF NOT EXISTS ide_files (
+      id TEXT PRIMARY KEY,
+      tree TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
   `);
   console.log('Migration complete');
 }

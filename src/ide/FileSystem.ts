@@ -1,23 +1,8 @@
 import type { FileNode, SearchMatch, ProjectFileEntry } from './types';
+import { saveIdeFiles } from '@/services/IdeApi';
 
 function generateId(): string {
   return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function reindexTree(node: FileNode, seen: Set<string>): FileNode {
-  const walk = (n: FileNode): FileNode => {
-    let id = n.id;
-    while (seen.has(id)) {
-      id = generateId();
-    }
-    seen.add(id);
-    return {
-      ...n,
-      id,
-      children: n.children.map(walk),
-    };
-  };
-  return walk(node);
 }
 
 function createDefaultFiles(): FileNode {
@@ -94,34 +79,25 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 }
 
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
 export class VirtualFileSystem {
   private root: FileNode;
-  private static STORAGE_KEY = 'ide_files';
 
-  constructor() {
-    this.root = this.load();
+  constructor(root?: FileNode) {
+    this.root = root ?? createDefaultFiles();
   }
 
-  private save(): void {
-    try {
-      const json = JSON.stringify(this.root);
-      localStorage.setItem(VirtualFileSystem.STORAGE_KEY, json);
-    } catch {
-      // storage full or unavailable
-    }
+  setRoot(root: FileNode): void {
+    this.root = root;
   }
 
-  private load(): FileNode {
-    try {
-      const stored = localStorage.getItem(VirtualFileSystem.STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as FileNode;
-        return reindexTree(parsed, new Set());
-      }
-    } catch {
-      // corrupted data, fall through to default
-    }
-    return createDefaultFiles();
+  private persist(): void {
+    if (persistTimer) clearTimeout(persistTimer);
+    persistTimer = setTimeout(() => {
+      const tree = this.root;
+      saveIdeFiles(tree).catch(() => {});
+    }, 300);
   }
 
   getRoot(): FileNode {
