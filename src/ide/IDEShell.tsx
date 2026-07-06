@@ -1,11 +1,12 @@
 import { type FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import type { EditorState, Tab, ProjectFileEntry } from './types';
+import type { EditorState, Tab, ProjectFileEntry, FileNode } from './types';
 import { VirtualFileSystem } from './FileSystem';
 import { CommandRegistry } from './CommandRegistry';
 import { Editor } from './Editor';
 import FileExplorer from './FileExplorer';
 import StatusBar from './StatusBar';
 import CommandPalette from './CommandPalette';
+import { getIdeFiles } from '@/services/IdeApi';
 
 interface IDEShellProps {
   projectName?: string;
@@ -31,13 +32,27 @@ function createInitialState(fs: VirtualFileSystem): EditorState {
 }
 
 const IDEShell: FC<IDEShellProps> = ({ projectName, projectFiles }) => {
-  const [fs] = useState(() => new VirtualFileSystem());
-  const [root, setRoot] = useState(() => fs.getRoot());
+  const [fs, setFs] = useState<VirtualFileSystem | null>(null);
+  const [root, setRoot] = useState<FileNode | null>(null);
   const [registry] = useState(() => new CommandRegistry());
-  const [editorState, setEditorState] = useState<EditorState>(() => createInitialState(fs));
+  const [editorState, setEditorState] = useState<EditorState>({ tabs: [], activeTabId: null, cursorPosition: { line: 1, column: 1 } });
   const projectLoaded = useRef(false);
 
   useEffect(() => {
+    getIdeFiles().then(data => {
+      let tree: FileNode | undefined;
+      if (data.tree) {
+        try { tree = JSON.parse(data.tree); } catch { /* use defaults */ }
+      }
+      const vfs = new VirtualFileSystem(tree);
+      setFs(vfs);
+      setRoot(vfs.getRoot());
+      setEditorState(createInitialState(vfs));
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!fs) return;
     if (projectName && projectFiles && projectFiles.length > 0 && !projectLoaded.current) {
       projectLoaded.current = true;
       fs.loadFromProject(projectName, projectFiles);
@@ -222,6 +237,14 @@ const IDEShell: FC<IDEShellProps> = ({ projectName, projectFiles }) => {
   }, [handleSave, handleCloseTab]);
 
   const activeTab = editorState.tabs.find(t => t.id === editorState.activeTabId);
+
+  if (!fs || !root) {
+    return (
+      <div className="flex items-center justify-center h-full bg-background border border-border rounded-[10px]">
+        <p className="text-sm text-muted-foreground">Loading IDE...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-background border border-border rounded-[10px] overflow-hidden">

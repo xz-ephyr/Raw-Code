@@ -146,7 +146,7 @@ export class VirtualFileSystem {
       expanded: false,
     };
     parent.children.push(node);
-    this.save();
+    this.persist();
     return node;
   }
 
@@ -167,7 +167,7 @@ export class VirtualFileSystem {
       expanded: false,
     };
     parent.children.push(node);
-    this.save();
+    this.persist();
     return node;
   }
 
@@ -180,7 +180,7 @@ export class VirtualFileSystem {
     const idx = parent.children.findIndex(c => c.name === name);
     if (idx !== -1) {
       parent.children.splice(idx, 1);
-      this.save();
+      this.persist();
     }
   }
 
@@ -215,14 +215,14 @@ export class VirtualFileSystem {
       updatePaths(node);
     }
 
-    this.save();
+    this.persist();
   }
 
   saveFile(path: string, content: string): void {
     const node = this.getNode(path);
     if (!node || node.isFolder) throw new Error(`File not found: ${path}`);
     node.content = content;
-    this.save();
+    this.persist();
   }
 
   loadFromProject(name: string, files: ProjectFileEntry[]): void {
@@ -277,7 +277,7 @@ export class VirtualFileSystem {
     }
 
     this.root = root;
-    this.save();
+    this.persist();
   }
 
   search(query: string): SearchMatch[] {
