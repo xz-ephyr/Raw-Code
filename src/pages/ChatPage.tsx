@@ -2,6 +2,8 @@ import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { getModelForChatRequest } from '@core/config/models';
 import { chatCompletion, getAIErrorMessage, generateSessionTitle } from '@core/models/aiService';
@@ -13,13 +15,16 @@ import { mapUIMessageToLegacyMessage } from '../lib/chatUtils';
 import { ArtifactPanel } from '../components/artifact/ArtifactPanel';
 import type { Artifact } from '../types/artifact';
 import { useArtifacts } from '../hooks/useArtifacts';
+import IDEShell from '../ide/IDEShell';
 import { useSessionTitle } from '../hooks/useSessionTitle';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useResizablePanel } from '../hooks/useResizablePanel';
+import { PageGradient } from '../components/ui/PageGradient';
 import { MessageList } from '../components/chat/MessageList';
 import TitleBar from '../components/layout/TitleBar';
 import { isTauri } from '../lib/tauri';
 import type { Project } from '../types/chat';
+import type { ProjectFileEntry } from '../ide/types';
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -27,9 +32,11 @@ export const ChatPage = () => {
   const { uuid, folder } = useParams();
   const navigate = useNavigate();
   const [isThinkingEnabled, setIsThinkingEnabled] = useState(false);
+  const [currentMode, setCurrentMode] = useState<string | undefined>('plan');
   const previousModelRef = useRef<string | null>(null);
   const isThinkingEnabledRef = useRef(false);
   const currentModelRef = useRef<string | null>(null);
+  const currentModeRef = useRef<string | undefined>(currentMode);
   const projectContextCacheRef = useRef<Record<string, { context: ProjectContext; timestamp: number }>>({});
   const { addToast } = useToast();
   const { setTitle: setSessionTitle, setSessionId, setIsTitleGenerating } = useSessionTitle();
@@ -43,12 +50,26 @@ export const ChatPage = () => {
     PANEL_MAX_WIDTH,
   } = useResizablePanel();
 
+  const {
+    panelWidth: idePanelWidth,
+    startResize: startIDEResize,
+    handleTouchStart: handleIDETouchStart,
+    handleDividerKeyDown: handleIDEDividerKeyDown,
+    PANEL_MIN_WIDTH: IDE_PANEL_MIN_WIDTH,
+    PANEL_MAX_WIDTH: IDE_PANEL_MAX_WIDTH,
+  } = useResizablePanel('ide-panel-width', { maxWidth: 9999 });
+
+  const isProject = !!folder;
   const currentProjectName = useMemo(() => {
     if (!folder) return undefined;
     return folder.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   }, [folder]);
 
   const toggleThinking = () => setIsThinkingEnabled((prev) => !prev);
+  const handleModeChange = useCallback((modeId: string | undefined) => {
+    setCurrentMode(modeId);
+    currentModeRef.current = modeId;
+  }, []);
 
   const {
     artifacts,
@@ -61,6 +82,31 @@ export const ChatPage = () => {
     openPanel,
     clearArtifacts,
   } = useArtifacts();
+
+  const [isIDEPanelOpen, setIsIDEPanelOpen] = useState(false);
+  const [projectFiles, setProjectFiles] = useState<ProjectFileEntry[]>([]);
+  const openIDEPanel = useCallback(() => setIsIDEPanelOpen(true), []);
+  const closeIDEPanel = useCallback(() => setIsIDEPanelOpen(false), []);
+
+  useEffect(() => {
+    if (!isIDEPanelOpen || !uuid || uuid === 'new') return;
+    const loadProjectFiles = async () => {
+      try {
+        const session = await ChatSessionManager.getSession(uuid);
+        if (!session?.projectId) return;
+        const projects = await DatabaseService.getProjects();
+        const project = projects.find(p => p.id === session.projectId);
+        if (!project) return;
+        const pc = await FileSystemService.getProjectContent(project.path, project.id);
+        const entries: ProjectFileEntry[] = pc.contents.map(c => ({
+          path: c.path,
+          content: c.text,
+        }));
+        if (entries.length > 0) setProjectFiles(entries);
+      } catch { /* ignore */ }
+    };
+    loadProjectFiles();
+  }, [isIDEPanelOpen, uuid]);
 
   const handleCopyMessage = useCallback((content: string) => {
     navigator.clipboard.writeText(content);
@@ -193,6 +239,7 @@ export const ChatPage = () => {
         previousModelName: previousModelRef.current || undefined,
         sessionId: uuid,
         projectContext,
+        modeId: currentModeRef.current,
       });
 
       previousModelRef.current = effectiveModel;
@@ -232,6 +279,21 @@ export const ChatPage = () => {
   } = chat;
 
   const isLoading = status === 'submitted' || status === 'streaming';
+
+  const handleRegenerate = useCallback((index: number) => {
+    setMessages((prev) => {
+      const userMsg = prev[index - 1];
+      if (!userMsg || userMsg.role !== 'user') return prev;
+      const assistantMsg = prev[index];
+      if (!assistantMsg || assistantMsg.role === 'user') return prev;
+      return prev.slice(0, index);
+    });
+    const rawMsg = rawMessages[index - 1];
+    const userContent = rawMsg?.content;
+    if (userContent) {
+      setTimeout(() => sendMessage({ text: userContent }), 0);
+    }
+  }, [rawMessages, setMessages, sendMessage]);
 
   useEffect(() => {
     if (isLoading) {
@@ -391,20 +453,14 @@ export const ChatPage = () => {
           folderName = selected.split(/[/\\]/).pop() || 'New Project';
           newProject = await ChatSessionManager.createProject(folderName, selected);
         }
+      } else if ('showDirectoryPicker' in window) {
+        const dirHandle = await (window as any).showDirectoryPicker();
+        folderName = dirHandle.name || 'New Project';
+        const projectPath = await FileSystemService.importDirectory(dirHandle);
+        newProject = await ChatSessionManager.createProject(folderName, projectPath);
+        await FileSystemService.uploadProjectFiles(newProject.id, projectPath);
       } else {
-        if ('showDirectoryPicker' in window) {
-          const dirHandle = await (window as any).showDirectoryPicker();
-          folderName = dirHandle.name || 'New Project';
-          const projectPath = await FileSystemService.importDirectory(dirHandle);
-          newProject = await ChatSessionManager.createProject(folderName, projectPath);
-          await FileSystemService.uploadProjectFiles(newProject.id, projectPath);
-        } else {
-          folderName = prompt('Enter a name for your project:') || '';
-          if (folderName) {
-            const fakePath = `/web-projects/${folderName}`;
-            newProject = await ChatSessionManager.createProject(folderName, fakePath);
-          }
-        }
+        addToast('Your browser does not support folder selection. Please use a supported browser or the desktop app.', 'error');
       }
       if (!newProject) return;
       window.dispatchEvent(new CustomEvent('projects-changed'));
@@ -440,11 +496,12 @@ export const ChatPage = () => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background relative">
+      <PageGradient />
       {uuid !== 'new' && messages.length > 0 && <TitleBar />}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 relative z-10">
         <div
           className={`flex flex-col min-w-0 bg-background relative ${
-            isMobile && isPanelOpen
+            isMobile && (isPanelOpen || isIDEPanelOpen)
               ? 'hidden'
               : 'flex-1'
           }`}
@@ -461,9 +518,14 @@ export const ChatPage = () => {
             onThumbsUp={handleThumbsUp}
             onThumbsDown={handleThumbsDown}
             onSend={handleSend}
+            onRegenerate={handleRegenerate}
             onStop={stop}
             onAddProject={handleAddProject}
+            onOpenIDE={openIDEPanel}
             currentProjectName={currentProjectName}
+            currentMode={currentMode}
+            onModeChange={handleModeChange}
+            isProject={isProject}
           />
         </div>
 
@@ -485,7 +547,7 @@ export const ChatPage = () => {
               aria-valuemax={PANEL_MAX_WIDTH}
               className="w-[5px] shrink-0 cursor-col-resize bg-transparent relative flex items-center justify-center group/divider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-inset"
             >
-               <div className="w-px h-full bg-neutral-700 group-hover/divider:bg-neutral-500 group-active/divider:bg-neutral-400 transition-colors" />
+               <div className="w-px h-full bg-border group-hover/divider:bg-muted-foreground group-active/divider:bg-muted-foreground transition-colors" />
             </div>
             {isMobile && (
               <div className="absolute inset-0 z-50 bg-black/30" onClick={closePanel} />
@@ -504,6 +566,43 @@ export const ChatPage = () => {
               }}
               onRollback={rollbackArtifact}
             />
+          </div>
+        )}
+
+        {isIDEPanelOpen && (
+          <div className="flex overflow-hidden min-w-0" style={{ width: idePanelWidth, flex: 'none' }}>
+            <div
+              onMouseDown={startIDEResize}
+              onTouchStart={handleIDETouchStart}
+              onKeyDown={handleIDEDividerKeyDown}
+              tabIndex={0}
+              role="separator"
+              aria-orientation="vertical"
+              aria-valuenow={idePanelWidth}
+              aria-valuemin={IDE_PANEL_MIN_WIDTH}
+              aria-valuemax={IDE_PANEL_MAX_WIDTH}
+              className="w-[5px] shrink-0 cursor-col-resize bg-transparent relative flex items-center justify-center group/divider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-inset"
+            >
+              <div className="w-px h-full bg-border group-hover/divider:bg-muted-foreground group-active/divider:bg-muted-foreground transition-colors" />
+            </div>
+            {isMobile && (
+              <div className="absolute inset-0 z-50 bg-black/30" onClick={closeIDEPanel} />
+            )}
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+                <span className="text-sm font-semibold">IDE</span>
+                <button
+                  onClick={closeIDEPanel}
+                  className="p-1 hover:bg-muted rounded-[6px] text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Close IDE panel"
+                >
+                  <HugeiconsIcon icon={Cancel01Icon} size={16} />
+                </button>
+              </div>
+              <div className="flex-1 min-h-0">
+                <IDEShell projectName={currentProjectName} projectFiles={projectFiles} />
+              </div>
+            </div>
           </div>
         )}
       </div>

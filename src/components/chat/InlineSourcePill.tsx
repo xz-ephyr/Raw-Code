@@ -40,10 +40,10 @@ export function InlineSourcePill({ url, title, snippet }: InlineSourcePillProps)
         onMouseEnter={show}
         onMouseLeave={hide}
         onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-card hover:bg-muted border border-border transition-colors no-underline shadow-sm hover:shadow-md cursor-pointer"
+        className="inline-flex items-center justify-center no-underline cursor-pointer"
         title={title || domain}
       >
-        <img src={faviconUrl} alt="" width={10} height={10} className="rounded" loading="lazy" />
+        <img src={faviconUrl} alt="" width={14} height={14} className="rounded-full shrink-0" loading="lazy" />
       </a>
 
       {isOpen && (

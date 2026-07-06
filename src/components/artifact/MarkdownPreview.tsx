@@ -28,14 +28,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({ content }: Markdo
             if (!inline) {
               return <CodeBlock language="" content={String(children).replace(/\n$/, '')} />;
             }
-            return (
-              <code
-                className="rounded bg-muted/80 border border-border/50 px-1.5 py-0.5 text-[0.85em] text-foreground font-mono"
-                {...props}
-              >
-                {children}
-              </code>
-            );
+            return <code {...props}>{children}</code>;
           },
           p({ children }) {
             return <div className="mb-4 last:mb-0">{children}</div>;

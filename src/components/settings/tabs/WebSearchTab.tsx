@@ -9,7 +9,7 @@ export function WebSearchTab() {
 
   useEffect(() => {
     if (searchKeysLoaded) return;
-    const keys = ['search-provider', 'search-api-key', 'search-exa-api-key', 'search-firecrawl-api-key', 'search-google-api-key', 'search-google-cx'];
+    const keys = ['search-provider', 'search-api-key', 'search-exa-api-key', 'search-firecrawl-api-key'];
     Promise.all(keys.map(k => DatabaseService.getConfig(k).then(v => ({ key: k, value: v || '' }))))
       .then((entries) => {
         const map: Record<string, string> = {};
@@ -43,8 +43,6 @@ export function WebSearchTab() {
         <p className="text-xs text-blue-400 leading-relaxed">
           Configure web search providers. API keys are stored securely in the local database.
           At minimum, set a <strong>Search Provider</strong> (Tavily recommended) for web search.
-          <strong>Google Custom Search</strong> handles image search;
-          <strong>Exa</strong> handles news search (falls back to Tavily).
         </p>
       </div>
 
@@ -58,7 +56,7 @@ export function WebSearchTab() {
           <option value="tavily">Tavily (Recommended)</option>
           <option value="exa">Exa</option>
           <option value="firecrawl">Firecrawl</option>
-          <option value="google">Google Custom Search</option>
+
         </select>
         <p className="text-xs text-muted-foreground">Provider used for general web search.</p>
       </div>
@@ -87,33 +85,7 @@ export function WebSearchTab() {
           onChange={(v) => setSearchConfig(p => ({ ...p, 'search-firecrawl-api-key': v }))}
         />
 
-        <div className="border-t border-border pt-4">
-          <details className="group">
-            <summary className="text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground list-none flex items-center gap-2">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-transform group-open:rotate-90">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-              Google Custom Search <span className="text-muted-foreground font-normal">(fallback)</span>
-            </summary>
-            <div className="mt-3 space-y-3 pl-4">
-              <SearchKeyField
-                label="Google API Key"
-                value={searchConfig['search-google-api-key'] || ''}
-                onChange={(v) => setSearchConfig(p => ({ ...p, 'search-google-api-key': v }))}
-              />
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-medium text-muted-foreground ml-1">CX (Engine ID)</label>
-                <input
-                  type="text"
-                  className="h-9 bg-muted rounded-[8px] pl-3 pr-3 outline-none text-sm w-full border border-border focus:border-ring transition-colors"
-                  placeholder={searchConfig['search-google-cx'] ? '••••••••••••••••' : 'Enter CX (Engine ID)'}
-                  value={searchConfig['search-google-cx'] || ''}
-                  onChange={(e) => setSearchConfig(p => ({ ...p, 'search-google-cx': e.target.value }))}
-                />
-              </div>
-            </div>
-          </details>
-        </div>
+
       </div>
 
       <div className="flex justify-end pt-2 border-t border-border">

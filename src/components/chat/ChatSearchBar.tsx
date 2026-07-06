@@ -41,17 +41,17 @@ export function ChatSearchBar({ searchQuery, onSearchChange, filter, onFilterCha
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 flex-1">
       <div className="relative flex-1">
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-          <HugeiconRenderer icon={Search01Icon} size={20} />
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+          <HugeiconRenderer icon={Search01Icon} size={16} />
         </div>
         <input
           type="text"
           placeholder="Search conversations..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full bg-muted rounded-[8px] py-3 pl-12 pr-4 text-sm focus:outline-none placeholder:text-muted-foreground"
+          className="w-full bg-muted rounded-md py-2 pl-9 pr-3 text-sm focus:outline-none placeholder:text-muted-foreground"
         />
       </div>
 
@@ -59,12 +59,12 @@ export function ChatSearchBar({ searchQuery, onSearchChange, filter, onFilterCha
         <button
           onClick={openFilter}
           className={cn(
-            'p-3 rounded-2xl transition-all flex items-center justify-center h-[46px] w-[46px] bg-transparent text-muted-foreground active:scale-95 active:bg-muted',
+            'p-2 rounded-lg transition-all flex items-center justify-center text-muted-foreground hover:bg-muted',
             isFilterOpen && 'bg-muted text-foreground'
           )}
           aria-label="Filter chats"
         >
-          <HugeiconRenderer icon={FilterMailIcon} size={20} />
+          <HugeiconRenderer icon={FilterMailIcon} size={18} />
         </button>
 
         {isFilterOpen && filterMenuPos && (

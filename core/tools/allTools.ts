@@ -20,6 +20,7 @@ import { resolvePathTool } from './system/resolvePath';
 import { httpRequestTool } from './network/httpRequest';
 import { checkUrlTool } from './network/checkUrl';
 import { webSearchTool, fetchPageTool, imageSearchTool, newsSearchTool } from '@core/tools/web/webSearchTool';
+import { subagentRunTool } from './agent/subagentRun';
 
 export const allTools = [
   readFileTool,
@@ -47,4 +48,5 @@ export const allTools = [
   fetchPageTool,
   imageSearchTool,
   newsSearchTool,
+  subagentRunTool,
 ];

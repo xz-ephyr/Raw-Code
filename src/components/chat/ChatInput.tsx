@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ArrowUp02Icon, Add01Icon, Cancel01Icon, StopIcon, Attachment01Icon, CameraAdd01Icon, Atom02Icon, HandBag01Icon, ArrowRight01Icon, TeamWorkIcon, HandsClappingIcon, QuillWrite02Icon, CursorMagicSelection04Icon, Bug02Icon } from '@hugeicons/core-free-icons';
+import { ArrowUp02Icon, Add01Icon, Cancel01Icon, StopIcon, Attachment01Icon, CameraAdd01Icon, Atom02Icon, HandBag01Icon, ArrowRight01Icon, TeamWorkIcon, HandsClappingIcon, QuillWrite02Icon, Bug02Icon } from '@hugeicons/core-free-icons';
 import { ThinScrollbar } from '../ui/ThinScrollbar';
 import ModelList from './ModelList';
+import { MODES } from '@core/mode';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -12,20 +13,42 @@ interface ChatInputProps {
   isThinkingEnabled: boolean;
   onToggleThinking: () => void;
   currentModel?: string;
+  currentMode?: string;
+  onModeChange?: (modeId: string | undefined) => void;
+  isProject?: boolean;
 }
 
-const NTABS = [
-  { icon: CursorMagicSelection04Icon, label: 'Plan', desc: 'Strategic planning and roadmap' },
-  { icon: Bug02Icon, label: 'Debugs', desc: 'Identify and fix issues' },
-  { icon: TeamWorkIcon, label: 'Teamwork', desc: 'Collaborate with your team' },
-  { icon: HandsClappingIcon, label: 'Grill Me', desc: 'Tough questions and feedback' },
-  { icon: QuillWrite02Icon, label: 'Super Mode', desc: 'Enhanced AI capabilities' },
-];
+const ICON_MAP: Record<string, any> = {
+  Bug02Icon,
+  TeamWorkIcon,
+  HandsClappingIcon,
+  QuillWrite02Icon,
+};
 
-function NTabDropdown({ isIdle }: { isIdle?: boolean }) {
-  const [currentTab, setCurrentTab] = useState(0);
+const MODE_COLORS: Record<string, string> = {
+  'blue-700': '#1d4ed8',
+  'orange-700': '#c2410c',
+  'purple-700': '#7e22ce',
+};
+
+const NTABS = MODES.map((m) => ({
+  icon: ICON_MAP[m.icon] || HandsClappingIcon,
+  label: m.label,
+  desc: m.description,
+  color: m.color,
+  colorHex: MODE_COLORS[m.color] || '#888',
+}));
+
+function NTabDropdown({ isIdle, currentMode, onModeChange, isProject }: { isIdle?: boolean; currentMode?: string; onModeChange?: (modeId: string | undefined) => void; isProject?: boolean }) {
+  const currentIndex = currentMode ? MODES.findIndex((m) => m.id === currentMode) : -1;
+  const [currentTab, setCurrentTab] = useState(currentIndex);
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const idx = currentMode ? MODES.findIndex((m) => m.id === currentMode) : -1;
+    setCurrentTab(idx);
+  }, [currentMode]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -38,7 +61,11 @@ function NTabDropdown({ isIdle }: { isIdle?: boolean }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  const tab = NTABS[currentTab];
+  const tab = currentTab >= 0 ? NTABS[currentTab] : undefined;
+
+  if (!isProject) {
+    return null;
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -46,31 +73,49 @@ function NTabDropdown({ isIdle }: { isIdle?: boolean }) {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1 px-2 py-1 rounded-[6px] text-foreground hover:bg-muted transition-colors text-xs"
-        title={tab.label}
+        title={tab ? tab.label : 'Default (no mode)'}
       >
-        <HugeiconsIcon icon={tab.icon} size={16} className="text-foreground" />
-        <span className="max-w-[80px] truncate">{tab.label}</span>
+        {tab ? (
+          <>
+            <HugeiconsIcon icon={tab.icon} size={16} style={{ color: tab.colorHex }} />
+            <span style={{ color: tab.colorHex }}>{tab.label}</span>
+          </>
+        ) : (
+          <span className="text-muted-foreground">Default</span>
+        )}
       </button>
       {isOpen && (
         <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 w-[220px] bg-card border border-border rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden`}>
-          {NTABS.map((t, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => { setCurrentTab(i); setIsOpen(false); }}
-              className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center gap-2 rounded-md ${
-                 i === currentTab
-                   ? 'text-foreground bg-muted'
-                   : 'text-foreground hover:bg-muted'
-               }`}
-            >
-              <HugeiconsIcon icon={t.icon} size={18} className="text-foreground" />
-              <div className="flex flex-col">
-                <span>{t.label}</span>
-                <span className="text-[10px] text-muted-foreground">{t.desc}</span>
-              </div>
-            </button>
-          ))}
+          {NTABS.map((t, i) => {
+            const isActive = i === currentTab;
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  if (isActive) {
+                    setCurrentTab(-1);
+                    onModeChange?.(undefined);
+                  } else {
+                    setCurrentTab(i);
+                    onModeChange?.(MODES[i].id);
+                  }
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center gap-2 rounded-[6px] ${
+                  isActive
+                    ? 'bg-muted'
+                    : 'text-foreground hover:bg-muted'
+                }`}
+              >
+                <HugeiconsIcon icon={t.icon} size={18} style={{ color: isActive ? t.colorHex : undefined }} className={isActive ? '' : 'text-foreground'} />
+                <div className="flex flex-col">
+                  <span style={{ color: isActive ? t.colorHex : undefined }} className={isActive ? '' : 'text-foreground'}>{t.label}</span>
+                  <span className="text-[10px] text-muted-foreground">{t.desc}</span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -127,13 +172,13 @@ function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, isIdle }: { isTh
               <span>{item.label}</span>
             </button>
           ))}
-          <div className="flex items-center gap-2 px-3 py-2 text-xs text-foreground rounded-md cursor-pointer hover:bg-muted" onClick={onToggleThinking}>
+          <div className="flex items-center gap-2 px-3 py-2 text-xs text-foreground rounded-[6px] cursor-pointer hover:bg-muted" onClick={onToggleThinking}>
             <HugeiconsIcon icon={Atom02Icon} size={16} />
             <span className="flex-1">Reasoning</span>
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onToggleThinking(); }}
-              className={`relative w-9 h-5 rounded-full transition-colors ${isThinkingEnabled ? 'bg-blue-500' : 'bg-neutral-600'}`}
+              className={`relative w-9 h-5 rounded-full transition-colors ${isThinkingEnabled ? 'bg-blue-500' : 'bg-muted-foreground'}`}
             >
               <span className={`absolute top-[3px] left-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${isThinkingEnabled ? 'translate-x-4' : ''}`} />
             </button>
@@ -171,7 +216,7 @@ function ThinkingPill({
     <button
       type="button"
       onClick={onToggleThinking}
-      className={`group flex items-center gap-2 bg-blue-900/30 text-blue-300 ${size === 'normal' ? 'px-4 py-1.5 text-sm' : 'px-3 py-1 text-xs'} rounded-md font-medium cursor-pointer transition-all active:scale-95`}
+      className={`group flex items-center gap-2 bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 ${size === 'normal' ? 'px-4 py-1.5 text-sm' : 'px-3 py-1 text-xs'} rounded-[6px] font-medium cursor-pointer transition-all active:scale-95`}
       aria-label="Disable thinking mode"
       title="Disable thinking mode"
     >
@@ -201,7 +246,7 @@ function SendButton({
       type="button"
       onClick={isLoading ? onStop : onSend}
       disabled={!hasValue && !isLoading}
-      className="p-1.5 text-foreground rounded-full bg-muted disabled:opacity-50 transition-opacity hover:opacity-90 active:scale-95"
+      className="p-1.5 text-background rounded-full bg-foreground disabled:opacity-50 transition-opacity hover:opacity-90 active:scale-95"
       aria-label={label}
       title={label}
     >
@@ -215,7 +260,7 @@ function SendButton({
   );
 }
 
-export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkingEnabled, onToggleThinking, currentModel }: ChatInputProps) {
+export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkingEnabled, onToggleThinking, currentModel, currentMode, onModeChange, isProject }: ChatInputProps) {
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -253,8 +298,8 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
   };
 
   return (
-    <div className="relative w-full mx-auto" style={{ maxWidth: 'min(880px, 100%)' }}>
-      <div className="bg-neutral-800 rounded-[12px] relative z-10 border border-neutral-700/60 shadow-sm">
+    <div className="shrink-0 w-full mx-auto px-4 pb-3" style={{ maxWidth: 'min(880px, 100%)' }}>
+      <div className="bg-muted rounded-[12px] relative z-10 border border-border/60">
         <ThinScrollbar className="max-h-[145px]">
           <textarea
             {...commonTextareaProps}
@@ -267,7 +312,7 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
             <div className="flex items-center justify-between">
             <div className="flex items-center gap-0.5">
               <ToolbarDropdown isThinkingEnabled={isThinkingEnabled} onToggleThinking={onToggleThinking} isIdle={isIdle} />
-              <NTabDropdown isIdle={isIdle} />
+              <NTabDropdown isIdle={isIdle} currentMode={currentMode} onModeChange={onModeChange} isProject={isProject} />
               {isThinkingEnabled && <ThinkingPill onToggleThinking={onToggleThinking} size="small" />}
             </div>
             <div className="flex items-center gap-1">

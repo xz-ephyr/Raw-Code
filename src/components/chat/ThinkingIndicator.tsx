@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Idea01Icon, ArrowDown01Icon } from '@hugeicons/core-free-icons';
 import { useThinkingTimer } from '@/hooks/useThinkingTimer';
@@ -8,17 +8,13 @@ interface ThinkingIndicatorProps {
   reasoning?: string;
 }
 
+/**
+ * @deprecated Use ThinkingTimeline instead. Kept for backward compatibility.
+ */
 export function ThinkingIndicator({ model, reasoning }: ThinkingIndicatorProps) {
   const isActivelyThinking = !reasoning;
   const { label } = useThinkingTimer(isActivelyThinking);
-  const [isExpanded, setIsExpanded] = useState(true);
-
-  useEffect(() => {
-    if (reasoning) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsExpanded(false);
-    }
-  }, [reasoning]);
+  const [isExpanded, setIsExpanded] = useState(!reasoning);
 
   return (
     <div className="py-2 text-sm text-foreground" role="status" aria-live="polite">

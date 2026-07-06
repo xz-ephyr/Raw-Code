@@ -18,9 +18,14 @@ interface MessageListProps {
   onThumbsUp: () => void;
   onThumbsDown: () => void;
   onSend: (content: string) => void;
+  onRegenerate: (index: number) => void;
   onStop: () => void;
   onAddProject: () => void;
+  onOpenIDE?: () => void;
   currentProjectName: string | undefined;
+  currentMode?: string;
+  onModeChange?: (modeId: string | undefined) => void;
+  isProject?: boolean;
 }
 
 export function MessageList({
@@ -35,13 +40,19 @@ export function MessageList({
   onThumbsUp,
   onThumbsDown,
   onSend,
+  onRegenerate,
   onStop,
   onAddProject,
+  onOpenIDE,
   currentProjectName,
+  currentMode,
+  onModeChange,
+  isProject,
 }: MessageListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [versionMap, setVersionMap] = useState<Record<string, number>>({});
 
   const handleScroll = useCallback(() => {
     const el = scrollContainerRef.current;
@@ -56,6 +67,21 @@ export function MessageList({
       setShowScrollButton(!near);
     }
   }, []);
+
+  const handleLocalRegenerate = useCallback((index: number) => {
+    const msg = messages[index];
+    if (msg) {
+      setVersionMap((prev) => ({
+        ...prev,
+        [msg.id || index]: (prev[msg.id || index] || 0) + 1,
+      }));
+    }
+    onRegenerate(index);
+  }, [messages, onRegenerate]);
+
+  const getMessageVersion = useCallback((msg: any, index: number): number => {
+    return versionMap[msg.id || index] || 1;
+  }, [versionMap]);
 
   const scrollToBottom = useCallback(() => {
     const el = scrollContainerRef.current;
@@ -102,6 +128,7 @@ export function MessageList({
                 key={m.id || i}
                 role={m.role}
                 content={m.content}
+                createdAt={m.createdAt}
                 artifacts={m.artifacts}
                 toolInvocations={m.toolInvocations}
                 reasoning={m.reasoning}
@@ -110,12 +137,14 @@ export function MessageList({
                 contentAfterTool={m.contentAfterTool}
                 currentModel={currentModel}
                 isStreaming={i === lastAssistantIndex}
+                messageIndex={i}
+                version={getMessageVersion(m, i)}
                 prevUserContent={prevUserContent}
                 onOpenArtifact={onOpenArtifact}
                 onCopy={onCopy}
                 onThumbsUp={onThumbsUp}
                 onThumbsDown={onThumbsDown}
-                handleSend={onSend}
+                onRegenerate={handleLocalRegenerate}
               />
             );
           })}
@@ -133,8 +162,12 @@ export function MessageList({
                 isThinkingEnabled={isThinkingEnabled}
                 onToggleThinking={onToggleThinking}
                 onCreateProject={onAddProject}
+                onOpenIDE={onOpenIDE}
                 currentProjectName={currentProjectName}
                 currentModel={currentModel}
+                currentMode={currentMode}
+                onModeChange={onModeChange}
+                isProject={isProject}
               />
             </div>
           )}
@@ -154,19 +187,21 @@ export function MessageList({
       )}
 
       {hasMessages && (
-        <div className="shrink-0 w-full mx-auto px-4 pb-3 bg-card">
-          <ChatInputContainer
-            idle={false}
-            onSend={onSend}
-            isLoading={isLoading}
-            onStop={onStop}
-            isThinkingEnabled={isThinkingEnabled}
-            onToggleThinking={onToggleThinking}
-            onCreateProject={onAddProject}
-            currentProjectName={currentProjectName}
-            currentModel={currentModel}
-          />
-        </div>
+        <ChatInputContainer
+          idle={false}
+          onSend={onSend}
+          isLoading={isLoading}
+          onStop={onStop}
+          isThinkingEnabled={isThinkingEnabled}
+          onToggleThinking={onToggleThinking}
+          onCreateProject={onAddProject}
+          onOpenIDE={onOpenIDE}
+          currentProjectName={currentProjectName}
+          currentModel={currentModel}
+          currentMode={currentMode}
+          onModeChange={onModeChange}
+          isProject={isProject}
+        />
       )}
     </>
   );

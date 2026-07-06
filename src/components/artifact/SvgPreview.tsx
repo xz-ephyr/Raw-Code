@@ -1,12 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 interface SvgPreviewProps {
   content: string;
 }
 
 export function SvgPreview({ content }: SvgPreviewProps) {
-  const [error, setError] = useState(false);
-
   const svgContent = useMemo(() => {
     const trimmed = content.trim();
     if (trimmed.startsWith('<svg') || trimmed.startsWith('<?xml')) {
@@ -21,13 +19,11 @@ export function SvgPreview({ content }: SvgPreviewProps) {
     return null;
   }, [content]);
 
-  if (error || !svgContent) {
+  if (!svgContent) {
     return (
       <div className="p-6">
-        <div className="rounded-lg border border-red-200 bg-red-900/20 border-red-800 p-4">
-          <p className="text-sm font-medium text-red-800 text-red-300">
-            {error ? 'Failed to render SVG' : 'No valid SVG found in content'}
-          </p>
+        <div className="rounded-lg bg-red-900/20 border-red-800 p-4">
+          <p className="text-sm font-medium text-red-300">No valid SVG found in content</p>
         </div>
         <pre className="mt-4 p-4 bg-muted rounded-lg border border-border text-xs font-mono whitespace-pre-wrap overflow-auto max-h-64 text-foreground">
           {content}
@@ -41,7 +37,6 @@ export function SvgPreview({ content }: SvgPreviewProps) {
       <div
         className="max-w-full overflow-auto"
         dangerouslySetInnerHTML={{ __html: svgContent }}
-        onError={() => setError(true)}
       />
     </div>
   );

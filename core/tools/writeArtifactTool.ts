@@ -10,4 +10,7 @@ export const writeArtifactTool = tool({
     language: z.string().optional().describe('Programming language for code artifacts (e.g. "python", "typescript").'),
     content: z.string().describe('The full content of the artifact.'),
   })),
+  execute: async ({ identifier, type, title, language, content }) => {
+    return { identifier, type, title, language, content };
+  },
 });

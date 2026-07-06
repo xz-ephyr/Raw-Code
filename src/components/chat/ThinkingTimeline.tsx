@@ -1,6 +1,17 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ChevronsDownUpIcon, InternetIcon } from '@hugeicons/core-free-icons';
+import {
+  InternetIcon, Clock01Icon, CheckmarkCircle02Icon,
+  FileSearchIcon, FilePlusIcon, PencilEdit02Icon,
+  FolderOpenIcon, Search02Icon, FileCodeIcon,
+  SearchCodeIcon, SourceCodeIcon, Folder01Icon,
+  FileSpreadsheetIcon, GitBranchIcon, GitCommitIcon,
+  GitPullRequestIcon, GitMergeIcon, FileValidationIcon,
+  CommandLineIcon, ComputerIcon, Task01Icon,
+  CursorTextIcon, GlobeIcon, WebSecurityIcon,
+  FileDownloadIcon, AiImageIcon, AiBrowserIcon,
+  Bug02Icon, AiBookIcon,
+} from '@hugeicons/core-free-icons';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -17,22 +28,62 @@ export interface TimelineSource {
 export interface TimelineStep {
   id: string;
   type: 'thinking' | 'searching';
-  /** For thinking: the full reasoning text so far */
   reasoning?: string;
-  /** For searching: the search query */
   query?: string;
-  /** For searching: whether the search is still running */
   isRunning?: boolean;
-  /** For searching: source URLs from completed results */
   sources?: TimelineSource[];
-  /** Whether this step is the currently active one (receiving updates) */
   isActive: boolean;
+  error?: string;
+  toolName?: string;
+  toolInput?: any;
+  toolOutput?: any;
 }
 
 interface ThinkingTimelineProps {
   steps: TimelineStep[];
   isStreaming: boolean;
 }
+
+type DisplayType = 'expandable' | 'inline' | 'default';
+
+interface ToolConfig {
+  icon: typeof InternetIcon;
+  presentPrefix: string;
+  pastPrefix: string;
+  displayType: DisplayType;
+}
+
+// ── Tool Configuration ─────────────────────────────────────────────
+
+const TOOL_CONFIG: Record<string, ToolConfig> = {
+  read_file:      { icon: FileSearchIcon, presentPrefix: 'Reading', pastPrefix: 'Read', displayType: 'expandable' },
+  write_file:     { icon: FilePlusIcon, presentPrefix: 'Writing', pastPrefix: 'Wrote', displayType: 'expandable' },
+  edit_file:      { icon: PencilEdit02Icon, presentPrefix: 'Editing', pastPrefix: 'Edited', displayType: 'expandable' },
+  list_directory: { icon: FolderOpenIcon, presentPrefix: 'Listing', pastPrefix: 'Listed', displayType: 'inline' },
+  find_files:     { icon: Search02Icon, presentPrefix: 'Finding', pastPrefix: 'Found', displayType: 'inline' },
+  glob_files:     { icon: FileCodeIcon, presentPrefix: 'Globbing', pastPrefix: 'Globbed', displayType: 'inline' },
+  grep_files:     { icon: SearchCodeIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'inline' },
+  code_search:    { icon: SourceCodeIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'inline' },
+  file_stats:     { icon: Folder01Icon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'inline' },
+  count_lines:    { icon: FileSpreadsheetIcon, presentPrefix: 'Counting', pastPrefix: 'Counted', displayType: 'inline' },
+  git_status:     { icon: GitBranchIcon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'inline' },
+  git_diff:       { icon: GitCommitIcon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'inline' },
+  git_log:        { icon: GitPullRequestIcon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'inline' },
+  git_branches:   { icon: GitMergeIcon, presentPrefix: 'Listing', pastPrefix: 'Listed', displayType: 'inline' },
+  git_show:       { icon: FileValidationIcon, presentPrefix: 'Showing', pastPrefix: 'Showed', displayType: 'inline' },
+  run_command:    { icon: CommandLineIcon, presentPrefix: 'Running', pastPrefix: 'Ran', displayType: 'expandable' },
+  system_info:    { icon: ComputerIcon, presentPrefix: 'Getting', pastPrefix: 'Got', displayType: 'inline' },
+  list_processes: { icon: Task01Icon, presentPrefix: 'Listing', pastPrefix: 'Listed', displayType: 'inline' },
+  resolve_path:   { icon: CursorTextIcon, presentPrefix: 'Resolving', pastPrefix: 'Resolved', displayType: 'inline' },
+  http_request:   { icon: GlobeIcon, presentPrefix: 'Making', pastPrefix: 'Made', displayType: 'expandable' },
+  check_url:      { icon: WebSecurityIcon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'inline' },
+  web_search:     { icon: InternetIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'default' },
+  fetch_page:     { icon: FileDownloadIcon, presentPrefix: 'Fetching', pastPrefix: 'Fetched', displayType: 'default' },
+  image_search:   { icon: AiImageIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'default' },
+  news_search:    { icon: AiBrowserIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'default' },
+  subagent_run:   { icon: Bug02Icon, presentPrefix: 'Delegating', pastPrefix: 'Delegated', displayType: 'expandable' },
+  search_docs:    { icon: AiBookIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'inline' },
+};
 
 // ── Helpers ────────────────────────────────────────────────────────
 
@@ -56,121 +107,310 @@ function buildSourcesFromResult(outputOrResult: any): TimelineSource[] {
   return sources;
 }
 
-// ── Sub-components ─────────────────────────────────────────────────
-
-function SearchingHeader({
-  query,
-  isRunning,
-  onToggle,
-}: {
-  query: string;
-  isRunning: boolean;
-  onToggle?: () => void;
-}) {
-  return (
-    <div
-      className={`flex items-center gap-2 px-2 pr-3 py-0.5 rounded-[6px] cursor-pointer select-none transition-all active:scale-[0.98] group/searchheader ${
-        isRunning ? 'bg-blue-900/40 active:bg-blue-900/60' : 'hover:bg-white/10 active:bg-white/15'
-      }`}
-      onClick={onToggle}
-    >
-      <div className="flex items-center justify-center w-5 h-5 shrink-0">
-        <HugeiconsIcon
-          icon={InternetIcon}
-          size={12}
-          className={isRunning ? 'text-blue-400' : 'text-white/50'}
-        />
-      </div>
-      <span
-        className={
-          isRunning
-            ? 'thinking-shimmer-text text-xs font-medium text-white font-inter'
-            : 'text-xs font-medium text-white/60 font-inter'
-        }
-      >
-        Searching
-      </span>
-      {query && (
-        <span className="text-sm font-medium text-white/70 truncate max-w-[400px]">
-          &ldquo;{query}&rdquo;
-        </span>
-      )}
-      <HugeiconsIcon
-        icon={ChevronsDownUpIcon}
-        size={12}
-        className="text-white/40 ml-auto opacity-0 group-hover/searchheader:opacity-100 transition-opacity cursor-pointer"
-      />
-    </div>
-  );
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
-function ThinkingStep({ reasoning, isActive, isStreaming }: {
+function getInputSummary(toolName: string, input: any): string {
+  if (!input) return '';
+  switch (toolName) {
+    case 'read_file': case 'write_file': case 'edit_file': case 'file_stats':
+    case 'list_directory': case 'count_lines': case 'resolve_path':
+      return input.path || '';
+    case 'find_files': case 'glob_files':
+      return input.pattern || input.path || '';
+    case 'grep_files': case 'code_search': case 'search_docs':
+      return input.pattern || input.query || input.path || '';
+    case 'run_command':
+      return input.command || '';
+    case 'http_request': case 'check_url':
+      return input.url || '';
+    case 'subagent_run':
+      return input.task || '';
+    case 'git_diff':
+      return `${input.path || ''}${input.cached ? ' (staged)' : ''}`;
+    case 'git_show':
+      return input.revision || input.path || '';
+    case 'git_status': case 'git_log': case 'git_branches':
+      return input.path || '';
+    default:
+      return input.query || input.url || input.path || '';
+  }
+}
+
+function getResultCount(output: any): string {
+  if (!output) return '';
+  if (output.totalResults != null) return `${output.totalResults} results`;
+  if (output.results && Array.isArray(output.results)) return `${output.results.length} results`;
+  if (output.files && Array.isArray(output.files)) return `${output.files.length} matches`;
+  if (output.paths && Array.isArray(output.paths)) return `${output.paths.length} matches`;
+  if (output.matches && Array.isArray(output.matches)) return `${output.matches.length} matches`;
+  if (output.entries && Array.isArray(output.entries)) return `${output.entries.length} items`;
+  if (output.commits && Array.isArray(output.commits)) return `${output.commits.length} entries`;
+  if (output.branches && Array.isArray(output.branches)) return `${output.branches.length} branches`;
+  if (output.processes && Array.isArray(output.processes)) return `${output.processes.length} processes`;
+  if (output.totalLines != null) return `${output.totalLines} lines`;
+  if (output.total != null) return `${output.total} total`;
+  const added = output.addedLines || output.additions || 0;
+  const removed = output.removedLines || output.deletions || 0;
+  if (added || removed) return `+${added}/-${removed}`;
+  if (output.status) return `${output.status}`;
+  return '';
+}
+
+function formatInlineResult(toolName: string, input: any, output: any): string {
+  const summary = getInputSummary(toolName, input);
+  const count = getResultCount(output);
+  if (summary && count) return `${summary} → ${count}`;
+  if (summary) return summary;
+  if (count) return count;
+  return '';
+}
+
+function formatToolOutput(toolName: string, output: any): string {
+  if (!output) return '';
+
+  if (toolName === 'read_file') {
+    return output.content || output.text || JSON.stringify(output, null, 2);
+  }
+  if (toolName === 'write_file' || toolName === 'edit_file') {
+    return output.message || output.result || JSON.stringify(output, null, 2);
+  }
+  if (toolName === 'run_command') {
+    const parts: string[] = [];
+    if (output.stdout) parts.push(`stdout:\n${output.stdout}`);
+    if (output.stderr) parts.push(`stderr:\n${output.stderr}`);
+    if (output.exitCode != null) parts.push(`exit code: ${output.exitCode}`);
+    return parts.join('\n\n') || JSON.stringify(output, null, 2);
+  }
+  if (toolName === 'http_request') {
+    const parts: string[] = [];
+    if (output.status != null) parts.push(`Status: ${output.status} ${output.statusText || ''}`);
+    if (output.data != null) {
+      const data = typeof output.data === 'object' ? JSON.stringify(output.data, null, 2) : String(output.data);
+      parts.push(`Body:\n${data.slice(0, 3000)}${data.length > 3000 ? '...' : ''}`);
+    }
+    return parts.join('\n') || JSON.stringify(output, null, 2);
+  }
+  if (toolName === 'subagent_run') {
+    return output.result || output.summary || output.output || JSON.stringify(output, null, 2);
+  }
+
+  return JSON.stringify(output, null, 2);
+}
+
+// ── Hooks ──────────────────────────────────────────────────────────
+
+function useSearchTimer(isRunning: boolean): number {
+  const [elapsed, setElapsed] = useState(0);
+  const startTimeRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (isRunning) {
+      if (startTimeRef.current === null) {
+        startTimeRef.current = Date.now();
+        setElapsed(0);
+      }
+      const id = setInterval(() => {
+        if (startTimeRef.current !== null) {
+          setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
+        }
+      }, 200);
+      return () => clearInterval(id);
+    } else {
+      startTimeRef.current = null;
+    }
+  }, [isRunning]);
+
+  return elapsed;
+}
+
+// ── Sub-components ─────────────────────────────────────────────────
+
+function ThinkingStepContent({ reasoning, isActive, isStreaming }: {
   reasoning?: string;
   isActive: boolean;
   isStreaming: boolean;
 }) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const prevLengthRef = useRef(0);
+
+  useEffect(() => {
+    if (contentRef.current && reasoning && reasoning.length > prevLengthRef.current) {
+      prevLengthRef.current = reasoning.length;
+    }
+  }, [reasoning]);
+
   const showEllipsis = isActive && isStreaming;
   return (
-    <div className="flex flex-col gap-1 flex-1 min-w-0 pb-3">
-      <div className="text-[12px] leading-relaxed text-white/90 [&>p]:my-0 font-inter">
-        <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>
-          {reasoning || ''}
-        </ReactMarkdown>
-      </div>
+    <div className="flex flex-col gap-1">
+      {reasoning && (
+        <div ref={contentRef} className="text-[12px] leading-relaxed text-foreground/90 [&>p]:my-0 font-inter">
+          <ReactMarkdown
+            remarkPlugins={REMARK_PLUGINS}
+            components={{
+              code({ inline, className, children, ...props }: any) {
+                if (inline) {
+                  return <code {...props}>{children}</code>;
+                }
+                return <code className={className} {...props}>{children}</code>;
+              },
+            }}
+          >
+            {reasoning}
+          </ReactMarkdown>
+        </div>
+      )}
       {showEllipsis && (
-        <div className="text-[13px] leading-relaxed text-white/50 animate-pulse">...</div>
+        <div className="text-[13px] leading-relaxed text-muted-foreground animate-pulse">...</div>
       )}
     </div>
   );
 }
 
-function SearchingStep({ step, isExpanded, onToggle }: {
+function SearchingStepContent({ step }: {
   step: TimelineStep;
-  isExpanded: boolean;
-  onToggle: () => void;
 }) {
+  const isRunning = !!step.isRunning;
+  const isError = !isRunning && step.sources && step.sources.length === 0 && !!step.error;
   const sources = step.sources || [];
-  return (
-    <div className="pb-3">
-      <SearchingHeader query={step.query || ''} isRunning={!!step.isRunning} onToggle={onToggle} />
+  const query = step.query || '';
+  const timer = useSearchTimer(isRunning);
 
-      {step.isRunning && (
-        <div className="flex items-center gap-1.5 px-2 text-xs text-white/50 animate-pulse">
-          <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
-          Fetching results...
-        </div>
+  let timerLabel = '';
+  if (timer > 0) {
+    timerLabel = formatDuration(timer);
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        {isError ? (
+          <span className="text-xs font-medium text-red-500 font-inter truncate">
+            {query ? `Search failed — ${query}` : 'Search failed'}
+          </span>
+        ) : isRunning ? (
+          <span className="thinking-shimmer-text text-xs font-medium font-inter truncate">
+            {query ? `Searching — ${query}` : 'Searching'}
+            {timerLabel && <span className="text-muted-foreground ml-1">· {timerLabel}</span>}
+          </span>
+        ) : (
+          <span className="text-xs font-medium text-muted-foreground font-inter">
+            Searched{query ? ` — ${query}` : ''}
+            {timerLabel && <span className="text-muted-foreground ml-1">· {timerLabel}</span>}
+          </span>
+        )}
+      </div>
+
+      {isError && (
+        <div className="text-xs text-red-400 font-inter">{(step as any).error || 'An error occurred during search.'}</div>
       )}
 
-      {!step.isRunning && sources.length > 0 && (
-        <div
-          className={`grid transition-all duration-300 ease-in-out ${
-            isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-          }`}
-        >
-          <div className="overflow-hidden min-h-0">
-            <div className="border border-white/10 rounded-[6px] overflow-y-auto max-h-[240px] thin-scrollbar mx-[5px]">
+      {!isError && (isRunning || sources.length > 0) && (
+        <div className="w-full rounded-[8px] border border-border bg-muted/30 p-2 max-h-[135px] overflow-y-auto thin-scrollbar">
+          {sources.length === 0 && isRunning ? (
+            <div className="flex items-center gap-2 min-h-[24px]">
+              <span className="text-[11px] text-muted-foreground/50 italic">Gathering sources...</span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-px">
               {sources.map((src, sIdx) => (
                 <a
                   key={sIdx}
                   href={src.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-2 h-[36px] rounded-[6px] hover:bg-white/10 transition-colors no-underline"
+                  className="flex items-center gap-2 pl-0.5 pr-1 py-0.5 rounded-[4px] hover:bg-foreground/10 active:bg-foreground/20 transition-colors no-underline text-[11px] text-foreground/80 w-full"
                 >
                   <img
                     src={`https://www.google.com/s2/favicons?domain=${getDomain(src.url)}&sz=16`}
                     alt=""
-                    width={16}
-                    height={16}
-                    className="rounded shrink-0"
+                    width={14}
+                    height={14}
+                    className="rounded-full shrink-0"
                   />
-                  <span className="text-sm text-white/80 truncate">{src.title || src.url}</span>
+                  <span className="truncate min-w-0">{src.title || getDomain(src.url)}</span>
                 </a>
               ))}
             </div>
-          </div>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+function InlineToolContent({ step }: {
+  step: TimelineStep;
+}) {
+  const config = step.toolName ? TOOL_CONFIG[step.toolName] : null;
+  const isRunning = !!step.isRunning;
+  const prefix = isRunning ? config?.presentPrefix : config?.pastPrefix;
+  const result = formatInlineResult(step.toolName || '', step.toolInput, step.toolOutput);
+
+  return (
+    <div className="flex flex-col gap-1">
+      <span className={`text-xs font-medium font-inter truncate ${isRunning ? 'thinking-shimmer-text' : 'text-muted-foreground'}`}>
+        {prefix}{result ? ` — ${result}` : ''}
+      </span>
+    </div>
+  );
+}
+
+function ExpandableToolContent({ step }: {
+  step: TimelineStep;
+}) {
+  const config = step.toolName ? TOOL_CONFIG[step.toolName] : null;
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isRunning = !!step.isRunning;
+  const done = !isRunning;
+  const prefix = isRunning ? config?.presentPrefix : config?.pastPrefix;
+  const summary = getInputSummary(step.toolName || '', step.toolInput);
+  const count = getResultCount(step.toolOutput);
+
+  useEffect(() => {
+    if (isRunning) setIsExpanded(true);
+  }, [isRunning]);
+
+  const label = prefix + (summary ? ` — ${summary}` : '') + (count ? ` → ${count}` : '');
+
+  return (
+    <div className="flex flex-col gap-1">
+      <button
+        onClick={() => setIsExpanded(p => !p)}
+        className="flex items-center gap-1.5 text-left w-full"
+      >
+        <span className={`text-xs font-medium font-inter truncate ${isRunning ? 'thinking-shimmer-text' : 'text-muted-foreground'}`}>
+          {label}
+        </span>
+        {done && <span className="text-[10px] text-muted-foreground/60 shrink-0">{isExpanded ? '▾' : '▸'}</span>}
+      </button>
+
+      <div className={`grid transition-all duration-200 ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+        <div className="overflow-hidden min-h-0">
+          <div className="rounded-[8px] border border-border bg-muted/30 p-2 mt-1 max-h-[250px] overflow-y-auto thin-scrollbar">
+            {step.toolInput && (
+              <div className="mb-2">
+                <div className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-1">Input</div>
+                <pre className="text-[11px] font-mono text-foreground/80 whitespace-pre-wrap break-words">
+                  {JSON.stringify(step.toolInput, null, 2)}
+                </pre>
+              </div>
+            )}
+            {step.toolOutput && (
+              <div>
+                <div className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-1">Output</div>
+                <pre className="text-[11px] font-mono text-foreground/80 whitespace-pre-wrap break-words max-h-[150px] overflow-y-auto">
+                  {formatToolOutput(step.toolName || '', step.toolOutput)}
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -181,39 +421,65 @@ export const ThinkingTimeline = React.memo(function ThinkingTimeline({
   steps,
   isStreaming,
 }: ThinkingTimelineProps) {
-  const [expandedSearch, setExpandedSearch] = useState<Set<string>>(new Set());
-
   if (steps.length === 0) return null;
 
-  const toggleExpand = (id: string) => {
-    setExpandedSearch((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
   return (
-    <div className="flex flex-col gap-0">
-      {steps.map((step) => {
-        if (step.type === 'thinking') {
-          return (
-            <div key={step.id} className="flex">
-              <ThinkingStep reasoning={step.reasoning} isActive={step.isActive} isStreaming={isStreaming} />
+    <div className="grid grid-cols-[auto_1fr] gap-x-1 gap-y-0.5">
+      {steps.map((step, idx) => {
+        const isLast = idx === steps.length - 1;
+        const isThinking = step.type === 'thinking';
+
+        const config = step.toolName ? TOOL_CONFIG[step.toolName] : null;
+
+        const done = isThinking
+          ? !step.isActive && !isStreaming && !!step.reasoning
+          : config
+            ? !step.isRunning && !!step.toolOutput
+            : !step.isRunning && (step.sources?.length || 0) > 0;
+
+        return (
+          <div key={step.id} className="contents">
+            {/* Icon cell */}
+            <div className="flex flex-col items-center shrink-0 w-4">
+              {isThinking && (
+                <div className="text-muted-foreground">
+                  <HugeiconsIcon icon={Clock01Icon} size={16} />
+                </div>
+              )}
+              {!isThinking && (
+                <div className="text-muted-foreground">
+                  <HugeiconsIcon icon={config?.icon || InternetIcon} size={16} />
+                </div>
+              )}
+              {(!isLast || done) && <div className="w-px flex-1 bg-border mt-0.5" />}
+              {isLast && done && (
+                <div className="text-muted-foreground mt-0.5">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} />
+                </div>
+              )}
             </div>
-          );
-        }
-        if (step.type === 'searching') {
-          return (
-            <SearchingStep
-              key={step.id}
-              step={step}
-              isExpanded={expandedSearch.has(step.id)}
-              onToggle={() => toggleExpand(step.id)}
-            />
-          );
-        }
-        return null;
+
+            {/* Text cell */}
+            <div className="min-w-0">
+              {isThinking && (
+                <ThinkingStepContent
+                  reasoning={step.reasoning}
+                  isActive={step.isActive}
+                  isStreaming={isStreaming}
+                />
+              )}
+              {!isThinking && config?.displayType === 'expandable' && (
+                <ExpandableToolContent step={step} />
+              )}
+              {!isThinking && config?.displayType === 'inline' && (
+                <InlineToolContent step={step} />
+              )}
+              {!isThinking && (!config || config.displayType === 'default') && (
+                <SearchingStepContent step={step} />
+              )}
+            </div>
+          </div>
+        );
       })}
     </div>
   );
@@ -225,9 +491,8 @@ function extractThinkTagsFromText(text: string): { clean: string; thinking: stri
   const thinkingParts: string[] = [];
   let clean = text;
 
-  const fullRegex = /<think>([\s\S]*?)<\/think>/gi;
+  const regex = /<think>([\s\S]*?)<\/think>/gi;
   let match: RegExpExecArray | null;
-  const regex = new RegExp(fullRegex.source, 'gi');
   while ((match = regex.exec(text)) !== null) {
     thinkingParts.push(match[1].trim());
     clean = clean.replace(match[0], '');
@@ -252,61 +517,75 @@ function buildStepsFromParts(
   hasContent?: boolean,
 ): TimelineStep[] {
   const steps: TimelineStep[] = [];
-  let reasoningBuf: string[] = [];
   let stepId = 0;
-
-  function flushReasoning(isActive: boolean) {
-    if (reasoningBuf.length === 0) return;
-    steps.push({
-      id: `thinking-${stepId++}`,
-      type: 'thinking',
-      reasoning: reasoningBuf.join('\n'),
-      isActive,
-    });
-    reasoningBuf = [];
-  }
+  let lastThinkingIdx = -1;
 
   for (const part of parts) {
     if (!part || !part.type) continue;
 
     if (part.type === 'reasoning') {
       const text = part.reasoning || (part as any).text || '';
-      if (text) reasoningBuf.push(text);
+      if (text) {
+        steps.push({
+          id: `thinking-${stepId++}`,
+          type: 'thinking',
+          reasoning: text,
+          isActive: false,
+        });
+        lastThinkingIdx = steps.length - 1;
+      }
     } else if (part.type === 'text') {
       const { thinking } = extractThinkTagsFromText(part.text || '');
-      if (thinking) reasoningBuf.push(thinking);
+      if (thinking) {
+        steps.push({
+          id: `thinking-${stepId++}`,
+          type: 'thinking',
+          reasoning: thinking,
+          isActive: false,
+        });
+        lastThinkingIdx = steps.length - 1;
+      }
     } else if (part.type === 'dynamic-tool' || part.type.startsWith('tool-')) {
       const toolName = part.toolName || part.type.replace(/^tool-/, '');
       if (toolName === 'writeArtifact') continue;
 
-      const isActivelyThinking = isStreaming && reasoningBuf.length > 0 && !hasContent;
-      flushReasoning(isActivelyThinking);
+      lastThinkingIdx = -1;
 
-      const state = part.state === 'output-available' ? 'result' : 'call';
+      const hasOutput = !!(part.output || part.result);
+      const isToolDone = hasOutput || part.state === 'output-available' || part.state === 'result' || part.state === 'complete';
       steps.push({
         id: part.toolCallId || `search-${stepId++}`,
         type: 'searching',
         query: part.input?.query || part.input?.url || '',
-        isRunning: state !== 'result',
+        isRunning: !isToolDone,
         sources: buildSourcesFromResult(part.output || part.result),
-        isActive: state !== 'result',
+        isActive: !isToolDone,
+        toolName,
+        toolInput: part.input,
+        toolOutput: part.output || part.result,
       });
     }
   }
 
-  flushReasoning(isStreaming && !hasContent);
+  if (isStreaming && !hasContent && lastThinkingIdx >= 0) {
+    steps[lastThinkingIdx].isActive = true;
+  }
 
   if (toolInvocations) {
     const existingIds = new Set(steps.map(s => s.id));
     for (const ti of toolInvocations) {
       if (ti.toolName === 'writeArtifact' || existingIds.has(ti.toolCallId)) continue;
+      const isDone = ti.state === 'result' || !!ti.result;
       steps.push({
         id: ti.toolCallId || `search-${stepId++}`,
         type: 'searching',
         query: ti.args?.query || ti.args?.url || '',
-        isRunning: ti.state !== 'result',
-        sources: ti.state === 'result' ? buildSourcesFromResult(ti.result) : [],
-        isActive: ti.state !== 'result',
+        isRunning: !isDone,
+        sources: isDone ? buildSourcesFromResult(ti.result) : [],
+        isActive: !isDone,
+        toolName: ti.toolName,
+        toolInput: ti.args,
+        toolOutput: isDone ? ti.result : undefined,
       });
     }
   }
@@ -336,13 +615,17 @@ function buildStepsFallback(
   }
 
   for (const ti of searchTools) {
+    const isDone = ti.state === 'result' || !!ti.result;
     steps.push({
       id: ti.toolCallId || `search-${steps.length}`,
       type: 'searching',
       query: ti.args?.query || ti.args?.url || '',
-      isRunning: ti.state !== 'result',
-      sources: ti.state === 'result' ? buildSourcesFromResult(ti.result) : [],
-      isActive: ti.state !== 'result',
+      isRunning: !isDone,
+      sources: isDone ? buildSourcesFromResult(ti.result) : [],
+      isActive: !isDone,
+      toolName: ti.toolName,
+      toolInput: ti.args,
+      toolOutput: isDone ? ti.result : undefined,
     });
   }
 

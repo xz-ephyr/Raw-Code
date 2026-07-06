@@ -25,9 +25,10 @@ const HEAD_INJECT = `${CSP_META}${DARK_STYLE}`;
 
 function buildSrcdoc(html: string): string {
   const cleaned = html.trim();
+  const lower = cleaned.toLowerCase();
 
-  if (cleaned.startsWith('<!DOCTYPE') || cleaned.startsWith('<html') || cleaned.startsWith('<head') || cleaned.startsWith('<body')) {
-    return cleaned.replace('<head>', `<head>${HEAD_INJECT}`);
+  if (lower.startsWith('<!doctype') || lower.startsWith('<html') || lower.startsWith('<head') || lower.startsWith('<body')) {
+    return cleaned.replace(/<head[^>]*>/i, (match) => `${match}${HEAD_INJECT}`);
   }
 
   return `<!DOCTYPE html><html><head>${HEAD_INJECT}</head><body>${cleaned}</body></html>`;

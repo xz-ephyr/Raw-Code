@@ -23,6 +23,10 @@ func NewExecutor(registry *Registry, expressURL string) *Executor {
 	}
 }
 
+func (e *Executor) Registry() *Registry {
+	return e.registry
+}
+
 func (e *Executor) Execute(ctx context.Context, call api.ToolCall) api.ToolCall {
 	start := time.Now()
 	call.ID = fmt.Sprintf("call_%d", start.UnixMilli())

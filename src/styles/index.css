@@ -179,10 +179,20 @@ body {
   display: inline-block;
 }
 
+code:not(pre code) {
+  background-color: color-mix(in oklch, var(--muted) 80%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.15em 0.45em;
+  font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
+  font-size: 0.85em;
+  color: var(--foreground);
+}
+
 .cm-editor {
   font-size: 13px;
   line-height: 1.6;
-  background: var(--card);
+  background: var(--muted);
 }
 .cm-editor .cm-scroller {
   padding: 10px 0;
@@ -191,7 +201,7 @@ body {
   outline: none;
 }
 .cm-editor .cm-gutters {
-  background: var(--card);
+  background: var(--muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -238,4 +248,25 @@ body {
 @keyframes stagger-fade-in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes aurora-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(6%, 4%) scale(1.08); }
+  50% { transform: translate(3%, -3%) scale(0.92); }
+  75% { transform: translate(-4%, 5%) scale(1.04); }
+}
+
+@keyframes aurora-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-5%, -4%) scale(0.94); }
+  50% { transform: translate(4%, 3%) scale(1.06); }
+  75% { transform: translate(-3%, -5%) scale(0.96); }
+}
+
+@keyframes aurora-drift-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-4%, 5%) scale(1.06); }
+  50% { transform: translate(5%, -2%) scale(0.94); }
+  75% { transform: translate(3%, 4%) scale(1.02); }
 }

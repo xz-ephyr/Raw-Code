@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/rs/cors"
 	"github.com/xz-ephyr/raw-code/agent/internal/agent"
 	"github.com/xz-ephyr/raw-code/agent/internal/infra"
+	"github.com/xz-ephyr/raw-code/agent/internal/model"
 	"github.com/xz-ephyr/raw-code/agent/internal/task"
 	"github.com/xz-ephyr/raw-code/agent/internal/tool"
 	"github.com/xz-ephyr/raw-code/agent/internal/worker"
@@ -25,6 +27,7 @@ type Server struct {
 	orchestrator *agent.Orchestrator
 	express      *infra.ExpressClient
 	tauri        *infra.TauriShell
+	modelClient  *model.Client
 	apiKey       string
 	startTime    time.Time
 	workerCount  int
@@ -38,6 +41,7 @@ func New(
 	orch *agent.Orchestrator,
 	exp *infra.ExpressClient,
 	ts *infra.TauriShell,
+	mc *model.Client,
 	apiKey string,
 	workerCount int,
 ) *Server {
@@ -50,6 +54,7 @@ func New(
 		orchestrator: orch,
 		express:      exp,
 		tauri:        ts,
+		modelClient:  mc,
 		apiKey:       apiKey,
 		startTime:    time.Now(),
 		workerCount:  workerCount,
@@ -104,6 +109,9 @@ func (s *Server) registerRoutes() {
 	s.router.HandleFunc("/api/chat", s.auth(s.handleChatProxy)).Methods("POST")
 	s.router.HandleFunc("/api/workflows", s.handleListWorkflows).Methods("GET")
 	s.router.HandleFunc("/api/tools/execute", s.auth(s.handleExecuteTool)).Methods("POST")
+	s.router.HandleFunc("/api/agents", s.handleListAgents).Methods("GET")
+	s.router.HandleFunc("/api/chat/stream", s.auth(s.handleChatStream)).Methods("POST")
+	s.router.HandleFunc("/api/chat/completion", s.auth(s.handleChatCompletion)).Methods("POST")
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
@@ -220,6 +228,7 @@ func (s *Server) handleChatProxy(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		SessionID string `json:"sessionId"`
 		Message   string `json:"message"`
+		AgentType string `json:"agentType"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")
@@ -232,6 +241,7 @@ func (s *Server) handleChatProxy(w http.ResponseWriter, r *http.Request) {
 		Type:      "delegate",
 		Prompt:    req.Message,
 		MaxSteps:  10,
+		AgentType: req.AgentType,
 	}
 
 	t := s.orchestrator.SubmitTask(taskReq)
@@ -247,6 +257,13 @@ func (s *Server) handleListWorkflows(w http.ResponseWriter, r *http.Request) {
 			{"name": "research_and_summarize", "description": "Search the web and create a summary"},
 			{"name": "codebase_audit", "description": "Search codebase for patterns and report findings"},
 		},
+	})
+}
+
+func (s *Server) handleListAgents(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"agents": agent.ListAgentTypes(),
+		"count":  len(agent.ListAgentTypes()),
 	})
 }
 
@@ -295,4 +312,164 @@ func (s *Server) handleExecuteTool(w http.ResponseWriter, r *http.Request) {
 		"result":     result.Result,
 		"durationMs": result.Duration,
 	})
+}
+
+func (s *Server) handleChatStream(w http.ResponseWriter, r *http.Request) {
+	if s.modelClient == nil {
+		writeError(w, http.StatusServiceUnavailable, "model client not configured")
+		return
+	}
+
+	var req api.ChatRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if len(req.Messages) == 0 {
+		writeError(w, http.StatusBadRequest, "messages are required")
+		return
+	}
+
+	if req.Model == "" {
+		req.Model = s.modelClient.Model()
+	}
+
+	toolDefs := agent.ToolsToModelDefinitions(s.toolRegistry.List())
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		writeError(w, http.StatusInternalServerError, "streaming not supported")
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
+
+	modelMsgs := make([]model.Message, len(req.Messages))
+	for i, msg := range req.Messages {
+		m := model.Message{Role: msg.Role, Content: msg.Content, ToolCallID: msg.ToolCallID}
+		if len(msg.ToolCalls) > 0 {
+			m.ToolCalls = make([]model.ToolCall, len(msg.ToolCalls))
+			for j, tc := range msg.ToolCalls {
+				args := ""
+				if tc.Params != nil {
+					argsBytes, _ := json.Marshal(tc.Params)
+					args = string(argsBytes)
+				}
+				m.ToolCalls[j] = model.ToolCall{
+					ID:   tc.ID,
+					Type: "function",
+					Function: model.ToolCallFunction{
+						Name:      tc.Tool,
+						Arguments: args,
+					},
+				}
+			}
+		}
+		modelMsgs[i] = m
+	}
+
+	if err := s.modelClient.ChatCompletionStream(r.Context(), model.ChatRequest{
+		Messages: modelMsgs,
+		Tools:    toolDefs,
+		Stream:   true,
+	}, func(chunk model.StreamChunk) {
+		event := api.StreamEvent{Type: "chunk", Content: chunk.Content}
+		if chunk.FinishReason != "" {
+			event.Type = "done"
+			event.Done = true
+		}
+		if chunk.Error != "" {
+			event.Type = "error"
+			event.Error = chunk.Error
+		}
+		data, _ := json.Marshal(event)
+		fmt.Fprintf(w, "data: %s\n\n", data)
+		flusher.Flush()
+	}); err != nil {
+		event := api.StreamEvent{Type: "error", Error: err.Error()}
+		data, _ := json.Marshal(event)
+		fmt.Fprintf(w, "data: %s\n\n", data)
+		flusher.Flush()
+	}
+}
+
+func (s *Server) handleChatCompletion(w http.ResponseWriter, r *http.Request) {
+	if s.modelClient == nil {
+		writeError(w, http.StatusServiceUnavailable, "model client not configured")
+		return
+	}
+
+	var req api.ChatRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if len(req.Messages) == 0 {
+		writeError(w, http.StatusBadRequest, "messages are required")
+		return
+	}
+
+	if req.Model == "" {
+		req.Model = s.modelClient.Model()
+	}
+
+	toolDefs := agent.ToolsToModelDefinitions(s.toolRegistry.List())
+
+	modelMsgs := make([]model.Message, len(req.Messages))
+	for i, msg := range req.Messages {
+		m := model.Message{Role: msg.Role, Content: msg.Content, ToolCallID: msg.ToolCallID}
+		if len(msg.ToolCalls) > 0 {
+			m.ToolCalls = make([]model.ToolCall, len(msg.ToolCalls))
+			for j, tc := range msg.ToolCalls {
+				args := ""
+				if tc.Params != nil {
+					argsBytes, _ := json.Marshal(tc.Params)
+					args = string(argsBytes)
+				}
+				m.ToolCalls[j] = model.ToolCall{
+					ID:   tc.ID,
+					Type: "function",
+					Function: model.ToolCallFunction{
+						Name:      tc.Tool,
+						Arguments: args,
+					},
+				}
+			}
+		}
+		modelMsgs[i] = m
+	}
+
+	resp, err := s.modelClient.ChatCompletion(r.Context(), model.ChatRequest{
+		Messages: modelMsgs,
+		Tools:    toolDefs,
+	})
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	apiResp := api.ChatResponse{
+		FinishReason: resp.FinishReason,
+		Message: api.ChatMessage{
+			Role:    "assistant",
+			Content: resp.Content,
+		},
+	}
+
+	for _, tc := range resp.ToolCalls {
+		var params map[string]any
+		json.Unmarshal([]byte(tc.Function.Arguments), &params)
+		apiResp.Message.ToolCalls = append(apiResp.Message.ToolCalls, api.ToolCall{
+			ID:     tc.ID,
+			Tool:   tc.Function.Name,
+			Params: params,
+		})
+	}
+
+	writeJSON(w, http.StatusOK, apiResp)
 }

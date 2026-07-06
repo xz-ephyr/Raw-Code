@@ -9,11 +9,11 @@ export const webSearchTool: ToolDef = {
   inputSchema: z.object({
     query: z.string().describe('The search query. Be specific and concise. Supports site:example.com to limit to one domain.'),
     site: z.string().optional().describe('Limit search to a single domain only (e.g. "react.dev").'),
-    maxResults: z.number().min(1).max(5).optional().default(5).describe('Number of results (1–5).'),
+    maxResults: z.number().min(1).max(10).optional().default(10).describe('Number of results (1–10).'),
   }),
   execute: async ({ query, site, maxResults }) => {
     try {
-      const result = await WebSearchService.search({ query, site, maxResults: Math.min(maxResults ?? 5, 5) });
+      const result = await WebSearchService.search({ query, site, maxResults: Math.min(maxResults ?? 10, 10) });
       return {
         results: result.results.map(r => ({
           title: r.title, url: r.url, snippet: r.snippet,

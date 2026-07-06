@@ -25,6 +25,7 @@ type Task struct {
 	Model       string
 	MaxSteps    int
 	ToolScope   []string
+	AgentType   string
 	Tools       []api.ToolCall
 	Result      string
 	Error       string
@@ -48,6 +49,7 @@ func NewTask(req api.TaskRequest) *Task {
 		Model:     req.Model,
 		MaxSteps:  req.MaxSteps,
 		ToolScope: req.ToolScope,
+		AgentType: req.AgentType,
 		CreatedAt: time.Now(),
 	}
 }
@@ -63,6 +65,7 @@ func (t *Task) ToAPI() api.AgentTask {
 		Model:      t.Model,
 		MaxSteps:   t.MaxSteps,
 		ToolScope:  t.ToolScope,
+		AgentType:  t.AgentType,
 		Tools:      t.Tools,
 		Result:     t.Result,
 		Error:      t.Error,

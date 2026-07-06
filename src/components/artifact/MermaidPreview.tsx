@@ -18,7 +18,8 @@ export function MermaidPreview({ content, onError }: MermaidPreviewProps) {
       setError(null);
 
       try {
-        const mermaid = (await import('mermaid')).default;
+        const mermaidModule = await import('mermaid');
+        const mermaid = mermaidModule.default || mermaidModule;
         mermaid.initialize({
           startOnLoad: false,
           theme: 'neutral',

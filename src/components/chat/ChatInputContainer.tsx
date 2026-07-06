@@ -13,10 +13,14 @@ interface ChatInputContainerProps {
   isThinkingEnabled: boolean;
   onToggleThinking: () => void;
   onCreateProject?: () => void;
+  onOpenIDE?: () => void;
   currentProjectName?: string;
   currentModel?: string;
   idle?: boolean;
   children?: ReactNode;
+  currentMode?: string;
+  onModeChange?: (modeId: string | undefined) => void;
+  isProject?: boolean;
 }
 
 export default function ChatInputContainer({
@@ -26,10 +30,14 @@ export default function ChatInputContainer({
   isThinkingEnabled,
   onToggleThinking,
   onCreateProject,
+  onOpenIDE,
   currentProjectName,
   currentModel,
   idle,
   children,
+  currentMode,
+  onModeChange,
+  isProject,
 }: ChatInputContainerProps) {
   const [isProjectOpen, setIsProjectOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -69,7 +77,7 @@ export default function ChatInputContainer({
       {idle ? (
         <div className="relative">
           <div
-            className="absolute left-0 right-0 bg-neutral-700 rounded-[12px]"
+            className="absolute left-0 right-0 bg-background rounded-[12px]"
             style={{ height: '155px', top: 0 }}
           >
             <div className="absolute bottom-2 left-2">
@@ -114,6 +122,17 @@ export default function ChatInputContainer({
                       <HugeiconsIcon icon={PlusSignIcon} size={15} className="text-muted-foreground shrink-0" />
                       <span>Create New</span>
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProjectOpen(false);
+                        onOpenIDE?.();
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-xs hover:bg-muted text-foreground flex items-center gap-2.5"
+                    >
+                      <img src="/wiki-folder.png" alt="" className="w-5 h-[14px] shrink-0" />
+                      <span>Open IDE</span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -127,6 +146,9 @@ export default function ChatInputContainer({
             isThinkingEnabled={isThinkingEnabled}
             onToggleThinking={onToggleThinking}
             currentModel={currentModel}
+            currentMode={currentMode}
+            onModeChange={onModeChange}
+            isProject={isProject}
           />
           {children}
         </div>
@@ -139,6 +161,9 @@ export default function ChatInputContainer({
             isThinkingEnabled={isThinkingEnabled}
           onToggleThinking={onToggleThinking}
           currentModel={currentModel}
+          currentMode={currentMode}
+          onModeChange={onModeChange}
+          isProject={isProject}
         />
       )}
     </div>

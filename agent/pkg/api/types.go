@@ -2,6 +2,32 @@ package api
 
 import "time"
 
+type ChatMessage struct {
+	Role       string     `json:"role"`
+	Content    string     `json:"content"`
+	ToolCallID string     `json:"toolCallId,omitempty"`
+	ToolCalls  []ToolCall `json:"toolCalls,omitempty"`
+}
+
+type ChatRequest struct {
+	SessionID string        `json:"sessionId"`
+	Model     string        `json:"model,omitempty"`
+	Messages  []ChatMessage `json:"messages"`
+	Stream    bool          `json:"stream,omitempty"`
+}
+
+type ChatResponse struct {
+	Message ChatMessage `json:"message"`
+	FinishReason string `json:"finishReason,omitempty"`
+}
+
+type StreamEvent struct {
+	Type    string `json:"type"`
+	Content string `json:"content,omitempty"`
+	Done    bool   `json:"done,omitempty"`
+	Error   string `json:"error,omitempty"`
+}
+
 type AgentTask struct {
 	ID          string            `json:"id"`
 	SessionID   string            `json:"sessionId"`
@@ -12,6 +38,7 @@ type AgentTask struct {
 	Model       string            `json:"model,omitempty"`
 	MaxSteps    int               `json:"maxSteps,omitempty"`
 	ToolScope   []string          `json:"toolScope,omitempty"`
+	AgentType   string            `json:"agentType,omitempty"`
 	Tools       []ToolCall        `json:"tools,omitempty"`
 	Result      string            `json:"result,omitempty"`
 	Error       string            `json:"error,omitempty"`
@@ -64,6 +91,7 @@ type TaskRequest struct {
 	Model     string   `json:"model,omitempty"`
 	MaxSteps  int      `json:"maxSteps,omitempty"`
 	ToolScope []string `json:"toolScope,omitempty"`
+	AgentType string   `json:"agentType,omitempty"`
 }
 
 type TaskResult struct {

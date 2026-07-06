@@ -36,23 +36,14 @@ export function ProjectSetupStep({ onComplete, onSkip }: ProjectSetupStepProps) 
           const allProjects = await ChatSessionManager.getProjects();
           setProjects(allProjects);
         }
-      } else {
-        if ('showDirectoryPicker' in window) {
-          const dirHandle = await (window as any).showDirectoryPicker();
-          const folderName = dirHandle.name || 'My Project';
-          const projectPath = await FileSystemService.importDirectory(dirHandle);
-          const newProject = await ChatSessionManager.createProject(folderName, projectPath);
-          await FileSystemService.uploadProjectFiles(newProject.id, projectPath);
-          const allProjects = await ChatSessionManager.getProjects();
-          setProjects(allProjects);
-        } else {
-          const folderName = prompt('Enter a name for your project:');
-          if (folderName) {
-            await ChatSessionManager.createProject(folderName, `/web-projects/${folderName}`);
-            const allProjects = await ChatSessionManager.getProjects();
-            setProjects(allProjects);
-          }
-        }
+      } else if ('showDirectoryPicker' in window) {
+        const dirHandle = await (window as any).showDirectoryPicker();
+        const folderName = dirHandle.name || 'My Project';
+        const projectPath = await FileSystemService.importDirectory(dirHandle);
+        const newProject = await ChatSessionManager.createProject(folderName, projectPath);
+        await FileSystemService.uploadProjectFiles(newProject.id, projectPath);
+        const allProjects = await ChatSessionManager.getProjects();
+        setProjects(allProjects);
       }
     } catch {
       // user cancelled

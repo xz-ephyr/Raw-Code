@@ -10,6 +10,7 @@ import {
   API_KEYS,
   MODELS,
 } from '@core/config/models';
+import { DatabaseService } from '@core/utils/DatabaseService';
 
 interface ModelSetupStepProps {
   onComplete: () => void;
@@ -40,13 +41,19 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isModelDropdownOpen]);
 
-  const [keys, setKeys] = useState(() => {
-    const initial: any = {};
-    Object.keys(API_KEYS).forEach((key) => {
-      initial[key] = localStorage.getItem((API_KEYS as any)[key]) || '';
-    });
-    return initial;
-  });
+  const [keys, setKeys] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    (async () => {
+      const initial: any = {};
+      for (const key of Object.keys(API_KEYS)) {
+        const storageKey = (API_KEYS as any)[key];
+        initial[key] = await DatabaseService.getConfig(storageKey)
+          .then(r => r || localStorage.getItem(storageKey) || '');
+      }
+      setKeys(initial);
+    })();
+  }, []);
 
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [selectedModel, setSelectedModel] = useState(getStoredSelectedModel);
@@ -56,7 +63,10 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
     setShowKeys(prev => ({ ...prev, [provider]: !prev[provider] }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    await Promise.all(Object.keys(API_KEYS).map((key) =>
+      DatabaseService.setConfig((API_KEYS as any)[key], keys[key])
+    ));
     Object.keys(API_KEYS).forEach((key) => {
       localStorage.setItem((API_KEYS as any)[key], keys[key]);
     });

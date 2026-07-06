@@ -2,17 +2,22 @@ package agent
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"sync"
 	"time"
+
 	"github.com/google/uuid"
+	"github.com/xz-ephyr/raw-code/agent/internal/model"
 	"github.com/xz-ephyr/raw-code/agent/internal/task"
 	"github.com/xz-ephyr/raw-code/agent/internal/tool"
 	"github.com/xz-ephyr/raw-code/agent/pkg/api"
 )
+
+//go:embed prompts/subagent-system-prompt.md
+var subagentSystemPrompt string
 
 type SubAgentRequest struct {
 	Task      string   `json:"task"`
@@ -20,18 +25,19 @@ type SubAgentRequest struct {
 	Model     string   `json:"model,omitempty"`
 	ToolScope []string `json:"toolScope,omitempty"`
 	MaxSteps  int      `json:"maxSteps,omitempty"`
+	AgentType string   `json:"agentType,omitempty"`
 }
 
 type SubAgent struct {
-	ID        string
-	Request   SubAgentRequest
-	Result    string
-	Error     string
-	Steps     int
-	Status    string
-	CreatedAt time.Time
+	ID          string
+	Request     SubAgentRequest
+	Result      string
+	Error       string
+	Steps       int
+	Status      string
+	CreatedAt   time.Time
 	CompletedAt *time.Time
-	done      chan struct{}
+	done        chan struct{}
 }
 
 func (s *SubAgent) Wait() {
@@ -39,19 +45,19 @@ func (s *SubAgent) Wait() {
 }
 
 type SubAgentManager struct {
-	mu        sync.RWMutex
-	agents    map[string]*SubAgent
-	manager   *task.Manager
-	executor  *tool.Executor
-	httpClient *http.Client
+	mu          sync.RWMutex
+	agents      map[string]*SubAgent
+	manager     *task.Manager
+	executor    *tool.Executor
+	modelClient *model.Client
 }
 
-func NewSubAgentManager(manager *task.Manager, executor *tool.Executor) *SubAgentManager {
+func NewSubAgentManager(manager *task.Manager, executor *tool.Executor, modelClient *model.Client) *SubAgentManager {
 	return &SubAgentManager{
-		agents:     make(map[string]*SubAgent),
-		manager:    manager,
-		executor:   executor,
-		httpClient: &http.Client{Timeout: 5 * time.Minute},
+		agents:      make(map[string]*SubAgent),
+		manager:     manager,
+		executor:    executor,
+		modelClient: modelClient,
 	}
 }
 
@@ -60,7 +66,9 @@ func (sm *SubAgentManager) Spawn(ctx context.Context, req SubAgentRequest) (*Sub
 	if req.MaxSteps <= 0 {
 		req.MaxSteps = 10
 	}
-	if req.Model == "" {
+	if req.Model == "" && sm.modelClient != nil {
+		req.Model = sm.modelClient.Model()
+	} else if req.Model == "" {
 		req.Model = "gemini-3.5-flash"
 	}
 
@@ -83,32 +91,160 @@ func (sm *SubAgentManager) Spawn(ctx context.Context, req SubAgentRequest) (*Sub
 func (sm *SubAgentManager) runSubAgent(ctx context.Context, sub *SubAgent) {
 	defer close(sub.done)
 
-	log.Printf("[sub-agent %s] starting: %.80s...", sub.ID, sub.Request.Task)
+	log.Printf("[sub-agent %s] starting with model %s: %.80s...", sub.ID, sub.Request.Model, sub.Request.Task)
 
-	// Execute tool calls based on the task and tool scope
-	tools := sm.selectTools(sub.Request.ToolScope)
-	toolCalls := sm.planToolCalls(sub.Request.Task, tools)
+	runner := &subAgentRunner{
+		manager:     sm.manager,
+		executor:    sm.executor,
+		modelClient: sm.modelClient,
+		sub:         sub,
+		taskCtx:     ctx,
+	}
 
-	for i := 0; i < sub.Request.MaxSteps; i++ {
+	runner.run()
+}
+
+type subAgentRunner struct {
+	manager     *task.Manager
+	executor    *tool.Executor
+	modelClient *model.Client
+	sub         *SubAgent
+	taskCtx     context.Context
+	messages    []model.Message
+}
+
+func (r *subAgentRunner) run() {
+	if r.modelClient == nil {
+		r.runWithoutModel()
+		return
+	}
+
+	agentPrompt := BuildAgentSystemPrompt(r.sub.Request.AgentType)
+	r.messages = []model.Message{
+		{Role: "system", Content: agentPrompt},
+		{Role: "user", Content: r.sub.Request.Task},
+	}
+
+	if r.sub.Request.Context != "" {
+		r.messages = append(r.messages, model.Message{Role: "user", Content: "Context:\n" + r.sub.Request.Context})
+	}
+
+	for step := 0; step < r.sub.Request.MaxSteps; step++ {
+		select {
+		case <-r.taskCtx.Done():
+			r.fail("context cancelled")
+			return
+		default:
+		}
+
+		toolDefs := r.getToolDefs()
+
+		resp, err := r.modelClient.ChatCompletion(r.taskCtx, model.ChatRequest{
+			Messages: r.messages,
+			Tools:    toolDefs,
+		})
+		if err != nil {
+			r.fail(fmt.Sprintf("LLM call failed: %v", err))
+			return
+		}
+
+		r.messages = append(r.messages, model.Message{
+			Role:    "assistant",
+			Content: resp.Content,
+		})
+
+		if len(resp.ToolCalls) > 0 {
+			msg := model.Message{Role: "assistant", ToolCalls: resp.ToolCalls, ExtraContent: resp.ExtraContent}
+			r.messages = append(r.messages, msg)
+
+			for _, tc := range resp.ToolCalls {
+				if tc.Type != "function" {
+					continue
+				}
+
+				var params map[string]any
+				if err := json.Unmarshal([]byte(tc.Function.Arguments), &params); err != nil {
+					params = map[string]any{"raw": tc.Function.Arguments}
+				}
+
+				call := api.ToolCall{
+					ID:     tc.ID,
+					Tool:   tc.Function.Name,
+					Params: params,
+				}
+
+				result := r.executor.Execute(r.taskCtx, call)
+				r.sub.Steps++
+
+				resultJSON, _ := json.Marshal(result.Result)
+				if resultJSON == nil {
+					resultJSON = []byte("null")
+				}
+
+				resultContent := string(resultJSON)
+				if result.Error != "" {
+					resultContent = fmt.Sprintf("Error: %s", result.Error)
+				}
+
+				r.messages = append(r.messages, model.Message{
+					Role:       "tool",
+					ToolCallID: tc.ID,
+					Content:    resultContent,
+					Name:       tc.Function.Name,
+				})
+			}
+		} else {
+			r.complete(resp.Content, step+1)
+			return
+		}
+	}
+
+	r.messages = append(r.messages, model.Message{
+		Role:    "user",
+		Content: "Provide a concise final answer synthesizing all the information gathered.",
+	})
+
+	finalResp, err := r.modelClient.ChatCompletion(r.taskCtx, model.ChatRequest{
+		Messages: r.messages,
+	})
+	if err != nil {
+		r.fail(fmt.Sprintf("final LLM call failed: %v", err))
+		return
+	}
+
+	r.complete(finalResp.Content, r.sub.Request.MaxSteps)
+}
+
+func (r *subAgentRunner) runWithoutModel() {
+	log.Printf("[sub-agent %s] no model client, using heuristic planning", r.sub.ID)
+
+	tools := []api.ToolDefinition{
+		{Name: "web_search", Description: "Search the web"},
+		{Name: "fetch_page", Description: "Fetch a webpage"},
+		{Name: "code_search", Description: "Search codebase"},
+		{Name: "read_file", Description: "Read a file"},
+	}
+
+	toolCalls := heuristicPlan(r.sub.Request.Task, tools)
+
+	for i := 0; i < r.sub.Request.MaxSteps; i++ {
 		if len(toolCalls) == 0 {
 			break
 		}
 
-		// Execute current batch in parallel
 		var wg sync.WaitGroup
 		results := make([]api.ToolCall, len(toolCalls))
 		for j, tc := range toolCalls {
 			wg.Add(1)
 			go func(idx int, call api.ToolCall) {
 				defer wg.Done()
-				results[idx] = sm.executor.Execute(ctx, call)
+				results[idx] = r.executor.Execute(r.taskCtx, call)
 			}(j, tc)
 		}
 		wg.Wait()
 
-		sub.Steps++
+		r.sub.Steps++
 
-		// Check if results contain info sufficient to answer
 		var hasErrors bool
 		for _, r := range results {
 			if r.Error != "" {
@@ -117,51 +253,144 @@ func (sm *SubAgentManager) runSubAgent(ctx context.Context, sub *SubAgent) {
 			}
 		}
 
-		// Simple heuristic: if no errors and we have results, we're done
 		if !hasErrors && len(results) > 0 {
-			// Synthesize results into a summary
 			resultJSON, _ := json.Marshal(results)
-			sub.Result = fmt.Sprintf("Sub-agent completed %d step(s).\nResults:\n%s", sub.Steps, string(resultJSON))
-			sub.Status = "completed"
+			r.sub.Result = fmt.Sprintf("Sub-agent completed %d step(s).\nResults:\n%s", r.sub.Steps, string(resultJSON))
+			r.sub.Status = "completed"
 			now := time.Now()
-			sub.CompletedAt = &now
+			r.sub.CompletedAt = &now
 			return
 		}
 
-		toolCalls = sm.planNextSteps(results, sub.Request.Task)
+		toolCalls = heuristicNextSteps(results, r.sub.Request.Task)
 	}
 
-	sub.Status = "completed"
+	r.sub.Status = "completed"
 	now := time.Now()
-	sub.CompletedAt = &now
-	if sub.Result == "" {
-		sub.Result = "Sub-agent completed with no conclusive results"
+	r.sub.CompletedAt = &now
+	if r.sub.Result == "" {
+		r.sub.Result = "Sub-agent completed with no conclusive results"
 	}
 }
 
-func (sm *SubAgentManager) selectTools(scope []string) []api.ToolDefinition {
-	return []api.ToolDefinition{
-		{Name: "web_search", Description: "Search the web"},
-		{Name: "fetch_page", Description: "Fetch a webpage"},
-		{Name: "code_search", Description: "Search codebase"},
-		{Name: "read_file", Description: "Read a file"},
+func (r *subAgentRunner) complete(result string, steps int) {
+	r.sub.Result = result
+	r.sub.Steps = steps
+	r.sub.Status = "completed"
+	now := time.Now()
+	r.sub.CompletedAt = &now
+	log.Printf("[sub-agent %s] completed in %d steps", r.sub.ID, steps)
+}
+
+func (r *subAgentRunner) fail(errMsg string) {
+	r.sub.Error = errMsg
+	r.sub.Status = "failed"
+	now := time.Now()
+	r.sub.CompletedAt = &now
+	log.Printf("[sub-agent %s] failed: %s", r.sub.ID, errMsg)
+}
+
+func (r *subAgentRunner) getToolDefs() []model.ToolDefinition {
+	if r.manager != nil {
+		allTools := r.executor.Registry().List()
+		scope := GetAgentConfig(r.sub.Request.AgentType).ToolScope
+		if scope != nil {
+			filtered := make([]api.ToolDefinition, 0, len(allTools))
+			for _, t := range allTools {
+				if FilterToolScope(scope, t.Name) {
+					filtered = append(filtered, t)
+				}
+			}
+			return ToolsToModelDefinitions(filtered)
+		}
+		return ToolsToModelDefinitions(allTools)
+	}
+
+	return []model.ToolDefinition{
+		{Name: "web_search", Description: "Search the web for information", Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"query": map[string]any{"type": "string", "description": "Search query"},
+			},
+			"required": []string{"query"},
+		}},
+		{Name: "read_file", Description: "Read a file from the filesystem", Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"path": map[string]any{"type": "string", "description": "File path"},
+			},
+			"required": []string{"path"},
+		}},
+		{Name: "run_command", Description: "Run a shell command", Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"command": map[string]any{"type": "string", "description": "Command to run"},
+			},
+			"required": []string{"command"},
+		}},
 	}
 }
 
-func (sm *SubAgentManager) planToolCalls(taskDesc string, tools []api.ToolDefinition) []api.ToolCall {
-	// Use simple heuristics to plan initial tool calls based on task description
+func ToolsToModelDefinitions(tools []api.ToolDefinition) []model.ToolDefinition {
+	defs := make([]model.ToolDefinition, 0, len(tools))
+	for _, t := range tools {
+		params := map[string]any{
+			"type":       "object",
+			"properties": make(map[string]any),
+			"required":   make([]string, 0),
+		}
+
+		props := params["properties"].(map[string]any)
+		required := params["required"].([]string)
+
+		for name, p := range t.Parameters {
+			prop := map[string]any{
+				"type":        p.Type,
+				"description": p.Description,
+			}
+			if len(p.Enum) > 0 {
+				prop["enum"] = p.Enum
+			}
+			props[name] = prop
+			if p.Required {
+				required = append(required, name)
+			}
+		}
+
+		defs = append(defs, model.ToolDefinition{
+			Name:        t.Name,
+			Description: t.Description,
+			Parameters:  params,
+		})
+	}
+	return defs
+}
+
+func heuristicPlan(taskDesc string, tools []api.ToolDefinition) []api.ToolCall {
 	taskLower := taskDesc
 
 	var calls []api.ToolCall
 
-	if containsAny(taskLower, []string{"search", "find", "look up", "research", "what", "how", "who", "when", "where"}) {
+	if containsAny(taskLower, []string{
+		"search", "find", "look up", "lookup", "research",
+		"what", "how", "who", "when", "where", "why",
+		"latest", "recent", "new", "news", "update", "current", "today", "now", "trends", "breaking",
+		"explain", "define", "describe", "summarize", "elaborate", "details", "info", "information",
+		"compare", "vs", "versus", "difference", "best", "top", "ranking", "list",
+		"verify", "confirm", "check", "validate", "fact-check", "ensure", "correct", "accurate",
+		"tutorial", "guide", "documentation", "docs", "how to", "example", "recipe",
+		"troubleshoot", "debug", "fix", "issue", "problem", "error", "solution", "workaround",
+		"status", "report", "background", "context", "overview", "breakdown",
+		"source", "citation", "reference", "proof", "evidence",
+		"method", "approach", "strategy", "technique",
+	}) {
 		calls = append(calls, api.ToolCall{
 			Tool:   "web_search",
 			Params: map[string]any{"query": taskDesc},
 		})
 	}
 
-	if containsAny(taskLower, []string{"code", "source", "function", "class", "implementation"}){
+	if containsAny(taskLower, []string{"code", "source", "function", "class", "implementation"}) {
 		calls = append(calls, api.ToolCall{
 			Tool:   "code_search",
 			Params: map[string]any{"pattern": taskDesc},
@@ -178,8 +407,7 @@ func (sm *SubAgentManager) planToolCalls(taskDesc string, tools []api.ToolDefini
 	return calls
 }
 
-func (sm *SubAgentManager) planNextSteps(previousResults []api.ToolCall, originalTask string) []api.ToolCall {
-	// Check if any result contains URLs that could be fetched for more detail
+func heuristicNextSteps(previousResults []api.ToolCall, originalTask string) []api.ToolCall {
 	for _, r := range previousResults {
 		if r.Error == "" && r.Result != nil {
 			if resultMap, ok := r.Result.(map[string]any); ok {
@@ -204,9 +432,8 @@ func (sm *SubAgentManager) planNextSteps(previousResults []api.ToolCall, origina
 }
 
 func containsAny(s string, substrs []string) bool {
-	sLower := s
 	for _, sub := range substrs {
-		if containsFold(sLower, sub) {
+		if containsFold(s, sub) {
 			return true
 		}
 	}
@@ -237,4 +464,8 @@ func toLower(c byte) byte {
 		return c + 32
 	}
 	return c
+}
+
+func systemPrompt() string {
+	return subagentSystemPrompt
 }

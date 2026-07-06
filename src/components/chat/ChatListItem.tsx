@@ -7,7 +7,7 @@ import {
   MoreVerticalIcon,
 } from '@hugeicons/core-free-icons';
 import { ChatSession } from '@/types/chat';
-import { cn } from '@/lib/utils';
+import { cn, formatRelativeTime } from '@/lib/utils';
 import { useToast } from '../ui/Toast';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 
@@ -23,8 +23,14 @@ export function ChatListItem({ chat, onDelete, onArchive, onRename }: ChatListIt
   const [editTitle, setEditTitle] = useState(chat.title);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const [time, setTime] = useState(Date.now());
   const menuRef = useRef<HTMLDivElement>(null);
   const { confirmAsync } = useToast();
+
+  useEffect(() => {
+    const id = setInterval(() => setTime(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const closeMenu = () => {
     setIsMenuOpen(false);
@@ -105,7 +111,10 @@ export function ChatListItem({ chat, onDelete, onArchive, onRename }: ChatListIt
             </form>
           ) : (
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-foreground truncate">{chat.title}</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-foreground line-clamp-2">{chat.title}</span>
+                <span className="text-xs text-muted-foreground shrink-0">{formatRelativeTime(chat.createdAt, time)}</span>
+              </div>
               {chat.lastMessage && (
                 <span className="text-xs text-muted-foreground truncate mt-0.5">{chat.lastMessage}</span>
               )}

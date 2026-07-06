@@ -3,12 +3,14 @@ import { createGroq } from '@ai-sdk/groq';
 import { createMistral } from '@ai-sdk/mistral';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createCerebras } from '@ai-sdk/cerebras';
-import { streamText, generateText, stepCountIs, convertToModelMessages } from 'ai';
+import { streamText, generateText, stepCountIs, convertToModelMessages, tool, zodSchema } from 'ai';
 import type { OpenAIProvider } from '@ai-sdk/openai';
 import { SYSTEM_PROMPT } from '@core/prompt/systemPrompt';
 import { writeArtifactTool } from '@core/tools/writeArtifactTool';
 import { allTools } from '@core/tools/allTools';
-import { API_KEYS, getModelDefinition, getUsedModels, markModelUsed, getAIModels, type Provider } from '@core/config/models';
+import { API_KEYS, getModelDefinition, getUsedModels, markModelUsed, getAIModels, getStoredSelectedModel, type Provider } from '@core/config/models';
+import { DatabaseService } from '@core/utils/DatabaseService';
+import { getModeSystemPrompt } from '@core/mode';
 import { getSmartSystemPrompt, type ProjectContext } from '@core/memory/contextController';
 import { contractContext } from '@core/memory/contextContractor';
 
@@ -31,13 +33,26 @@ export function refreshProviders() {
   cachedProviders = null;
 }
 
-function getProviders() {
-  const currentGoogleKey = localStorage.getItem(API_KEYS.google) || '';
-  const currentGroqKey = localStorage.getItem(API_KEYS.groq) || '';
-  const currentMistralKey = localStorage.getItem(API_KEYS.mistral) || '';
-  const currentOpenrouterKey = localStorage.getItem(API_KEYS.openrouter) || '';
-  const currentOpencodezenKey = localStorage.getItem(API_KEYS.opencodezen) || '';
-  const currentCerebrasKey = localStorage.getItem(API_KEYS.cerebras) || '';
+async function getProviders() {
+  const [
+    currentGoogleKey,
+    currentGroqKey,
+    currentMistralKey,
+    currentOpenrouterKey,
+    currentOpencodezenKey,
+    currentCerebrasKey,
+  ] = await Promise.all([
+    DatabaseService.getConfig(API_KEYS.google).then(r => r || localStorage.getItem(API_KEYS.google) || ''),
+    DatabaseService.getConfig(API_KEYS.groq).then(r => r || localStorage.getItem(API_KEYS.groq) || ''),
+    DatabaseService.getConfig(API_KEYS.mistral).then(r => r || localStorage.getItem(API_KEYS.mistral) || ''),
+    DatabaseService.getConfig(API_KEYS.openrouter).then(r => r || localStorage.getItem(API_KEYS.openrouter) || ''),
+    DatabaseService.getConfig(API_KEYS.opencodezen).then(r => r || localStorage.getItem(API_KEYS.opencodezen) || ''),
+    DatabaseService.getConfig(API_KEYS.cerebras).then(r => r || localStorage.getItem(API_KEYS.cerebras) || ''),
+  ]);
+
+  const opencodezenBaseURL = await DatabaseService.getConfig('opencodezen-base-url')
+    .then(r => r || localStorage.getItem('opencodezen-base-url') || 'https://opencode.ai/zen/v1');
+
   if (
     !cachedProviders ||
     currentGoogleKey !== cachedGoogleKey ||
@@ -63,7 +78,7 @@ function getProviders() {
       }),
       opencodezen: createOpenAI({
         apiKey: currentOpencodezenKey,
-        baseURL: localStorage.getItem('opencodezen-base-url') || 'https://opencode.ai/zen/v1',
+        baseURL: opencodezenBaseURL,
       }),
       cerebras: createCerebras({ apiKey: currentCerebrasKey }),
     };
@@ -83,12 +98,13 @@ export function getAIErrorMessage(error: unknown) {
   }
 }
 
-const MAX_STEPS = 6;
+const MAX_STEPS = 20;
 
-function getConfiguredProviders(): Set<Provider> {
+async function getConfiguredProviders(): Promise<Set<Provider>> {
   const configured = new Set<Provider>();
   for (const [provider, key] of Object.entries(API_KEYS)) {
-    const val = localStorage.getItem(key);
+    const val = await DatabaseService.getConfig(key)
+      .then(r => r || localStorage.getItem(key) || '');
     if (val && val.trim()) {
       configured.add(provider as Provider);
     }
@@ -96,9 +112,9 @@ function getConfiguredProviders(): Set<Provider> {
   return configured;
 }
 
-export function buildFallbackChain(primaryModelName: string, sessionId?: string): string[] {
+export async function buildFallbackChain(primaryModelName: string, sessionId?: string): Promise<string[]> {
   const used = sessionId ? getUsedModels(sessionId) : [];
-  const configuredProviders = getConfiguredProviders();
+  const configuredProviders = await getConfiguredProviders();
   const primaryDef = getModelDefinition(primaryModelName);
 
   const others = getAIModels()
@@ -138,6 +154,7 @@ export async function chatCompletion({
   previousModelName,
   sessionId,
   projectContext,
+  modeId,
 }: {
   messages: any[];
   modelName: string;
@@ -146,8 +163,9 @@ export async function chatCompletion({
   previousModelName?: string;
   sessionId?: string;
   projectContext?: ProjectContext;
+  modeId?: string;
 }) {
-  const providers = getProviders();
+  const providers = await getProviders();
 
   const getLanguageModel = (name: string) => {
     const def = getModelDefinition(name);
@@ -162,11 +180,21 @@ export async function chatCompletion({
     return providers.google('gemini-3.5-flash');
   };
 
-  const fullSystemPrompt = getSmartSystemPrompt(SYSTEM_PROMPT, projectContext);
+  const modePrompt = getModeSystemPrompt(modeId);
+  const modeAwarePrompt = modePrompt ? `${SYSTEM_PROMPT}\n${modePrompt}` : SYSTEM_PROMPT;
+  const fullSystemPrompt = getSmartSystemPrompt(modeAwarePrompt, projectContext);
 
   const errors: string[] = [];
-  const chain = buildFallbackChain(modelName, sessionId);
+  const chain = await buildFallbackChain(modelName, sessionId);
   const uniqueChain = Array.from(new Set(chain));
+
+  let searchProvider = 'tavily';
+  try {
+    const stored = await DatabaseService.getConfig('search-provider');
+    if (stored) searchProvider = stored;
+  } catch {
+    searchProvider = 'tavily';
+  }
 
   for (let modelIdx = 0; modelIdx < uniqueChain.length; modelIdx++) {
     const currentModelName = uniqueChain[modelIdx];
@@ -217,7 +245,20 @@ export async function chatCompletion({
           writeArtifact: writeArtifactTool,
           ...allTools.reduce((acc, t) => {
             const name = (t as any).name || (t as any).toolName;
-            if (name) acc[name] = t;
+            if (name) {
+              if (name === 'web_search' && (t as any).description) {
+                (t as any).description = `Search the web for current information using ${searchProvider}. Use when you need up-to-date data, recent news, documentation, or facts beyond your training cutoff. Trigger on keywords like: search, research, find, look up, latest, news, recent, current, what is, who is, explain, define, compare, how to, verify, check, troubleshoot, fix, debug, status, update, trends, documentation, guide, tutorial, example, vs, versus, difference, best, top, ranking, list, data, facts, details, info, information, background, context, overview, breakdown, summary, elaborate, describe, explain, confirm, validate, fact-check, ensure, correct, accurate, true, real, legitimate, credible, source, citation, reference, proof, evidence, method, approach, strategy, technique, solution, workaround, resolve, recipe, sample, specification, spec, API, docs.`;
+              }
+              if ((t as any).inputSchema) {
+                acc[name] = tool({
+                  description: (t as any).description,
+                  inputSchema: zodSchema((t as any).inputSchema),
+                  execute: (t as any).execute,
+                });
+              } else {
+                acc[name] = t;
+              }
+            }
             return acc;
           }, {} as any),
         },
@@ -246,18 +287,38 @@ export async function chatCompletion({
 // ── Session title generation ─────────────────────────────────────────
 
 export async function generateSessionTitle(userMessage: string): Promise<string> {
-  const providers = getProviders();
-  try {
-    const model = providers.groq('llama-3.1-8b-instant');
-    const { text } = await generateText({
-      model,
-      system: 'You are a title generator. Respond with ONLY a concise descriptive title (5–15 words, no quotes) that summarises the user\'s intent or question.',
-      messages: [{ role: 'user', content: userMessage }],
-      maxRetries: 1,
-    });
-    const cleaned = text.replace(/["'']/g, '').trim();
-    return cleaned.length > 150 ? cleaned.slice(0, 150) : cleaned || 'New conversation';
-  } catch {
-    return 'New conversation';
+  const providers = await getProviders();
+  const errors: string[] = [];
+
+  const candidates = (() => {
+    const stored = getStoredSelectedModel();
+    const def = getModelDefinition(stored);
+    if (def && def.provider in providers) {
+      return [stored, ...getAIModels().filter(m => m !== stored)];
+    }
+    return getAIModels();
+  })();
+
+  for (const modelId of candidates) {
+    const def = getModelDefinition(modelId);
+    if (!def) continue;
+    const provider = providers[def.provider as keyof typeof providers];
+    if (!provider) continue;
+    try {
+      const { text } = await generateText({
+        model: (provider as any)(modelId.includes('/') ? modelId.split('/').slice(1).join('/') : modelId),
+        system: 'Read the user\'s request below. Write one concise sentence summarising what they want — capture the goal and key details naturally. Do not use quotes. Do not add commentary.',
+        messages: [{ role: 'user', content: userMessage }],
+        maxRetries: 1,
+      });
+      const cleaned = text.replace(/["''"]/g, '').trim();
+      if (cleaned) return cleaned.length > 250 ? cleaned.slice(0, 250) : cleaned;
+    } catch (e: any) {
+      errors.push(`${modelId}: ${e?.message || 'unknown error'}`);
+      continue;
+    }
   }
+
+  console.warn('All models failed for title generation:', errors.join(' | '));
+  return 'New conversation';
 }

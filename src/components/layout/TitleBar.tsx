@@ -55,7 +55,7 @@ export default function TitleBar() {
   const displayTitle = sessionTitle || 'New conversation';
 
   return (
-    <div className="group flex items-center h-9 px-4 bg-sidebar shrink-0 select-none">
+    <div className="group flex items-center h-9 px-4 bg-background shrink-0 select-none">
       {isEditing ? (
         <input
           ref={inputRef}
@@ -67,7 +67,7 @@ export default function TitleBar() {
         />
       ) : isTitleGenerating ? (
         <div className="flex items-center gap-2 w-full">
-          <div className="h-3.5 w-44 rounded bg-gradient-to-r from-neutral-600 via-neutral-700 to-neutral-600 bg-[length:200%_100%] animate-shimmer" />
+          <div className="h-3.5 w-44 rounded bg-gradient-to-r from-muted-foreground via-muted to-muted-foreground bg-[length:200%_100%] animate-shimmer" />
           <span className="text-[11px] text-muted-foreground">Generating title...</span>
         </div>
       ) : (

@@ -23,7 +23,6 @@ import { Project } from '@/types/chat';
 import { isTauri } from '@/lib/tauri';
 import { useToast } from '../ui/Toast';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
-import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const newThreadIcon = <HugeiconRenderer icon={PencilEdit02Icon} />;
@@ -127,29 +126,18 @@ export default function Sidebar() {
           const slug = folderName.toLowerCase().replace(/\s+/g, '-');
           navigate(`/project/${slug}-${newProject.id}`);
         }
+      } else if ('showDirectoryPicker' in window) {
+        const dirHandle = await (window as any).showDirectoryPicker();
+        const folderName = dirHandle.name || 'New Project';
+        const projectPath = await FileSystemService.importDirectory(dirHandle);
+        const newProject = await ChatSessionManager.createProject(folderName, projectPath);
+        await FileSystemService.uploadProjectFiles(newProject.id, projectPath);
+        const allProjects = await ChatSessionManager.getProjects();
+        setProjects(allProjects);
+        const slug = folderName.toLowerCase().replace(/\s+/g, '-');
+        navigate(`/project/${slug}-${newProject.id}`);
       } else {
-        // Web: use File System Access API if available, otherwise prompt for a name
-        if ('showDirectoryPicker' in window) {
-          const dirHandle = await (window as any).showDirectoryPicker();
-          const folderName = dirHandle.name || 'New Project';
-          const projectPath = await FileSystemService.importDirectory(dirHandle);
-          const newProject = await ChatSessionManager.createProject(folderName, projectPath);
-          await FileSystemService.uploadProjectFiles(newProject.id, projectPath);
-          const allProjects = await ChatSessionManager.getProjects();
-          setProjects(allProjects);
-          const slug = folderName.toLowerCase().replace(/\s+/g, '-');
-          navigate(`/project/${slug}-${newProject.id}`);
-        } else {
-          const folderName = prompt('Enter a name for your project:');
-          if (folderName) {
-            const fakePath = `/web-projects/${folderName}`;
-            const newProject = await ChatSessionManager.createProject(folderName, fakePath);
-            const allProjects = await ChatSessionManager.getProjects();
-            setProjects(allProjects);
-            const slug = folderName.toLowerCase().replace(/\s+/g, '-');
-            navigate(`/project/${slug}-${newProject.id}`);
-          }
-        }
+        addToast('Your browser does not support folder selection. Please use a supported browser or the desktop app.', 'error');
       }
     } catch (err) {
       console.error('Failed to open directory:', err);
@@ -285,27 +273,33 @@ export default function Sidebar() {
             onClick={handleDownloadApp}
             collapsed={isCollapsed}
           />
-          <button
-            onClick={toggleTheme}
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            className={cn(
-              'flex items-center py-1.5 px-2 rounded-[8px] cursor-pointer active:scale-[0.99] transition-transform w-full',
-              isCollapsed ? 'justify-center' : 'gap-3',
-              'hover:bg-sidebar-accent'
-            )}
-          >
-            <div className="shrink-0 flex items-center justify-center w-[18px] h-[18px]">
-              {theme === 'dark' ? <HugeiconRenderer icon={Sun01Icon} /> : <HugeiconRenderer icon={Moon01Icon} />}
-            </div>
-            <span
-              className={cn(
-                'text-sm font-medium whitespace-nowrap transition-all duration-200 overflow-hidden',
-                isCollapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[200px] opacity-100'
-              )}
+          {isCollapsed ? (
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="flex items-center justify-center py-1.5 rounded-[8px] cursor-pointer active:scale-[0.99] transition-transform hover:bg-sidebar-accent"
             >
-              {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-            </span>
-          </button>
+              <div className="shrink-0 flex items-center justify-center w-[18px] h-[18px]">
+                {theme === 'dark' ? <HugeiconRenderer icon={Sun01Icon} /> : <HugeiconRenderer icon={Moon01Icon} />}
+              </div>
+            </button>
+          ) : (
+            <div
+              onClick={toggleTheme}
+              className="flex items-center justify-between py-1.5 px-2 rounded-[8px] cursor-pointer hover:bg-sidebar-accent transition-colors"
+            >
+              <span className="text-sm font-medium">
+                {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); toggleTheme(); }}
+                className={`relative w-9 h-5 rounded-full transition-colors ${theme === 'dark' ? 'bg-blue-500' : 'bg-muted-foreground'}`}
+              >
+                <span className={`absolute top-[3px] left-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${theme === 'dark' ? 'translate-x-4' : ''}`} />
+              </button>
+            </div>
+          )}
           <SidebarTab
             iconElement={settingsIcon}
             label="Settings"

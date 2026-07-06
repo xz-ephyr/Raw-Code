@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ZapIcon, GlobeIcon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
 import {
@@ -11,6 +11,7 @@ import {
   MODELS,
 } from '@core/config/models';
 import { refreshProviders } from '@core/models/aiService';
+import { DatabaseService } from '@core/utils/DatabaseService';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -23,13 +24,19 @@ const PROVIDER_LABELS: Record<string, string> = {
 };
 
 export function ApiKeysTab() {
-  const [keys, setKeys] = useState(() => {
-    const initial: any = {};
-    Object.keys(API_KEYS).forEach((key) => {
-      initial[key] = localStorage.getItem((API_KEYS as any)[key]) || '';
-    });
-    return initial;
-  });
+  const [keys, setKeys] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    (async () => {
+      const initial: any = {};
+      for (const key of Object.keys(API_KEYS)) {
+        const storageKey = (API_KEYS as any)[key];
+        initial[key] = await DatabaseService.getConfig(storageKey)
+          .then(r => r || localStorage.getItem(storageKey) || '');
+      }
+      setKeys(initial);
+    })();
+  }, []);
 
   const [selectedModel, setSelectedModel] = useState(getStoredSelectedModel);
   const [modelMode, setModelMode] = useState(getStoredModelMode);
@@ -39,6 +46,9 @@ export function ApiKeysTab() {
   const handleSaveApiKeys = async () => {
     setIsSaving(true);
     await new Promise((r) => setTimeout(r, 300));
+    await Promise.all(Object.keys(API_KEYS).map((key) =>
+      DatabaseService.setConfig((API_KEYS as any)[key], keys[key])
+    ));
     Object.keys(API_KEYS).forEach((key) => {
       localStorage.setItem((API_KEYS as any)[key], keys[key]);
     });

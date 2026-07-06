@@ -13,6 +13,13 @@ const resultBlockRegex = /(?:^|\n)(?:\d+\.\s*\[.*?\]\(.*?\)|\[\d+\]:\s*https?:\/
 const metaCognitionLineRegex = /^(?:I\s+(?:am|keep|will|must|should|need|can|have|was|had|shall)|I'm|Let\s+me|Wait[\s,]+I|Actually[\s,]+|Okay[\s,]+|Hmm[\s,]+|The\s+(?:error|previous|tool|call|API)\s|This\s+(?:is|suggests|means)|Looking\s+(?:at|back)|As\s+of\s+my\s+current|After\s+|I'll|I've|I'd).*/gim;
 const retryPhraseRegex = /(?:Try\s+(?:a|the|again|one)|Retry|Attempt\s+\d|Again,?|One more|Let me\s+(?:try|see|check|look|be|do|make)|I will\s+(?:now|try|attempt|call|remove|omit|use|just|simply|consciously|absolutely|be|not)|I keep\s+(?:including|making|doing|typing|getting|sending|adding|forgetting)|I am\s+(?:struggling|failing|having|experiencing|going|literally|typing|unable|in\s+a|somehow|clearly|repeating)|I must\s+(?:stop|try|remove|omit|not)|I should\s+(?:try|just|probably|really)|I cannot\s+(?:stop|seem|figure)|Wait,\s+I\s+(?:am|see|keep|will)|Actually,?\s+(?:looking|I|the|let)|Okay,?\s+(?:I|let|the|so|enough)|I'm\s+(?:going|having|struggling|failing|in|literally|an\s+AI))[\s\S]*?(?:\n|$)/gim;
 
+// Strip tool call references that leak into reasoning
+const toolNameRegex = /(?:^|\n)\s*(?:web_search|fetchPage|imageSearch|newsSearch|webSearch|writeArtifact)\s*(?:\(|:|\s)/gim;
+const toolCallRegex = /(?:^|\n)\s*(?:(?:calling|using|invoking|running|executing)\s+(?:the\s+)?(?:web_search|fetchPage|imageSearch|newsSearch|webSearch|writeArtifact)|(?:web_search|fetchPage|imageSearch|newsSearch|webSearch|writeArtifact)\s+(?:tool|function|call))/gim;
+const toolResultRegex = /(?:^|\n)\s*(?:(?:the\s+)?(?:search|tool|function|call)\s+(?:returned|result|completed|finished|executed|done|gave|produced|showed)|results?\s+(?:from|of)\s+(?:the\s+)?(?:search|tool|function|call))/gim;
+const queryParamRegex = /(?:^|\n)\s*(?:query|q)\s*[=:]\s*["']?.+?["']?\s*(?:\n|$)/gim;
+const toolMetadataLineRegex = /(?:^|\n)\s*(?:toolCallId|toolName|args|input|output|result|state)\s*[=:].*(?:\n|$)/gim;
+
 export function cleanReasoning(reasoning: string): string {
   let cleaned = reasoning
     .split('\n')
@@ -24,7 +31,25 @@ export function cleanReasoning(reasoning: string): string {
   cleaned = cleaned.replace(/https?:\/\/\S+/g, '');
   cleaned = cleaned.replace(metaCognitionLineRegex, '');
   cleaned = cleaned.replace(retryPhraseRegex, '');
+  cleaned = cleaned.replace(toolNameRegex, '\n');
+  cleaned = cleaned.replace(toolCallRegex, '\n');
+  cleaned = cleaned.replace(toolResultRegex, '\n');
+  cleaned = cleaned.replace(queryParamRegex, '\n');
+  cleaned = cleaned.replace(toolMetadataLineRegex, '\n');
   return cleaned.replace(/\n{3,}/g, '\n\n').trim();
+}
+
+/**
+ * Sanitize markdown content to prevent accidental markdown rendering.
+ */
+export function sanitizeMarkdownContent(content: string): string {
+  let result = content;
+
+  // 1. Escape `#` at line start when followed by a digit (e.g. `#1`, `#2`)
+  //    to prevent accidental headings from plain text
+  result = result.replace(/^(#\d)/gm, '\\$1');
+
+  return result;
 }
 
 export function hasPartialArtifact(content: string): boolean {
@@ -179,9 +204,12 @@ export const mapUIMessageToLegacyMessage = (m: any): any => {
     }
   }
 
+  // Sanitize final content for streaming artifacts
+  const finalContent = sanitizeMarkdownContent(cleanText || content);
+
   return {
     ...m,
-    content: cleanText || content,
+    content: finalContent,
     reasoning,
     toolInvocations,
     contentBeforeTool,

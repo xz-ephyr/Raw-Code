@@ -14,6 +14,7 @@ interface AssistantBubbleProps {
   content: string;
   isStreaming: boolean;
   model?: string;
+  version?: number;
   toolInvocations?: any[];
   reasoning?: string;
   parts?: any[];
@@ -32,6 +33,7 @@ export const AssistantBubble = React.memo(
     content,
     isStreaming,
     model,
+    version,
     toolInvocations,
     reasoning,
     parts,
@@ -51,12 +53,17 @@ export const AssistantBubble = React.memo(
     const timelineSteps = useTimelineSteps(reasoning, toolInvocations, isStreaming, parts, !!content);
     const hasTimeline = timelineSteps.length > 0;
 
-    const isThinkingActive = isStreaming && !content;
+    const [hasOpenedReasoning, setHasOpenedReasoning] = useState(false);
+    const isNewThinkingSession = isStreaming && !content;
     useEffect(() => {
-      if (isThinkingActive) {
+      if (isNewThinkingSession && !hasOpenedReasoning) {
         setIsReasoningOpen(true);
+        setHasOpenedReasoning(true);
       }
-    }, [isThinkingActive]);
+      if (!isStreaming) {
+        setHasOpenedReasoning(false);
+      }
+    }, [isNewThinkingSession, hasOpenedReasoning, isStreaming]);
     const allSources = useAggregatedSources(toolInvocations);
 
     const {
@@ -90,7 +97,7 @@ export const AssistantBubble = React.memo(
                 onClick={() => setIsReasoningOpen((p) => !p)}
               />
               <div
-                className={`grid ${
+                className={`grid -ml-4 ${
                   isReasoningOpen
                     ? 'grid-rows-[1fr] opacity-100'
                     : 'grid-rows-[0fr] opacity-0'
@@ -99,7 +106,7 @@ export const AssistantBubble = React.memo(
                 <div className="overflow-hidden min-h-0">
                     <div
                       ref={timelineScrollRef}
-                      className="overflow-y-auto no-scrollbar flex flex-col gap-2 max-h-[45vh] rounded-lg bg-muted/90 p-3"
+                      className="overflow-y-auto no-scrollbar flex flex-col gap-2 max-h-[45vh] rounded-lg bg-muted/90 pt-3 pb-3 pr-3 pl-3"
                     >
                       <ThinkingTimeline
                         steps={timelineSteps}
@@ -146,6 +153,7 @@ export const AssistantBubble = React.memo(
           <BubbleActions
             allSources={allSources}
             model={model}
+            version={version}
             onCopy={onCopy}
             onThumbsUp={onThumbsUp}
             onThumbsDown={onThumbsDown}

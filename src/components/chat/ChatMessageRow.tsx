@@ -5,6 +5,7 @@ import { AssistantBubble } from './AssistantBubble';
 interface ChatMessageRowProps {
   role: string;
   content: string;
+  createdAt?: number;
   artifacts?: any[];
   toolInvocations?: any[];
   reasoning?: string;
@@ -13,17 +14,20 @@ interface ChatMessageRowProps {
   contentAfterTool?: string;
   currentModel: string | undefined;
   isStreaming: boolean;
+  messageIndex: number;
+  version: number;
   prevUserContent?: string;
   onOpenArtifact: (artifact: any) => void;
   onCopy: (content: string) => void;
   onThumbsUp: () => void;
   onThumbsDown: () => void;
-  handleSend: (content: string) => void;
+  onRegenerate: (index: number) => void;
 }
 
 export const ChatMessageRow = memo(function ChatMessageRow({
   role,
   content,
+  createdAt,
   artifacts,
   toolInvocations,
   reasoning,
@@ -32,21 +36,23 @@ export const ChatMessageRow = memo(function ChatMessageRow({
   contentAfterTool,
   currentModel,
   isStreaming,
+  messageIndex,
+  version,
   prevUserContent,
   onOpenArtifact,
   onCopy,
   onThumbsUp,
   onThumbsDown,
-  handleSend,
+  onRegenerate,
 }: ChatMessageRowProps) {
   const handleMsgCopy = useCallback(() => onCopy(content), [content, onCopy]);
   const handleThumbsUp = useCallback(() => onThumbsUp(), [onThumbsUp]);
   const handleThumbsDown = useCallback(() => onThumbsDown(), [onThumbsDown]);
   const handleMsgRegenerate = useCallback(() => {
     if (prevUserContent) {
-      handleSend(prevUserContent);
+      onRegenerate(messageIndex);
     }
-  }, [prevUserContent, handleSend]);
+  }, [prevUserContent, messageIndex, onRegenerate]);
 
   const handleOpenMsgArtifact = useCallback(() => {
     if (artifacts && artifacts.length > 0) {
@@ -57,11 +63,12 @@ export const ChatMessageRow = memo(function ChatMessageRow({
   return (
     <>
       {role === 'user' ? (
-        <UserBubble content={content} />
+        <UserBubble content={content} createdAt={createdAt} />
       ) : (
         <AssistantBubble
           content={content}
           model={currentModel}
+          version={version}
           isStreaming={isStreaming}
           toolInvocations={toolInvocations}
           reasoning={reasoning}

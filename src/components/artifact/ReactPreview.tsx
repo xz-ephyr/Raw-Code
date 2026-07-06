@@ -10,11 +10,9 @@ interface ReactPreviewProps {
 function normalizeCode(code: string): string {
   let normalized = code.trim();
 
-  if (!normalized.includes('export default')) {
-    return normalized;
+  if (normalized.includes('export default')) {
+    normalized = normalized.replace(/export\s+default\s+/g, '');
   }
-
-  normalized = normalized.replace(/export default\s*(function|class|const|let|var)/, '$1');
 
   normalized = normalized
     .replace(/import\s+(\w+)\s+from\s+["']react["']/g, 'var $1 = window.React;')
@@ -41,7 +39,6 @@ function transpile(code: string): string {
   try {
     const result = Babel.transform(code, {
       presets: ['react', ['typescript', { ignoreExtensions: true }]],
-      plugins: [['syntax-jsx', {}]],
       filename: 'artifact.tsx',
       compact: false,
       retainLines: true,
