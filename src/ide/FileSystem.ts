@@ -1,26 +1,23 @@
 import type { FileNode, SearchMatch, ProjectFileEntry } from './types';
 
-let nextId = 1;
 function generateId(): string {
-  return `node_${nextId++}`;
+  return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function resetIdCounter(): void {
-  nextId = 1;
-}
-
-function maxIdInTree(node: FileNode): number {
-  let max = 0;
-  const walk = (n: FileNode) => {
-    const match = n.id.match(/^node_(\d+)$/);
-    if (match) {
-      const num = parseInt(match[1], 10);
-      if (num > max) max = num;
+function reindexTree(node: FileNode, seen: Set<string>): FileNode {
+  const walk = (n: FileNode): FileNode => {
+    let id = n.id;
+    while (seen.has(id)) {
+      id = generateId();
     }
-    for (const child of n.children) walk(child);
+    seen.add(id);
+    return {
+      ...n,
+      id,
+      children: n.children.map(walk),
+    };
   };
-  walk(node);
-  return max;
+  return walk(node);
 }
 
 function createDefaultFiles(): FileNode {
@@ -119,9 +116,7 @@ export class VirtualFileSystem {
       const stored = localStorage.getItem(VirtualFileSystem.STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as FileNode;
-        const highest = maxIdInTree(parsed);
-        if (highest >= nextId) nextId = highest + 1;
-        return parsed;
+        return reindexTree(parsed, new Set());
       }
     } catch {
       // corrupted data, fall through to default
@@ -255,7 +250,6 @@ export class VirtualFileSystem {
   }
 
   loadFromProject(name: string, files: ProjectFileEntry[]): void {
-    resetIdCounter();
     const root: FileNode = {
       id: generateId(),
       name,
