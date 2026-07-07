@@ -48,6 +48,11 @@ func (c *ExpressClient) GetConfig(ctx context.Context, key string) (string, erro
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("get config unexpected status %d: %s", resp.StatusCode, string(body))
+	}
+
 	var result string
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return "", fmt.Errorf("failed to decode config response: %w", err)
@@ -79,6 +84,11 @@ func (c *ExpressClient) GetSessions(ctx context.Context) ([]map[string]any, erro
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("get sessions unexpected status %d: %s", resp.StatusCode, string(body))
+	}
+
 	var result []map[string]any
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("failed to decode sessions: %w", err)
@@ -107,6 +117,11 @@ func (c *ExpressClient) WebSearch(ctx context.Context, query string, maxResults 
 		return nil, fmt.Errorf("web search request failed: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("web search unexpected status %d: %s", resp.StatusCode, string(body))
+	}
 
 	var result WebSearchResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {

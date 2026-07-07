@@ -231,22 +231,6 @@ export const FileSystemService = {
     }
   },
 
-  getCompressedTree: (tree: FileEntry[]): string => {
-    const summarize = (entries: FileEntry[], indent = ''): string => {
-      return entries
-        .map((e) => {
-          if (e.isDirectory) {
-            const childrenStr = summarize(e.children || [], indent + '  ');
-            return `${indent}${e.name}/\n${childrenStr}`;
-          }
-          return `${indent}${e.name}`;
-        })
-        .join('\n');
-    };
-
-    return summarize(tree);
-  },
-
   getFileContent: async (path: string, projectId?: string): Promise<string> => {
     if (isTauri()) {
       try {
@@ -306,17 +290,7 @@ export const FileSystemService = {
 
     const files = await readDirectoryHandle(dirHandle, projectPath);
 
-    // Upload to server DB if projectId is available
-    if (projectId) {
-      try {
-        await DatabaseService.saveProjectFiles(projectId, files.map(f => ({ path: f.path, content: f.content })));
-        return projectPath;
-      } catch (e) {
-        console.error('Error uploading files to server:', e);
-      }
-    }
-
-    // Fallback: store in virtual FS
+    // Always store in virtual FS for immediate access
     webVirtualFS[projectPath + '/'] = '';
     for (const f of files) {
       webVirtualFS[f.path] = f.content;
@@ -326,25 +300,17 @@ export const FileSystemService = {
         }
       } catch { /* quota exceeded */ }
     }
-    return projectPath;
-  },
 
-  /** Upload all files in a project's virtual FS path to the server DB. */
-  uploadProjectFiles: async (projectId: string, projectPath: string): Promise<void> => {
-    const prefix = projectPath.endsWith('/') ? projectPath : projectPath + '/';
-    const files: { path: string; content: string }[] = [];
-    for (const key of Object.keys(webVirtualFS)) {
-      if (key.startsWith(prefix) && key !== prefix) {
-        files.push({ path: key, content: webVirtualFS[key] });
+    // Also persist to server DB if projectId is available
+    if (projectId) {
+      try {
+        await DatabaseService.saveProjectFiles(projectId, files.map(f => ({ path: f.path, content: f.content })));
+      } catch (e) {
+        console.error('Error uploading files to server:', e);
       }
     }
-    if (files.length === 0) return;
-    await DatabaseService.saveProjectFiles(projectId, files);
-    // Clear from localStorage after upload
-    for (const f of files) {
-      try { localStorage.removeItem(`vfs:${f.path}`); } catch { /* ignore */ }
-      delete webVirtualFS[f.path];
-    }
+
+    return projectPath;
   },
 
   saveFile: async (path: string, content: string, projectId?: string): Promise<void> => {

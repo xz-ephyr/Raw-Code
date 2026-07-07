@@ -4,13 +4,14 @@ import { callGoTool } from '@core/utils/goProxy';
 
 export const editFileTool: ToolDef = {
   name: 'edit_file',
-  description: 'Make a targeted edit to a file using search-and-replace. Provide surrounding context (a few lines before and after) to ensure unique matches. Format: <<<<<<< SEARCH\\nexact text to replace\\n=======\\nreplacement text\\n>>>>>>> REPLACE. Read the file first before editing.',
+  description: 'Apply a targeted edit to an existing file by replacing an exact string match with new content. Provide the exact `old_string` to search for (include surrounding context lines for uniqueness) and the `new_string` to replace it with. Read the file first before editing.',
   category: 'code',
   inputSchema: z.object({
     path: z.string().describe('Absolute path to the file to edit.'),
-    diff: z.string().describe('The diff in Git merge-conflict format: <<<<<<< SEARCH\\n<exact lines to replace>\\n=======\\n<new lines>\\n>>>>>>> REPLACE'),
+    old_string: z.string().describe('The exact string to search for and replace. Must match exactly — include surrounding context lines (a few before and after) to ensure a unique match.'),
+    new_string: z.string().describe('The replacement string.'),
   }),
-  execute: async ({ path, diff }) => {
-    return callGoTool('edit_file', { path, diff }, { idempotent: false });
+  execute: async ({ path, old_string, new_string }) => {
+    return callGoTool('edit_file', { path, old_string, new_string }, { idempotent: false });
   },
 };

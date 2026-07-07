@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { buildFallbackChain } from '../src/services/aiService';
-import * as modelsConfig from '../src/config/models';
+import { buildFallbackChain } from '../core/models/aiService';
+import * as modelsConfig from '../core/config/models';
 
 // Mock getAIModels and getModelDefinition
-vi.mock('../src/config/models', async () => {
-  const actual = await vi.importActual('../src/config/models');
+vi.mock('../core/config/models', async () => {
+  const actual = await vi.importActual('../core/config/models');
   return {
     ...actual,
     getAIModels: vi.fn(),

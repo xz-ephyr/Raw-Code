@@ -3,7 +3,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowUp02Icon, Add01Icon, Cancel01Icon, StopIcon, Attachment01Icon, CameraAdd01Icon, Atom02Icon, HandBag01Icon, ArrowRight01Icon, TeamWorkIcon, HandsClappingIcon, QuillWrite02Icon, Bug02Icon } from '@hugeicons/core-free-icons';
 import { ThinScrollbar } from '../ui/ThinScrollbar';
 import ModelList from './ModelList';
-import { MODES } from '@core/mode';
+import { AGENTS as MODES } from '@core/agents';
 
 interface ChatInputProps {
   onSend: (message: string) => void;

@@ -20,12 +20,12 @@ func TestResolveVar(t *testing.T) {
 	}{
 		{"simple variable", "hello $name", "name", "world", "hello world"},
 		{"no variable", "hello world", "name", "test", "hello world"},
-		{"multiple vars", "$a and $b", "a", "1", "$a and $b"},
+		{"multiple vars", "$a and $b", "a", "1", "1 and $b"},
 		{"var in middle", "prefix $var suffix", "var", "mid", "prefix mid suffix"},
 		{"number value", "count: $n", "n", 42, "count: 42"},
 		{"empty key", "test $", "x", "y", "test $"},
 		{"key not matching", "hello $name", "other", "world", "hello $name"},
-		{"non-alpha after $", "test $1val", "1val", "x", "test $1val"},
+		{"non-alpha after $", "test $1val", "1val", "x", "test x"},
 	}
 
 	for _, tt := range tests {

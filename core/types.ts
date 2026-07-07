@@ -10,8 +10,4 @@ export interface ToolDef<TInput = any, TOutput = any> {
   execute: (input: TInput) => Promise<TOutput>;
 }
 
-export interface ToolResult {
-  success: boolean;
-  data?: any;
-  error?: string;
-}
+

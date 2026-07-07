@@ -283,7 +283,7 @@ func stripMarkdownJSON(s string) string {
 	if start < end {
 		return s[start:end]
 	}
-	return s
+	return ""
 }
 
 func (o *Orchestrator) runWorkflowTask(t *task.Task) {

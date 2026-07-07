@@ -195,18 +195,7 @@ export const ChatPage = () => {
       if (!project) return undefined;
 
       const pc = await FileSystemService.getProjectContent(project.path, project.id);
-      let files = pc.tree;
-      if (pc.contents.length > 0) {
-        files += '\n\n### File Contents\n\n';
-        files += pc.contents.map(f =>
-          `--- ${f.path} ---\n${f.text}`
-        ).join('\n\n');
-      }
-      const notes: string[] = [];
-      if (pc.truncated) notes.push('Some files were omitted because the total content exceeded the limit.');
-      if (pc.skippedBinary > 0) notes.push(`${pc.skippedBinary} binary file(s) excluded.`);
-      if (pc.skippedSize > 0) notes.push(`${pc.skippedSize} file(s) too large to include.`);
-      if (notes.length > 0) files += '\n\n_Notes: ' + notes.join(' ') + '_';
+      const files = pc.tree + '\n\n_Use `read_file`, `grep_files`, and `list_directory` to explore file contents._';
 
       const context = { name: project.name, path: project.path, files };
 
@@ -458,9 +447,8 @@ export const ChatPage = () => {
       } else if ('showDirectoryPicker' in window) {
         const dirHandle = await (window as any).showDirectoryPicker();
         folderName = dirHandle.name || 'New Project';
-        const projectPath = await FileSystemService.importDirectory(dirHandle);
-        newProject = await ChatSessionManager.createProject(folderName, projectPath);
-        await FileSystemService.uploadProjectFiles(newProject.id, projectPath);
+        newProject = await ChatSessionManager.createProject(folderName, folderName);
+        await FileSystemService.importDirectory(dirHandle, newProject.id);
       } else {
         addToast('Your browser does not support folder selection. Please use a supported browser or the desktop app.', 'error');
       }

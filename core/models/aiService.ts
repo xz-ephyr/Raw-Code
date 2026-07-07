@@ -10,7 +10,7 @@ import { writeArtifactTool } from '@core/tools/writeArtifactTool';
 import { allTools } from '@core/tools/allTools';
 import { API_KEYS, getModelDefinition, getUsedModels, markModelUsed, getAIModels, getStoredSelectedModel, type Provider } from '@core/config/models';
 import { DatabaseService } from '@core/utils/DatabaseService';
-import { getModeSystemPrompt } from '@core/mode';
+import { getAgentById } from '@core/agents';
 import { getSmartSystemPrompt, type ProjectContext } from '@core/memory/contextController';
 import { contractContext } from '@core/memory/contextContractor';
 
@@ -180,7 +180,8 @@ export async function chatCompletion({
     return providers.google('gemini-3.5-flash');
   };
 
-  const modePrompt = getModeSystemPrompt(modeId);
+  const agent = getAgentById(modeId ?? '');
+  const modePrompt = agent?.systemPrompt ?? '';
   const modeAwarePrompt = modePrompt ? `${SYSTEM_PROMPT}\n${modePrompt}` : SYSTEM_PROMPT;
   const fullSystemPrompt = getSmartSystemPrompt(modeAwarePrompt, projectContext);
 

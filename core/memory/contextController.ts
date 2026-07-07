@@ -13,9 +13,9 @@ export function getSmartSystemPrompt(basePrompt: string, projectContext?: Projec
 
 You are inside a folder named "${projectContext.name}" located at \`${projectContext.path}\`.
 
-Below is the full folder structure and the contents of all readable files:
+You do **not** have file contents preloaded into context. Below is only the directory structure (paths):
 
 ${projectContext.files}
 
-Use this information to answer questions about the folder's structure and contents. When the user asks about files, data, or anything inside this folder, refer to the file tree and contents above.`;
+To explore the codebase, use \`read_file\` to read file contents, \`grep_files\` or \`code_search\` to search file contents, and \`list_directory\` to list directory contents. Always read files before editing them.`;
 }
