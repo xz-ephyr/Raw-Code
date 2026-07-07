@@ -124,7 +124,7 @@ func TestRegisterDefaults(t *testing.T) {
 	}
 
 	// Verify a few expected tools exist
-	expectedTools := []string{"web_search", "read_file", "write_file", "git_status", "run_command"}
+	expectedTools := []string{"web_search", "read_file", "write_file", "git_status"}
 	for _, name := range expectedTools {
 		def, ok := r.Get(name)
 		if !ok {

@@ -116,7 +116,7 @@ export function ChatListItem({ chat, onDelete, onArchive, onRename }: ChatListIt
                 <span className="text-xs text-muted-foreground shrink-0">{formatRelativeTime(chat.createdAt, time)}</span>
               </div>
               {chat.lastMessage && (
-                <span className="text-xs text-muted-foreground truncate mt-0.5">{chat.lastMessage}</span>
+                <span className="text-xs text-muted-foreground truncate mt-0.5">{chat.lastMessage.length > 100 ? chat.lastMessage.slice(0, 100) + '…' : chat.lastMessage}</span>
               )}
             </div>
           )}

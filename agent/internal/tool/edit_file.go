@@ -32,7 +32,11 @@ func editFileTool() ToolDef {
 			}
 			newStr, _ := params["new_string"].(string)
 
-			path = expandPath(path)
+			safePath, err := e.SandboxPath(expandPath(path))
+			if err != nil {
+				return nil, err
+			}
+			path = safePath
 			data, err := os.ReadFile(path)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read file: %w", err)

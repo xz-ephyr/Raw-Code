@@ -302,7 +302,7 @@ export const FileSystemService = {
 
   importDirectory: async (dirHandle: FileSystemDirectoryHandle, projectId?: string): Promise<string> => {
     const name = dirHandle.name;
-    const projectPath = '/web-projects/' + name;
+    const projectPath = name;
 
     const files = await readDirectoryHandle(dirHandle, projectPath);
 

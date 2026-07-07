@@ -14,7 +14,7 @@ func listDirectoryTool() ToolDef {
 	return ToolDef{
 		Definition: api.ToolDefinition{
 			Name:        "list_directory",
-			Description: "List files and directories in a project path with optional glob pattern filtering.",
+			Description: "List files and directories in a project path with optional glob pattern filtering. Pattern examples: \"*.ts\" to filter TypeScript files, \"*.test.*\" for test files. Use glob_files for recursive searching.",
 			Category:    "code",
 			Parameters: map[string]api.ParamDef{
 				"path":    {Type: "string", Description: "Directory path to list", Required: true},
@@ -26,7 +26,11 @@ func listDirectoryTool() ToolDef {
 			if path == "" {
 				path = "."
 			}
-			path = expandPath(path)
+			safePath, err := e.SandboxPath(expandPath(path))
+			if err != nil {
+				return nil, err
+			}
+			path = safePath
 
 			entries, err := os.ReadDir(path)
 			if err != nil {

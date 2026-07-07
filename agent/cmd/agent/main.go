@@ -26,11 +26,12 @@ func main() {
 	}
 
 	apiKey := os.Getenv("AGENT_API_KEY")
+	projectRoot := os.Getenv("PROJECT_ROOT")
 
 	express := infra.NewExpressClient(expressURL)
 	modelCfg := getModelConfig(express)
 
-	hub := NewAgentHub(expressURL, apiKey, modelCfg)
+	hub := NewAgentHub(expressURL, apiKey, modelCfg, projectRoot)
 	srv := hub.SetupServer(port)
 
 	if apiKey == "" {

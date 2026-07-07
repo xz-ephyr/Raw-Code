@@ -250,7 +250,8 @@ export async function chatCompletion({
                 (t as any).description = `Search the web for current information using ${searchProvider}. Use when you need up-to-date data, recent news, documentation, or facts beyond your training cutoff. Trigger on keywords like: search, research, find, look up, latest, news, recent, current, what is, who is, explain, define, compare, how to, verify, check, troubleshoot, fix, debug, status, update, trends, documentation, guide, tutorial, example, vs, versus, difference, best, top, ranking, list, data, facts, details, info, information, background, context, overview, breakdown, summary, elaborate, describe, explain, confirm, validate, fact-check, ensure, correct, accurate, true, real, legitimate, credible, source, citation, reference, proof, evidence, method, approach, strategy, technique, solution, workaround, resolve, recipe, sample, specification, spec, API, docs.`;
               }
               if ((t as any).inputSchema) {
-                acc[name] = tool({
+                const isAlreadyWrapped = typeof (t as any).inputSchema?.validate === 'function';
+                acc[name] = isAlreadyWrapped ? t : tool({
                   description: (t as any).description,
                   inputSchema: zodSchema((t as any).inputSchema),
                   execute: (t as any).execute,
@@ -307,12 +308,12 @@ export async function generateSessionTitle(userMessage: string): Promise<string>
     try {
       const { text } = await generateText({
         model: (provider as any)(modelId.includes('/') ? modelId.split('/').slice(1).join('/') : modelId),
-        system: 'Read the user\'s request below. Write one concise sentence summarising what they want — capture the goal and key details naturally. Do not use quotes. Do not add commentary.',
+        system: 'Read the user\'s request below. Summarise in 5 words or fewer — just the core intent, no articles, no punctuation. Do not use quotes. Do not add commentary.',
         messages: [{ role: 'user', content: userMessage }],
         maxRetries: 1,
       });
       const cleaned = text.replace(/["''"]/g, '').trim();
-      if (cleaned) return cleaned.length > 250 ? cleaned.slice(0, 250) : cleaned;
+      if (cleaned) return cleaned.length > 60 ? cleaned.slice(0, 60) : cleaned;
     } catch (e: any) {
       errors.push(`${modelId}: ${e?.message || 'unknown error'}`);
       continue;

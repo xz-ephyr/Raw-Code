@@ -25,10 +25,8 @@ xz Frontend (React/Vite)
 │  └──────────────────────────────────────────────────────┘   │
 │                                                              │
 │  ┌─ Tool Executor ──────────────────────────────────────┐   │
-│  │  web_search → Express /websearch proxy                │   │
-│  │  code_search → ripgrep                                │   │
-│  │  read_file / list_directory → local filesystem        │   │
-│  │  run_command → shell.exec (sandboxed)                 │   │
+ │  │  web_search → Express /websearch proxy                │   │
+ │  │  read_file / list_directory → local filesystem        │   │
 │  │  delegate_task → sub-agent spawn                      │   │
 │  │  run_workflow → workflow engine                       │   │
 │  └──────────────────────────────────────────────────────┘   │

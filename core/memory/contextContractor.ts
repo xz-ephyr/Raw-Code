@@ -33,8 +33,8 @@ export async function contractContext(messages: Message[], model: LanguageModel)
     const hasArrayContent = messages.some(m => Array.isArray(m.content));
     const summaryContent = `SUMMARY OF PREVIOUS CONVERSATION: ${summary}`;
     const summaryMsg = hasArrayContent
-      ? { role: 'system' as const, content: [{ type: 'text' as const, text: summaryContent }] }
-      : { role: 'system' as const, content: summaryContent };
+      ? { role: 'user' as const, content: [{ type: 'text' as const, text: summaryContent }] }
+      : { role: 'user' as const, content: summaryContent };
 
     return [
       summaryMsg,

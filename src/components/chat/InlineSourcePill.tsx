@@ -42,8 +42,10 @@ export function InlineSourcePill({ url, title, snippet }: InlineSourcePillProps)
         onClick={(e) => e.stopPropagation()}
         className="inline-flex items-center justify-center no-underline cursor-pointer"
         title={title || domain}
+        aria-label={`Source: ${title || domain}`}
       >
         <img src={faviconUrl} alt="" width={14} height={14} className="rounded-full shrink-0" loading="lazy" />
+        <span className="sr-only">Opens in new tab</span>
       </a>
 
       {isOpen && (

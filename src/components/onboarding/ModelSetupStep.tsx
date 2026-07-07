@@ -41,7 +41,9 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isModelDropdownOpen]);
 
-  const [keys, setKeys] = useState<Record<string, string>>({});
+  const [keys, setKeys] = useState<Record<string, string>>(
+    Object.fromEntries(Object.keys(API_KEYS).map(k => [k, '']))
+  );
 
   useEffect(() => {
     (async () => {

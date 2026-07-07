@@ -59,30 +59,30 @@ const TOOL_CONFIG: Record<string, ToolConfig> = {
   read_file:      { icon: FileSearchIcon, presentPrefix: 'Reading', pastPrefix: 'Read', displayType: 'expandable' },
   write_file:     { icon: FilePlusIcon, presentPrefix: 'Writing', pastPrefix: 'Wrote', displayType: 'expandable' },
   edit_file:      { icon: PencilEdit02Icon, presentPrefix: 'Editing', pastPrefix: 'Edited', displayType: 'expandable' },
-  list_directory: { icon: FolderOpenIcon, presentPrefix: 'Listing', pastPrefix: 'Listed', displayType: 'inline' },
-  find_files:     { icon: Search02Icon, presentPrefix: 'Finding', pastPrefix: 'Found', displayType: 'inline' },
-  glob_files:     { icon: FileCodeIcon, presentPrefix: 'Globbing', pastPrefix: 'Globbed', displayType: 'inline' },
-  grep_files:     { icon: SearchCodeIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'inline' },
-  code_search:    { icon: SourceCodeIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'inline' },
-  file_stats:     { icon: Folder01Icon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'inline' },
-  count_lines:    { icon: FileSpreadsheetIcon, presentPrefix: 'Counting', pastPrefix: 'Counted', displayType: 'inline' },
-  git_status:     { icon: GitBranchIcon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'inline' },
-  git_diff:       { icon: GitCommitIcon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'inline' },
-  git_log:        { icon: GitPullRequestIcon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'inline' },
-  git_branches:   { icon: GitMergeIcon, presentPrefix: 'Listing', pastPrefix: 'Listed', displayType: 'inline' },
-  git_show:       { icon: FileValidationIcon, presentPrefix: 'Showing', pastPrefix: 'Showed', displayType: 'inline' },
+  list_directory: { icon: FolderOpenIcon, presentPrefix: 'Listing', pastPrefix: 'Listed', displayType: 'expandable' },
+  find_files:     { icon: Search02Icon, presentPrefix: 'Finding', pastPrefix: 'Found', displayType: 'expandable' },
+  glob_files:     { icon: FileCodeIcon, presentPrefix: 'Globbing', pastPrefix: 'Globbed', displayType: 'expandable' },
+  grep_files:     { icon: SearchCodeIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'expandable' },
+  code_search:    { icon: SourceCodeIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'expandable' },
+  file_stats:     { icon: Folder01Icon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'expandable' },
+  count_lines:    { icon: FileSpreadsheetIcon, presentPrefix: 'Counting', pastPrefix: 'Counted', displayType: 'expandable' },
+  git_status:     { icon: GitBranchIcon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'expandable' },
+  git_diff:       { icon: GitCommitIcon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'expandable' },
+  git_log:        { icon: GitPullRequestIcon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'expandable' },
+  git_branches:   { icon: GitMergeIcon, presentPrefix: 'Listing', pastPrefix: 'Listed', displayType: 'expandable' },
+  git_show:       { icon: FileValidationIcon, presentPrefix: 'Showing', pastPrefix: 'Showed', displayType: 'expandable' },
   run_command:    { icon: CommandLineIcon, presentPrefix: 'Running', pastPrefix: 'Ran', displayType: 'expandable' },
-  system_info:    { icon: ComputerIcon, presentPrefix: 'Getting', pastPrefix: 'Got', displayType: 'inline' },
-  list_processes: { icon: Task01Icon, presentPrefix: 'Listing', pastPrefix: 'Listed', displayType: 'inline' },
-  resolve_path:   { icon: CursorTextIcon, presentPrefix: 'Resolving', pastPrefix: 'Resolved', displayType: 'inline' },
+  system_info:    { icon: ComputerIcon, presentPrefix: 'Getting', pastPrefix: 'Got', displayType: 'expandable' },
+  list_processes: { icon: Task01Icon, presentPrefix: 'Listing', pastPrefix: 'Listed', displayType: 'expandable' },
+  resolve_path:   { icon: CursorTextIcon, presentPrefix: 'Resolving', pastPrefix: 'Resolved', displayType: 'expandable' },
   http_request:   { icon: GlobeIcon, presentPrefix: 'Making', pastPrefix: 'Made', displayType: 'expandable' },
-  check_url:      { icon: WebSecurityIcon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'inline' },
+  check_url:      { icon: WebSecurityIcon, presentPrefix: 'Checking', pastPrefix: 'Checked', displayType: 'expandable' },
   web_search:     { icon: InternetIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'default' },
   fetch_page:     { icon: FileDownloadIcon, presentPrefix: 'Fetching', pastPrefix: 'Fetched', displayType: 'default' },
   image_search:   { icon: AiImageIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'default' },
   news_search:    { icon: AiBrowserIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'default' },
   subagent_run:   { icon: Bug02Icon, presentPrefix: 'Delegating', pastPrefix: 'Delegated', displayType: 'expandable' },
-  search_docs:    { icon: AiBookIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'inline' },
+  search_docs:    { icon: AiBookIcon, presentPrefix: 'Searching', pastPrefix: 'Searched', displayType: 'expandable' },
 };
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -371,10 +371,6 @@ function ExpandableToolContent({ step }: {
   const summary = getInputSummary(step.toolName || '', step.toolInput);
   const count = getResultCount(step.toolOutput);
 
-  useEffect(() => {
-    if (isRunning) setIsExpanded(true);
-  }, [isRunning]);
-
   const label = prefix + (summary ? ` — ${summary}` : '') + (count ? ` → ${count}` : '');
 
   return (
@@ -424,7 +420,7 @@ export const ThinkingTimeline = React.memo(function ThinkingTimeline({
   if (steps.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-[auto_1fr] gap-x-1 gap-y-0.5">
+    <div className="flex flex-col gap-1">
       {steps.map((step, idx) => {
         const isLast = idx === steps.length - 1;
         const isThinking = step.type === 'thinking';
@@ -437,9 +433,13 @@ export const ThinkingTimeline = React.memo(function ThinkingTimeline({
             ? !step.isRunning && !!step.toolOutput
             : !step.isRunning && (step.sources?.length || 0) > 0;
 
+        const hasStarted = isThinking
+          ? !!step.reasoning
+          : step.isRunning || !!step.toolOutput || !!step.toolInput || (step.sources?.length || 0) > 0;
+
         return (
-          <div key={step.id} className="contents">
-            {/* Icon cell */}
+          <div key={step.id} className="flex gap-1.5">
+            {/* Icon column */}
             <div className="flex flex-col items-center shrink-0 w-4">
               {isThinking && (
                 <div className="text-muted-foreground">
@@ -451,7 +451,7 @@ export const ThinkingTimeline = React.memo(function ThinkingTimeline({
                   <HugeiconsIcon icon={config?.icon || InternetIcon} size={16} />
                 </div>
               )}
-              {(!isLast || done) && <div className="w-px flex-1 bg-border mt-0.5" />}
+              {(!isLast || hasStarted) && <div className="w-px flex-1 bg-border mt-0.5" />}
               {isLast && done && (
                 <div className="text-muted-foreground mt-0.5">
                   <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} />
@@ -459,8 +459,8 @@ export const ThinkingTimeline = React.memo(function ThinkingTimeline({
               )}
             </div>
 
-            {/* Text cell */}
-            <div className="min-w-0">
+            {/* Text column */}
+            <div className="min-w-0 flex-1">
               {isThinking && (
                 <ThinkingStepContent
                   reasoning={step.reasoning}

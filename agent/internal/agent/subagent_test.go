@@ -3,14 +3,12 @@ package agent
 import (
 	"testing"
 
-	"github.com/xz-ephyr/raw-code/agent/internal/model"
 	"github.com/xz-ephyr/raw-code/agent/pkg/api"
 )
 
 func TestHeuristicPlan(t *testing.T) {
 	tools := []api.ToolDefinition{
 		{Name: "web_search", Description: "Search the web"},
-		{Name: "code_search", Description: "Search codebase"},
 		{Name: "read_file", Description: "Read a file"},
 	}
 
@@ -21,7 +19,6 @@ func TestHeuristicPlan(t *testing.T) {
 	}{
 		{"search task should trigger web_search", "search for golang tutorials", 1},
 		{"research should trigger web_search", "research quantum computing", 1},
-		{"code search should trigger code_search", "find the main function in code", 1},
 		{"general task should have at least web_search", "tell me about yourself", 1},
 	}
 
@@ -59,30 +56,6 @@ func TestHeuristicPlanWebSearchKeywords(t *testing.T) {
 			}
 			if !found {
 				t.Errorf("expected web_search for task containing '%s'", kw)
-			}
-		})
-	}
-}
-
-func TestHeuristicPlanCodeSearch(t *testing.T) {
-	tools := []api.ToolDefinition{
-		{Name: "web_search", Description: "Search the web"},
-		{Name: "code_search", Description: "Search codebase"},
-	}
-
-	codeKeywords := []string{"code", "source", "function", "class", "implementation"}
-	for _, kw := range codeKeywords {
-		t.Run("code_keyword_"+kw, func(t *testing.T) {
-			calls := heuristicPlan("find the "+kw+" definition", tools)
-			found := false
-			for _, c := range calls {
-				if c.Tool == "code_search" {
-					found = true
-					break
-				}
-			}
-			if !found {
-				t.Errorf("expected code_search for task containing '%s'", kw)
 			}
 		})
 	}
@@ -221,47 +194,12 @@ func TestToolsToModelDefinitionsEmpty(t *testing.T) {
 }
 
 func TestHeuristicNextSteps(t *testing.T) {
-	// Test with web search results containing URLs
-	results := []api.ToolCall{
-		{
-			Tool: "web_search",
-			Result: map[string]any{
-				"results": []any{
-					map[string]any{"url": "https://example.com/article"},
-				},
-			},
-		},
-	}
-
-	calls := heuristicNextSteps(results, "original task")
-	if len(calls) != 1 {
-		t.Fatalf("expected 1 follow-up call, got %d", len(calls))
-	}
-	if calls[0].Tool != "fetch_page" {
-		t.Fatalf("expected fetch_page, got '%s'", calls[0].Tool)
-	}
-	if calls[0].Params["url"] != "https://example.com/article" {
-		t.Fatalf("expected URL param, got %v", calls[0].Params["url"])
-	}
-}
-
-func TestHeuristicNextStepsNoResults(t *testing.T) {
-	results := []api.ToolCall{
-		{Tool: "web_search", Error: "failed"},
-	}
-	calls := heuristicNextSteps(results, "task")
-	if len(calls) != 0 {
-		t.Fatalf("expected 0 calls on error, got %d", len(calls))
-	}
-}
-
-func TestHeuristicNextStepsEmptyResults(t *testing.T) {
 	results := []api.ToolCall{
 		{Tool: "web_search", Result: map[string]any{"results": []any{}}},
 	}
 	calls := heuristicNextSteps(results, "task")
 	if len(calls) != 0 {
-		t.Fatalf("expected 0 calls on empty results, got %d", len(calls))
+		t.Fatalf("expected 0 calls, got %d", len(calls))
 	}
 }
 

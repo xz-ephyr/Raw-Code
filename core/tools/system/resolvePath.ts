@@ -3,10 +3,10 @@ import type { ToolDef } from '@core/types';
 
 export const resolvePathTool: ToolDef = {
   name: 'resolve_path',
-  description: 'Resolve a file path, expanding environment variables, tilde (~), and normalizing separators.',
+  description: 'Resolve a file path: expand ~ to home directory, expand $VAR or %VAR% environment variables, normalize path separators. Use before passing user-provided paths to other tools to ensure they are absolute and valid.',
   category: 'system',
   inputSchema: z.object({
-    path: z.string().describe('The path to resolve. Supports ~ for home directory and $VAR or %VAR% for environment variables.'),
+    path: z.string().describe('The path to resolve. Supports ~ for home directory, $VAR or %VAR% for environment variables.'),
   }),
   execute: async ({ path }) => {
     let resolved = path;

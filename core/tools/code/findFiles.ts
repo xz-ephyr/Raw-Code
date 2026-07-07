@@ -4,7 +4,7 @@ import { callGoTool } from '@core/utils/goProxy';
 
 export const findFilesTool: ToolDef = {
   name: 'find_files',
-  description: 'Search for files matching a specific pattern (glob) within a directory.',
+  description: 'Search for files by name pattern (glob). Use when you know the filename, extension, or naming convention. For content search use grep_files instead.',
   category: 'code',
   inputSchema: z.object({
     path: z.string().describe('Absolute path to the directory to search in.'),

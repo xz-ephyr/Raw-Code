@@ -3,6 +3,8 @@ package tool
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/xz-ephyr/raw-code/agent/pkg/api"
@@ -12,7 +14,7 @@ func grepFilesTool() ToolDef {
 	return ToolDef{
 		Definition: api.ToolDefinition{
 			Name:        "grep_files",
-			Description: "Search file contents using a simple text query (case-insensitive by default). Simpler than code_search for quick lookups.",
+			Description: "Search file contents using a simple case-insensitive text query. Use plain text queries (not regex). Examples: searching for \"function calculateTotal\", \"import React\", \"TODO\", \"useEffect\". The query is matched as a case-insensitive substring of each line.",
 			Category:    "code",
 			Parameters: map[string]api.ParamDef{
 				"query":       {Type: "string", Description: "Text to search for (case-insensitive)", Required: true},
@@ -30,33 +32,68 @@ func grepFilesTool() ToolDef {
 			if searchPath == "" {
 				searchPath = "."
 			}
+			safePath, err := e.SandboxPath(expandPath(searchPath))
+			if err != nil {
+				return nil, err
+			}
+			searchPath = safePath
 			maxMatches, _ := params["max_matches"].(float64)
 			if maxMatches == 0 {
 				maxMatches = 30
 			}
+			fileGlob, _ := params["file_glob"].(string)
 
-			args := []string{"-n", "-i", "--max-count", fmt.Sprintf("%d", int(maxMatches)), "-e", query}
-			if fp, ok := params["file_glob"].(string); ok && fp != "" {
-				args = append(args, "--glob", fp)
-			}
-			args = append(args, "-r", searchPath)
+			queryLower := strings.ToLower(query)
+			var matches []string
+			count := 0
 
-			out, err := runCmd(ctx, "rg", args...)
-			if err != nil {
-				if strings.Contains(err.Error(), "exit status 1") {
-					return map[string]any{"matches": []string{}, "count": 0, "query": query}, nil
+			err = filepath.WalkDir(searchPath, func(path string, d os.DirEntry, err error) error {
+				if err != nil {
+					return nil
 				}
-				return nil, err
-			}
+				if d.IsDir() {
+					name := d.Name()
+					if name == "node_modules" || name == ".git" || name == "dist" || name == ".next" || name == "build" || name == ".vite" {
+						return filepath.SkipDir
+					}
+					return nil
+				}
 
-			lines := strings.Split(strings.TrimSpace(out), "\n")
-			if len(lines) == 1 && lines[0] == "" {
-				lines = []string{}
+				if fileGlob != "" {
+					match, err := filepath.Match(fileGlob, filepath.Base(path))
+					if err != nil || !match {
+						return nil
+					}
+				}
+
+				if count >= int(maxMatches) {
+					return filepath.SkipAll
+				}
+
+				data, err := os.ReadFile(path)
+				if err != nil {
+					return nil
+				}
+
+				lines := strings.Split(string(data), "\n")
+				for i, line := range lines {
+					if count >= int(maxMatches) {
+						break
+					}
+					if strings.Contains(strings.ToLower(line), queryLower) {
+						matches = append(matches, fmt.Sprintf("%s:%d:%s", path, i+1, strings.TrimRight(line, "\r")))
+						count++
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				return nil, fmt.Errorf("search failed: %w", err)
 			}
 
 			return map[string]any{
-				"matches": lines,
-				"count":   len(lines),
+				"matches": matches,
+				"count":   len(matches),
 				"query":   query,
 			}, nil
 		},

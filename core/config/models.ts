@@ -1,3 +1,5 @@
+import { DatabaseService } from '../utils/DatabaseService';
+
 export type Provider =
   | 'google'
   | 'groq'
@@ -122,14 +124,24 @@ export function getUsedModelsStorageKey(sessionId: string | undefined): string {
   return `used-models-${sessionId || 'new'}`;
 }
 
+const usedModelsCache = new Map<string, AIModel[]>();
+
 export function getUsedModels(sessionId: string | undefined): AIModel[] {
   const key = getUsedModelsStorageKey(sessionId);
+
+  const cached = usedModelsCache.get(key);
+  if (cached) return cached;
+
   try {
     const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
+    if (stored) {
+      const parsed = JSON.parse(stored) as AIModel[];
+      usedModelsCache.set(key, parsed);
+      return parsed;
+    }
+  } catch {}
+
+  return [];
 }
 
 export function markModelUsed(sessionId: string | undefined, model: AIModel) {
@@ -137,7 +149,10 @@ export function markModelUsed(sessionId: string | undefined, model: AIModel) {
   const used = getUsedModels(sessionId);
   if (!used.includes(model)) {
     used.push(model);
-    localStorage.setItem(key, JSON.stringify(used));
+    usedModelsCache.set(key, used);
+    const json = JSON.stringify(used);
+    try { localStorage.setItem(key, json); } catch {}
+    DatabaseService.setConfig(key, json).catch(() => {});
   }
 }
 
@@ -147,7 +162,35 @@ export function getUnusedModels(sessionId: string | undefined): AIModel[] {
 }
 
 export function resetUsedModels(sessionId: string | undefined) {
-  localStorage.removeItem(getUsedModelsStorageKey(sessionId));
+  const key = getUsedModelsStorageKey(sessionId);
+  usedModelsCache.delete(key);
+  try { localStorage.removeItem(key); } catch {}
+  DatabaseService.setConfig(key, '').catch(() => {});
+}
+
+let cleanedUp = false;
+
+function cleanupUsedModelsStorage() {
+  if (cleanedUp) return;
+  cleanedUp = true;
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('used-models-')) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {}
+}
+
+export function initUsedModelsCache(sessionId: string | undefined): Promise<void> {
+  const key = getUsedModelsStorageKey(sessionId);
+  cleanupUsedModelsStorage();
+  return DatabaseService.getConfig(key).then(val => {
+    if (val) {
+      try { usedModelsCache.set(key, JSON.parse(val)); } catch {}
+    }
+  }).catch(() => {});
 }
 
 export function getNextExploringModel(sessionId: string | undefined): AIModel {

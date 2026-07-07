@@ -27,7 +27,11 @@ func writeFileTool() ToolDef {
 			}
 			content, _ := params["content"].(string)
 
-			path = expandPath(path)
+			safePath, err := e.SandboxPath(expandPath(path))
+			if err != nil {
+				return nil, err
+			}
+			path = safePath
 			dir := filepath.Dir(path)
 			if err := os.MkdirAll(dir, 0755); err != nil {
 				return nil, fmt.Errorf("failed to create parent directories: %w", err)

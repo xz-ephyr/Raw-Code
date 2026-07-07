@@ -4,12 +4,12 @@ import { callGoTool } from '@core/utils/goProxy';
 
 export const runCommandTool: ToolDef = {
   name: 'run_command',
-  description: 'Execute a shell command and return the stdout, stderr, and exit code.',
+  description: 'Execute a shell command and return stdout, stderr, and exit code. Use PowerShell syntax. Always set cwd to the project root. Prefer npm scripts over raw tools. NEVER run destructive commands (rm -rf, format, mass delete) without explicit user approval.',
   category: 'system',
   inputSchema: z.object({
-    command: z.string().describe('The full shell command to execute.'),
-    cwd: z.string().optional().describe('The working directory to run the command in.'),
-    timeout: z.number().int().positive().max(300000).optional().default(30000).describe('Timeout in milliseconds (max 300,000).'),
+    command: z.string().describe('The full PowerShell command to execute. Use project npm scripts when available (npm run build, npm test). For multiple steps, chain with semicolons.'),
+    cwd: z.string().optional().describe('Working directory. ALWAYS set this to the project root — never assume the default.'),
+    timeout: z.number().int().positive().max(300000).optional().default(30000).describe('Timeout in ms. Quick checks: 10000. Package installs: 60000. Builds: 120000. Max: 300000.'),
   }),
   execute: async ({ command, cwd, timeout }) => {
     // Map cwd to workdir and convert timeout to seconds for the Go executor.

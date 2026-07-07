@@ -5,7 +5,7 @@ import { DefaultChatTransport } from 'ai';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { ChatSessionManager } from '@/services/ChatSessionManager';
-import { getModelForChatRequest } from '@core/config/models';
+import { getModelForChatRequest, initUsedModelsCache } from '@core/config/models';
 import { chatCompletion, getAIErrorMessage, generateSessionTitle } from '@core/models/aiService';
 import type { ProjectContext } from '@core/memory/contextController';
 import { FileSystemService } from '@core/workspace/FileSystemService';
@@ -254,6 +254,7 @@ export const ChatPage = () => {
   }), [uuid, currentModel, getProjectContext]);
 
   const chat = useChat({
+    id: uuid,
     transport,
     messages: [],
     onError: (chatError: Error) => {
@@ -310,6 +311,7 @@ export const ChatPage = () => {
     clearArtifacts();
     if (uuid) {
       const loadSession = async () => {
+        await initUsedModelsCache(uuid);
         if (!sessionStorage.getItem('pending-first-message') && uuid !== 'new') {
           const storedMessages = await DatabaseService.getMessages(uuid);
           setMessages(storedMessages.map(mapUIMessageToLegacyMessage));
@@ -339,7 +341,7 @@ export const ChatPage = () => {
   }, [currentModel]);
 
   const messages = useMemo(
-    () => rawMessages.map(mapUIMessageToLegacyMessage),
+    () => rawMessages.map(mapUIMessageToLegacyMessage).filter(Boolean) as any[],
     [rawMessages]
   );
 

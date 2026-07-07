@@ -4,7 +4,7 @@ import { callGoTool } from '@core/utils/goProxy';
 
 export const readFileTool: ToolDef = {
   name: 'read_file',
-  description: 'Read the entire contents of a file at the specified path. Returns the content as a string along with file metadata.',
+  description: 'Read the entire contents of a file. ALWAYS read a file before editing it to see its current state. Use absolute paths.',
   category: 'code',
   inputSchema: z.object({
     path: z.string().describe('Absolute path to the file to read.'),

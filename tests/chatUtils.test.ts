@@ -36,9 +36,9 @@ more reasoning`;
     expect(cleanReasoning(input)).toBe('text\nend');
   });
 
-  it('removes bare URLs', () => {
+  it('preserves bare URLs (only strips structured reference formats)', () => {
     const input = 'visit https://example.com/page for more';
-    expect(cleanReasoning(input)).not.toContain('https://');
+    expect(cleanReasoning(input)).toBe(input.trim());
   });
 
   it('strips meta-cognition lines about tool calls', () => {
@@ -46,9 +46,14 @@ more reasoning`;
     expect(cleanReasoning(input)).toBe('reasoning\n\nmore reasoning');
   });
 
-  it('strips retry phrases', () => {
-    const input = 'some text\nLet me try again with a different approach\nend';
+  it('strips explicit failure loops, not normal planning statements', () => {
+    const input = 'some text\nI am struggling with the same error repeatedly\nend';
     expect(cleanReasoning(input)).toBe('some text\n\nend');
+  });
+
+  it('preserves normal retry/planning statements as legitimate reasoning', () => {
+    const input = 'some text\nLet me try again with a different approach\nend';
+    expect(cleanReasoning(input)).toBe(input.trim());
   });
 
   it('collapses excessive newlines', () => {
@@ -64,13 +69,12 @@ more reasoning`;
     expect(cleanReasoning('')).toBe('');
   });
 
-  it('handles mixed artifacts and URLs', () => {
+  it('handles mixed artifacts and preserves inline URLs', () => {
     const input = `thinking about solution
 * Type: \`code\`
-look at https://example.com
-I will try once more
+look at https://example.com for reference
 done`;
-    expect(cleanReasoning(input)).toBe('thinking about solution\nlook at \n\ndone');
+    expect(cleanReasoning(input)).toBe('thinking about solution\nlook at https://example.com for reference\ndone');
   });
 });
 
@@ -137,6 +141,12 @@ describe('extractThinkTags', () => {
     const result = extractThinkTags('a<think>\nline1\nline2\n</think>b');
     expect(result.cleanContent).toBe('ab');
     expect(result.thinking).toBe('line1\nline2');
+  });
+
+  it('extracts both complete and incomplete think tags', () => {
+    const result = extractThinkTags('<think>done</think><think>unfinished');
+    expect(result.cleanContent).toBe('');
+    expect(result.thinking).toBe('done\nunfinished');
   });
 });
 
@@ -205,6 +215,25 @@ describe('mapUIMessageToLegacyMessage', () => {
     expect(result.artifacts[0].content).toBe('const x = 1;');
   });
 
+  it('extracts all writeArtifact calls, not just the first', () => {
+    const msg = {
+      toolInvocations: [
+        {
+          toolName: 'writeArtifact',
+          args: { identifier: 'file-a', type: 'code', content: 'const a = 1;', title: 'File A' },
+        },
+        {
+          toolName: 'writeArtifact',
+          args: { identifier: 'file-b', type: 'code', content: 'const b = 2;', title: 'File B' },
+        },
+      ],
+    };
+    const result = mapUIMessageToLegacyMessage(msg);
+    expect(result.artifacts).toHaveLength(2);
+    expect(result.artifacts[0].identifier).toBe('file-a');
+    expect(result.artifacts[1].identifier).toBe('file-b');
+  });
+
   it('parses antArtifact tags when no writeArtifact tool', () => {
     const msg = { content: 'some text\n<antArtifact identifier="a1" type="code" title="Test">code here</antArtifact>' };
     const result = mapUIMessageToLegacyMessage(msg);
@@ -222,7 +251,7 @@ describe('mapUIMessageToLegacyMessage', () => {
       ],
     };
     const result = mapUIMessageToLegacyMessage(msg);
-    expect(result.contentBeforeTool).toBe('before ');
+    expect(result.contentBeforeTool).toBe('before');
     expect(result.contentAfterTool).toBe('after');
   });
 

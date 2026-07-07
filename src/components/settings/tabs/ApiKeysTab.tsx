@@ -24,7 +24,9 @@ const PROVIDER_LABELS: Record<string, string> = {
 };
 
 export function ApiKeysTab() {
-  const [keys, setKeys] = useState<Record<string, string>>({});
+  const [keys, setKeys] = useState<Record<string, string>>(
+    Object.fromEntries(Object.keys(API_KEYS).map(k => [k, '']))
+  );
 
   useEffect(() => {
     (async () => {

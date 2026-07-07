@@ -1,18 +1,128 @@
-import { memo, Fragment, useMemo } from 'react';
+import React, { memo, Fragment, useMemo, useDeferredValue, type ComponentType } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+import remarkMath from 'remark-math';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+import rehypeKatex from 'rehype-katex';
 import { visit } from 'unist-util-visit';
+import type { Root, Text } from 'mdast';
+import type { PluggableList } from 'unified';
 import { CodeBlock } from './CodeBlock';
 import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from './Table';
 import { InlineSourcePill } from './InlineSourcePill';
+import { MermaidBlock } from './MermaidBlock';
+import { MarkdownErrorBoundary } from './MarkdownErrorBoundary';
 
-/**
- * Custom remark plugin to identify and tag citations in the markdown tree.
- * It transforms text containing 【...】 into custom 'citation' nodes.
- */
+const citationRegex = /【([^】]+)】/g;
+
+interface SourceInfo {
+  url: string;
+  title: string;
+  snippet?: string;
+}
+
+const ALLOWED_PROTOCOLS = ['http:', 'https:', 'mailto:'];
+
+function isSafeUri(uri: string | undefined): string | undefined {
+  if (!uri) return undefined;
+  try {
+    const url = new URL(uri, window.location.origin);
+    return ALLOWED_PROTOCOLS.includes(url.protocol) ? uri : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]/g, '');
+}
+
+function buildSourceIndex(sources: SourceInfo[]): {
+  byUrl: Map<string, SourceInfo>;
+  byIndex: Map<number, SourceInfo>;
+  byTitleLower: Map<string, SourceInfo[]>;
+} {
+  const byUrl = new Map<string, SourceInfo>();
+  const byIndex = new Map<number, SourceInfo>();
+  const byTitleLower = new Map<string, SourceInfo[]>();
+
+  for (let i = 0; i < sources.length; i++) {
+    const s = sources[i];
+    if (s.url) byUrl.set(s.url, s);
+    byIndex.set(i + 1, s);
+    const lower = s.title.toLowerCase();
+    if (!byTitleLower.has(lower)) byTitleLower.set(lower, []);
+    byTitleLower.get(lower)!.push(s);
+  }
+
+  return { byUrl, byIndex, byTitleLower };
+}
+
+function lookupCitation(text: string, index: SourceIndex): SourceInfo | undefined {
+  const trimmed = text.trim();
+  if (!trimmed) return undefined;
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return index.byUrl.get(trimmed);
+  }
+
+  const num = parseInt(trimmed, 10);
+  if (!isNaN(num) && num >= 1) {
+    return index.byIndex.get(num);
+  }
+
+  const lower = trimmed.toLowerCase();
+  const matches = index.byTitleLower.get(lower);
+  if (matches) return matches[0];
+
+  for (const [, sources] of index.byTitleLower) {
+    for (const s of sources) {
+      if (s.title.toLowerCase().includes(lower)) return s;
+    }
+  }
+
+  return undefined;
+}
+
+type SourceIndex = ReturnType<typeof buildSourceIndex>;
+
+function needsClosingFence(content: string): boolean {
+  const lines = content.split('\n');
+  let inFence = false;
+  for (const line of lines) {
+    if (/^ {0,3}```/.test(line)) {
+      inFence = !inFence;
+    }
+  }
+  return inFence;
+}
+
+function prepareStreamingContent(content: string): string {
+  const trimmed = content;
+  if (!trimmed) return trimmed;
+
+  if (needsClosingFence(trimmed)) {
+    return trimmed + '\n```';
+  }
+
+  const incompleteCitation = /【[^】]*$/m;
+  if (incompleteCitation.test(trimmed)) {
+    return trimmed.replace(incompleteCitation, '');
+  }
+
+  return trimmed;
+}
+
 function remarkCitations() {
-  return (tree: any) => {
-    visit(tree, 'text', (node, index, parent) => {
+  return (tree: Root) => {
+    visit(tree, 'text', (node: Text, index, parent) => {
+      if (!parent || typeof index !== 'number') return;
+
       const parts = node.value.split(citationRegex);
       if (parts.length <= 1) return;
 
@@ -33,63 +143,263 @@ function remarkCitations() {
         }
       }
 
-      parent.children.splice(index as number, 1, ...newNodes);
-      return (index as number) + newNodes.length;
+      parent.children.splice(index, 1, ...newNodes);
+      return index + newNodes.length - 1;
     });
+
+    function groupCitationsInNode(node: any) {
+      if (!node.children || !Array.isArray(node.children)) return;
+
+      const newChildren: any[] = [];
+      let pendingCitations: string[] = [];
+
+      for (const child of node.children) {
+        if (child.type === 'citation') {
+          pendingCitations.push(child.data.hProperties.citation);
+        } else {
+          if (pendingCitations.length > 0) {
+            newChildren.push({
+              type: 'citation-group',
+              data: {
+                hName: 'citation-group',
+                hProperties: { citations: [...new Set(pendingCitations)] },
+              },
+            });
+            pendingCitations = [];
+          }
+          newChildren.push(child);
+          groupCitationsInNode(child);
+        }
+      }
+
+      if (pendingCitations.length > 0) {
+        newChildren.push({
+          type: 'citation-group',
+          data: {
+            hName: 'citation-group',
+            hProperties: { citations: [...new Set(pendingCitations)] },
+          },
+        });
+      }
+
+      node.children = newChildren;
+    }
+
+    groupCitationsInNode(tree);
   };
 }
 
-const REMARK_PLUGINS = [remarkGfm, remarkCitations];
-
-interface SourceInfo {
-  url: string;
-  title: string;
-  snippet?: string;
-}
+const REMARK_PLUGINS = [remarkGfm, remarkBreaks, remarkMath, remarkCitations];
+const REHYPE_PLUGINS: PluggableList = [
+  rehypeRaw,
+  [rehypeSanitize, {
+    ...defaultSchema,
+    tagNames: [
+      ...(defaultSchema.tagNames || []),
+      'citation',
+      'citation-group',
+    ],
+    attributes: {
+      ...defaultSchema.attributes,
+      citation: ['citation'],
+      'citation-group': ['citations'],
+      code: ['className'],
+      span: ['className', 'style'],
+      '*': ['className', 'style', 'id', 'role', 'aria-label'],
+    },
+  }],
+  rehypeKatex,
+];
 
 interface MarkdownMessageProps {
   content: string;
   sources?: SourceInfo[];
 }
 
-const citationRegex = /【([^】]+)】/g;
-
-function matchCitation(text: string, sources: SourceInfo[]): SourceInfo | undefined {
-  const trimmed = text.trim();
-  if (!trimmed || sources.length === 0) return undefined;
-
-  // Try URL match
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return sources.find(s => s.url === trimmed);
-  }
-
-  // Try index match: 【1】 → sources[0]
-  const num = parseInt(trimmed, 10);
-  if (!isNaN(num) && num >= 1 && num <= sources.length) {
-    return sources[num - 1];
-  }
-
-  // Try title match (substring, case-insensitive)
-  const lower = trimmed.toLowerCase();
-  return sources.find(s =>
-    s.title.toLowerCase().includes(lower) ||
-    lower.includes(s.title.toLowerCase())
-  );
-}
-
 export const MarkdownMessage = memo(function MarkdownMessage({ content, sources = [] }: MarkdownMessageProps) {
-  const sanitized = content.replace(/<br\s*\/?>/gi, '\n');
+  const deferredContent = useDeferredValue(content);
+  const prepared = useMemo(() => prepareStreamingContent(deferredContent), [deferredContent]);
+  const hasCitations = useMemo(() => prepared.includes('【'), [prepared]);
 
-  const hasCitations = citationRegex.test(sanitized);
-  citationRegex.lastIndex = 0;
+  const sourceIndex = useMemo(() => buildSourceIndex(sources), [sources]);
 
-  const components = useMemo(() => {
-    if (!hasCitations) return markdownComponents;
+  const markdownComponents = useMemo(() => {
+    const base: Record<string, ComponentType<any>> = {
+      pre({ children }: { children: React.ReactNode }) {
+        return <div className="w-full">{children}</div>;
+      },
+      code({ node, className, children, ...props }: { node?: { parent?: { tagName: string } }; className?: string; children?: React.ReactNode; [key: string]: any }) {
+        const hasPreParent = node?.parent?.tagName === 'pre';
+        const isInline = !hasPreParent;
+        const match = /language-(\w+)/.exec(className || '');
+        const language = match ? match[1] : '';
+        const codeContent = String(children).replace(/\n$/, '');
 
-    return {
-      ...markdownComponents,
-      citation({ citation }: { citation: string }) {
-        const matched = matchCitation(citation, sources);
+        if (language === 'mermaid') {
+          return <MermaidBlock content={codeContent} />;
+        }
+
+        if (!isInline && match) {
+          return <CodeBlock language={language} content={codeContent} />;
+        }
+        if (!isInline) {
+          return <CodeBlock language="" content={codeContent} />;
+        }
+        return <code {...props}>{children}</code>;
+      },
+      p({ children }) {
+        return <div className="mb-4 last:mb-0">{children}</div>;
+      },
+      ul({ children }) {
+        return <ul className="list-disc pl-5 mb-4 space-y-1 [&_.task-list-item]:list-none [&_.task-list-item]:-ml-5">{children}</ul>;
+      },
+      ol({ children }) {
+        return <ol className="list-decimal pl-5 mb-4 space-y-1">{children}</ol>;
+      },
+      li({ children }) {
+        return <li className="[&>input[type=checkbox]]:mr-2 [&>input[type=checkbox]]:accent-primary [&>input[type=checkbox]]:translate-y-[1px]">{children}</li>;
+      },
+      input({ type, checked, ...props }) {
+        return (
+          <input
+            type={type || 'checkbox'}
+            checked={checked}
+            {...props}
+            className="h-4 w-4 rounded border-border text-primary focus:ring-primary/30"
+          />
+        );
+      },
+      h1({ children }) {
+        const id = slugify(String(children));
+        return (
+          <h1 id={id} className="text-2xl font-semibold mb-4 mt-6 text-foreground scroll-mt-20">
+            {children}
+          </h1>
+        );
+      },
+      h2({ children }) {
+        const id = slugify(String(children));
+        return (
+          <h2 id={id} className="text-xl font-semibold mb-3 mt-5 text-foreground scroll-mt-20">
+            {children}
+          </h2>
+        );
+      },
+      h3({ children }) {
+        const id = slugify(String(children));
+        return (
+          <h3 id={id} className="text-lg font-semibold mb-3 mt-4 text-foreground scroll-mt-20">
+            {children}
+          </h3>
+        );
+      },
+      h4({ children }) {
+        const id = slugify(String(children));
+        return (
+          <h4 id={id} className="text-base font-semibold mb-2 mt-4 text-foreground scroll-mt-20">
+            {children}
+          </h4>
+        );
+      },
+      table({ children, ...props }) {
+        return <Table {...props}>{children}</Table>;
+      },
+      thead({ children, ...props }) {
+        return <TableHead {...props}>{children}</TableHead>;
+      },
+      tbody({ children, ...props }) {
+        return <TableBody {...props}>{children}</TableBody>;
+      },
+      tr({ children, ...props }) {
+        return <TableRow {...props}>{children}</TableRow>;
+      },
+      th({ children, ...props }) {
+        return <TableHeaderCell {...props}>{children}</TableHeaderCell>;
+      },
+      td({ children, ...props }) {
+        return <TableCell {...props}>{children}</TableCell>;
+      },
+      blockquote({ children }) {
+        return (
+          <blockquote className="border-l-4 border-border pl-4 py-1 italic text-muted-foreground mb-4 bg-muted/50 rounded-r-lg">
+            {children}
+          </blockquote>
+        );
+      },
+      a({ href, children }) {
+        const safeHref = isSafeUri(href);
+        if (!safeHref) {
+          return <span className="text-muted-foreground line-through">{children}</span>;
+        }
+        const isExternal = safeHref.startsWith('http');
+        return (
+          <a
+            href={safeHref}
+            target={isExternal ? '_blank' : undefined}
+            rel={isExternal ? 'noopener noreferrer' : undefined}
+            className="text-blue-400 hover:text-blue-300 hover:underline font-medium"
+          >
+            {children}
+            {isExternal && (
+              <span className="sr-only"> (opens in new tab)</span>
+            )}
+          </a>
+        );
+      },
+      hr() {
+        return <hr className="my-6 border-border" />;
+      },
+      img({ src, alt }) {
+        const safeSrc = isSafeUri(src);
+        if (!safeSrc) {
+          return (
+            <span className="inline-block text-xs text-muted-foreground italic border border-dashed border-border px-2 py-1 rounded my-1">
+              {alt || 'Blocked image'}
+            </span>
+          );
+        }
+        return (
+          <img
+            src={safeSrc}
+            alt={alt || ''}
+            className="inline-block max-h-48 w-auto rounded border border-border my-1 mr-2"
+            loading="lazy"
+          />
+        );
+      },
+      'citation-group'({ citations = [] }: { citations?: string[] }) {
+        const matched = citations
+          .map((c) => ({ key: c, source: lookupCitation(c, sourceIndex) }))
+          .filter((m): m is { key: string; source: SourceInfo } => !!m.source);
+
+        if (matched.length === 0) {
+          return (
+            <span className="inline-flex items-center text-[11px] text-muted-foreground/60 mx-0.5">
+              【{citations.join(',')}】
+            </span>
+          );
+        }
+
+        return (
+          <span className="inline-flex items-center gap-0.5 mx-0.5 align-middle" role="group" aria-label={`${matched.length} sources`}>
+            {matched.map((m, i) => (
+              <Fragment key={m.key}>
+                {i > 0 && <span className="text-muted-foreground/40 text-[10px]">,</span>}
+                <InlineSourcePill
+                  url={m.source.url}
+                  title={m.source.title}
+                  snippet={m.source.snippet}
+                />
+              </Fragment>
+            ))}
+          </span>
+        );
+      },
+    };
+
+    if (hasCitations) {
+      base.citation = ({ citation = '' }: { citation?: string }) => {
+        const matched = lookupCitation(citation, sourceIndex);
         if (matched) {
           return (
             <InlineSourcePill
@@ -99,117 +409,24 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, sources 
             />
           );
         }
-        return <Fragment>【{citation}】</Fragment>;
-      },
-    } as any;
-  }, [hasCitations, sources]);
+        return <span className="text-muted-foreground/50 text-[11px] mx-0.5">【{citation}】</span>;
+      };
+    }
+
+    return base;
+  }, [hasCitations, sourceIndex]);
 
   return (
-    <div className="text-[15px] leading-relaxed break-words text-foreground [&>p]:my-0">
-      <ReactMarkdown
-        remarkPlugins={REMARK_PLUGINS}
-        components={components}
-      >
-        {sanitized}
-      </ReactMarkdown>
-    </div>
+    <MarkdownErrorBoundary>
+      <div className="text-[15px] leading-relaxed break-words text-foreground [&>p]:my-0">
+        <ReactMarkdown
+          remarkPlugins={REMARK_PLUGINS}
+          rehypePlugins={REHYPE_PLUGINS}
+          components={markdownComponents}
+        >
+          {prepared}
+        </ReactMarkdown>
+      </div>
+    </MarkdownErrorBoundary>
   );
 });
-
-const markdownComponents = {
-  pre({ children }: any) {
-    return <div className="w-full">{children}</div>;
-  },
-  code({ inline, className, children, ...props }: any) {
-    const match = /language-(\w+)/.exec(className || '');
-    const language = match ? match[1] : '';
-
-    if (!inline && match) {
-      return (
-        <CodeBlock language={language} content={String(children).replace(/\n$/, '')} />
-      );
-    }
-    if (!inline) {
-      return <CodeBlock language="" content={String(children).replace(/\n$/, '')} />;
-    }
-    return <code {...props}>{children}</code>;
-  },
-  p({ children }: any) {
-    return <div className="mb-4 last:mb-0">{children}</div>;
-  },
-  ul({ children }: any) {
-    return <ul className="list-disc pl-5 mb-4 space-y-1">{children}</ul>;
-  },
-  ol({ children }: any) {
-    return <ol className="list-decimal pl-5 mb-4 space-y-1">{children}</ol>;
-  },
-  li({ children }: any) {
-    return <li>{children}</li>;
-  },
-  h1({ children }: any) {
-    return (
-      <h1 className="text-2xl font-semibold mb-4 mt-6 text-foreground">{children}</h1>
-    );
-  },
-  h2({ children }: any) {
-    return <h2 className="text-xl font-semibold mb-3 mt-5 text-foreground">{children}</h2>;
-  },
-  h3({ children }: any) {
-    return <h3 className="text-lg font-semibold mb-3 mt-4 text-foreground">{children}</h3>;
-  },
-  h4({ children }: any) {
-    return (
-      <h4 className="text-base font-semibold mb-2 mt-4 text-foreground">{children}</h4>
-    );
-  },
-  table({ children, ...props }: any) {
-    return <Table {...props}>{children}</Table>;
-  },
-  thead({ children, ...props }: any) {
-    return <TableHead {...props}>{children}</TableHead>;
-  },
-  tbody({ children, ...props }: any) {
-    return <TableBody {...props}>{children}</TableBody>;
-  },
-  tr({ children, ...props }: any) {
-    return <TableRow {...props}>{children}</TableRow>;
-  },
-  th({ children, ...props }: any) {
-    return <TableHeaderCell {...props}>{children}</TableHeaderCell>;
-  },
-  td({ children, ...props }: any) {
-    return <TableCell {...props}>{children}</TableCell>;
-  },
-  blockquote({ children }: any) {
-    return (
-      <blockquote className="border-l-4 border-border pl-4 py-1 italic text-muted-foreground mb-4 bg-muted/50 rounded-r-lg">
-        {children}
-      </blockquote>
-    );
-  },
-  a({ href, children }: any) {
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-400 hover:text-blue-300 hover:underline font-medium"
-      >
-        {children}
-      </a>
-    );
-  },
-  hr() {
-    return <hr className="my-6 border-border" />;
-  },
-  img({ src, alt }: any) {
-    return (
-      <img
-        src={src}
-        alt={alt || ''}
-        className="inline-block max-h-48 w-auto rounded border border-border my-1 mr-2"
-        loading="lazy"
-      />
-    );
-  },
-};

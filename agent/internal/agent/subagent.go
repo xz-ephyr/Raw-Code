@@ -220,8 +220,6 @@ func (r *subAgentRunner) runWithoutModel() {
 
 	tools := []api.ToolDefinition{
 		{Name: "web_search", Description: "Search the web"},
-		{Name: "fetch_page", Description: "Fetch a webpage"},
-		{Name: "code_search", Description: "Search codebase"},
 		{Name: "read_file", Description: "Read a file"},
 	}
 
@@ -321,13 +319,6 @@ func (r *subAgentRunner) getToolDefs() []model.ToolDefinition {
 			},
 			"required": []string{"path"},
 		}},
-		{Name: "run_command", Description: "Run a shell command", Parameters: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"command": map[string]any{"type": "string", "description": "Command to run"},
-			},
-			"required": []string{"command"},
-		}},
 	}
 }
 
@@ -341,7 +332,7 @@ func ToolsToModelDefinitions(tools []api.ToolDefinition) []model.ToolDefinition 
 		}
 
 		props := params["properties"].(map[string]any)
-		required := params["required"].([]string)
+		var required []string
 
 		for name, p := range t.Parameters {
 			prop := map[string]any{
@@ -356,6 +347,7 @@ func ToolsToModelDefinitions(tools []api.ToolDefinition) []model.ToolDefinition 
 				required = append(required, name)
 			}
 		}
+		params["required"] = required
 
 		defs = append(defs, model.ToolDefinition{
 			Name:        t.Name,
@@ -390,13 +382,6 @@ func heuristicPlan(taskDesc string, tools []api.ToolDefinition) []api.ToolCall {
 		})
 	}
 
-	if containsAny(taskLower, []string{"code", "source", "function", "class", "implementation"}) {
-		calls = append(calls, api.ToolCall{
-			Tool:   "code_search",
-			Params: map[string]any{"pattern": taskDesc},
-		})
-	}
-
 	if len(calls) == 0 {
 		calls = append(calls, api.ToolCall{
 			Tool:   "web_search",
@@ -408,26 +393,6 @@ func heuristicPlan(taskDesc string, tools []api.ToolDefinition) []api.ToolCall {
 }
 
 func heuristicNextSteps(previousResults []api.ToolCall, originalTask string) []api.ToolCall {
-	for _, r := range previousResults {
-		if r.Error == "" && r.Result != nil {
-			if resultMap, ok := r.Result.(map[string]any); ok {
-				if results, ok := resultMap["results"].([]any); ok {
-					for _, res := range results {
-						if resMap, ok := res.(map[string]any); ok {
-							if url, ok := resMap["url"].(string); ok && url != "" {
-								return []api.ToolCall{
-									{
-										Tool:   "fetch_page",
-										Params: map[string]any{"url": url},
-									},
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
 	return nil
 }
 

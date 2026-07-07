@@ -35,7 +35,7 @@ export function getOS(): string {
 
 export const systemInfoTool: ToolDef = {
   name: 'system_info',
-  description: 'Get information about the current system including OS, platform, CPU cores, memory, and browser.',
+  description: 'Get information about the current system: OS, platform, browser, CPU cores, memory, Tauri status, timezone. Useful for understanding the environment before running commands or suggesting platform-specific solutions.',
   category: 'system',
   inputSchema: z.object({}),
   execute: async () => {

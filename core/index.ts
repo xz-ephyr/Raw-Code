@@ -2,6 +2,7 @@
 export * from './types';
 export * from './config/models';
 export * from './prompt/systemPrompt';
+export { TOOLCALL_GUIDE } from './prompt/toolcallGuide';
 export * from './memory/contextController';
 export * from './memory/contextContractor';
 export * from './models/aiService';

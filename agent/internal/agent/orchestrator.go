@@ -483,16 +483,7 @@ func (o *Orchestrator) RegisterDefaultWorkflows() {
 		Name:        "research_and_summarize",
 		Description: "Search the web for information on a topic and create a markdown summary",
 		Steps: []WorkflowStep{
-			{Tool: "web_search", Params: map[string]any{"query": "$topic"}, Map: map[string]string{"first_url": "results[0].url"}},
-			{Tool: "fetch_page", Params: map[string]any{"url": "$first_url"}},
-		},
-	})
-	o.RegisterWorkflow(WorkflowDef{
-		Name:        "codebase_audit",
-		Description: "Search codebase for patterns and report findings",
-		Steps: []WorkflowStep{
-			{Tool: "code_search", Params: map[string]any{"pattern": "$pattern"}},
-			{Tool: "read_file", Params: map[string]any{"path": "$path"}},
+			{Tool: "web_search", Params: map[string]any{"query": "$topic"}},
 		},
 	})
 }

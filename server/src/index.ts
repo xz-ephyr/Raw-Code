@@ -5,7 +5,7 @@ import { query, migrate, transaction, querySync } from './db.js';
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: Infinity }));
 
 const PORT = process.env.PORT || 3001;
 const API_KEY = process.env.API_KEY;

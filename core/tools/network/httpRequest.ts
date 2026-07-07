@@ -3,14 +3,14 @@ import type { ToolDef } from '@core/types';
 
 export const httpRequestTool: ToolDef = {
   name: 'http_request',
-  description: 'Make an HTTP request to an external API or URL. Supports GET, POST, PUT, PATCH, DELETE methods.',
+  description: 'Make an HTTP request to an external API or URL. Supports GET, POST, PUT, PATCH, DELETE. For checking if a URL is reachable (rather than reading its content), use check_url instead.',
   category: 'network',
   inputSchema: z.object({
-    url: z.string().url().describe('The full URL to send the request to.'),
-    method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']).optional().default('GET').describe('HTTP method.'),
-    headers: z.record(z.string()).optional().describe('Optional HTTP headers as key-value pairs.'),
-    body: z.string().optional().describe('Request body as a string (JSON, text, etc.). Automatically sets Content-Type for JSON.'),
-    timeout: z.number().optional().default(15000).describe('Timeout in milliseconds.'),
+    url: z.string().url().describe('The full URL to send the request to (must include https:// or http://).'),
+    method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']).optional().default('GET').describe('HTTP method. Default GET. Use POST for creating, PUT/PATCH for updating.'),
+    headers: z.record(z.string()).optional().describe('Optional HTTP headers as key-value pairs (e.g., {"Authorization": "Bearer <token>"}).'),
+    body: z.string().optional().describe('Request body as a string. For JSON, pass a JSON string — Content-Type is set automatically.'),
+    timeout: z.number().optional().default(15000).describe('Timeout in milliseconds. Default 15000 (15s). Increase for slow endpoints.'),
   }),
   execute: async ({ url, method, headers, body, timeout }) => {
     const controller = new AbortController();

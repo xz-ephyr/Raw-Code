@@ -3,6 +3,7 @@ package tool
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/xz-ephyr/raw-code/agent/pkg/api"
@@ -26,10 +27,15 @@ func readFileTool() ToolDef {
 				return nil, fmt.Errorf("path is required")
 			}
 
-			content, err := runCmd(ctx, "cat", expandPath(path))
+			safePath, err := e.SandboxPath(expandPath(path))
+			if err != nil {
+				return nil, err
+			}
+			data, err := os.ReadFile(safePath)
 			if err != nil {
 				return nil, fmt.Errorf("read file failed: %w", err)
 			}
+			content := string(data)
 
 			lines := strings.Split(content, "\n")
 			if offset, ok := params["offset"].(float64); ok && offset > 0 {

@@ -63,14 +63,14 @@ const IDEShell: FC<IDEShellProps> = ({ projectName, projectFiles }) => {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   const refreshRoot = useCallback(() => {
-    setRoot(fs.getRoot());
+    if (fs) setRoot(fs.getRoot());
   }, [fs]);
 
   const handleSave = useCallback(() => {
     setEditorState(prev => {
       if (!prev.activeTabId) return prev;
       const tab = prev.tabs.find(t => t.id === prev.activeTabId);
-      if (!tab) return prev;
+      if (!tab || !fs) return prev;
       fs.saveFile(tab.path, tab.content);
       return {
         ...prev,
@@ -91,6 +91,7 @@ const IDEShell: FC<IDEShellProps> = ({ projectName, projectFiles }) => {
   }, []);
 
   const handleFileOpen = useCallback((path: string) => {
+    if (!fs) return;
     const node = fs.getNode(path);
     if (!node || node.isFolder) return;
     setEditorState(prev => {
@@ -137,7 +138,7 @@ const IDEShell: FC<IDEShellProps> = ({ projectName, projectFiles }) => {
 
   const handleFileCreate = useCallback((path: string) => {
     try {
-      if (!path) return;
+      if (!path || !fs) return;
       const name = fs.getFileName(path);
       if (!name) return;
       fs.createFile(path, '');
@@ -149,7 +150,7 @@ const IDEShell: FC<IDEShellProps> = ({ projectName, projectFiles }) => {
 
   const handleFolderCreate = useCallback((path: string) => {
     try {
-      if (!path) return;
+      if (!path || !fs) return;
       const name = fs.getFileName(path);
       if (!name) return;
       fs.createFolder(path);
@@ -161,6 +162,7 @@ const IDEShell: FC<IDEShellProps> = ({ projectName, projectFiles }) => {
 
   const handleDelete = useCallback((path: string) => {
     try {
+      if (!fs) return;
       fs.delete(path);
       setEditorState(prev => ({
         ...prev,
@@ -179,6 +181,7 @@ const IDEShell: FC<IDEShellProps> = ({ projectName, projectFiles }) => {
 
   const handleRename = useCallback((oldPath: string, newName: string) => {
     try {
+      if (!fs) return;
       fs.rename(oldPath, newName);
       const parentDir = oldPath.substring(0, oldPath.lastIndexOf('/'));
       const newPath = parentDir ? `${parentDir}/${newName}` : `/${newName}`;

@@ -27,14 +27,14 @@ type AgentHub struct {
 	AgentServer  *server.Server
 }
 
-func NewAgentHub(expressURL string, apiKey string, modelCfg *model.ProviderConfig) *AgentHub {
+func NewAgentHub(expressURL string, apiKey string, modelCfg *model.ProviderConfig, projectRoot string) *AgentHub {
 	express := infra.NewExpressClient(expressURL)
 	tauri := infra.NewTauriShell()
 
 	tm := task.NewManager()
 	reg := tool.NewRegistry()
 	reg.RegisterDefaults()
-	exec := tool.NewExecutor(reg, expressURL)
+	exec := tool.NewExecutor(reg, expressURL, projectRoot)
 
 	pool := worker.NewPool(4, tm, exec)
 

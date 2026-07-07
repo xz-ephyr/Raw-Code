@@ -32,9 +32,8 @@ type AgentConfig struct {
 
 // defaultTools are always available to every agent.
 var defaultTools = []string{
-	"web_search", "fetch_page", "read_file", "list_directory",
-	"find_files", "file_stats", "grep_files", "code_search",
-	"run_command", "system_info", "list_processes", "resolve_path",
+	"web_search", "read_file", "list_directory",
+	"grep_files", "glob_files", "write_file", "edit_file",
 }
 
 // agentRegistry maps agent type IDs to their configurations.
@@ -105,25 +104,10 @@ func BuildAgentSystemPrompt(agentType string) string {
 	b.WriteString(cfg.SystemPrompt)
 	b.WriteString("\n\n---\n\n")
 	b.WriteString("## General Rules\n\n")
-	b.WriteString("These rules apply regardless of your specific agent role:\n\n")
-	b.WriteString("### Tool Usage\n")
-	b.WriteString("- Use dedicated tools over shell commands.\n")
 	b.WriteString("- Call independent operations in parallel.\n")
-	b.WriteString("- For `run_command`: quote paths, prefer read-only first, avoid destructive operations.\n")
-	b.WriteString("\n### Error Handling\n")
-	b.WriteString("- Retry transient failures once, then try an alternative tool.\n")
-	b.WriteString("- Partial results are better than no results.\n")
-	b.WriteString("- Report permission errors — do not bypass them.\n")
-	b.WriteString("\n### Quality\n")
-	b.WriteString("- Always provide all required parameters. Validate before calling.\n")
-	b.WriteString("- Use absolute paths with correct OS separator.\n")
-	b.WriteString("- Prefer targeted edits (`edit_file`) over full overwrites (`write_file`).\n")
-	b.WriteString("- Double-check before writing — you cannot undo.\n")
-	b.WriteString("\n### Decision Making\n")
-	b.WriteString("- Proceed if the task is clear. Ask only if genuinely ambiguous.\n")
-	b.WriteString("- When in doubt, choose the safer option.\n")
-	b.WriteString("\n### Final Answer\n")
-	b.WriteString("Provide a clear summary of what was done, key outputs, any open items, and evidence.\n")
+	b.WriteString("- Prefer dedicated tools over shell commands.\n")
+	b.WriteString("- On error: report and move on. Do not retry with alternatives.\n")
+	b.WriteString("- For edits: read first, then edit — one read can inform multiple edits.\n")
 
 	return b.String()
 }

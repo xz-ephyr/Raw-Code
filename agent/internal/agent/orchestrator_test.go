@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -161,15 +160,15 @@ func TestRegisterWorkflow(t *testing.T) {
 
 	// Verify workflows via reflection-like approach
 	orch.mu.RLock()
-	if len(orch.workflows) != 2 {
-		t.Fatalf("expected 2 default workflows, got %d", len(orch.workflows))
+	if len(orch.workflows) != 1 {
+		t.Fatalf("expected 1 default workflow, got %d", len(orch.workflows))
 	}
 	rwf, ok := orch.workflows["research_and_summarize"]
 	if !ok {
 		t.Fatal("expected research_and_summarize workflow")
 	}
-	if len(rwf.Steps) != 2 {
-		t.Fatalf("expected 2 steps, got %d", len(rwf.Steps))
+	if len(rwf.Steps) != 1 {
+		t.Fatalf("expected 1 step, got %d", len(rwf.Steps))
 	}
 	if rwf.Steps[0].Tool != "web_search" {
 		t.Fatalf("expected first step to be web_search, got '%s'", rwf.Steps[0].Tool)
@@ -185,7 +184,7 @@ func TestSubmitDirectTask(t *testing.T) {
 	pool.Start()
 	defer pool.Stop()
 
-	orch := NewOrchestrator(tm, reg, exec, pool, nil)
+	_ = NewOrchestrator(tm, reg, exec, pool, nil)
 
 	apiReq := struct {
 		SessionID string   `json:"sessionId"`

@@ -3,12 +3,12 @@ import type { ToolDef } from '@core/types';
 
 export const checkUrlTool: ToolDef = {
   name: 'check_url',
-  description: 'Check if a URL is reachable and return its status code, response time, and basic headers.',
+  description: 'Check if a URL is reachable (returns status code, response time, headers). Lightweight HEAD request — use this for health checks, link verification, or before making a full http_request. Does NOT fetch page content — use http_request or fetch_page for that.',
   category: 'network',
   inputSchema: z.object({
-    url: z.string().url().describe('The URL to check.'),
-    timeout: z.number().optional().default(10000).describe('Timeout in milliseconds.'),
-    followRedirects: z.boolean().optional().default(true).describe('Whether to follow redirects.'),
+    url: z.string().url().describe('The URL to check (must include https:// or http://).'),
+    timeout: z.number().optional().default(10000).describe('Timeout in milliseconds. Default 10000 (10s).'),
+    followRedirects: z.boolean().optional().default(true).describe('Follow HTTP redirects. Default true. Set false to see the redirect chain.'),
   }),
   execute: async ({ url, timeout, followRedirects }) => {
     const controller = new AbortController();
