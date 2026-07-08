@@ -51,3 +51,19 @@ src-tauri/binaries
 
 # Binaries
 *.exe
+
+# Audit and planning files
+AUDIT_INFRA.md
+AUDIT_SUBAGENT.md
+FIX_LOG.md
+PLAN.md
+
+# AI-generated images
+ChatGPT_Image_Jul_8__2026__02_00_50_PM-removebg-preview.png
+ChatGPT_Image_Jul_8__2026__02_00_59_PM-removebg-preview.png
+
+# Staging area
+staging/
+
+# Browser subproject
+browser/
