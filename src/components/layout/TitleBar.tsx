@@ -2,8 +2,19 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSessionTitle } from '@/hooks/useSessionTitle';
 import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { useParams } from 'react-router-dom';
+import { HugeiconRenderer } from '@/components/ui/HugeiconRenderer';
+import { VisualStudioCodeIcon, MessageAdd01Icon, ComputerTerminal01Icon } from '@hugeicons/core-free-icons';
 
-export default function TitleBar() {
+interface TitleBarProps {
+  isProject?: boolean;
+  isIDEVisible?: boolean;
+  isTerminalVisible?: boolean;
+  onToggleIDE?: () => void;
+  onToggleTerminal?: () => void;
+  onNewThread?: () => void;
+}
+
+export default function TitleBar({ isProject, isIDEVisible, isTerminalVisible, onToggleIDE, onToggleTerminal, onNewThread }: TitleBarProps) {
   const { sessionTitle, setTitle, isTitleGenerating } = useSessionTitle();
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -55,35 +66,82 @@ export default function TitleBar() {
   const displayTitle = sessionTitle || 'New conversation';
 
   return (
-    <div className="group flex items-center h-9 px-4 bg-background shrink-0 select-none">
-      {isEditing ? (
-        <input
-          ref={inputRef}
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onBlur={handleSubmitEdit}
-          onKeyDown={handleKeyDown}
-          className="w-full max-w-[400px] bg-card border border-border rounded-[6px] px-2 py-0.5 text-sm font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-        />
-      ) : isTitleGenerating ? (
-        <div className="flex items-center gap-2 w-full">
-          <div className="h-3.5 w-44 rounded bg-gradient-to-r from-muted-foreground via-muted to-muted-foreground bg-[length:200%_100%] animate-shimmer" />
-          <span className="text-[11px] text-muted-foreground">Generating title...</span>
+    <div className="group flex items-center h-9 px-4 bg-background shrink-0 select-none border-b border-border">
+      <div className="flex items-center min-w-0 flex-1">
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={handleSubmitEdit}
+            onKeyDown={handleKeyDown}
+            className="w-full max-w-[400px] bg-card border border-border rounded-[6px] px-2 py-0.5 text-sm font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        ) : isTitleGenerating ? (
+          <div className="flex items-center gap-2 w-full">
+            <div className="h-3.5 w-44 rounded bg-gradient-to-r from-muted-foreground via-muted to-muted-foreground bg-[length:200%_100%] animate-shimmer" />
+            <span className="text-[11px] text-muted-foreground">Generating title...</span>
+          </div>
+        ) : (
+          <button
+            onClick={handleStartEdit}
+            className="flex items-center gap-1.5 min-w-0 cursor-text"
+            title="Click to rename"
+          >
+            <span className="text-sm font-semibold text-foreground truncate">{displayTitle}</span>
+            <span className="shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11.5 1.5L14.5 4.5L5.5 13.5L1.5 14.5L2.5 10.5L11.5 1.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                <path d="M9 4L12 7" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </button>
+        )}
+      </div>
+
+      {isProject && (
+        <div className="flex items-center gap-1.5 shrink-0 ml-2">
+          {onNewThread && (
+            <button
+              type="button"
+              onClick={onNewThread}
+              className="p-1.5 hover:bg-muted rounded-[6px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              title="New thread"
+            >
+              <HugeiconRenderer icon={MessageAdd01Icon} size={16} />
+            </button>
+          )}
+          <div className="flex items-center rounded-[6px] bg-muted/40 overflow-hidden">
+            {onToggleIDE && (
+              <button
+                type="button"
+                onClick={onToggleIDE}
+                className={`flex items-center px-2 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                  isIDEVisible
+                    ? 'bg-muted text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                }`}
+                title={isIDEVisible ? 'Close IDE' : 'Open IDE'}
+              >
+                <HugeiconRenderer icon={VisualStudioCodeIcon} size={15} />
+              </button>
+            )}
+            {onToggleTerminal && (
+              <button
+                type="button"
+                onClick={onToggleTerminal}
+                className={`flex items-center px-2 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                  isTerminalVisible
+                    ? 'bg-muted text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                }`}
+                title={isTerminalVisible ? 'Close terminal' : 'Open terminal'}
+              >
+                <HugeiconRenderer icon={ComputerTerminal01Icon} size={15} />
+              </button>
+            )}
+          </div>
         </div>
-      ) : (
-        <button
-          onClick={handleStartEdit}
-          className="flex items-center gap-1.5 w-full min-w-0 cursor-text"
-          title="Click to rename"
-        >
-          <span className="text-sm font-semibold text-foreground truncate">{displayTitle}</span>
-          <span className="shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M11.5 1.5L14.5 4.5L5.5 13.5L1.5 14.5L2.5 10.5L11.5 1.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-              <path d="M9 4L12 7" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-            </svg>
-          </span>
-        </button>
       )}
     </div>
   );

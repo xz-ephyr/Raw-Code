@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { html } from '@codemirror/lang-html';
@@ -6,7 +7,7 @@ import { json } from '@codemirror/lang-json';
 import { markdown } from '@codemirror/lang-markdown';
 import { python } from '@codemirror/lang-python';
 import { rust } from '@codemirror/lang-rust';
-import { File01Icon } from '@hugeicons/core-free-icons';
+import { File01Icon, ChevronRightIcon } from '@hugeicons/core-free-icons';
 import { HugeiconRenderer } from '@/components/ui/HugeiconRenderer';
 import type { Tab } from './types';
 import { EditorTab } from './EditorTab';
@@ -70,20 +71,34 @@ export function Editor({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center overflow-x-auto no-wrap border-b border-border">
-        {tabs.map((tab) => (
-          <EditorTab
-            key={tab.id}
-            tab={tab}
-            isActive={tab.id === activeTabId}
-            onSelect={() => onTabSelect(tab.id)}
-            onClose={(e) => {
-              e.stopPropagation();
-              onTabClose(tab.id);
-            }}
-          />
-        ))}
+      <div className="flex items-center border-b border-border">
+        <div className="flex items-center overflow-x-auto flex-1 min-w-0">
+          {tabs.map((tab) => (
+            <EditorTab
+              key={tab.id}
+              tab={tab}
+              isActive={tab.id === activeTabId}
+              onSelect={() => onTabSelect(tab.id)}
+              onClose={(e) => {
+                e.stopPropagation();
+                onTabClose(tab.id);
+              }}
+            />
+          ))}
+        </div>
       </div>
+      {activeTab && (
+        <div className="flex items-center gap-1 px-3 py-1 text-[11px] text-muted-foreground bg-muted/20 border-b border-border">
+          {activeTab.path.split('/').filter(Boolean).map((segment, i, arr) => (
+            <Fragment key={i}>
+              {i > 0 && <span className="shrink-0 text-muted-foreground/50"><HugeiconRenderer icon={ChevronRightIcon} size={12} /></span>}
+              <span className={i === arr.length - 1 ? 'text-foreground font-medium' : 'hover:text-foreground cursor-pointer'}>
+                {segment}
+              </span>
+            </Fragment>
+          ))}
+        </div>
+      )}
       <div className="flex-1 overflow-hidden">
         <CodeMirror
           value={activeTab.content}

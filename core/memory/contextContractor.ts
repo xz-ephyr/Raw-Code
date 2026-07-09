@@ -5,9 +5,9 @@ interface Message {
   content: string | Array<{ type: string; text?: string }>;
 }
 
-export async function contractContext(messages: Message[], model: LanguageModel) {
+export async function contractContext(messages: Message[], model: LanguageModel): Promise<{ messages: Message[]; summary: string }> {
   // If no messages or only one, no need to contract
-  if (messages.length <= 1) return messages;
+  if (messages.length <= 1) return { messages, summary: '' };
 
   const history = messages.map(m => {
     const text = typeof m.content === 'string'
@@ -36,13 +36,16 @@ export async function contractContext(messages: Message[], model: LanguageModel)
       ? { role: 'user' as const, content: [{ type: 'text' as const, text: summaryContent }] }
       : { role: 'user' as const, content: summaryContent };
 
-    return [
-      summaryMsg,
-      ...messages.slice(-4), // Keep some recent history for continuity
-    ];
+    return {
+      messages: [
+        summaryMsg,
+        ...messages.slice(-4), // Keep some recent history for continuity
+      ],
+      summary,
+    };
   } catch (error) {
     console.error('Context contraction failed:', error);
     // Fallback: Return last 10 messages if summarization fails
-    return messages.slice(-10);
+    return { messages: messages.slice(-10), summary: '' };
   }
 }

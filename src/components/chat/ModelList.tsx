@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ArrowDown01Icon, CheckmarkCircle01Icon, AiCloudIcon } from '@hugeicons/core-free-icons';
+import { ArrowDown01Icon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
 import { MODELS, getModelDefinition, SELECTED_MODEL_STORAGE_KEY } from '@core/config/models';
+import { ModelIcon } from '@/components/ui/ModelIcon';
 
 const PROVIDER_LABELS: Record<string, string> = {
   google: 'Google',
@@ -72,9 +73,9 @@ export default function ModelList({ currentModel, showThinkingOnly, isIdle }: Mo
                 <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   {group.label}
                 </div>
-                {group.models.map((model) => (
+                {group.models.map((model, idx) => (
                   <button
-                    key={model.id}
+                    key={`${model.id}-${idx}`}
                     type="button"
                     onClick={() => handleSelect(model.id)}
                     className={`w-full text-left px-3 py-1 text-xs transition-colors flex items-center gap-2 rounded-md ${
@@ -83,7 +84,7 @@ export default function ModelList({ currentModel, showThinkingOnly, isIdle }: Mo
                          : 'text-muted-foreground hover:bg-muted'
                     }`}
                   >
-                    <HugeiconsIcon icon={AiCloudIcon} size={14} className="shrink-0 text-muted-foreground" />
+                    <ModelIcon modelId={model.id} size={14} />
                     <span className="truncate">{model.label}</span>
                     {model.supportsThinking && (
                       <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-blue-500 shrink-0 ml-auto" />

@@ -7,14 +7,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"os/exec"
 	"runtime"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/xz-ephyr/raw-code/agent/pkg/api"
 )
+
+const maxOutputSize = 1 << 20 // 1 MB cap on stdout/stderr each
 
 type ToolHandler func(context.Context, *Executor, map[string]any) (any, error)
 
@@ -63,6 +65,26 @@ func runCmd(ctx context.Context, name string, args ...string) (string, error) {
 	return out.String(), nil
 }
 
+func RunShell(ctx context.Context, command string, workdir string, timeout time.Duration) (string, string, int, error) {
+	return runShell(ctx, command, workdir, timeout)
+}
+
+type maxBufferWriter struct {
+	buf   *bytes.Buffer
+	limit int
+}
+
+func (w *maxBufferWriter) Write(p []byte) (int, error) {
+	available := w.limit - w.buf.Len()
+	if available <= 0 {
+		return len(p), nil
+	}
+	if len(p) > available {
+		p = p[:available]
+	}
+	return w.buf.Write(p)
+}
+
 func runShell(ctx context.Context, command string, workdir string, timeout time.Duration) (string, string, int, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -78,8 +100,8 @@ func runShell(ctx context.Context, command string, workdir string, timeout time.
 	}
 
 	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	cmd.Stdout = &maxBufferWriter{buf: &stdout, limit: maxOutputSize}
+	cmd.Stderr = &maxBufferWriter{buf: &stderr, limit: maxOutputSize}
 
 	err := cmd.Run()
 	exitCode := 0
@@ -90,7 +112,16 @@ func runShell(ctx context.Context, command string, workdir string, timeout time.
 			exitCode = -1
 		}
 	}
-	return stdout.String(), stderr.String(), exitCode, err
+
+	out := stdout.String()
+	errOut := stderr.String()
+	if !utf8.ValidString(out) {
+		out = "[binary output truncated]"
+	}
+	if !utf8.ValidString(errOut) {
+		errOut = "[binary output truncated]"
+	}
+	return out, errOut, exitCode, err
 }
 
 func gitCmd(ctx context.Context, repoPath string, args ...string) (string, error) {
@@ -99,10 +130,5 @@ func gitCmd(ctx context.Context, repoPath string, args ...string) (string, error
 }
 
 func expandPath(path string) string {
-	expanded := os.ExpandEnv(path)
-	if strings.HasPrefix(expanded, "~") {
-		home, _ := os.UserHomeDir()
-		expanded = home + expanded[1:]
-	}
-	return expanded
+	return path
 }

@@ -13,6 +13,7 @@ import {
 import { refreshProviders } from '@core/models/aiService';
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { PasswordInput } from '@/components/ui/PasswordInput';
+import { ModelIcon } from '@/components/ui/ModelIcon';
 
 const PROVIDER_LABELS: Record<string, string> = {
   google: 'Google Gemini',
@@ -125,9 +126,9 @@ export function ApiKeysTab() {
             {isModelDropdownOpen && (
               <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-[10px] shadow-lg shadow-black/30 overflow-hidden">
                 <div className="overflow-y-auto thin-scrollbar" style={{ maxHeight: 155 }}>
-                  {MODELS.map((model) => (
+                  {MODELS.map((model, idx) => (
                     <button
-                      key={model.id}
+                      key={`${model.id}-${idx}`}
                       className={`w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors flex items-center gap-2 ${
                         selectedModel === model.id ? 'bg-muted font-medium' : ''
                       }`}
@@ -136,6 +137,7 @@ export function ApiKeysTab() {
                         setIsModelDropdownOpen(false);
                       }}
                     >
+                      <ModelIcon modelId={model.id} size={14} />
                       <span className="flex-1 truncate">{model.label}</span>
                       <span className="text-[11px] text-muted-foreground shrink-0">{PROVIDER_LABELS[model.provider] || model.provider}</span>
                       {model.supportsThinking && (

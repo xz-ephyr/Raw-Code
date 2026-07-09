@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Add01Icon } from '@hugeicons/core-free-icons';
+import { Add01Icon, File01Icon, Folder01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconRenderer } from '@/components/ui/HugeiconRenderer';
 import FileTreeItem from './FileTreeItem';
 import type { FileNode } from './types';
@@ -31,6 +31,7 @@ const FileExplorer = ({
 }: FileExplorerProps) => {
   const [createMode, setCreateMode] = useState<CreateMode>(null);
   const [createName, setCreateName] = useState('');
+  const [showCreateDropdown, setShowCreateDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -60,23 +61,38 @@ const FileExplorer = ({
     <div className="w-[260px] shrink-0 h-full bg-card border-r border-border flex flex-col rounded-[10px]">
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <h2 className="text-sm font-bold">Explorer</h2>
-        <div className="flex items-center gap-1">
+        <div className="relative">
           <button
             type="button"
-            onClick={() => { setCreateMode('file'); setCreateName(''); }}
+            onClick={() => setShowCreateDropdown(p => !p)}
             className="p-1 hover:bg-muted rounded-[8px] cursor-pointer active:scale-[0.99]"
-            aria-label="New file"
+            aria-label="Create new file or folder"
           >
             <HugeiconRenderer icon={Add01Icon} />
           </button>
-          <button
-            type="button"
-            onClick={() => { setCreateMode('folder'); setCreateName(''); }}
-            className="p-1 hover:bg-muted rounded-[8px] cursor-pointer active:scale-[0.99]"
-            aria-label="New folder"
-          >
-            <FolderIcon />
-          </button>
+          {showCreateDropdown && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowCreateDropdown(false)} />
+              <div className="absolute right-0 top-full mt-1 w-44 bg-card border border-border rounded-xl shadow-lg py-1 z-50">
+                <button
+                  type="button"
+                  onClick={() => { setShowCreateDropdown(false); setCreateMode('file'); setCreateName(''); }}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-muted cursor-pointer"
+                >
+                  <HugeiconRenderer icon={File01Icon} size={14} />
+                  New File...
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowCreateDropdown(false); setCreateMode('folder'); setCreateName(''); }}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-muted cursor-pointer"
+                >
+                  <HugeiconRenderer icon={Folder01Icon} size={14} />
+                  New Folder...
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

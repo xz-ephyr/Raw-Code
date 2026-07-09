@@ -20,12 +20,16 @@ import (
 var subagentSystemPrompt string
 
 type SubAgentRequest struct {
-	Task      string   `json:"task"`
-	Context   string   `json:"context,omitempty"`
-	Model     string   `json:"model,omitempty"`
-	ToolScope []string `json:"toolScope,omitempty"`
-	MaxSteps  int      `json:"maxSteps,omitempty"`
-	AgentType string   `json:"agentType,omitempty"`
+	Task                string   `json:"task"`
+	Context             string   `json:"context,omitempty"`
+	Model               string   `json:"model,omitempty"`
+	ToolScope           []string `json:"toolScope,omitempty"`
+	MaxSteps            int      `json:"maxSteps,omitempty"`
+	MaxWallClockMs      int64    `json:"maxWallClockMs,omitempty"`
+	AgentType           string   `json:"agentType,omitempty"`
+	Depth               int      `json:"-"` // internal recursion depth; never serialised
+	SkipVerification    bool     `json:"-"`
+	MaxTransientRetries int      `json:"-"`
 }
 
 type SubAgent struct {
@@ -49,10 +53,10 @@ type SubAgentManager struct {
 	agents      map[string]*SubAgent
 	manager     *task.Manager
 	executor    *tool.Executor
-	modelClient *model.Client
+	modelClient model.ModelProvider
 }
 
-func NewSubAgentManager(manager *task.Manager, executor *tool.Executor, modelClient *model.Client) *SubAgentManager {
+func NewSubAgentManager(manager *task.Manager, executor *tool.Executor, modelClient model.ModelProvider) *SubAgentManager {
 	return &SubAgentManager{
 		agents:      make(map[string]*SubAgent),
 		manager:     manager,
@@ -62,9 +66,16 @@ func NewSubAgentManager(manager *task.Manager, executor *tool.Executor, modelCli
 }
 
 func (sm *SubAgentManager) Spawn(ctx context.Context, req SubAgentRequest) (*SubAgent, error) {
+	if req.Depth > 2 {
+		return nil, fmt.Errorf("max sub-agent nesting depth exceeded (depth %d)", req.Depth)
+	}
+
 	id := uuid.New().String()
 	if req.MaxSteps <= 0 {
 		req.MaxSteps = 10
+	}
+	if req.MaxSteps > 50 {
+		req.MaxSteps = 50
 	}
 	if req.Model == "" && sm.modelClient != nil {
 		req.Model = sm.modelClient.Model()
@@ -107,7 +118,7 @@ func (sm *SubAgentManager) runSubAgent(ctx context.Context, sub *SubAgent) {
 type subAgentRunner struct {
 	manager     *task.Manager
 	executor    *tool.Executor
-	modelClient *model.Client
+	modelClient model.ModelProvider
 	sub         *SubAgent
 	taskCtx     context.Context
 	messages    []model.Message
@@ -120,99 +131,42 @@ func (r *subAgentRunner) run() {
 	}
 
 	agentPrompt := BuildAgentSystemPrompt(r.sub.Request.AgentType)
-	r.messages = []model.Message{
+	messages := []model.Message{
 		{Role: "system", Content: agentPrompt},
 		{Role: "user", Content: r.sub.Request.Task},
 	}
-
 	if r.sub.Request.Context != "" {
-		r.messages = append(r.messages, model.Message{Role: "user", Content: "Context:\n" + r.sub.Request.Context})
+		messages = append(messages, model.Message{Role: "user", Content: "Context:\n" + r.sub.Request.Context})
 	}
 
-	for step := 0; step < r.sub.Request.MaxSteps; step++ {
-		select {
-		case <-r.taskCtx.Done():
-			r.fail("context cancelled")
-			return
-		default:
-		}
-
-		toolDefs := r.getToolDefs()
-
-		resp, err := r.modelClient.ChatCompletion(r.taskCtx, model.ChatRequest{
-			Messages: r.messages,
-			Tools:    toolDefs,
-		})
-		if err != nil {
-			r.fail(fmt.Sprintf("LLM call failed: %v", err))
-			return
-		}
-
-		r.messages = append(r.messages, model.Message{
-			Role:    "assistant",
-			Content: resp.Content,
-		})
-
-		if len(resp.ToolCalls) > 0 {
-			msg := model.Message{Role: "assistant", ToolCalls: resp.ToolCalls, ExtraContent: resp.ExtraContent}
-			r.messages = append(r.messages, msg)
-
-			for _, tc := range resp.ToolCalls {
-				if tc.Type != "function" {
-					continue
-				}
-
-				var params map[string]any
-				if err := json.Unmarshal([]byte(tc.Function.Arguments), &params); err != nil {
-					params = map[string]any{"raw": tc.Function.Arguments}
-				}
-
-				call := api.ToolCall{
-					ID:     tc.ID,
-					Tool:   tc.Function.Name,
-					Params: params,
-				}
-
-				result := r.executor.Execute(r.taskCtx, call)
-				r.sub.Steps++
-
-				resultJSON, _ := json.Marshal(result.Result)
-				if resultJSON == nil {
-					resultJSON = []byte("null")
-				}
-
-				resultContent := string(resultJSON)
-				if result.Error != "" {
-					resultContent = fmt.Sprintf("Error: %s", result.Error)
-				}
-
-				r.messages = append(r.messages, model.Message{
-					Role:       "tool",
-					ToolCallID: tc.ID,
-					Content:    resultContent,
-					Name:       tc.Function.Name,
-				})
-			}
-		} else {
-			r.complete(resp.Content, step+1)
-			return
-		}
+	scope := GetAgentConfig(r.sub.Request.AgentType).ToolScope
+	if r.sub.Request.ToolScope != nil {
+		scope = r.sub.Request.ToolScope
 	}
 
-	r.messages = append(r.messages, model.Message{
-		Role:    "user",
-		Content: "Provide a concise final answer synthesizing all the information gathered.",
-	})
+	cfg := AgentLoopConfig{
+		ModelClient:        r.modelClient,
+		Executor:           r.executor,
+		MaxSteps:           r.sub.Request.MaxSteps,
+		Depth:              r.sub.Request.Depth,
+		ToolScope:          scope,
+		MaxWallClockMs:     r.sub.Request.MaxWallClockMs,
+		SkipVerification:   r.sub.Request.SkipVerification,
+		MaxTransientRetries: r.sub.Request.MaxTransientRetries,
+		Model:              r.sub.Request.Model,
+	}
 
-	finalResp, err := r.modelClient.ChatCompletion(r.taskCtx, model.ChatRequest{
-		Messages: r.messages,
-	})
-	if err != nil {
-		r.fail(fmt.Sprintf("final LLM call failed: %v", err))
+	result := RunAgentLoop(r.taskCtx, cfg, messages)
+
+	r.messages = result.Messages
+	r.sub.Steps = result.Steps
+
+	if result.Error != "" {
+		r.fail(result.Error)
 		return
 	}
 
-	r.complete(finalResp.Content, r.sub.Request.MaxSteps)
+	r.complete(result.FinalResp, result.Steps)
 }
 
 func (r *subAgentRunner) runWithoutModel() {
@@ -272,12 +226,49 @@ func (r *subAgentRunner) runWithoutModel() {
 }
 
 func (r *subAgentRunner) complete(result string, steps int) {
-	r.sub.Result = result
+	// Attempt to summarise the result so the parent receives a concise
+	// summary instead of raw output.  On any failure the raw result is kept.
+	summary := r.summarizeResult(result)
+	r.sub.Result = summary
 	r.sub.Steps = steps
 	r.sub.Status = "completed"
 	now := time.Now()
 	r.sub.CompletedAt = &now
 	log.Printf("[sub-agent %s] completed in %d steps", r.sub.ID, steps)
+}
+
+// summarizeResult asks the LLM to condense the given text to 1-3 sentences.
+// If the LLM call fails the original text is returned unchanged.
+func (r *subAgentRunner) summarizeResult(raw string) string {
+	if r.modelClient == nil || raw == "" {
+		return raw
+	}
+
+	prompt := fmt.Sprintf(`Summarise the following in 1-3 sentences. What was done and what was the key finding or outcome?
+
+Full result:
+%s`, raw)
+
+	msgs := []model.Message{
+		{Role: "system", Content: "You produce concise 1-3 sentence summaries. No commentary, no markdown, no headings."},
+		{Role: "user", Content: prompt},
+	}
+
+	// The summarisation call is intentionally *not* given any tools — it is a
+	// pure text-in/text-out generation.  The same model client is used because
+	// the Go sidecar only has a single configured model (no cheap tier).
+	summResp, err := r.modelClient.ChatCompletion(context.Background(), model.ChatRequest{
+		Model:    r.sub.Request.Model,
+		Messages: msgs,
+	})
+	if err != nil {
+		log.Printf("[sub-agent %s] summarisation call failed, keeping raw result: %v", r.sub.ID, err)
+		return raw
+	}
+	if summResp.Content == "" {
+		return raw
+	}
+	return summResp.Content
 }
 
 func (r *subAgentRunner) fail(errMsg string) {

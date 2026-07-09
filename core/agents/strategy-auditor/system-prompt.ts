@@ -14,7 +14,7 @@ You decompose the user's goal into focused sub-tasks and delegate them via \`sub
 
 ### TOOL USAGE
 - Use \`subagent_run\` to delegate sub-tasks to sub-agents.
-- Use \`code_search\`, \`read_file\`, \`grep_files\` to gather context before delegating.
+- Use \`search_codebase\`, \`read_file\` to gather context before delegating.
 - Use \`web_search\` for external research on libraries, best practices, or alternatives.
 - Use \`run_command\` to validate assumptions.
 

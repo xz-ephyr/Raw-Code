@@ -3,37 +3,53 @@ import { createGroq } from '@ai-sdk/groq';
 import { createMistral } from '@ai-sdk/mistral';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createCerebras } from '@ai-sdk/cerebras';
-import { streamText, generateText, stepCountIs, convertToModelMessages, tool, zodSchema } from 'ai';
+import { streamText, generateText, stepCountIs, convertToModelMessages, wrapLanguageModel, extractReasoningMiddleware } from 'ai';
 import type { OpenAIProvider } from '@ai-sdk/openai';
 import { SYSTEM_PROMPT } from '@core/prompt/systemPrompt';
-import { writeArtifactTool } from '@core/tools/writeArtifactTool';
+import { buildToolPolicy } from '@core/prompt/toolPolicy';
 import { allTools } from '@core/tools/allTools';
 import { API_KEYS, getModelDefinition, getUsedModels, markModelUsed, getAIModels, getStoredSelectedModel, type Provider } from '@core/config/models';
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { getAgentById } from '@core/agents';
+import { getProjectMemory, setProjectMemory, deleteProjectMemory, extractFactsFromResult, type ProjectMemoryEntry } from '@core/memory/projectMemory';
 import { getSmartSystemPrompt, type ProjectContext } from '@core/memory/contextController';
 import { contractContext } from '@core/memory/contextContractor';
+import { recordUsage } from '@core/utils/usageTracker';
 
-let cachedProviders: {
+interface ProvidersCache {
   google: ReturnType<typeof createGoogleGenerativeAI>;
   groq: ReturnType<typeof createGroq>;
   mistral: ReturnType<typeof createMistral>;
   openrouter: OpenAIProvider;
   opencodezen: OpenAIProvider;
   cerebras: ReturnType<typeof createCerebras>;
-} | null = null;
-let cachedGoogleKey = '';
-let cachedGroqKey = '';
-let cachedMistralKey = '';
-let cachedOpenrouterKey = '';
-let cachedOpencodezenKey = '';
-let cachedCerebrasKey = '';
-
-export function refreshProviders() {
-  cachedProviders = null;
 }
 
-async function getProviders() {
+interface ProvidersCacheEntry {
+  providers: ProvidersCache;
+  googleKey: string;
+  groqKey: string;
+  mistralKey: string;
+  openrouterKey: string;
+  opencodezenKey: string;
+  cerebrasKey: string;
+  opencodezenBaseURL: string;
+}
+
+const providersCache = new Map<string, ProvidersCacheEntry>();
+const GLOBAL_CACHE_KEY = '__global__';
+
+export function refreshProviders(cacheKey?: string) {
+  if (cacheKey) {
+    providersCache.delete(cacheKey);
+  } else {
+    providersCache.clear();
+  }
+}
+
+async function getProviders(projectId?: string) {
+  const cacheKey = projectId || GLOBAL_CACHE_KEY;
+
   const [
     currentGoogleKey,
     currentGroqKey,
@@ -53,22 +69,29 @@ async function getProviders() {
   const opencodezenBaseURL = await DatabaseService.getConfig('opencodezen-base-url')
     .then(r => r || localStorage.getItem('opencodezen-base-url') || 'https://opencode.ai/zen/v1');
 
+  const existing = providersCache.get(cacheKey);
   if (
-    !cachedProviders ||
-    currentGoogleKey !== cachedGoogleKey ||
-    currentGroqKey !== cachedGroqKey ||
-    currentMistralKey !== cachedMistralKey ||
-    currentOpenrouterKey !== cachedOpenrouterKey ||
-    currentOpencodezenKey !== cachedOpencodezenKey ||
-    currentCerebrasKey !== cachedCerebrasKey
+    existing &&
+    currentGoogleKey === existing.googleKey &&
+    currentGroqKey === existing.groqKey &&
+    currentMistralKey === existing.mistralKey &&
+    currentOpenrouterKey === existing.openrouterKey &&
+    currentOpencodezenKey === existing.opencodezenKey &&
+    currentCerebrasKey === existing.cerebrasKey &&
+    opencodezenBaseURL === existing.opencodezenBaseURL
   ) {
-    cachedGoogleKey = currentGoogleKey;
-    cachedGroqKey = currentGroqKey;
-    cachedMistralKey = currentMistralKey;
-    cachedOpenrouterKey = currentOpenrouterKey;
-    cachedOpencodezenKey = currentOpencodezenKey;
-    cachedCerebrasKey = currentCerebrasKey;
-    cachedProviders = {
+    return existing.providers;
+  }
+
+  const entry: ProvidersCacheEntry = {
+    googleKey: currentGoogleKey,
+    groqKey: currentGroqKey,
+    mistralKey: currentMistralKey,
+    openrouterKey: currentOpenrouterKey,
+    opencodezenKey: currentOpencodezenKey,
+    cerebrasKey: currentCerebrasKey,
+    opencodezenBaseURL,
+    providers: {
       google: createGoogleGenerativeAI({ apiKey: currentGoogleKey }),
       groq: createGroq({ apiKey: currentGroqKey }),
       mistral: createMistral({ apiKey: currentMistralKey }),
@@ -81,22 +104,93 @@ async function getProviders() {
         baseURL: opencodezenBaseURL,
       }),
       cerebras: createCerebras({ apiKey: currentCerebrasKey }),
-    };
-  }
-  return cachedProviders;
+    },
+  };
+
+  providersCache.set(cacheKey, entry);
+  return entry.providers;
+}
+
+function redactSensitiveInfo(msg: string): string {
+  return msg
+    .replace(/([?&]key)=[^&\s]+/gi, '$1=REDACTED')
+    .replace(/([?&]api_key)=[^&\s]+/gi, '$1=REDACTED')
+    .replace(/([?&]api-key)=[^&\s]+/gi, '$1=REDACTED')
+    .replace(/x-api-key\s*:\s*\S+/gi, 'x-api-key: REDACTED')
+    .replace(/Authorization\s*:\s*Bearer\s*\S+/gi, 'Authorization: Bearer REDACTED');
 }
 
 export function getAIErrorMessage(error: unknown) {
   if (error == null) return 'The AI request failed for an unknown reason.';
-  if (typeof error === 'string') return error;
-  if (error instanceof Error) return error.message;
-
-  try {
-    return JSON.stringify(error);
-  } catch {
-    return 'The AI request failed and the error could not be serialized.';
+  let msg: string;
+  if (typeof error === 'string') msg = error;
+  else if (error instanceof Error) msg = error.message;
+  else {
+    try {
+      msg = JSON.stringify(error);
+    } catch {
+      return 'The AI request failed and the error could not be serialized.';
+    }
   }
+  return redactSensitiveInfo(msg);
 }
+
+type ReasoningMode = 'native' | 'tag' | 'none';
+
+interface ModelReasoningConfig {
+  mode: ReasoningMode;
+  tagName?: string;
+  providerOptions?: Record<string, any>;
+}
+
+const MODEL_REASONING: Record<string, ModelReasoningConfig> = {
+  // ── Google ──
+  'gemini-3.5-flash':       { mode: 'native',  providerOptions: { google: { thinkingConfig: { thinkingBudget: 1024 } } } },
+  'gemini-3-flash-preview': { mode: 'native',  providerOptions: { google: { thinkingConfig: { thinkingBudget: 1024 } } } },
+  'gemini-2.5-flash':       { mode: 'native',  providerOptions: { google: { thinkingConfig: { thinkingBudget: 1024 } } } },
+  'gemini-2.5-flash-lite':  { mode: 'native',  providerOptions: { google: { thinkingConfig: { thinkingBudget: 1024 } } } },
+  'gemma-4-31b-it':         { mode: 'none' },
+  'gemma-4-26b-a4b-it':     { mode: 'none' },
+
+  // ── Groq ──
+  'groq/compound':                    { mode: 'native', providerOptions: { groq: { reasoningFormat: 'parsed' } } },
+  'groq/compound-mini':               { mode: 'native', providerOptions: { groq: { reasoningFormat: 'parsed' } } },
+  'openai/gpt-oss-safeguard-20b':     { mode: 'native', providerOptions: { groq: { reasoningFormat: 'parsed' } } },
+  'qwen/qwen3-32b':                   { mode: 'tag',    tagName: 'think' },
+  'llama-3.1-8b-instant':             { mode: 'none' },
+
+  // ── OpenCode Zen (OpenAI-compatible, no native reasoning parts → tag middleware) ──
+  'deepseek-v4-flash-free':           { mode: 'tag',    tagName: 'think' },
+  'big-pickle':                       { mode: 'tag',    tagName: 'think' },
+  'mimo-v2.5-free':                   { mode: 'tag',    tagName: 'think' },
+
+  // ── Mistral ──
+  'mistral-large-latest':             { mode: 'none' },
+  'mistral-medium-latest':            { mode: 'none' },
+  'mistral-small-latest':             { mode: 'none' },
+  'magistral-medium-latest':          { mode: 'tag',    tagName: 'think' },
+  'devstral-latest':                  { mode: 'none' },
+  'codestral-latest':                 { mode: 'none' },
+
+  // ── OpenRouter (reasoning toggle via providerOptions) ──
+  'nvidia/nemotron-3-ultra-550b-a55b:free':    { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
+  'nvidia/nemotron-3-super-120b-a12b:free':    { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
+  'nvidia/nemotron-3-nano-30b-a3b:free':       { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
+  'openai/gpt-oss-20b:free':                   { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
+  'nvidia/nemotron-nano-12b-v2-vl:free':       { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
+  'nvidia/nemotron-nano-9b-v2:free':           { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
+  'openrouter/free':                           { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
+  'nvidia/nemotron-3.5-content-safety:free':   { mode: 'none' },
+  'tencent/hy3:free':                          { mode: 'none' },
+  'poolside/laguna-m.1:free':                  { mode: 'none' },
+  'poolside/laguna-xs.2:free':                 { mode: 'none' },
+  'cohere/north-mini-code:free':               { mode: 'none' },
+
+  // ── Cerebras ──
+  'gpt-oss-120b':  { mode: 'native', providerOptions: { cerebras: {} } },
+  'zai-glm-4.7':   { mode: 'tag',    tagName: 'think' },
+  'gemma-4-31b':   { mode: 'none' },
+};
 
 const MAX_STEPS = 20;
 
@@ -112,8 +206,8 @@ async function getConfiguredProviders(): Promise<Set<Provider>> {
   return configured;
 }
 
-export async function buildFallbackChain(primaryModelName: string, sessionId?: string): Promise<string[]> {
-  const used = sessionId ? getUsedModels(sessionId) : [];
+export async function buildFallbackChain(primaryModelName: string, sessionId?: string, projectId?: string): Promise<string[]> {
+  const used = sessionId || projectId ? getUsedModels(projectId, sessionId) : [];
   const configuredProviders = await getConfiguredProviders();
   const primaryDef = getModelDefinition(primaryModelName);
 
@@ -150,43 +244,66 @@ export async function chatCompletion({
   messages,
   modelName,
   isThinkingEnabled,
+  isWebSearchEnabled = true,
   abortSignal,
   previousModelName,
   sessionId,
   projectContext,
   modeId,
+  projectId,
 }: {
   messages: any[];
   modelName: string;
   isThinkingEnabled?: boolean;
+  isWebSearchEnabled?: boolean;
   abortSignal?: AbortSignal;
   previousModelName?: string;
   sessionId?: string;
   projectContext?: ProjectContext;
   modeId?: string;
+  projectId?: string;
 }) {
-  const providers = await getProviders();
+  const providers = await getProviders(projectId);
 
   const getLanguageModel = (name: string) => {
     const def = getModelDefinition(name);
     if (!def) return providers.google('gemini-3.5-flash');
 
-    if (def.provider === 'google') return providers.google(def.id);
-    if (def.provider === 'groq') return providers.groq(def.id);
-    if (def.provider === 'mistral') return providers.mistral(def.id);
-    if (def.provider === 'openrouter') return providers.openrouter(def.id);
-    if (def.provider === 'opencodezen') return providers.opencodezen(def.id);
-    if (def.provider === 'cerebras') return providers.cerebras(def.id);
-    return providers.google('gemini-3.5-flash');
+    const model =
+      def.provider === 'google' ? providers.google(def.id) :
+      def.provider === 'groq' ? providers.groq(def.id) :
+      def.provider === 'mistral' ? providers.mistral(def.id) :
+      def.provider === 'openrouter' ? providers.openrouter(def.id) :
+      def.provider === 'opencodezen' ? providers.opencodezen(def.id) :
+      def.provider === 'cerebras' ? providers.cerebras(def.id) :
+      providers.google('gemini-3.5-flash');
+
+    const reasoning = MODEL_REASONING[name];
+    if (reasoning?.mode === 'tag') {
+      return wrapLanguageModel({
+        model,
+        middleware: extractReasoningMiddleware({ tagName: reasoning.tagName ?? 'think' }),
+      });
+    }
+    return model;
   };
 
   const agent = getAgentById(modeId ?? '');
   const modePrompt = agent?.systemPrompt ?? '';
   const modeAwarePrompt = modePrompt ? `${SYSTEM_PROMPT}\n${modePrompt}` : SYSTEM_PROMPT;
-  const fullSystemPrompt = getSmartSystemPrompt(modeAwarePrompt, projectContext);
+
+  let projectMemory: ProjectMemoryEntry[] | undefined;
+  if (projectId) {
+    const allMemory = await getProjectMemory(projectId);
+    projectMemory = allMemory.filter(e => e.source !== 'auto-discovered');
+  }
+
+  const isNewSession = !previousModelName || !messages || messages.length <= 2;
+  const toolPolicy = isNewSession ? buildToolPolicy('new_task') : buildToolPolicy('continuing_session');
+  const fullSystemPrompt = getSmartSystemPrompt(modeAwarePrompt, projectContext, projectMemory) + '\n\n' + toolPolicy;
 
   const errors: string[] = [];
-  const chain = await buildFallbackChain(modelName, sessionId);
+  const chain = await buildFallbackChain(modelName, sessionId, projectId);
   const uniqueChain = Array.from(new Set(chain));
 
   let searchProvider = 'tavily';
@@ -203,12 +320,10 @@ export async function chatCompletion({
     const def = getModelDefinition(currentModelName);
     const shouldApplyThinking = isThinkingEnabled && def?.supportsThinking;
 
+    const reasoning = MODEL_REASONING[currentModelName];
     let providerOptions: any = undefined;
-    if (shouldApplyThinking) {
-      providerOptions = {};
-      if (def?.provider === 'google') {
-        providerOptions.google = { thinkingConfig: { thinkingBudget: 1024 } };
-      }
+    if (shouldApplyThinking && reasoning?.mode === 'native') {
+      providerOptions = reasoning.providerOptions;
     }
 
     let msgs = messages;
@@ -233,37 +348,49 @@ export async function chatCompletion({
 
       if (previousModelName && previousModelName !== currentModelName) {
         const incomingModel = getLanguageModel(currentModelName);
-        msgs = await contractContext(msgs, incomingModel);
+        const contracted = await contractContext(msgs, incomingModel);
+        msgs = contracted.messages;
+
+        if (projectId && contracted.summary) {
+          const summaryKey = `context-summary-${Date.now()}`;
+          setProjectMemory(projectId, summaryKey, contracted.summary, 'auto-summary').catch(e =>
+            console.warn('Failed to store context summary:', e)
+          );
+
+          getProjectMemory(projectId).then(allMemory => {
+            const summaries = allMemory
+              .filter(e => e.key.startsWith('context-summary-'))
+              .sort((a, b) => b.updatedAt - a.updatedAt);
+            if (summaries.length > 5) {
+              const toDelete = summaries.slice(5);
+              for (const entry of toDelete) {
+                deleteProjectMemory(projectId, entry.key).catch(() => {});
+              }
+            }
+          }).catch(() => {});
+        }
       }
 
       const filteredMessages = msgs.filter((m: any) => m.role !== 'system');
 
-      return streamText({
+      const result = streamText({
         model: currentModel,
         system: fullSystemPrompt,
         messages: filteredMessages,
-        tools: {
-          writeArtifact: writeArtifactTool,
-          ...allTools.reduce((acc, t) => {
-            const name = (t as any).name || (t as any).toolName;
+        tools: allTools.reduce((acc, t) => {
+            const toolObj = t as any;
+            const name = toolObj.name || toolObj.toolName;
             if (name) {
-              if (name === 'web_search' && (t as any).description) {
-                (t as any).description = `Search the web for current information using ${searchProvider}. Use when you need up-to-date data, recent news, documentation, or facts beyond your training cutoff. Trigger on keywords like: search, research, find, look up, latest, news, recent, current, what is, who is, explain, define, compare, how to, verify, check, troubleshoot, fix, debug, status, update, trends, documentation, guide, tutorial, example, vs, versus, difference, best, top, ranking, list, data, facts, details, info, information, background, context, overview, breakdown, summary, elaborate, describe, explain, confirm, validate, fact-check, ensure, correct, accurate, true, real, legitimate, credible, source, citation, reference, proof, evidence, method, approach, strategy, technique, solution, workaround, resolve, recipe, sample, specification, spec, API, docs.`;
+              if (name === 'web_search') {
+                if (!isWebSearchEnabled) return acc;
+                if (toolObj.description) {
+                  toolObj.description = `Search the web for current information using ${searchProvider}. Use when you need up-to-date data, recent news, documentation, or facts beyond your training cutoff. Trigger on keywords like: search, research, find, look up, latest, news, recent, current, what is, who is, explain, define, compare, how to, verify, check, troubleshoot, fix, debug, status, update, trends, documentation, guide, tutorial, example, vs, versus, difference, best, top, ranking, list, data, facts, details, info, information, background, context, overview, breakdown, summary, elaborate, describe, explain, confirm, validate, fact-check, ensure, correct, accurate, true, real, legitimate, credible, source, citation, reference, proof, evidence, method, approach, strategy, technique, solution, workaround, resolve, recipe, sample, specification, spec, API, docs.`;
+                }
               }
-              if ((t as any).inputSchema) {
-                const isAlreadyWrapped = typeof (t as any).inputSchema?.validate === 'function';
-                acc[name] = isAlreadyWrapped ? t : tool({
-                  description: (t as any).description,
-                  inputSchema: zodSchema((t as any).inputSchema),
-                  execute: (t as any).execute,
-                });
-              } else {
-                acc[name] = t;
-              }
+              acc[name] = toolObj;
             }
             return acc;
           }, {} as any),
-        },
         providerOptions,
         abortSignal,
         maxRetries: 2,
@@ -271,10 +398,38 @@ export async function chatCompletion({
         onError({ error }) {
           console.error(`AI stream failed for ${currentModelName}:`, getAIErrorMessage(error));
         },
+        onFinish: (result) => {
+          const { usage } = result;
+          recordUsage({
+            model: currentModelName,
+            promptTokens: usage.inputTokens ?? 0,
+            completionTokens: usage.outputTokens ?? 0,
+            totalTokens: usage.totalTokens ?? 0,
+            timestamp: Date.now(),
+          });
+
+          // Auto-discover project facts from tool call results
+          if (projectId && result.steps) {
+            for (const step of result.steps) {
+              for (const part of step.content) {
+                if (part.type === 'tool-result') {
+                  const facts = extractFactsFromResult(part.toolName, part.input, part.output);
+                  for (const fact of facts) {
+                    setProjectMemory(projectId, fact.key, fact.value, 'auto-discovered').catch(e =>
+                      console.warn('Failed to store auto-discovered fact:', e)
+                    );
+                  }
+                }
+              }
+            }
+          }
+        },
       });
+
+      return result;
     } catch (error) {
       if (sessionId) {
-        markModelUsed(sessionId, currentModelName);
+        markModelUsed(projectId, currentModelName, sessionId);
       }
       errors.push(`${currentModelName}: ${getAIErrorMessage(error)}`);
       console.warn(`Model ${currentModelName} failed, trying fallback...`);

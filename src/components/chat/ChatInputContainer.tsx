@@ -12,6 +12,8 @@ interface ChatInputContainerProps {
   isLoading?: boolean;
   isThinkingEnabled: boolean;
   onToggleThinking: () => void;
+  isWebSearchEnabled: boolean;
+  onToggleWebSearch: () => void;
   onCreateProject?: () => void;
   onOpenIDE?: () => void;
   currentProjectName?: string;
@@ -29,6 +31,8 @@ export default function ChatInputContainer({
   isLoading,
   isThinkingEnabled,
   onToggleThinking,
+  isWebSearchEnabled,
+  onToggleWebSearch,
   onCreateProject,
   onOpenIDE,
   currentProjectName,
@@ -145,6 +149,8 @@ export default function ChatInputContainer({
             isIdle={true}
             isThinkingEnabled={isThinkingEnabled}
             onToggleThinking={onToggleThinking}
+            isWebSearchEnabled={isWebSearchEnabled}
+            onToggleWebSearch={onToggleWebSearch}
             currentModel={currentModel}
             currentMode={currentMode}
             onModeChange={onModeChange}
@@ -158,8 +164,10 @@ export default function ChatInputContainer({
           onStop={onStop}
           isLoading={isLoading}
           isIdle={false}
-            isThinkingEnabled={isThinkingEnabled}
+          isThinkingEnabled={isThinkingEnabled}
           onToggleThinking={onToggleThinking}
+          isWebSearchEnabled={isWebSearchEnabled}
+          onToggleWebSearch={onToggleWebSearch}
           currentModel={currentModel}
           currentMode={currentMode}
           onModeChange={onModeChange}

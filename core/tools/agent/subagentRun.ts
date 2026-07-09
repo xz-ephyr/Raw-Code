@@ -1,25 +1,30 @@
+import { tool, zodSchema } from 'ai';
 import { z } from 'zod';
-import type { ToolDef } from '@core/types';
 import { callGoTool } from '@core/utils/goProxy';
 
-export const subagentRunTool: ToolDef = {
+export const subagentRunTool = {
   name: 'subagent_run',
-  description: 'Spawn a sub-agent to handle a complex multi-step task. Use when: the task needs 3+ sequential tool calls, requires deep research, you are stuck in a loop, or the task can be cleanly isolated. The sub-agent gets its own LLM with full tool access. Do NOT use for simple single-tool operations.',
-  category: 'agent',
-  inputSchema: z.object({
-    task: z.string().describe('The task description for the sub-agent. Be specific: include goals, constraints, expected output format, and any relevant context. The clearer the task, the better the result.'),
-    context: z.string().optional().describe('Additional background information, code snippets, or references the sub-agent needs to complete the task.'),
-    model: z.string().optional().describe('Optional model ID override for the sub-agent (e.g., "gemini-3.5-flash", "mistral-large-latest"). Defaults to the current model.'),
-    maxSteps: z.number().optional().describe('Maximum steps for the sub-agent loop. Default 10. Increase for complex research tasks, decrease for simple delegation.'),
-    toolScope: z.array(z.string()).optional().describe('Restrict the sub-agent to specific tools by name (e.g., ["read_file", "grep_files", "web_search"]). If omitted, all tools are available.'),
+  ...tool({
+    description: 'Spawn one or more sub-agents to handle complex multi-step tasks. Each sub-agent gets its own LLM with full tool access. Do NOT use for simple single-tool operations.\n\nTwo modes:\n1. Single task: set `task` to one task description. Spawns one sub-agent.\n2. Parallel tasks: set `tasks` to an array of task descriptions. Spawns one sub-agent per description in parallel and synthesises results.',
+    inputSchema: zodSchema(z.object({
+      task: z.string().optional().describe('Single task description. Provide goals, constraints, expected output, and context.'),
+      tasks: z.array(z.string()).optional().describe('Array of task descriptions for parallel execution. Each spawns a sub-agent; results are synthesised.'),
+      context: z.string().optional().describe('Additional background information, code snippets, or references the sub-agent(s) need.'),
+      model: z.string().optional().describe('Optional model ID override for the sub-agent(s) (e.g. "gemini-3.5-flash", "mistral-large-latest"). Defaults to the current model.'),
+      maxSteps: z.number().optional().describe('Maximum steps per sub-agent loop. Default 10. Increase for complex research, decrease for simple delegation.'),
+      agentType: z.string().optional().describe('Optional agent type override (e.g. "explorer"). If set, the sub-agent uses the specified agent\'s system prompt and tool scope.'),
+      toolScope: z.array(z.string()).optional().describe('Restrict the sub-agent to specific tools (e.g. ["read_file", "search_codebase", "web_search"]). If omitted, the agent type default scope is used.'),
+    })),
+    execute: async ({ task, tasks, context, model, maxSteps, agentType, toolScope }) => {
+      return callGoTool('subagent_run', {
+        task,
+        tasks,
+        context,
+        model,
+        maxSteps,
+        agentType,
+        toolScope,
+      }, { timeout: 120000 });
+    },
   }),
-  execute: async ({ task, context, model, maxSteps, toolScope }) => {
-    return callGoTool('subagent_run', {
-      task,
-      context,
-      model,
-      maxSteps,
-      toolScope,
-    }, { timeout: 120000 });
-  },
 };

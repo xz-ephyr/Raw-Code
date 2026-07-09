@@ -1,6 +1,13 @@
 import crypto from 'crypto';
 import { query } from './db.js';
 
+function redactSensitiveUrl(text: string): string {
+  return text
+    .replace(/([?&]key)=[^&\s"]+/gi, '$1=REDACTED')
+    .replace(/([?&]api_key)=[^&\s"]+/gi, '$1=REDACTED')
+    .replace(/([?&]api-key)=[^&\s"]+/gi, '$1=REDACTED');
+}
+
 const TAVILY_URL = 'https://api.tavily.com';
 const FIRECRAWL_URL = 'https://api.firecrawl.dev';
 const GOOGLE_URL = 'https://www.googleapis.com/customsearch/v1';
@@ -296,7 +303,7 @@ export async function webSearch(params: { query: string; maxResults: number; sit
       return result;
     } catch (e) {
       lastError = e;
-      console.warn(`Search provider "${cfg.name}" failed, trying next: ${(e as any).message}`);
+      console.warn(`Search provider "${cfg.name}" failed, trying next: ${redactSensitiveUrl((e as any).message)}`);
     }
   }
 

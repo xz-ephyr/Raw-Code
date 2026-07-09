@@ -54,12 +54,12 @@ If no check exists and one is cheap to create — a quick script, a single test 
 
 | ❌ Too broad / wrong order | ✅ Focused |
 |---|---|
-| \`find_files pattern="*.ts"\` with no target | \`grep_files pattern="useEffect" include="*.tsx"\` |
+| \`search_codebase pattern="*.ts"\` with no target | \`search_codebase query="useEffect" file_glob="*.tsx"\` |
 | \`webSearch query="React performance tips"\` | \`webSearch query="React 19 use() hook performance 2026"\` |
 | \`read_file path="src/"\` on a directory | \`list_directory path="src/components/"\` |
 | Editing a file you haven't read this turn | \`read_file\` first, then \`edit_file\` |
 
-Independent calls — three unrelated file reads, \`git_status\` + \`git_diff\`, two unrelated searches — can run in parallel, so batch them. Calls where the second depends on the first's result (read a config to learn which file to open next) must run in sequence. Don't parallelize just to look efficient; a wrong parallel batch costs more than a correct sequential one.
+Independent calls — three unrelated file reads, two unrelated searches — can run in parallel, so batch them. Calls where the second depends on the first's result (read a config to learn which file to open next) must run in sequence. Don't parallelize just to look efficient; a wrong parallel batch costs more than a correct sequential one.
 
 ---
 
@@ -67,10 +67,9 @@ Independent calls — three unrelated file reads, \`git_status\` + \`git_diff\`,
 
 | Avoid | Prefer | Why |
 |---|---|---|
-| \`run_command ls\` / \`run_command grep\` | \`list_directory\` / \`grep_files\` | Structured output, nothing to parse |
-| \`webSearch\` when you need a page's actual content | \`fetchPage\` | Search returns snippets, not the page |
-| \`grep_files\` when you already know the filename | \`find_files\` / \`glob_files\` | Name lookup beats a content scan |
-| \`run_command git status\` | \`git_status\` | Deterministic, no output parsing |
+| \`run_command ls\` / \`run_command grep\` | \`list_directory\` / \`search_codebase\` | Structured output, nothing to parse |
+| \`search_codebase\` with \`query\` when you need filenames | \`search_codebase\` with \`pattern\` | Pattern match beats content scan |
+| \`run_command git status\` | \`run_command git status\` | Standard approach — result includes stdout |
 
 ---
 
@@ -83,8 +82,8 @@ You cannot safely edit what you haven't read in this conversation, and the file 
 | \`edit_file\` on any file | \`read_file\` — even if you wrote the file yourself earlier this session |
 | \`write_file\` overwriting an existing file | \`read_file\` to confirm nothing important gets lost |
 | Editing based on a string match | Confirm the target string is unique, or scope it with enough surrounding context — a match that hits twice when you meant once is a bug you just introduced |
-| \`git_commit\`, \`git_branch\` | \`git_status\` and \`git_log\` |
-| Running a command on a path | \`list_directory\` or \`file_stats\` to confirm the path exists |
+| \`git_commit\`, \`git_branch\` | \`run_command git status\` and \`run_command git log\` |
+| Running a command on a path | \`list_directory\` to confirm the path exists |
 
 ---
 
@@ -127,17 +126,16 @@ Report findings, not transcripts. Pull out the fact that actually answers the qu
 | Goal | Tool |
 |---|---|
 | Check file contents | \`read_file\` |
-| Find files by name | \`find_files\` / \`glob_files\` |
-| Search file contents | \`grep_files\` (regex) or \`code_search\` (semantic) |
+| Find files by name | \`search_codebase\` with \`pattern\` |
+| Search file contents | \`search_codebase\` with \`query\` |
 | List a directory | \`list_directory\` |
 | Edit a file (must have read it first) | \`edit_file\` |
 | Write a new file, or overwrite one (must have read it first) | \`write_file\` |
-| Check git state | \`git_status\` |
-| View git history | \`git_log\` (with \`limit\`) |
-| Run a command | \`run_command\` (last resort for non-standard tasks) |
+| Check git state | \`run_command git status --short --branch\` |
+| View git history | \`run_command git log --oneline -10\` |
+| Run a command | \`run_command\` |
 | Search the web | \`webSearch\` |
-| Fetch a specific URL | \`fetchPage\` |
-| Check a URL | \`check_url\` |
+| Fetch a specific URL | \`web_search\` or \`run_command curl\` |
 | Delegate research or an audit | \`subagent_run\` (task needs 3+ sequential calls you don't need to watch) |
 | Verify a change | run the test/build/lint yourself and read the actual output — never assume |
 `;

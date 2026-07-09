@@ -4,6 +4,7 @@ import { VirtualFileSystem } from './FileSystem';
 import { CommandRegistry } from './CommandRegistry';
 import { Editor } from './Editor';
 import FileExplorer from './FileExplorer';
+import { ActivityBar, type PanelId } from './ActivityBar';
 import StatusBar from './StatusBar';
 import CommandPalette from './CommandPalette';
 import { getIdeFiles } from '@/services/IdeApi';
@@ -60,6 +61,7 @@ const IDEShell: FC<IDEShellProps> = ({ projectName, projectFiles }) => {
       setEditorState(createInitialState(fs));
     }
   }, [projectName, projectFiles, fs]);
+  const [activePanel, setActivePanel] = useState<PanelId>('files');
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   const refreshRoot = useCallback(() => {
@@ -252,17 +254,20 @@ const IDEShell: FC<IDEShellProps> = ({ projectName, projectFiles }) => {
   return (
     <div className="flex flex-col h-full bg-background border border-border rounded-[10px] overflow-hidden">
       <div className="flex flex-1 min-h-0">
-        <div className="w-[240px] shrink-0 border-r border-border">
-          <FileExplorer
-            root={root}
-            onFileOpen={handleFileOpen}
-            onFileCreate={handleFileCreate}
-            onFolderCreate={handleFolderCreate}
-            onDelete={handleDelete}
-            onRename={handleRename}
-            openFiles={openFiles}
-          />
-        </div>
+        <ActivityBar activePanel={activePanel} onPanelChange={setActivePanel} />
+        {activePanel === 'files' && (
+          <div className="w-[240px] shrink-0 border-r border-border">
+            <FileExplorer
+              root={root}
+              onFileOpen={handleFileOpen}
+              onFileCreate={handleFileCreate}
+              onFolderCreate={handleFolderCreate}
+              onDelete={handleDelete}
+              onRename={handleRename}
+              openFiles={openFiles}
+            />
+          </div>
+        )}
         <Editor
           tabs={editorState.tabs}
           activeTabId={editorState.activeTabId}

@@ -7,10 +7,14 @@ import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { getModelForChatRequest, initUsedModelsCache } from '@core/config/models';
 import { chatCompletion, getAIErrorMessage, generateSessionTitle } from '@core/models/aiService';
+import { approveToolConfirmation, denyToolConfirmation } from '@core/utils/toolConfirm';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import type { ProjectContext } from '@core/memory/contextController';
 import { FileSystemService } from '@core/workspace/FileSystemService';
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { useToast } from '../components/ui/Toast';
+import { useProjectStore } from '@/stores/projectStore';
+import { useTerminal } from '@/contexts/TerminalContext';
 import { mapUIMessageToLegacyMessage } from '../lib/chatUtils';
 import { ArtifactPanel } from '../components/artifact/ArtifactPanel';
 import type { Artifact } from '../types/artifact';
@@ -31,12 +35,21 @@ const MOBILE_BREAKPOINT = 768;
 export const ChatPage = () => {
   const { uuid, folder } = useParams();
   const navigate = useNavigate();
-  const [isThinkingEnabled, setIsThinkingEnabled] = useState(false);
-  const [currentMode, setCurrentMode] = useState<string | undefined>('plan');
+  const isThinkingEnabled = useProjectStore(s => s.isThinkingEnabled);
+  const setIsThinkingEnabled = useProjectStore(s => s.setIsThinkingEnabled);
+  const isWebSearchEnabled = useProjectStore(s => s.isWebSearchEnabled);
+  const setIsWebSearchEnabled = useProjectStore(s => s.setIsWebSearchEnabled);
+  const currentMode = useProjectStore(s => s.currentMode);
+  const setCurrentMode = useProjectStore(s => s.setCurrentMode);
+  const setProjectContext = useProjectStore(s => s.setProjectContext);
+  const currentProjectId = useProjectStore(s => s.currentProjectId);
+  const setCurrentProjectId = useProjectStore(s => s.setCurrentProjectId);
   const previousModelRef = useRef<string | null>(null);
   const isThinkingEnabledRef = useRef(false);
+  const isWebSearchEnabledRef = useRef(true);
   const currentModelRef = useRef<string | null>(null);
-  const currentModeRef = useRef<string | undefined>(currentMode);
+  const currentModeRef = useRef<string | undefined>('plan');
+  const projectIdRef = useRef<string | null>(null);
   const projectContextCacheRef = useRef<Record<string, { context: ProjectContext; timestamp: number }>>({});
   const { addToast } = useToast();
   const { setTitle: setSessionTitle, setSessionId, setIsTitleGenerating } = useSessionTitle();
@@ -65,11 +78,12 @@ export const ChatPage = () => {
     return folder.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   }, [folder]);
 
-  const toggleThinking = () => setIsThinkingEnabled((prev) => !prev);
+  const toggleThinking = () => setIsThinkingEnabled(!isThinkingEnabled);
+  const toggleWebSearch = () => setIsWebSearchEnabled(!isWebSearchEnabled);
   const handleModeChange = useCallback((modeId: string | undefined) => {
     setCurrentMode(modeId);
     currentModeRef.current = modeId;
-  }, []);
+  }, [setCurrentMode]);
 
   const {
     artifacts,
@@ -87,6 +101,18 @@ export const ChatPage = () => {
   const [projectFiles, setProjectFiles] = useState<ProjectFileEntry[]>([]);
   const openIDEPanel = useCallback(() => setIsIDEPanelOpen(true), []);
   const closeIDEPanel = useCallback(() => setIsIDEPanelOpen(false), []);
+  const { visible: terminalVisible, toggle: toggleTerminal } = useTerminal();
+
+  const handleNewThread = useCallback(async () => {
+    if (!uuid || uuid === 'new') return;
+    try {
+      const session = await ChatSessionManager.getSession(uuid);
+      if (!session?.projectId) return;
+      const newSession = await ChatSessionManager.create('New conversation', undefined, session.projectId);
+      const slug = folder || newSession.id;
+      navigate(`/project/${slug}/${newSession.id}`);
+    } catch { /* ignore */ }
+  }, [uuid, folder, navigate]);
 
   useEffect(() => {
     if (!isIDEPanelOpen || !uuid || uuid === 'new') return;
@@ -150,18 +176,19 @@ export const ChatPage = () => {
     [uuid, addArtifacts]
   );
 
-  const [modelRevision, setModelRevision] = useState(0);
+  const modelRevision = useProjectStore(s => s.modelRevision);
+  const incrementModelRevision = useProjectStore(s => s.incrementModelRevision);
 
   useEffect(() => {
-    const handler = () => setModelRevision((v) => v + 1);
+    const handler = () => incrementModelRevision();
     window.addEventListener('model-changed', handler);
     return () => window.removeEventListener('model-changed', handler);
-  }, []);
+  }, [incrementModelRevision]);
 
   const currentModel = useMemo(() => {
     void modelRevision;
-    return getModelForChatRequest(uuid);
-  }, [uuid, modelRevision]);
+    return getModelForChatRequest(uuid, currentProjectId || undefined);
+  }, [uuid, modelRevision, currentProjectId]);
 
   const getProjectContext = useCallback(async (): Promise<ProjectContext | undefined> => {
     if (!uuid || uuid === 'new') return undefined;
@@ -195,7 +222,7 @@ export const ChatPage = () => {
       if (!project) return undefined;
 
       const pc = await FileSystemService.getProjectContent(project.path, project.id);
-      const files = pc.tree + '\n\n_Use `read_file`, `grep_files`, and `list_directory` to explore file contents._';
+      const files = pc.tree + '\n\n_Use \`read_file\`, \`search_codebase\`, and \`list_directory\` to explore file contents._';
 
       const context = { name: project.name, path: project.path, files };
 
@@ -204,12 +231,13 @@ export const ChatPage = () => {
         context,
         timestamp: Date.now()
       };
+      setProjectContext(context);
 
       return context;
     } catch {
       return undefined;
     }
-  }, [uuid]);
+  }, [uuid, setProjectContext]);
 
   // eslint-disable-next-line react-hooks/refs
   const transport = useMemo(() => new DefaultChatTransport({
@@ -224,11 +252,13 @@ export const ChatPage = () => {
         messages: body.messages,
         modelName: effectiveModel,
         isThinkingEnabled: isThinkingEnabledRef.current,
+        isWebSearchEnabled: isWebSearchEnabledRef.current,
         abortSignal: options?.signal,
         previousModelName: previousModelRef.current || undefined,
         sessionId: uuid,
         projectContext,
         modeId: currentModeRef.current,
+        projectId: projectIdRef.current || undefined,
       });
 
       previousModelRef.current = effectiveModel;
@@ -300,15 +330,14 @@ export const ChatPage = () => {
     clearArtifacts();
     if (uuid) {
       const loadSession = async () => {
-        await initUsedModelsCache(uuid);
-        if (!sessionStorage.getItem('pending-first-message') && uuid !== 'new') {
+        const session = await ChatSessionManager.getSession(uuid).catch(() => null);
+        await initUsedModelsCache(session?.projectId || undefined, uuid);
+        if (session && !sessionStorage.getItem('pending-first-message') && uuid !== 'new') {
           const storedMessages = await DatabaseService.getMessages(uuid);
           setMessages(storedMessages.map(mapUIMessageToLegacyMessage));
-          const session = await ChatSessionManager.getSession(uuid);
-          if (session) {
-            setSessionId(uuid);
-            setSessionTitle(session.title);
-          }
+          setSessionId(uuid);
+          setSessionTitle(session.title);
+          if (session.projectId) setCurrentProjectId(session.projectId);
         } else if (uuid === 'new') {
           setSessionId('new');
           setSessionTitle('New conversation');
@@ -319,15 +348,23 @@ export const ChatPage = () => {
     } else {
       setSessionId(null);
     }
-  }, [uuid, setMessages, setSessionId, setSessionTitle, clearArtifacts]);
+  }, [uuid, setMessages, setSessionId, setSessionTitle, clearArtifacts, setCurrentProjectId]);
 
   useEffect(() => {
     isThinkingEnabledRef.current = isThinkingEnabled;
   }, [isThinkingEnabled]);
 
   useEffect(() => {
+    isWebSearchEnabledRef.current = isWebSearchEnabled;
+  }, [isWebSearchEnabled]);
+
+  useEffect(() => {
     currentModelRef.current = currentModel;
   }, [currentModel]);
+
+  useEffect(() => {
+    projectIdRef.current = currentProjectId;
+  }, [currentProjectId]);
 
   const messages = useMemo(
     () => rawMessages.map(mapUIMessageToLegacyMessage).filter(Boolean) as any[],
@@ -391,6 +428,7 @@ export const ChatPage = () => {
         const session = await ChatSessionManager.getSession(uuid).catch(() => null);
         if (session?.projectId) {
           delete projectContextCacheRef.current[session.projectId];
+          setProjectContext(null);
         }
 
         DatabaseService.saveMessages(uuid, [userMsg]).catch((e) =>
@@ -429,12 +467,13 @@ export const ChatPage = () => {
         }
       }
     },
-    [uuid, sendMessage, navigate, setSessionId, setSessionTitle, setIsTitleGenerating]
+    [uuid, sendMessage, navigate, setSessionId, setSessionTitle, setIsTitleGenerating, setProjectContext]
   );
 
   const handleAddProject = useCallback(async () => {
     try {
       projectContextCacheRef.current = {}; // Invalidate cache on project mutations
+      setProjectContext(null);
       let newProject: Project | null = null;
       let folderName = '';
       if (isTauri()) {
@@ -461,7 +500,7 @@ export const ChatPage = () => {
       console.error('Failed to open directory:', err);
       addToast('Could not open folder. Make sure the server is running and try again.', 'error');
     }
-  }, [navigate, addToast]);
+  }, [navigate, addToast, setProjectContext]);
 
   useEffect(() => {
     if (uuid && uuid !== 'new') {
@@ -482,12 +521,32 @@ export const ChatPage = () => {
     [addArtifacts, selectArtifact, openPanel]
   );
 
+  const [pendingConfirm, setPendingConfirm] = useState<{ tool: string; description: string } | null>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setPendingConfirm(detail ? { tool: detail.tool, description: detail.description } : null);
+    };
+    window.addEventListener('tool-confirm-request', handler);
+    return () => window.removeEventListener('tool-confirm-request', handler);
+  }, []);
+
   const panelRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background relative">
       <PageGradient />
-      {uuid !== 'new' && messages.length > 0 && <TitleBar />}
+      {uuid !== 'new' && messages.length > 0 && (
+        <TitleBar
+          isProject={isProject}
+          isIDEVisible={isIDEPanelOpen}
+          isTerminalVisible={terminalVisible}
+          onToggleIDE={() => setIsIDEPanelOpen(p => !p)}
+          onToggleTerminal={toggleTerminal}
+          onNewThread={isProject ? handleNewThread : undefined}
+        />
+      )}
       <div className="flex flex-1 min-h-0 relative z-10">
         <div
           className={`flex flex-col min-w-0 bg-background relative ${
@@ -503,6 +562,8 @@ export const ChatPage = () => {
             lastAssistantIndex={lastAssistantIndex}
             isThinkingEnabled={isThinkingEnabled}
             onToggleThinking={toggleThinking}
+            isWebSearchEnabled={isWebSearchEnabled}
+            onToggleWebSearch={toggleWebSearch}
             onOpenArtifact={handleOpenArtifact}
             onCopy={handleCopyMessage}
             onThumbsUp={handleThumbsUp}
@@ -516,6 +577,25 @@ export const ChatPage = () => {
             currentMode={currentMode}
             onModeChange={handleModeChange}
             isProject={isProject}
+            bottomSlot={pendingConfirm ? (
+              <ConfirmDialog
+                open
+                mode="inline"
+                title="Confirm Action"
+                message={pendingConfirm.description}
+                confirmLabel="Approve"
+                cancelLabel="Deny"
+                variant="default"
+                onConfirm={() => {
+                  approveToolConfirmation();
+                  setPendingConfirm(null);
+                }}
+                onCancel={() => {
+                  denyToolConfirmation();
+                  setPendingConfirm(null);
+                }}
+              />
+            ) : undefined}
           />
         </div>
 
@@ -596,6 +676,8 @@ export const ChatPage = () => {
           </div>
         )}
       </div>
+
+
     </div>
   );
 };

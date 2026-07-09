@@ -169,4 +169,22 @@ export const DatabaseService = {
       localStorage.setItem(`rc_config_${key}`, value);
     }
   },
+
+  // Project Memory
+  async getProjectMemory(projectId: string): Promise<{ key: string; value: string; source: string; updatedAt: number }[]> {
+    const rows = await request<any[]>('get_project_memory', { projectId });
+    return rows.map(({ updated_at, ...rest }) => ({ ...rest, updatedAt: Number(updated_at) }));
+  },
+
+  async setProjectMemory(projectId: string, key: string, value: string, source: string): Promise<void> {
+    await request('set_project_memory', { projectId, key, value, source });
+  },
+
+  async deleteProjectMemory(projectId: string, key: string): Promise<void> {
+    await request('delete_project_memory', { projectId, key });
+  },
+
+  async clearProjectMemory(projectId: string): Promise<void> {
+    await request('clear_project_memory', { projectId });
+  },
 };

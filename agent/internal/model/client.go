@@ -18,6 +18,8 @@ type Client struct {
 	httpClient *http.Client
 }
 
+var _ ModelProvider = (*Client)(nil)
+
 func NewClient(config ProviderConfig) *Client {
 	return &Client{
 		config: config,
@@ -49,7 +51,11 @@ func (c *Client) chatURL() string {
 }
 
 func (c *Client) ChatCompletion(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
-	apiReq := buildAPIRequest(c.config.Model, req)
+	model := req.Model
+	if model == "" {
+		model = c.config.Model
+	}
+	apiReq := buildAPIRequest(model, req)
 	body, err := json.Marshal(apiReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -107,7 +113,11 @@ func (c *Client) ChatCompletion(ctx context.Context, req ChatRequest) (*ChatResp
 }
 
 func (c *Client) ChatCompletionStream(ctx context.Context, req ChatRequest, onChunk func(StreamChunk)) error {
-	apiReq := buildAPIRequest(c.config.Model, req)
+	model := req.Model
+	if model == "" {
+		model = c.config.Model
+	}
+	apiReq := buildAPIRequest(model, req)
 	apiReq.Stream = true
 
 	body, err := json.Marshal(apiReq)

@@ -20,7 +20,7 @@ const retryLoopRegex = /(?:^|\n)\s*(?:I(?:'m| am)\s+(?:struggling|failing|repeat
 
 // ── Regex: Tool call metadata leaking into reasoning ───────────────
 
-const toolCallRefRegex = /(?:^|\n)\s*(?:(?:calling|using|invoking|running)\s+(?:the\s+)?(?:web_search|fetchPage|imageSearch|newsSearch|webSearch|writeArtifact|subagent_run|read_file|edit_file|write_file|run_command|git_status|list_directory|grep_files|find_files|glob_files|code_search))\s.*$/gim;
+const toolCallRefRegex = /(?:^|\n)\s*(?:(?:calling|using|invoking|running)\s+(?:the\s+)?(?:web_search|write_artifact|subagent_run|read_file|edit_file|write_file|run_command|list_directory|search_codebase))\s.*$/gim;
 const toolResultRefRegex = /(?:^|\n)\s*(?:(?:the\s+)?(?:search|tool|function|call)\s+(?:returned|result|completed|finished|executed|done|gave|produced|showed))\s.*$/gim;
 const queryParamRegex = /(?:^|\n)\s*(?:query|q)\s*[=:]\s*["'].+?["']\s*$/gim;
 const toolMetadataLineRegex = /(?:^|\n)\s*(?:toolCallId|toolName|args|input|output|result|state)\s*[=:].*$/gim;
@@ -242,7 +242,24 @@ export const mapUIMessageToLegacyMessage = (m: UIMessage | null | undefined): Le
   }
 
   // Split content around writeArtifact tool call for shimmer placement
-  const { contentBeforeTool, contentAfterTool } = buildContentBeforeAfter(m.parts);
+  let { contentBeforeTool, contentAfterTool } = buildContentBeforeAfter(m.parts);
+  contentBeforeTool = contentBeforeTool ?? m.contentBeforeTool;
+  contentAfterTool = contentAfterTool ?? m.contentAfterTool;
+
+  // Strip reasoning from contentBeforeTool/contentAfterTool too (prevents leak into streamedIntention/streamedExplanation)
+  if (reasoning) {
+    const stripReasoning = (text: string | undefined): string | undefined => {
+      if (!text) return undefined;
+      let cleaned = text;
+      let pos: number;
+      while ((pos = cleaned.indexOf(reasoning)) !== -1) {
+        cleaned = (cleaned.slice(0, pos) + cleaned.slice(pos + reasoning.length)).trim();
+      }
+      return cleaned || undefined;
+    };
+    contentBeforeTool = stripReasoning(contentBeforeTool);
+    contentAfterTool = stripReasoning(contentAfterTool);
+  }
 
   const finalContent = sanitizeMarkdownContent(cleanContent);
 
@@ -251,8 +268,8 @@ export const mapUIMessageToLegacyMessage = (m: UIMessage | null | undefined): Le
     content: finalContent,
     reasoning,
     toolInvocations,
-    contentBeforeTool: contentBeforeTool ?? m.contentBeforeTool,
-    contentAfterTool: contentAfterTool ?? m.contentAfterTool,
+    contentBeforeTool,
+    contentAfterTool,
     artifacts: allArtifacts,
     hasPartialArtifact: hasPartialArtifact(content),
   };

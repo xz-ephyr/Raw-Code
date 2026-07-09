@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Settings02Icon, Key01Icon, ZapIcon, Cancel01Icon, FolderLibraryIcon, GlobeIcon, ViewIcon } from '@hugeicons/core-free-icons';
+import { Settings02Icon, Key01Icon, ZapIcon, Cancel01Icon, FolderLibraryIcon, GlobeIcon, ViewIcon, NoteIcon } from '@hugeicons/core-free-icons';
 import { GeneralTab } from './tabs/GeneralTab';
 import { ApiKeysTab } from './tabs/ApiKeysTab';
 import { WebSearchTab } from './tabs/WebSearchTab';
 import { AppearanceTab } from './tabs/AppearanceTab';
 import { BehaviorTab } from './tabs/BehaviorTab';
 import { StorageTab } from './tabs/StorageTab';
+import { ProjectMemoryTab } from './tabs/ProjectMemoryTab';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ const tabs = [
   { id: 'web-search', label: 'Web & Search', icon: GlobeIcon },
   { id: 'appearance', label: 'Appearance', icon: ViewIcon },
   { id: 'behavior', label: 'Behavior', icon: ZapIcon },
+  { id: 'project-memory', label: 'Project Memory', icon: NoteIcon },
   { id: 'storage', label: 'Storage', icon: FolderLibraryIcon },
 ] as const;
 
@@ -72,6 +74,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             {activeTab === 'web-search' && <WebSearchTab />}
             {activeTab === 'appearance' && <AppearanceTab />}
             {activeTab === 'behavior' && <BehaviorTab />}
+            {activeTab === 'project-memory' && <ProjectMemoryTab />}
             {activeTab === 'storage' && <StorageTab />}
           </div>
         </div>

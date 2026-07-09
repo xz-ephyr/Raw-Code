@@ -27,7 +27,7 @@ type Server struct {
 	orchestrator *agent.Orchestrator
 	express      *infra.ExpressClient
 	tauri        *infra.TauriShell
-	modelClient  *model.Client
+	modelClient  model.ModelProvider
 	apiKey       string
 	startTime    time.Time
 	workerCount  int
@@ -41,7 +41,7 @@ func New(
 	orch *agent.Orchestrator,
 	exp *infra.ExpressClient,
 	ts *infra.TauriShell,
-	mc *model.Client,
+	mc model.ModelProvider,
 	apiKey string,
 	workerCount int,
 ) *Server {

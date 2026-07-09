@@ -89,12 +89,7 @@ func allTools() []ToolDef {
 		writeFileTool(),
 		editFileTool(),
 		listDirectoryTool(),
-		grepFilesTool(),
-		globFilesTool(),
-		gitStatusTool(),
-		gitDiffTool(),
-		gitLogTool(),
-		gitBranchesTool(),
-		gitShowTool(),
+		searchCodebaseTool(),
+		runCommandTool(),
 	}
 }

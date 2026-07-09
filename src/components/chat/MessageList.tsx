@@ -13,6 +13,8 @@ interface MessageListProps {
   lastAssistantIndex: number;
   isThinkingEnabled: boolean;
   onToggleThinking: () => void;
+  isWebSearchEnabled: boolean;
+  onToggleWebSearch: () => void;
   onOpenArtifact: (artifact: any) => void;
   onCopy: (content: string) => void;
   onThumbsUp: () => void;
@@ -26,6 +28,7 @@ interface MessageListProps {
   currentMode?: string;
   onModeChange?: (modeId: string | undefined) => void;
   isProject?: boolean;
+  bottomSlot?: React.ReactNode;
 }
 
 export function MessageList({
@@ -35,6 +38,8 @@ export function MessageList({
   lastAssistantIndex,
   isThinkingEnabled,
   onToggleThinking,
+  isWebSearchEnabled,
+  onToggleWebSearch,
   onOpenArtifact,
   onCopy,
   onThumbsUp,
@@ -48,6 +53,7 @@ export function MessageList({
   currentMode,
   onModeChange,
   isProject,
+  bottomSlot,
 }: MessageListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
@@ -161,6 +167,8 @@ export function MessageList({
                 onStop={onStop}
                 isThinkingEnabled={isThinkingEnabled}
                 onToggleThinking={onToggleThinking}
+                isWebSearchEnabled={isWebSearchEnabled}
+                onToggleWebSearch={onToggleWebSearch}
                 onCreateProject={onAddProject}
                 onOpenIDE={onOpenIDE}
                 currentProjectName={currentProjectName}
@@ -173,6 +181,12 @@ export function MessageList({
           )}
         </div>
       </div>
+
+      {bottomSlot && (
+        <div className="shrink-0 w-full mx-auto px-4" style={{ maxWidth: 'min(880px, 100%)' }}>
+          {bottomSlot}
+        </div>
+      )}
 
       {showScrollButton && hasMessages && (
         <div className="shrink-0 flex justify-center w-full mx-auto bg-card relative" style={{ height: 0 }}>
@@ -194,6 +208,8 @@ export function MessageList({
           onStop={onStop}
           isThinkingEnabled={isThinkingEnabled}
           onToggleThinking={onToggleThinking}
+          isWebSearchEnabled={isWebSearchEnabled}
+          onToggleWebSearch={onToggleWebSearch}
           onCreateProject={onAddProject}
           onOpenIDE={onOpenIDE}
           currentProjectName={currentProjectName}

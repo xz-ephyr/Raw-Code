@@ -136,6 +136,14 @@ export async function migrate() {
       tree TEXT NOT NULL,
       updated_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS project_memory (
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      key TEXT NOT NULL,
+      value TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'manual',
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (project_id, key)
+    );
   `);
   console.log('Migration complete');
 }

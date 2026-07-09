@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ArrowUp02Icon, Add01Icon, Cancel01Icon, StopIcon, Attachment01Icon, CameraAdd01Icon, Atom02Icon, HandBag01Icon, ArrowRight01Icon, TeamWorkIcon, HandsClappingIcon, QuillWrite02Icon, Bug02Icon } from '@hugeicons/core-free-icons';
+import { ArrowUp02Icon, Add01Icon, Cancel01Icon, StopIcon, Attachment01Icon, CameraAdd01Icon, Atom02Icon, InternetIcon, HandBag01Icon, ArrowRight01Icon, TeamWorkIcon, HandsClappingIcon, QuillWrite02Icon, Bug02Icon } from '@hugeicons/core-free-icons';
 import { ThinScrollbar } from '../ui/ThinScrollbar';
 import ModelList from './ModelList';
 import { AGENTS as MODES } from '@core/agents';
@@ -12,6 +12,8 @@ interface ChatInputProps {
   isIdle?: boolean;
   isThinkingEnabled: boolean;
   onToggleThinking: () => void;
+  isWebSearchEnabled: boolean;
+  onToggleWebSearch: () => void;
   currentModel?: string;
   currentMode?: string;
   onModeChange?: (modeId: string | undefined) => void;
@@ -122,7 +124,7 @@ function NTabDropdown({ isIdle, currentMode, onModeChange, isProject }: { isIdle
   );
 }
 
-function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, isIdle }: { isThinkingEnabled: boolean; onToggleThinking: () => void; isIdle?: boolean }) {
+function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, isWebSearchEnabled, onToggleWebSearch, isIdle }: { isThinkingEnabled: boolean; onToggleThinking: () => void; isWebSearchEnabled: boolean; onToggleWebSearch: () => void; isIdle?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSkillsOpen, setIsSkillsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -181,6 +183,17 @@ function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, isIdle }: { isTh
               className={`relative w-9 h-5 rounded-full transition-colors ${isThinkingEnabled ? 'bg-blue-500' : 'bg-muted-foreground'}`}
             >
               <span className={`absolute top-[3px] left-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${isThinkingEnabled ? 'translate-x-4' : ''}`} />
+            </button>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-2 text-xs text-foreground rounded-[6px] cursor-pointer hover:bg-muted" onClick={onToggleWebSearch}>
+            <HugeiconsIcon icon={InternetIcon} size={16} />
+            <span className="flex-1">Web Search</span>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onToggleWebSearch(); }}
+              className={`relative w-9 h-5 rounded-full transition-colors ${isWebSearchEnabled ? 'bg-blue-500' : 'bg-muted-foreground'}`}
+            >
+              <span className={`absolute top-[3px] left-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${isWebSearchEnabled ? 'translate-x-4' : ''}`} />
             </button>
           </div>
           <div className="h-px bg-border mx-3" />
@@ -260,7 +273,7 @@ function SendButton({
   );
 }
 
-export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkingEnabled, onToggleThinking, currentModel, currentMode, onModeChange, isProject }: ChatInputProps) {
+export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkingEnabled, onToggleThinking, isWebSearchEnabled, onToggleWebSearch, currentModel, currentMode, onModeChange, isProject }: ChatInputProps) {
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -311,7 +324,7 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
         <div className="flex flex-col px-3 py-1.5 bg-transparent gap-1">
             <div className="flex items-center justify-between">
             <div className="flex items-center gap-0.5">
-              <ToolbarDropdown isThinkingEnabled={isThinkingEnabled} onToggleThinking={onToggleThinking} isIdle={isIdle} />
+              <ToolbarDropdown isThinkingEnabled={isThinkingEnabled} onToggleThinking={onToggleThinking} isWebSearchEnabled={isWebSearchEnabled} onToggleWebSearch={onToggleWebSearch} isIdle={isIdle} />
               <NTabDropdown isIdle={isIdle} currentMode={currentMode} onModeChange={onModeChange} isProject={isProject} />
               {isThinkingEnabled && <ThinkingPill onToggleThinking={onToggleThinking} size="small" />}
             </div>

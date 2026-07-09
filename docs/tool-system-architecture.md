@@ -38,16 +38,11 @@ The AI model's tool loop runs entirely in `streamText()` — it generates tool c
 ### Go Tools (already built)
 
 ```
-research/   code/        git/          system/        network/
-├─ web_search  ├─ code_search  ├─ git_status   ├─ run_command  ├─ http_request
-├─ fetch_page  ├─ read_file    ├─ git_diff     ├─ system_info  └─ check_url
-├─ image_search├─ write_file   ├─ git_log      ├─ list_processes
-├─ news_search ├─ edit_file    ├─ git_branches └─ resolve_path
-└─ search_docs ├─ list_dir     └─ git_show
-                ├─ find_files
-                ├─ file_stats
-                ├─ count_lines
-                └─ grep_files
+search/        code/           action/
+├─ web_search  ├─ read_file    ├─ run_command
+├─ search_codebase├─ write_file├─ write_artifact
+               ├─ edit_file   └─ subagent_run
+               └─ list_directory
 ```
 
 These tools:

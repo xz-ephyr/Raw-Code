@@ -27,9 +27,14 @@ func readFileTool() ToolDef {
 				return nil, fmt.Errorf("path is required")
 			}
 
-			safePath, err := e.SandboxPath(expandPath(path))
+			safePath, err := e.SandboxPath(path)
 			if err != nil {
 				return nil, err
+			}
+
+			if IsRestrictedPath(safePath) {
+				e.LogViolation("read_file", "restricted_file", safePath)
+				return nil, fmt.Errorf("cannot read restricted file (may contain secrets): %s", path)
 			}
 			data, err := os.ReadFile(safePath)
 			if err != nil {

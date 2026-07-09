@@ -16,18 +16,19 @@ import (
 )
 
 type AgentHub struct {
-	TaskManager  *task.Manager
-	ToolRegistry *tool.Registry
-	Executor     *tool.Executor
-	Pool         *worker.Pool
-	Orchestrator *agent.Orchestrator
-	Express      *infra.ExpressClient
-	Tauri        *infra.TauriShell
-	ModelClient  *model.Client
-	AgentServer  *server.Server
+	TaskManager   *task.Manager
+	ToolRegistry  *tool.Registry
+	Executor      *tool.Executor
+	Pool          *worker.Pool
+	Orchestrator  *agent.Orchestrator
+	Express       *infra.ExpressClient
+	Tauri         *infra.TauriShell
+	ModelClient   model.ModelProvider
+	AgentServer   *server.Server
+	ProviderReg   *model.ProviderRegistry
 }
 
-func NewAgentHub(expressURL string, apiKey string, modelCfg *model.ProviderConfig, projectRoot string) *AgentHub {
+func NewAgentHub(expressURL string, apiKey string, providerReg *model.ProviderRegistry, projectRoot string) *AgentHub {
 	express := infra.NewExpressClient(expressURL)
 	tauri := infra.NewTauriShell()
 
@@ -35,12 +36,13 @@ func NewAgentHub(expressURL string, apiKey string, modelCfg *model.ProviderConfi
 	reg := tool.NewRegistry()
 	reg.RegisterDefaults()
 	exec := tool.NewExecutor(reg, expressURL, projectRoot)
+	exec.ConfirmWrites = true
 
 	pool := worker.NewPool(4, tm, exec)
 
-	var mc *model.Client
-	if modelCfg != nil && modelCfg.APIKey != "" {
-		mc = model.NewClient(*modelCfg)
+	var mc model.ModelProvider
+	if providerReg != nil && len(providerReg.AvailableProviders()) > 0 {
+		mc = model.NewRouterClient(providerReg)
 	}
 
 	orch := agent.NewOrchestrator(tm, reg, exec, pool, mc)
@@ -61,8 +63,45 @@ func NewAgentHub(expressURL string, apiKey string, modelCfg *model.ProviderConfi
 		},
 	}, func(ctx context.Context, e *tool.Executor, params map[string]any) (any, error) {
 		taskStr, _ := params["task"].(string)
+		tasksRaw := params["tasks"]
+
+		// Mode 2: parallel tasks array (decompose-style execution).
+		if tasksArr, ok := tasksRaw.([]any); ok && len(tasksArr) > 0 {
+			subtaskDescs := make([]string, 0, len(tasksArr))
+			for _, t := range tasksArr {
+				if s, ok := t.(string); ok {
+					subtaskDescs = append(subtaskDescs, s)
+				}
+			}
+			if len(subtaskDescs) == 0 {
+				return nil, fmt.Errorf("tasks array is empty or contains non-string items")
+			}
+
+			contextStr, _ := params["context"].(string)
+			modelStr, _ := params["model"].(string)
+			maxSteps := 10
+			if v, ok := params["maxSteps"].(float64); ok {
+				maxSteps = int(v)
+			}
+			if maxSteps > 50 {
+				maxSteps = 50
+			}
+			depth := 0
+			if v, ok := params["_depth"].(float64); ok {
+				depth = int(v)
+			}
+
+			summary := orch.RunSubTasks(ctx, subtaskDescs, contextStr, modelStr, maxSteps, depth)
+			return map[string]any{
+				"result": summary,
+				"steps":  len(subtaskDescs),
+				"mode":   "parallel",
+			}, nil
+		}
+
+		// Mode 1: single task (standard behaviour).
 		if taskStr == "" {
-			return nil, fmt.Errorf("task is required")
+			return nil, fmt.Errorf("task is required when tasks array is not provided")
 		}
 		contextStr, _ := params["context"].(string)
 		modelStr, _ := params["model"].(string)
@@ -70,6 +109,13 @@ func NewAgentHub(expressURL string, apiKey string, modelCfg *model.ProviderConfi
 		maxSteps := 10
 		if v, ok := params["maxSteps"].(float64); ok {
 			maxSteps = int(v)
+		}
+		if maxSteps > 50 {
+			maxSteps = 50
+		}
+		depth := 0
+		if v, ok := params["_depth"].(float64); ok {
+			depth = int(v)
 		}
 		var toolScope []string
 		if ts, ok := params["toolScope"].([]any); ok {
@@ -87,6 +133,7 @@ func NewAgentHub(expressURL string, apiKey string, modelCfg *model.ProviderConfi
 			ToolScope: toolScope,
 			MaxSteps:  maxSteps,
 			AgentType: agentType,
+			Depth:     depth,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("sub-agent spawn failed: %w", err)
@@ -101,6 +148,7 @@ func NewAgentHub(expressURL string, apiKey string, modelCfg *model.ProviderConfi
 		return map[string]any{
 			"result": sub.Result,
 			"steps":  sub.Steps,
+			"mode":   "single",
 		}, nil
 	})
 
@@ -116,6 +164,7 @@ func NewAgentHub(expressURL string, apiKey string, modelCfg *model.ProviderConfi
 		Tauri:        tauri,
 		ModelClient:  mc,
 		AgentServer:  srv,
+		ProviderReg:  providerReg,
 	}
 
 	pool.Start()

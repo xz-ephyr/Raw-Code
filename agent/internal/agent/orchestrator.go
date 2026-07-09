@@ -23,7 +23,7 @@ type Orchestrator struct {
 	executor    *tool.Executor
 	pool        *worker.Pool
 	subAgents   *SubAgentManager
-	modelClient *model.Client
+	modelClient model.ModelProvider
 	mu          sync.RWMutex
 	workflows   map[string]WorkflowDef
 }
@@ -41,7 +41,7 @@ type WorkflowStep struct {
 	Map    map[string]string `json:"map,omitempty"`
 }
 
-func NewOrchestrator(manager *task.Manager, registry *tool.Registry, executor *tool.Executor, pool *worker.Pool, modelClient *model.Client) *Orchestrator {
+func NewOrchestrator(manager *task.Manager, registry *tool.Registry, executor *tool.Executor, pool *worker.Pool, modelClient model.ModelProvider) *Orchestrator {
 	return &Orchestrator{
 		manager:     manager,
 		registry:    registry,
@@ -158,7 +158,23 @@ func (o *Orchestrator) runDecomposedTask(t *task.Task) {
 		}(i, st)
 	}
 
-	wg.Wait()
+	// Use a channel so we can select on wait completion vs. context timeout.
+	waitDone := make(chan struct{}, 1)
+	go func() {
+		wg.Wait()
+		waitDone <- struct{}{}
+	}()
+	select {
+	case <-waitDone:
+	case <-ctx.Done():
+		completed := 0
+		for _, r := range results {
+			if r != "" {
+				completed++
+			}
+		}
+		log.Printf("[orchestrator] decompose task %s timed out — returning partial results (%d/%d tasks)", t.ID, completed, len(subtasks))
+	}
 
 	summary := o.synthesizeResults(ctx, t.Prompt, results)
 
@@ -476,6 +492,95 @@ func (o *Orchestrator) RegisterWorkflow(def WorkflowDef) {
 
 func (o *Orchestrator) SubAgentManager() *SubAgentManager {
 	return o.subAgents
+}
+
+// RunSubTasks spawns one sub-agent per task description, waits for all to
+// complete (in parallel), synthesises the results into a single summary, and
+// then summarises the synthesised result.  This is the public entry-point used
+// by the hub so that subagent_run with a `tasks` array does not need to go
+// through the full Task/Manager path.
+func (o *Orchestrator) RunSubTasks(ctx context.Context, subtaskDescs []string, contextStr, modelStr string, maxStepsPerTask, depth int) string {
+	if len(subtaskDescs) == 0 {
+		return ""
+	}
+
+	// Use a timeout context so a hung sub-agent cannot block indefinitely.
+	runCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+
+	results := make([]string, len(subtaskDescs))
+	var wg sync.WaitGroup
+
+	for i, desc := range subtaskDescs {
+		wg.Add(1)
+		go func(idx int, taskDesc string) {
+			defer wg.Done()
+
+			sub, err := o.subAgents.Spawn(runCtx, SubAgentRequest{
+				Task:      taskDesc,
+				Context:   contextStr,
+				Model:     modelStr,
+				MaxSteps:  maxStepsPerTask,
+				Depth:     depth + 1,
+			})
+			if err != nil {
+				results[idx] = fmt.Sprintf("Subtask %d failed: %v", idx+1, err)
+				return
+			}
+
+			// Wait with context awareness: if the context was cancelled
+			// (timeout) we bail out instead of blocking on sub.Wait().
+			done := make(chan struct{}, 1)
+			go func() {
+				sub.Wait()
+				done <- struct{}{}
+			}()
+			select {
+			case <-done:
+			case <-runCtx.Done():
+				results[idx] = fmt.Sprintf("Subtask %d timed out", idx+1)
+				return
+			}
+
+			if sub.Error != "" {
+				results[idx] = fmt.Sprintf("Subtask %d failed: %s", idx+1, sub.Error)
+			} else {
+				results[idx] = sub.Result
+			}
+		}(i, desc)
+	}
+
+	wg.Wait()
+
+	// Synthesise raw results via LLM.
+	var fullTask string
+	if len(subtaskDescs) == 1 {
+		fullTask = subtaskDescs[0]
+	} else {
+		fullTask = fmt.Sprintf("Parallel tasks: %s", strings.Join(subtaskDescs, "; "))
+	}
+	synthesised := o.synthesizeResults(runCtx, fullTask, results)
+
+	// Apply summarisation (same pattern as subagent's complete()).
+	if o.modelClient != nil {
+		summPrompt := fmt.Sprintf(`Summarise the following in 1-3 sentences. What was done and what was the key finding or outcome?
+
+Full result:
+%s`, synthesised)
+		summMsgs := []model.Message{
+			{Role: "system", Content: "You produce concise 1-3 sentence summaries. No commentary, no markdown, no headings."},
+			{Role: "user", Content: summPrompt},
+		}
+		summResp, err := o.modelClient.ChatCompletion(context.Background(), model.ChatRequest{
+			Messages: summMsgs,
+		})
+		if err == nil && summResp.Content != "" {
+			return summResp.Content
+		}
+		// fall through to raw synthesised result on error
+	}
+
+	return synthesised
 }
 
 func (o *Orchestrator) RegisterDefaultWorkflows() {

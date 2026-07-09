@@ -13,30 +13,50 @@ func editFileTool() ToolDef {
 	return ToolDef{
 		Definition: api.ToolDefinition{
 			Name:        "edit_file",
-			Description: "Apply a patch to an existing file by replacing exact string matches. Use this for surgical edits instead of rewriting entire files.",
+			Description: "Apply edits to an existing file. Provide old_string/new_string for exact string replacements, or a unified diff patch for surgical multi-hunk edits.",
 			Category:    "code",
 			Parameters: map[string]api.ParamDef{
 				"path":       {Type: "string", Description: "Absolute or relative file path", Required: true},
-				"old_string": {Type: "string", Description: "Exact string to search for and replace (must match exactly)", Required: true},
-				"new_string": {Type: "string", Description: "Replacement string", Required: true},
+				"old_string": {Type: "string", Description: "Exact string to search for and replace (alternative to patch)", Required: false},
+				"new_string": {Type: "string", Description: "Replacement string for old_string (required if old_string is set)", Required: false},
+				"patch":      {Type: "string", Description: "Unified diff patch to apply (alternative to old_string/new_string)", Required: false},
+				"confirm":    {Type: "boolean", Description: "Set to true to confirm this destructive edit operation", Required: false},
 			},
 		},
 		Handler: func(ctx context.Context, e *Executor, params map[string]any) (any, error) {
+			if err := e.RequireConfirm(params); err != nil {
+				return nil, err
+			}
 			path, _ := params["path"].(string)
 			if path == "" {
 				return nil, fmt.Errorf("path is required")
 			}
-			oldStr, _ := params["old_string"].(string)
-			if oldStr == "" {
-				return nil, fmt.Errorf("old_string is required")
-			}
-			newStr, _ := params["new_string"].(string)
 
-			safePath, err := e.SandboxPath(expandPath(path))
+			oldStr, hasOld := params["old_string"].(string)
+			newStr, _ := params["new_string"].(string)
+			patchStr, hasPatch := params["patch"].(string)
+
+			// Mode 2: unified diff patch
+			if hasPatch && patchStr != "" {
+				return applyDiff(e, path, patchStr)
+			}
+
+			// Mode 1: exact string replacement
+			if !hasOld || oldStr == "" {
+				return nil, fmt.Errorf("either old_string or patch is required")
+			}
+
+			safePath, err := e.SandboxPath(path)
 			if err != nil {
 				return nil, err
 			}
 			path = safePath
+
+			if IsRestrictedPath(path) {
+				e.LogViolation("edit_file", "restricted_file", path)
+				return nil, fmt.Errorf("cannot edit restricted file (may contain secrets): %s", path)
+			}
+
 			data, err := os.ReadFile(path)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read file: %w", err)

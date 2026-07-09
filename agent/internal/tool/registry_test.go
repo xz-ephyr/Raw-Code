@@ -86,7 +86,7 @@ func TestListByCategory(t *testing.T) {
 
 	r.Register(api.ToolDefinition{Name: "web_search", Description: "search", Category: "research"}, handler)
 	r.Register(api.ToolDefinition{Name: "read_file", Description: "read", Category: "code"}, handler)
-	r.Register(api.ToolDefinition{Name: "git_status", Description: "git", Category: "git"}, handler)
+	r.Register(api.ToolDefinition{Name: "run_command", Description: "shell", Category: "system"}, handler)
 
 	tools := r.ListByCategory("research")
 	if len(tools) != 1 {
@@ -124,7 +124,7 @@ func TestRegisterDefaults(t *testing.T) {
 	}
 
 	// Verify a few expected tools exist
-	expectedTools := []string{"web_search", "read_file", "write_file", "git_status"}
+	expectedTools := []string{"web_search", "read_file", "write_file", "run_command"}
 	for _, name := range expectedTools {
 		def, ok := r.Get(name)
 		if !ok {

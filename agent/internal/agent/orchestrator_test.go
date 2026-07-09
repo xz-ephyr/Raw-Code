@@ -134,10 +134,10 @@ func TestIsAlpha(t *testing.T) {
 func TestNewOrchestrator(t *testing.T) {
 	tm := task.NewManager()
 	reg := tool.NewRegistry()
-	exec := tool.NewExecutor(reg, "http://localhost:3001")
+	exec := tool.NewExecutor(reg, "http://localhost:3001", "")
 	pool := worker.NewPool(2, tm, exec)
 	mc := model.NewClient(model.ProviderConfig{
-		Provider: model.ProviderOpenAI,
+		Provider: model.ProviderOpenCodeZen,
 		BaseURL:  "http://localhost:8080",
 		APIKey:   "test-key",
 		Model:    "test-model",
@@ -152,7 +152,7 @@ func TestNewOrchestrator(t *testing.T) {
 func TestRegisterWorkflow(t *testing.T) {
 	tm := task.NewManager()
 	reg := tool.NewRegistry()
-	exec := tool.NewExecutor(reg, "http://localhost:3001")
+	exec := tool.NewExecutor(reg, "http://localhost:3001", "")
 	pool := worker.NewPool(2, tm, exec)
 
 	orch := NewOrchestrator(tm, reg, exec, pool, nil)
@@ -179,7 +179,7 @@ func TestRegisterWorkflow(t *testing.T) {
 func TestSubmitDirectTask(t *testing.T) {
 	tm := task.NewManager()
 	reg := tool.NewRegistry()
-	exec := tool.NewExecutor(reg, "http://localhost:3001")
+	exec := tool.NewExecutor(reg, "http://localhost:3001", "")
 	pool := worker.NewPool(2, tm, exec)
 	pool.Start()
 	defer pool.Stop()
@@ -224,10 +224,10 @@ func TestDecomposeTask(t *testing.T) {
 	// Test the decomposeTask pure logic with a mock model client
 	tm := task.NewManager()
 	reg := tool.NewRegistry()
-	exec := tool.NewExecutor(reg, "http://localhost:3001")
+	exec := tool.NewExecutor(reg, "http://localhost:3001", "")
 	pool := worker.NewPool(2, tm, exec)
 	mc := model.NewClient(model.ProviderConfig{
-		Provider: model.ProviderOpenAI,
+		Provider: model.ProviderOpenCodeZen,
 		BaseURL:  "http://localhost:8080",
 		APIKey:   "test-key",
 		Model:    "test-model",

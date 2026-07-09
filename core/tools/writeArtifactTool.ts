@@ -1,7 +1,9 @@
 import { tool, zodSchema } from 'ai';
 import { z } from 'zod';
 
-export const writeArtifactTool = tool({
+export const writeArtifactTool = {
+  name: 'write_artifact',
+  ...tool({
   description: 'Create or update an interactive preview artifact: code, HTML, SVG, Mermaid diagram, React component, or markdown document. Use for substantial content (>15 lines). Reuse the same identifier to update an existing artifact. One artifact per message unless asked otherwise.',
   inputSchema: zodSchema(z.object({
     identifier: z.string().describe('Unique kebab-case identifier for the artifact. Reuse to update an existing artifact.'),
@@ -13,4 +15,4 @@ export const writeArtifactTool = tool({
   execute: async ({ identifier, type, title, language, content }) => {
     return { identifier, type, title, language, content };
   },
-});
+})};

@@ -5,6 +5,7 @@ export * from './prompt/systemPrompt';
 export { TOOLCALL_GUIDE } from './prompt/toolcallGuide';
 export * from './memory/contextController';
 export * from './memory/contextContractor';
+export * from './memory/projectMemory';
 export * from './models/aiService';
 export * from './workspace/FileSystemService';
 export * from './utils/DatabaseService';
