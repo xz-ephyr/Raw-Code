@@ -67,3 +67,7 @@ staging/
 
 # Browser subproject
 browser/
+
+# Fallow analysis reports (generated)
+fallow/
+.fallowrc

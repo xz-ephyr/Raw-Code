@@ -41,10 +41,10 @@ async function getProviders(projectId?: string) {
   });
 
   const baseURLPromises = allProviders
-    .filter(p => p.id === 'opencodezen')
     .map(async (p) => {
-      const baseURL = await DatabaseService.getConfig('opencodezen-base-url')
-        .then(r => r || localStorage.getItem('opencodezen-base-url') || p.baseURL);
+      const baseURLKey = `${p.id}-base-url`;
+      const baseURL = await DatabaseService.getConfig(baseURLKey)
+        .then(r => r || localStorage.getItem(baseURLKey) || p.baseURL);
       return { id: p.id, baseURL };
     });
 
@@ -192,8 +192,11 @@ export async function chatCompletion({
   const getLanguageModel = (name: string) => {
     const def = getModelDefinition(name);
     if (!def) {
-      const fallback = providers.get('google');
-      return fallback ? fallback('gemini-3.5-flash') : null;
+      const firstId = providers.keys().next().value;
+      const firstClients = providers.values();
+      const fallback = firstClients.next().value;
+      const fallbackModel = firstId ? getModelDefinition(firstId) : null;
+      return fallback && fallbackModel ? fallback(fallbackModel.id) : null;
     }
 
     const client = providers.get(def.provider);

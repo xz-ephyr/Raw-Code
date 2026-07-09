@@ -14,7 +14,7 @@ export interface FileContent {
   text: string;
 }
 
-export interface ProjectContent {
+interface ProjectContent {
   tree: string;
   contents: FileContent[];
   truncated: boolean;

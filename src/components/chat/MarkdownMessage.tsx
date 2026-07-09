@@ -1,4 +1,4 @@
-import React, { memo, Fragment, useMemo, useDeferredValue, type ComponentType } from 'react';
+import { memo, Fragment, useMemo, useDeferredValue, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -10,10 +10,10 @@ import { visit } from 'unist-util-visit';
 import type { Root, Text } from 'mdast';
 import type { PluggableList } from 'unified';
 import { CodeBlock } from './CodeBlock';
-import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from './Table';
 import { InlineSourcePill } from './InlineSourcePill';
 import { MermaidBlock } from './MermaidBlock';
 import { MarkdownErrorBoundary } from './MarkdownErrorBoundary';
+import { createBaseComponents } from '@/components/markdown/sharedComponents';
 
 const citationRegex = /【([^】]+)】/g;
 
@@ -224,11 +224,8 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, sources 
   const sourceIndex = useMemo(() => buildSourceIndex(sources), [sources]);
 
   const markdownComponents = useMemo(() => {
-    const base: Record<string, ComponentType<any>> = {
-      pre({ children }: { children: React.ReactNode }) {
-        return <div className="w-full">{children}</div>;
-      },
-      code({ node, className, children, ...props }: { node?: { parent?: { tagName: string } }; className?: string; children?: React.ReactNode; [key: string]: any }) {
+    const overrides: Record<string, any> = {
+      code({ node, className, children, ...props }: any) {
         const hasPreParent = node?.parent?.tagName === 'pre';
         const isInline = !hasPreParent;
         const match = /language-(\w+)/.exec(className || '');
@@ -247,19 +244,13 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, sources 
         }
         return <code {...props}>{children}</code>;
       },
-      p({ children }) {
-        return <div className="mb-4 last:mb-0">{children}</div>;
-      },
-      ul({ children }) {
+      ul({ children }: { children: ReactNode }) {
         return <ul className="list-disc pl-5 mb-4 space-y-1 [&_.task-list-item]:list-none [&_.task-list-item]:-ml-5">{children}</ul>;
       },
-      ol({ children }) {
-        return <ol className="list-decimal pl-5 mb-4 space-y-1">{children}</ol>;
-      },
-      li({ children }) {
+      li({ children }: { children: ReactNode }) {
         return <li className="[&>input[type=checkbox]]:mr-2 [&>input[type=checkbox]]:accent-primary [&>input[type=checkbox]]:translate-y-[1px]">{children}</li>;
       },
-      input({ type, checked, ...props }) {
+      input({ type, checked, ...props }: any) {
         return (
           <input
             type={type || 'checkbox'}
@@ -269,7 +260,7 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, sources 
           />
         );
       },
-      h1({ children }) {
+      h1({ children }: any) {
         const id = slugify(String(children));
         return (
           <h1 id={id} className="text-2xl font-semibold mb-4 mt-6 text-foreground scroll-mt-20">
@@ -277,7 +268,7 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, sources 
           </h1>
         );
       },
-      h2({ children }) {
+      h2({ children }: any) {
         const id = slugify(String(children));
         return (
           <h2 id={id} className="text-xl font-semibold mb-3 mt-5 text-foreground scroll-mt-20">
@@ -285,7 +276,7 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, sources 
           </h2>
         );
       },
-      h3({ children }) {
+      h3({ children }: any) {
         const id = slugify(String(children));
         return (
           <h3 id={id} className="text-lg font-semibold mb-3 mt-4 text-foreground scroll-mt-20">
@@ -293,7 +284,7 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, sources 
           </h3>
         );
       },
-      h4({ children }) {
+      h4({ children }: any) {
         const id = slugify(String(children));
         return (
           <h4 id={id} className="text-base font-semibold mb-2 mt-4 text-foreground scroll-mt-20">
@@ -301,32 +292,7 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, sources 
           </h4>
         );
       },
-      table({ children, ...props }) {
-        return <Table {...props}>{children}</Table>;
-      },
-      thead({ children, ...props }) {
-        return <TableHead {...props}>{children}</TableHead>;
-      },
-      tbody({ children, ...props }) {
-        return <TableBody {...props}>{children}</TableBody>;
-      },
-      tr({ children, ...props }) {
-        return <TableRow {...props}>{children}</TableRow>;
-      },
-      th({ children, ...props }) {
-        return <TableHeaderCell {...props}>{children}</TableHeaderCell>;
-      },
-      td({ children, ...props }) {
-        return <TableCell {...props}>{children}</TableCell>;
-      },
-      blockquote({ children }) {
-        return (
-          <blockquote className="border-l-4 border-border pl-4 py-1 italic text-muted-foreground mb-4 bg-muted/50 rounded-r-lg">
-            {children}
-          </blockquote>
-        );
-      },
-      a({ href, children }) {
+      a({ href, children }: any) {
         const safeHref = isSafeUri(href);
         if (!safeHref) {
           return <span className="text-muted-foreground line-through">{children}</span>;
@@ -346,10 +312,7 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, sources 
           </a>
         );
       },
-      hr() {
-        return <hr className="my-6 border-border" />;
-      },
-      img({ src, alt }) {
+      img({ src, alt }: any) {
         const safeSrc = isSafeUri(src);
         if (!safeSrc) {
           return (
@@ -397,8 +360,10 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, sources 
       },
     };
 
+    const base = createBaseComponents(overrides);
+
     if (hasCitations) {
-      base.citation = ({ citation = '' }: { citation?: string }) => {
+      (base as any).citation = ({ citation = '' }: { citation?: string }) => {
         const matched = lookupCitation(citation, sourceIndex);
         if (matched) {
           return (

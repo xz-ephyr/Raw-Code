@@ -44,7 +44,7 @@ export function InlineSourcePill({ url, title, snippet }: InlineSourcePillProps)
         title={title || domain}
         aria-label={`Source: ${title || domain}`}
       >
-        <img src={faviconUrl} alt="" width={14} height={14} className="rounded-full shrink-0" loading="lazy" />
+        <img src={faviconUrl} alt="" width={14} height={14} className="rounded-full shrink-0" loading="lazy" onError={(e) => { (e.currentTarget).style.display = 'none'; }} />
         <span className="sr-only">Opens in new tab</span>
       </a>
 

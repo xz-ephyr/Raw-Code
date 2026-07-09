@@ -7,35 +7,27 @@ import {
   SELECTED_MODEL_STORAGE_KEY,
   getStoredModelMode,
   getStoredSelectedModel,
-  API_KEYS,
   MODELS,
 } from '@core/config/models';
 import { refreshProviders } from '@core/models/aiService';
 import { DatabaseService } from '@core/utils/DatabaseService';
+import { getAllProviders, getProviderLabel } from '@core/providers';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { ModelIcon } from '@/components/ui/ModelIcon';
 
-const PROVIDER_LABELS: Record<string, string> = {
-  google: 'Google Gemini',
-  groq: 'Groq',
-  opencodezen: 'OpenCode Zen',
-  mistral: 'Mistral',
-  openrouter: 'OpenRouter',
-  cerebras: 'Cerebras',
-};
-
 export function ApiKeysTab() {
+  const providers = getAllProviders();
+
   const [keys, setKeys] = useState<Record<string, string>>(
-    Object.fromEntries(Object.keys(API_KEYS).map(k => [k, '']))
+    Object.fromEntries(providers.map(p => [p.id, '']))
   );
 
   useEffect(() => {
     (async () => {
       const initial: any = {};
-      for (const key of Object.keys(API_KEYS)) {
-        const storageKey = (API_KEYS as any)[key];
-        initial[key] = await DatabaseService.getConfig(storageKey)
-          .then(r => r || localStorage.getItem(storageKey) || '');
+      for (const p of providers) {
+        initial[p.id] = await DatabaseService.getConfig(p.configKey)
+          .then(r => r || localStorage.getItem(p.configKey) || '');
       }
       setKeys(initial);
     })();
@@ -49,11 +41,11 @@ export function ApiKeysTab() {
   const handleSaveApiKeys = async () => {
     setIsSaving(true);
     await new Promise((r) => setTimeout(r, 300));
-    await Promise.all(Object.keys(API_KEYS).map((key) =>
-      DatabaseService.setConfig((API_KEYS as any)[key], keys[key])
+    await Promise.all(providers.map((p) =>
+      DatabaseService.setConfig(p.configKey, keys[p.id])
     ));
-    Object.keys(API_KEYS).forEach((key) => {
-      localStorage.setItem((API_KEYS as any)[key], keys[key]);
+    providers.forEach((p) => {
+      localStorage.setItem(p.configKey, keys[p.id]);
     });
     localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
     localStorage.setItem(MODEL_MODE_STORAGE_KEY, modelMode);
@@ -71,13 +63,13 @@ export function ApiKeysTab() {
       </div>
 
       <div className="grid gap-x-6 gap-y-4 grid-cols-1 sm:grid-cols-2">
-        {Object.keys(PROVIDER_LABELS).map((providerId) => (
-          <div key={providerId} className="flex flex-col gap-1.5">
-            <label className="text-[12px] font-medium text-muted-foreground ml-1">{PROVIDER_LABELS[providerId]}</label>
+        {providers.map((p) => (
+          <div key={p.id} className="flex flex-col gap-1.5">
+            <label className="text-[12px] font-medium text-muted-foreground ml-1">{p.label}</label>
             <PasswordInput
-              value={keys[providerId]}
-              onChange={(value) => setKeys({ ...keys, [providerId]: value })}
-              placeholder={`Enter ${PROVIDER_LABELS[providerId]} Key`}
+              value={keys[p.id]}
+              onChange={(value) => setKeys({ ...keys, [p.id]: value })}
+              placeholder={`Enter ${p.label} Key`}
               showKeyIcon
             />
           </div>
@@ -116,7 +108,7 @@ export function ApiKeysTab() {
               <span className="flex-1 truncate">
                 {(() => {
                   const def = MODELS.find(m => m.id === selectedModel);
-                  return def ? `${def.label} (${PROVIDER_LABELS[def.provider] || def.provider})` : selectedModel;
+                  return def ? `${def.label} (${getProviderLabel(def.provider) || def.provider})` : selectedModel;
                 })()}
               </span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground shrink-0">
@@ -139,7 +131,7 @@ export function ApiKeysTab() {
                     >
                       <ModelIcon modelId={model.id} size={14} />
                       <span className="flex-1 truncate">{model.label}</span>
-                      <span className="text-[11px] text-muted-foreground shrink-0">{PROVIDER_LABELS[model.provider] || model.provider}</span>
+                      <span className="text-[11px] text-muted-foreground shrink-0">{getProviderLabel(model.provider) || model.provider}</span>
                       {model.supportsThinking && (
                         <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-blue-500 shrink-0 ml-auto" />
                       )}

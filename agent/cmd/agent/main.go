@@ -46,13 +46,13 @@ func main() {
 		fmt.Println("WARNING: PROJECT_ROOT is not set. Filesystem access is UNRESTRICTED.")
 		fmt.Println("  Set PROJECT_ROOT to restrict file access to the project directory.")
 	}
-	if providerReg == nil || len(providerReg.AvailableProviders()) == 0 {
+	if providerReg == nil || len(providerReg.AvailableIDs()) == 0 {
 		fmt.Println("WARNING: No model provider configured. LLM features will use heuristic fallback.")
 		fmt.Println("  Set MODEL_API_KEY env var or add API keys via the Settings UI (stored in Express DB).")
 	} else {
-		fmt.Printf("Provider registry loaded with %d provider(s):\n", len(providerReg.AvailableProviders()))
-		for _, p := range providerReg.AvailableProviders() {
-			cfg := providerReg.Config(p)
+		fmt.Printf("Provider registry loaded with %d provider(s):\n", len(providerReg.AvailableIDs()))
+		for _, id := range providerReg.AvailableIDs() {
+			cfg := providerReg.Config(id)
 			fmt.Printf("  - %s: %s (model: %s)\n", cfg.Provider, cfg.BaseURL, cfg.Model)
 		}
 	}
@@ -80,50 +80,31 @@ func loadProviderRegistry(express *infra.ExpressClient) *model.ProviderRegistry 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	configs := make(map[model.Provider]*model.ProviderConfig)
+	reg := model.DefaultProviderRegistry()
 
-	for _, provider := range model.AllProviders() {
-		apiKey := os.Getenv(model.ProviderEnvVar(provider))
+	for _, info := range reg.AllInfo() {
+		apiKey := os.Getenv(info.EnvVar)
 		if apiKey == "" {
-			configKey := model.ProviderAPIKeyConfigKey(provider)
-			if configKey != "" {
-				if key, err := express.GetConfig(ctx, configKey); err == nil && key != "" {
-					apiKey = key
-				}
+			if key, err := express.GetConfig(ctx, info.APIKeyConfigKey); err == nil && key != "" {
+				apiKey = key
 			}
 		}
 		if apiKey == "" {
 			continue
 		}
 
-		baseURL := model.ProviderBaseURL(provider)
-
-		defaultModel := "deepseek-v4-flash-free"
-		switch provider {
-		case model.ProviderOpenRouter:
-			defaultModel = "deepseek/deepseek-chat"
-		case model.ProviderGoogle:
-			defaultModel = "gemini-3.5-flash"
-		case model.ProviderGroq:
-			defaultModel = "llama-3.1-8b-instant"
-		case model.ProviderMistral:
-			defaultModel = "mistral-small-latest"
-		case model.ProviderCerebras:
-			defaultModel = "gpt-oss-120b"
-		}
-
-		configs[provider] = &model.ProviderConfig{
-			Provider: provider,
-			BaseURL:  baseURL,
+		reg.SetConfig(info.ID, &model.ProviderConfig{
+			Provider: info.ID,
+			BaseURL:  info.BaseURL,
 			APIKey:   apiKey,
-			Model:    defaultModel,
-		}
+			Model:    info.DefaultModel,
+		})
 	}
 
-	if len(configs) == 0 {
+	if len(reg.AvailableIDs()) == 0 {
 		return nil
 	}
-	return model.NewProviderRegistry(configs)
+	return reg
 }
 
 func runIntegrityChecks(reg *tool.Registry) {

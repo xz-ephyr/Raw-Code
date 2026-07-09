@@ -8,6 +8,6 @@ export const teamworkAgent: Agent = {
   icon: 'TeamWorkIcon',
   description: 'Collaborate with your team',
   systemPrompt: TEAMWORK_AGENT_PROMPT,
-  color: 'blue-700',
+  color: 'amber-500',
   toolScope: teamworkTools.map((t) => t.name),
 };

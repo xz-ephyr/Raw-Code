@@ -19,10 +19,6 @@ export function requestToolConfirmation(
   });
 }
 
-export function getPendingConfirmation(): PendingConfirmation | null {
-  return currentPending;
-}
-
 export function approveToolConfirmation(result?: any) {
   if (resolveConfirm) {
     resolveConfirm(result ?? { approved: true });

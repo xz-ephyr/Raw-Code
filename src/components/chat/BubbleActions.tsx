@@ -32,7 +32,7 @@ function SourcesFooter({ sources }: { sources: TimelineSource[] }) {
               title={src.title || src.url}
               className="no-underline -ml-1.5 first:ml-0"
             >
-              <img src={faviconUrl} alt={domain} width={14} height={14} className="rounded-full shrink-0" loading="lazy" />
+              <img src={faviconUrl} alt={domain} width={14} height={14} className="rounded-full shrink-0" loading="lazy" onError={(e) => { (e.currentTarget).style.display = 'none'; }} />
             </a>
           );
         })}

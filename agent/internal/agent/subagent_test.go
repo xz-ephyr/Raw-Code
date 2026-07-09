@@ -1,8 +1,12 @@
 package agent
 
 import (
+	"context"
 	"testing"
 
+	"github.com/xz-ephyr/raw-code/agent/internal/model"
+	"github.com/xz-ephyr/raw-code/agent/internal/task"
+	"github.com/xz-ephyr/raw-code/agent/internal/tool"
 	"github.com/xz-ephyr/raw-code/agent/pkg/api"
 )
 
@@ -191,6 +195,70 @@ func TestToolsToModelDefinitionsEmpty(t *testing.T) {
 	if len(defs) != 0 {
 		t.Fatalf("expected 0 definitions for empty input, got %d", len(defs))
 	}
+}
+
+func TestSubAgentModelConfig(t *testing.T) {
+	mock := &mockModel{
+		responses: []model.ChatResponse{
+			{Content: "completed", FinishReason: "stop"},
+		},
+	}
+
+	tm := task.NewManager()
+	reg := tool.NewRegistry()
+	reg.RegisterDefaults()
+	exec := tool.NewExecutor(reg, "", t.TempDir())
+	sm := NewSubAgentManager(tm, exec, mock)
+
+	t.Run("custom model in request", func(t *testing.T) {
+		sub, err := sm.Spawn(context.Background(), SubAgentRequest{
+			Task:  "test task",
+			Model: "gpt-4-turbo",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		sub.Wait()
+		if sub.Request.Model != "gpt-4-turbo" {
+			t.Errorf("expected model 'gpt-4-turbo', got %q", sub.Request.Model)
+		}
+		if sub.Status != "completed" {
+			t.Errorf("expected completed, got %q: %s", sub.Status, sub.Error)
+		}
+	})
+
+	t.Run("inherits model from modelClient when empty", func(t *testing.T) {
+		mock2 := &mockModel{responses: []model.ChatResponse{{Content: "ok", FinishReason: "stop"}}}
+		sm2 := NewSubAgentManager(task.NewManager(), exec, mock2)
+
+		sub, err := sm2.Spawn(context.Background(), SubAgentRequest{
+			Task: "test task",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		sub.Wait()
+		if sub.Request.Model != "mock" {
+			t.Errorf("expected model 'mock' (from client), got %q", sub.Request.Model)
+		}
+	})
+
+	t.Run("no model client uses heuristic fallback", func(t *testing.T) {
+		sm3 := NewSubAgentManager(task.NewManager(), exec, nil)
+		sub, err := sm3.Spawn(context.Background(), SubAgentRequest{
+			Task: "search for something",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		sub.Wait()
+		if sub.Status != "completed" {
+			t.Errorf("expected completed with heuristic, got %q: %s", sub.Status, sub.Error)
+		}
+		if sub.Result == "" {
+			t.Error("expected non-empty result from heuristic execution")
+		}
+	})
 }
 
 func TestHeuristicNextSteps(t *testing.T) {

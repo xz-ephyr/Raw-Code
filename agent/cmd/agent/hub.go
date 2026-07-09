@@ -41,7 +41,7 @@ func NewAgentHub(expressURL string, apiKey string, providerReg *model.ProviderRe
 	pool := worker.NewPool(4, tm, exec)
 
 	var mc model.ModelProvider
-	if providerReg != nil && len(providerReg.AvailableProviders()) > 0 {
+	if providerReg != nil && len(providerReg.AvailableIDs()) > 0 {
 		mc = model.NewRouterClient(providerReg)
 	}
 

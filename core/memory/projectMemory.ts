@@ -81,6 +81,4 @@ export function extractFactsFromResult(toolName: string, input: unknown, output:
   return facts;
 }
 
-export function factsDiscovered(facts: DiscoveredFact[]): boolean {
-  return facts.length > 0;
-}
+

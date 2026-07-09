@@ -31,6 +31,7 @@ const MODE_COLORS: Record<string, string> = {
   'blue-700': '#1d4ed8',
   'orange-700': '#c2410c',
   'purple-700': '#7e22ce',
+  'amber-500': '#f59e0b',
 };
 
 const NTABS = MODES.map((m) => ({

@@ -31,8 +31,8 @@ export const useProjectStore = create<ProjectState>((set) => ({
   projectMemory: [],
   isThinkingEnabled: false,
   isWebSearchEnabled: true,
-  currentMode: 'plan',
-  selectedModel: 'gemini-3.5-flash',
+  currentMode: 'explorer',
+  selectedModel: 'z-ai/glm-4.7-flash-free',
   modelRevision: 0,
 
   setCurrentProjectId: (id) => set({ currentProjectId: id }),
@@ -41,7 +41,9 @@ export const useProjectStore = create<ProjectState>((set) => ({
   setProjectMemory: (memory) => set({ projectMemory: memory }),
   setIsThinkingEnabled: (enabled) => set({ isThinkingEnabled: enabled }),
   setIsWebSearchEnabled: (enabled) => set({ isWebSearchEnabled: enabled }),
-  setCurrentMode: (mode) => set({ currentMode: mode }),
+  setCurrentMode: (mode) => {
+    set({ currentMode: mode });
+  },
   setSelectedModel: (model) => set({ selectedModel: model }),
   incrementModelRevision: () => set((state) => ({ modelRevision: state.modelRevision + 1 })),
 }));

@@ -10,7 +10,7 @@ export const subagentRunTool = {
       task: z.string().optional().describe('Single task description. Provide goals, constraints, expected output, and context.'),
       tasks: z.array(z.string()).optional().describe('Array of task descriptions for parallel execution. Each spawns a sub-agent; results are synthesised.'),
       context: z.string().optional().describe('Additional background information, code snippets, or references the sub-agent(s) need.'),
-      model: z.string().optional().describe('Optional model ID override for the sub-agent(s) (e.g. "gemini-3.5-flash", "mistral-large-latest"). Defaults to the current model.'),
+      model: z.string().optional().describe('Optional model ID override for the sub-agent(s) (e.g. "z-ai/glm-4.7-flash-free", "deepseek/deepseek-v3.2"). Defaults to the current model.'),
       maxSteps: z.number().optional().describe('Maximum steps per sub-agent loop. Default 10. Increase for complex research, decrease for simple delegation.'),
       agentType: z.string().optional().describe('Optional agent type override (e.g. "explorer"). If set, the sub-agent uses the specified agent\'s system prompt and tool scope.'),
       toolScope: z.array(z.string()).optional().describe('Restrict the sub-agent to specific tools (e.g. ["read_file", "search_codebase", "web_search"]). If omitted, the agent type default scope is used.'),

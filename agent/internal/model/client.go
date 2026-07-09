@@ -37,7 +37,7 @@ func (c *Client) BaseURL() string {
 	return c.config.BaseURL
 }
 
-func (c *Client) Provider() Provider {
+func (c *Client) Provider() string {
 	return c.config.Provider
 }
 
@@ -55,6 +55,7 @@ func (c *Client) ChatCompletion(ctx context.Context, req ChatRequest) (*ChatResp
 	if model == "" {
 		model = c.config.Model
 	}
+	req = sanitizeRequest(req, c.config.Provider)
 	apiReq := buildAPIRequest(model, req)
 	body, err := json.Marshal(apiReq)
 	if err != nil {
@@ -106,6 +107,7 @@ func (c *Client) ChatCompletion(ctx context.Context, req ChatRequest) (*ChatResp
 				Name:      tc.Function.Name,
 				Arguments: tc.Function.Arguments,
 			},
+			ThoughtSignature: tc.ThoughtSignature,
 		})
 	}
 
@@ -117,6 +119,7 @@ func (c *Client) ChatCompletionStream(ctx context.Context, req ChatRequest, onCh
 	if model == "" {
 		model = c.config.Model
 	}
+	req = sanitizeRequest(req, c.config.Provider)
 	apiReq := buildAPIRequest(model, req)
 	apiReq.Stream = true
 
@@ -184,6 +187,7 @@ func (c *Client) ChatCompletionStream(ctx context.Context, req ChatRequest, onCh
 						Name:      tc.Function.Name,
 						Arguments: tc.Function.Arguments,
 					},
+					ThoughtSignature: tc.ThoughtSignature,
 				})
 			}
 		}
@@ -224,9 +228,10 @@ type openAIMessage struct {
 }
 
 type openAIToolCall struct {
-	ID       string               `json:"id,omitempty"`
-	Type     string               `json:"type,omitempty"`
-	Function openAIToolCallFunction `json:"function,omitempty"`
+	ID               string                 `json:"id,omitempty"`
+	Type             string                 `json:"type,omitempty"`
+	Function         openAIToolCallFunction `json:"function,omitempty"`
+	ThoughtSignature string                 `json:"thought_signature,omitempty"`
 }
 
 type openAIToolCallFunction struct {
@@ -294,10 +299,74 @@ type openAIStreamDelta struct {
 	ToolCalls []openAIToolCall  `json:"tool_calls,omitempty"`
 }
 
+var googleProviderNames = []string{"google"}
+
+func isGoogleProvider(provider string) bool {
+	lower := strings.ToLower(provider)
+	for _, name := range googleProviderNames {
+		if lower == name {
+			return true
+		}
+	}
+	return false
+}
+
+// sanitizeRequest strips tool-related fields for providers that do not
+// support function calling (e.g. Google's OpenAI-compatible endpoint).
+func sanitizeRequest(req ChatRequest, provider string) ChatRequest {
+	if !isGoogleProvider(provider) {
+		return req
+	}
+
+	req.Tools = nil
+
+	var sanitized []Message
+	for _, msg := range req.Messages {
+		switch msg.Role {
+		case "assistant":
+			msg.ToolCalls = nil
+			sanitized = append(sanitized, msg)
+		case "tool":
+			content := msg.Content
+			if content == "" {
+				content = "(tool completed)"
+			}
+			if msg.Name != "" {
+				sanitized = append(sanitized, Message{
+					Role:    "user",
+					Content: "Tool " + msg.Name + " returned: " + content,
+				})
+			} else {
+				sanitized = append(sanitized, Message{
+					Role:    "user",
+					Content: "Tool returned: " + content,
+				})
+			}
+		default:
+			sanitized = append(sanitized, msg)
+		}
+	}
+	req.Messages = sanitized
+	return req
+}
+
 func buildAPIRequest(model string, req ChatRequest) openAIRequest {
+	var tools []openAITool
+	for _, tool := range req.Tools {
+		tools = append(tools, openAITool{
+			Type: "function",
+			Function: openAIFunction{
+				Name:        tool.Name,
+				Description: tool.Description,
+				Parameters:  tool.Parameters,
+			},
+		})
+	}
+
 	apiReq := openAIRequest{
 		Model:       model,
 		Messages:    make([]openAIMessage, len(req.Messages)),
+		Tools:       tools,
 		Stream:      req.Stream,
 		Temperature: 0.7,
 	}
@@ -324,25 +393,12 @@ func buildAPIRequest(model string, req ChatRequest) openAIRequest {
 						Name:      tc.Function.Name,
 						Arguments: tc.Function.Arguments,
 					},
+					ThoughtSignature: tc.ThoughtSignature,
 				}
 			}
 		}
 
 		apiReq.Messages[i] = apiMsg
-	}
-
-	if len(req.Tools) > 0 {
-		apiReq.Tools = make([]openAITool, len(req.Tools))
-		for i, tool := range req.Tools {
-			apiReq.Tools[i] = openAITool{
-				Type: "function",
-				Function: openAIFunction{
-					Name:        tool.Name,
-					Description: tool.Description,
-					Parameters:  tool.Parameters,
-				},
-			}
-		}
 	}
 
 	return apiReq

@@ -4,17 +4,6 @@ import { ArrowDown01Icon, CheckmarkCircle01Icon } from '@hugeicons/core-free-ico
 import { MODELS, getModelDefinition, SELECTED_MODEL_STORAGE_KEY } from '@core/config/models';
 import { ModelIcon } from '@/components/ui/ModelIcon';
 
-const PROVIDER_LABELS: Record<string, string> = {
-  google: 'Google',
-  groq: 'Groq',
-  opencodezen: 'OpenCode Zen',
-  mistral: 'Mistral',
-  openrouter: 'OpenRouter',
-  cerebras: 'Cerebras',
-};
-
-const PROVIDER_ORDER = ['google', 'groq', 'opencodezen', 'mistral', 'openrouter', 'cerebras'];
-
 interface ModelListProps {
   currentModel: string;
   showThinkingOnly?: boolean;
@@ -48,12 +37,6 @@ export default function ModelList({ currentModel, showThinkingOnly, isIdle }: Mo
     ? MODELS.filter(m => m.supportsThinking)
     : MODELS;
 
-  const groups = PROVIDER_ORDER.map((provider) => ({
-    provider,
-    label: PROVIDER_LABELS[provider] || provider,
-    models: filteredModels.filter((m) => m.provider === provider),
-  })).filter((g) => g.models.length > 0);
-
   return (
     <div className="relative" ref={ref}>
       <button
@@ -68,30 +51,23 @@ export default function ModelList({ currentModel, showThinkingOnly, isIdle }: Mo
       {isOpen && (
         <div className={`absolute ${isIdle ? 'top-full mt-1' : 'bottom-full mb-1'} right-0 w-[229px] bg-card border border-border rounded-xl shadow-xl shadow-black/30 z-[9999] overflow-hidden`}>
           <div className="overflow-y-auto thin-scrollbar" style={{ maxHeight: '190px' }}>
-            {groups.map((group) => (
-              <div key={group.provider}>
-                <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                  {group.label}
-                </div>
-                {group.models.map((model, idx) => (
-                  <button
-                    key={`${model.id}-${idx}`}
-                    type="button"
-                    onClick={() => handleSelect(model.id)}
-                    className={`w-full text-left px-3 py-1 text-xs transition-colors flex items-center gap-2 rounded-md ${
-                       model.id === currentModel
-                         ? 'text-foreground bg-muted'
-                         : 'text-muted-foreground hover:bg-muted'
-                    }`}
-                  >
-                    <ModelIcon modelId={model.id} size={14} />
-                    <span className="truncate">{model.label}</span>
-                    {model.supportsThinking && (
-                      <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-blue-500 shrink-0 ml-auto" />
-                    )}
-                  </button>
-                ))}
-              </div>
+            {filteredModels.map((model, idx) => (
+              <button
+                key={`${model.id}-${idx}`}
+                type="button"
+                onClick={() => handleSelect(model.id)}
+                className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center gap-2 rounded-md ${
+                   model.id === currentModel
+                     ? 'text-foreground bg-muted'
+                     : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                <ModelIcon modelId={model.id} size={14} />
+                <span className="truncate">{model.label}</span>
+                {model.supportsThinking && (
+                  <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-blue-500 shrink-0 ml-auto" />
+                )}
+              </button>
             ))}
           </div>
         </div>

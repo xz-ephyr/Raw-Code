@@ -7,27 +7,20 @@ import {
   SELECTED_MODEL_STORAGE_KEY,
   getStoredModelMode,
   getStoredSelectedModel,
-  API_KEYS,
   MODELS,
 } from '@core/config/models';
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { ModelIcon } from '@/components/ui/ModelIcon';
+import { getAllProviders, getProviderLabel } from '@core/providers';
 
 interface ModelSetupStepProps {
   onComplete: () => void;
   onSkip: () => void;
 }
 
-const PROVIDER_LABELS: Record<string, string> = {
-  google: 'Google Gemini',
-  groq: 'Groq',
-  opencodezen: 'OpenCode Zen',
-  mistral: 'Mistral',
-  openrouter: 'OpenRouter',
-  cerebras: 'Cerebras',
-};
-
 export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
+  const providers = getAllProviders();
+
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const modelDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -43,16 +36,15 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
   }, [isModelDropdownOpen]);
 
   const [keys, setKeys] = useState<Record<string, string>>(
-    Object.fromEntries(Object.keys(API_KEYS).map(k => [k, '']))
+    Object.fromEntries(providers.map(p => [p.id, '']))
   );
 
   useEffect(() => {
     (async () => {
       const initial: any = {};
-      for (const key of Object.keys(API_KEYS)) {
-        const storageKey = (API_KEYS as any)[key];
-        initial[key] = await DatabaseService.getConfig(storageKey)
-          .then(r => r || localStorage.getItem(storageKey) || '');
+      for (const p of providers) {
+        initial[p.id] = await DatabaseService.getConfig(p.configKey)
+          .then(r => r || localStorage.getItem(p.configKey) || '');
       }
       setKeys(initial);
     })();
@@ -67,11 +59,11 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
   };
 
   const handleSave = async () => {
-    await Promise.all(Object.keys(API_KEYS).map((key) =>
-      DatabaseService.setConfig((API_KEYS as any)[key], keys[key])
+    await Promise.all(providers.map((p) =>
+      DatabaseService.setConfig(p.configKey, keys[p.id])
     ));
-    Object.keys(API_KEYS).forEach((key) => {
-      localStorage.setItem((API_KEYS as any)[key], keys[key]);
+    providers.forEach((p) => {
+      localStorage.setItem(p.configKey, keys[p.id]);
     });
     localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
     localStorage.setItem(MODEL_MODE_STORAGE_KEY, modelMode);
@@ -79,8 +71,8 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
     onComplete();
   };
 
-  const hasAnyKey = Object.keys(PROVIDER_LABELS).some(
-    (p) => keys[p]?.trim().length > 0
+  const hasAnyKey = providers.some(
+    (p) => keys[p.id]?.trim().length > 0
   );
 
   return (
@@ -100,29 +92,29 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
       </div>
 
       <div className="space-y-4">
-        {Object.keys(PROVIDER_LABELS).map((providerId) => (
-          <div key={providerId} className="flex flex-col gap-1.5">
+        {providers.map((p) => (
+          <div key={p.id} className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-foreground ml-1">
-              {PROVIDER_LABELS[providerId]}
+              {p.label}
             </label>
             <div className="relative">
               <div className="absolute left-3 top-2.5 text-muted-foreground">
                 <HugeiconsIcon icon={Key01Icon} size={14} />
               </div>
               <input
-                type={showKeys[providerId] ? 'text' : 'password'}
+                type={showKeys[p.id] ? 'text' : 'password'}
                 className="h-10 bg-muted rounded-[10px] pl-9 pr-10 outline-none text-sm w-full border border-border focus:border-muted-foreground transition-colors"
-                placeholder={`Enter ${PROVIDER_LABELS[providerId]} API Key`}
-                value={keys[providerId]}
-                onChange={(e) => setKeys({ ...keys, [providerId]: e.target.value })}
+                placeholder={`Enter ${p.label} API Key`}
+                value={keys[p.id]}
+                onChange={(e) => setKeys({ ...keys, [p.id]: e.target.value })}
               />
               <button
                 type="button"
-                onClick={() => toggleShowKey(providerId)}
+                onClick={() => toggleShowKey(p.id)}
                 className="absolute right-2.5 top-2 text-muted-foreground hover:text-muted-foreground"
               >
                 <HugeiconsIcon
-                  icon={showKeys[providerId] ? ViewOffSlashIcon : ViewIcon}
+                  icon={showKeys[p.id] ? ViewOffSlashIcon : ViewIcon}
                   size={16}
                 />
               </button>
@@ -160,7 +152,7 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
               <span className="flex-1 truncate">
                 {(() => {
                   const def = MODELS.find(m => m.id === selectedModel);
-                  return def ? `${def.label} (${PROVIDER_LABELS[def.provider] || def.provider})` : selectedModel;
+                  return def ? `${def.label} (${getProviderLabel(def.provider)})` : selectedModel;
                 })()}
               </span>
               <HugeiconsIcon icon={ArrowDown01Icon} size={16} className="text-muted-foreground shrink-0" />
@@ -181,7 +173,7 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
                     >
                       <ModelIcon modelId={model.id} size={14} />
                       <span className="flex-1 truncate">{model.label}</span>
-                      <span className="text-[11px] text-muted-foreground shrink-0">{PROVIDER_LABELS[model.provider] || model.provider}</span>
+                      <span className="text-[11px] text-muted-foreground shrink-0">{getProviderLabel(model.provider)}</span>
                       {model.supportsThinking && (
                         <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-blue-500 shrink-0 ml-auto" />
                       )}

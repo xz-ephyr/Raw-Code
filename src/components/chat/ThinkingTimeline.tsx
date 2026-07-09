@@ -105,18 +105,43 @@ function formatDuration(seconds: number): string {
 function shortenPath(fullPath: string): string {
   if (!fullPath) return '';
   const segments = fullPath.split(/[\\\/]/).filter(Boolean);
-  const knownSkip = new Set(['C:', 'D:', 'Users', 'zephy', 'Documents']);
-  let startIdx = 0;
-  for (let i = 0; i < segments.length; i++) {
-    if (!knownSkip.has(segments[i])) {
-      startIdx = i;
-      break;
-    }
-  }
-  const projectRoot = segments[startIdx];
-  const rest = segments.slice(startIdx + 1);
   const sep = fullPath.includes('\\') ? '\\' : '/';
-  return `~${projectRoot}${rest.length > 0 ? sep + rest.join(sep) : ''}`;
+
+  let start = 0;
+  if (segments.length > 0 && /^[a-zA-Z]:$/.test(segments[start])) start++;
+
+  const relevant = segments.slice(start);
+  if (relevant.length <= 2) return relevant.join(sep);
+  return relevant.slice(-3).join(sep);
+}
+
+const INLINE_EXTRACTORS: Record<string, (input: any, output: any) => ReturnType<typeof extractInlineInfo>> = {
+  run_command: (input) => {
+    const cmd = input.command || '';
+    return { inlineSummary: cmd.slice(0, 80), scriptLine: cmd };
+  },
+  read_file: (input) => {
+    const path = input.path || '';
+    const offset = input.offset;
+    const limit = input.limit;
+    const short = shortenPath(path);
+    const summary = offset != null ? `${short} (offset=${offset}, limit=${limit ?? 'full'})` : short;
+    return { inlineSummary: summary, filePath: short, readOffset: offset, readLimit: limit };
+  },
+  write_file: (input, output) => extractFileEditInfo(input, output),
+  edit_file: (input, output) => extractFileEditInfo(input, output),
+  search_codebase: (input) => ({ inlineSummary: input.query || input.pattern || input.path || '' }),
+  list_directory: (input) => ({ inlineSummary: shortenPath(input.path || '') }),
+};
+
+function extractFileEditInfo(input: any, output: any) {
+  const path = input.path || '';
+  const oldContent = output?.oldContent || '';
+  const newContent = output?.content || input?.content || '';
+  const added = Math.max(0, newContent.split('\n').length - oldContent.split('\n').length);
+  const removed = Math.max(0, oldContent.split('\n').length - newContent.split('\n').length);
+  const short = shortenPath(path);
+  return { inlineSummary: `${short}  +${added} / -${removed}`, filePath: short, linesAdded: added, linesRemoved: removed };
 }
 
 function extractInlineInfo(toolName: string, input: any, output: any): {
@@ -129,72 +154,35 @@ function extractInlineInfo(toolName: string, input: any, output: any): {
   readLimit?: number;
 } {
   if (!input) return { inlineSummary: '' };
-  switch (toolName) {
-    case 'run_command': {
-      const cmd = input.command || '';
-      return { inlineSummary: cmd.slice(0, 80), scriptLine: cmd };
-    }
-    case 'read_file': {
-      const path = input.path || '';
-      const offset = input.offset;
-      const limit = input.limit;
-      const short = shortenPath(path);
-      const summary = offset != null ? `${short} (offset=${offset}, limit=${limit ?? 'full'})` : short;
-      return { inlineSummary: summary, filePath: short, readOffset: offset, readLimit: limit };
-    }
-    case 'write_file':
-    case 'edit_file': {
-      const path = input.path || '';
-      const oldContent = output?.oldContent || '';
-      const newContent = output?.content || input?.content || '';
-      const added = Math.max(0, newContent.split('\n').length - oldContent.split('\n').length);
-      const removed = Math.max(0, oldContent.split('\n').length - newContent.split('\n').length);
-      const short = shortenPath(path);
-      return { inlineSummary: `${short}  +${added} / -${removed}`, filePath: short, linesAdded: added, linesRemoved: removed };
-    }
-    case 'search_codebase': {
-      return { inlineSummary: input.query || input.pattern || input.path || '' };
-    }
-    case 'list_directory': {
-      const path = input.path || '';
-      return { inlineSummary: shortenPath(path) };
-    }
-    default:
-      return { inlineSummary: '' };
-  }
+  return (INLINE_EXTRACTORS[toolName] || (() => ({ inlineSummary: '' })))(input, output);
 }
 
 function formatToolOutput(toolName: string, output: any): string {
   if (!output) return '';
-  if (toolName === 'read_file') {
-    return output.content || output.text || JSON.stringify(output, null, 2);
-  }
-  if (toolName === 'write_file' || toolName === 'edit_file') {
-    return output.message || output.result || JSON.stringify(output, null, 2);
-  }
-  if (toolName === 'run_command') {
-    const parts: string[] = [];
-    if (output.stdout) parts.push(`stdout:\n${output.stdout}`);
-    if (output.stderr) parts.push(`stderr:\n${output.stderr}`);
-    if (output.exitCode != null) parts.push(`exit code: ${output.exitCode}`);
-    return parts.join('\n\n') || JSON.stringify(output, null, 2);
-  }
-  if (toolName === 'subagent_run') {
-    return output.result || output.summary || output.output || JSON.stringify(output, null, 2);
-  }
-  if (toolName === 'list_directory') {
-    if (output.entries && Array.isArray(output.entries)) {
-      return output.entries.map((e: any) => `${e.name}${e.isDir ? '/' : ''}`).join('\n');
-    }
-    if (output.files && Array.isArray(output.files)) {
-      return output.files.join('\n');
-    }
-    if (output.paths && Array.isArray(output.paths)) {
-      return output.paths.map((p: string) => shortenPath(p)).join('\n');
-    }
-    return JSON.stringify(output, null, 2);
-  }
-  return JSON.stringify(output, null, 2);
+
+  const formatters: Record<string, (o: any) => string> = {
+    read_file: (o) => o.content || o.text || JSON.stringify(o, null, 2),
+    write_file: (o) => o.message || o.result || JSON.stringify(o, null, 2),
+    edit_file: (o) => o.message || o.result || JSON.stringify(o, null, 2),
+    run_command: (o) => {
+      const parts: string[] = [];
+      if (o.stdout) parts.push(`stdout:\n${o.stdout}`);
+      if (o.stderr) parts.push(`stderr:\n${o.stderr}`);
+      if (o.exitCode != null) parts.push(`exit code: ${o.exitCode}`);
+      return parts.join('\n\n') || JSON.stringify(o, null, 2);
+    },
+    subagent_run: (o) => o.result || o.summary || o.output || JSON.stringify(o, null, 2),
+    list_directory: (o) => {
+      if (o.entries && Array.isArray(o.entries)) {
+        return o.entries.map((e: any) => `${e.name}${e.isDir ? '/' : ''}`).join('\n');
+      }
+      if (o.files && Array.isArray(o.files)) return o.files.join('\n');
+      if (o.paths && Array.isArray(o.paths)) return o.paths.map((p: string) => shortenPath(p)).join('\n');
+      return JSON.stringify(o, null, 2);
+    },
+  };
+
+  return (formatters[toolName] || ((o) => JSON.stringify(o, null, 2)))(output);
 }
 
 // ── Hooks ──────────────────────────────────────────────────────────
@@ -209,7 +197,7 @@ function useSearchTimer(isRunning: boolean): number {
         setElapsed(0);
       }
       const id = setInterval(() => {
-        if (startTimeRef.current !== null) {
+        if (startTimeRef.current !== null && !document.hidden) {
           setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
         }
       }, 200);
@@ -240,7 +228,7 @@ function ThinkingStepContent({ reasoning, isActive, isStreaming }: {
   return (
     <div className="flex flex-col gap-1">
       {reasoning && (
-        <div ref={contentRef} className="text-[12px] leading-relaxed text-foreground/90 [&>p]:my-0 font-inter">
+        <div ref={contentRef} className="text-[14px] leading-relaxed text-foreground/90 [&>p]:my-0 font-inter">
           <ReactMarkdown remarkPlugins={REMARK_PLUGINS} components={{
             code({ inline, className, children, ...props }: any) {
               if (inline) return <code {...props}>{children}</code>;
@@ -252,7 +240,7 @@ function ThinkingStepContent({ reasoning, isActive, isStreaming }: {
         </div>
       )}
       {showEllipsis && (
-        <div className="text-[13px] leading-relaxed text-muted-foreground animate-pulse">...</div>
+        <div className="text-[15px] leading-relaxed text-muted-foreground animate-pulse">...</div>
       )}
     </div>
   );
@@ -271,37 +259,37 @@ function SearchingStepContent({ step }: { step: TimelineStep }) {
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
         {isError ? (
-          <span className="text-xs font-medium text-red-500 font-inter truncate">
+          <span className="text-sm font-medium text-red-500 font-inter truncate">
             {query ? `Search failed — ${query}` : 'Search failed'}
           </span>
         ) : isRunning ? (
-          <span className="thinking-shimmer-text text-xs font-medium font-inter truncate">
+          <span className="thinking-shimmer-text text-sm font-medium font-inter truncate">
             {query ? `Searching — ${query}` : 'Searching'}
             {timerLabel && <span className="text-muted-foreground ml-1">· {timerLabel}</span>}
           </span>
         ) : (
-          <span className="text-xs font-medium text-muted-foreground font-inter">
+          <span className="text-sm font-medium text-muted-foreground font-inter">
             Searched{query ? ` — ${query}` : ''}
             {timerLabel && <span className="text-muted-foreground ml-1">· {timerLabel}</span>}
           </span>
         )}
       </div>
       {isError && (
-        <div className="text-xs text-red-400 font-inter">{(step as any).error || 'An error occurred during search.'}</div>
+        <div className="text-sm text-red-400 font-inter">{(step as any).error || 'An error occurred during search.'}</div>
       )}
       {!isError && (isRunning || sources.length > 0) && (
         <div className="w-full rounded-[8px] border border-border/30 bg-muted/30 p-2 max-h-[135px] overflow-y-auto thin-scrollbar">
           {sources.length === 0 && isRunning ? (
             <div className="flex items-center gap-2 min-h-[24px]">
-              <span className="text-[11px] text-muted-foreground/50 italic">Gathering sources...</span>
+              <span className="text-[15px] text-muted-foreground/50 italic">Gathering sources...</span>
             </div>
           ) : (
             <div className="flex flex-col gap-px">
               {sources.map((src, sIdx) => (
                 <a key={sIdx} href={src.url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 pl-0.5 pr-1 py-0.5 rounded-[4px] hover:bg-foreground/10 active:bg-foreground/20 transition-colors no-underline text-[11px] text-foreground/80 w-full"
+                  className="flex items-center gap-2 pl-0.5 pr-1 py-0.5 rounded-[4px] hover:bg-foreground/10 active:bg-foreground/20 transition-colors no-underline text-[15px] text-foreground/80 w-full"
                 >
-                  <img src={`https://www.google.com/s2/favicons?domain=${getDomain(src.url)}&sz=16`} alt="" width={14} height={14} className="rounded-full shrink-0" />
+                  <img src={`https://www.google.com/s2/favicons?domain=${getDomain(src.url)}&sz=16`} alt="" width={14} height={14} className="rounded-full shrink-0" onError={(e) => { (e.currentTarget).style.display = 'none'; }} />
                   <span className="truncate min-w-0">{src.title || getDomain(src.url)}</span>
                 </a>
               ))}
@@ -311,6 +299,56 @@ function SearchingStepContent({ step }: { step: TimelineStep }) {
       )}
     </div>
   );
+}
+
+function isFileTool(name: string | undefined) {
+  return name === 'read_file' || name === 'write_file' || name === 'edit_file' || name === 'list_directory';
+}
+
+function isSearchTool(name: string | undefined) {
+  return name === 'search_codebase' || name === 'list_directory';
+}
+
+function ToolInlineSummary({ step }: { step: TimelineStep }) {
+  const { toolName, scriptLine, filePath, readOffset, readLimit, linesAdded, linesRemoved, inlineSummary } = step;
+  if (toolName === 'run_command' && scriptLine) {
+    return <span className="truncate">script  {scriptLine}</span>;
+  }
+  if (isFileTool(toolName) && filePath) {
+    return (
+      <span className="truncate">
+        {filePath}
+        {readOffset != null && <span className="text-muted-foreground/50 ml-1">offset={readOffset}</span>}
+        {readLimit != null && <span className="text-muted-foreground/50 ml-1">limit={readLimit}</span>}
+        {linesAdded != null && <span className="text-muted-foreground/50 ml-1">+{linesAdded} / -{linesRemoved}</span>}
+      </span>
+    );
+  }
+  if (toolName === 'search_codebase' && inlineSummary) {
+    return <span className="truncate">{inlineSummary}</span>;
+  }
+  return null;
+}
+
+function ToolDetailPanel({ step, hasOutput, formattedOutput }: { step: TimelineStep; hasOutput: boolean; formattedOutput: string }) {
+  const { toolName, scriptLine } = step;
+  if (toolName === 'run_command') {
+    return (
+      <div className="flex flex-col">
+        <div className="bg-card/80 px-3 py-2 font-mono text-sm text-foreground border-b border-border/20">{scriptLine}</div>
+        {hasOutput && (
+          <div className="px-3 py-2 font-mono text-sm text-muted-foreground max-h-48 overflow-y-auto whitespace-pre-wrap">{formattedOutput}</div>
+        )}
+      </div>
+    );
+  }
+  if ((toolName === 'read_file' || toolName === 'write_file' || toolName === 'edit_file') && hasOutput) {
+    return <div className="px-3 py-2 font-mono text-sm text-foreground max-h-48 overflow-y-auto whitespace-pre-wrap">{formattedOutput}</div>;
+  }
+  if (isSearchTool(toolName) && hasOutput) {
+    return <div className="px-3 py-2 font-mono text-sm text-foreground max-h-48 overflow-y-auto whitespace-pre-wrap">{formattedOutput}</div>;
+  }
+  return null;
 }
 
 // ── Tool inline box (clickable detail panel) ───────────────────────
@@ -328,54 +366,19 @@ function ToolInlineBox({ step }: { step: TimelineStep }) {
 
   return (
     <div className="mt-0.5">
-      {/* Inline summary line (clickable) — wrapped in inline bg */}
       <div
-        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] bg-muted/40 hover:bg-muted/70 transition-colors cursor-pointer text-[11px] font-mono text-muted-foreground/80 max-w-full"
+        role="button"
+        tabIndex={0}
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] bg-muted/40 hover:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer text-[15px] font-mono text-muted-foreground/80 max-w-full"
         onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsOpen(!isOpen); } }}
       >
-        {step.toolName === 'run_command' && step.scriptLine && (
-          <span className="truncate">script  {step.scriptLine}</span>
-        )}
-        {(step.toolName === 'read_file' || step.toolName === 'write_file' || step.toolName === 'edit_file' || step.toolName === 'list_directory') && step.filePath && (
-          <span className="truncate">
-            {step.filePath}
-            {step.readOffset != null && <span className="text-muted-foreground/50 ml-1">offset={step.readOffset}</span>}
-            {step.readLimit != null && <span className="text-muted-foreground/50 ml-1">limit={step.readLimit}</span>}
-            {step.linesAdded != null && <span className="text-muted-foreground/50 ml-1">+{step.linesAdded} / -{step.linesRemoved}</span>}
-          </span>
-        )}
-        {step.toolName === 'search_codebase' && step.inlineSummary && (
-          <span className="truncate">{step.inlineSummary}</span>
-        )}
+        <ToolInlineSummary step={step} />
       </div>
 
-      {/* Expanded detail panel */}
-      <div className={`grid transition-all ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-        <div className="overflow-hidden min-h-0">
-          <div className="mt-1.5 rounded-lg border border-border/30 bg-muted/50 overflow-hidden">
-            {step.toolName === 'run_command' && (
-              <div className="flex flex-col">
-                <div className="bg-card/80 px-3 py-2 font-mono text-xs text-foreground border-b border-border/20">
-                  {step.scriptLine}
-                </div>
-                {hasOutput && (
-                  <div className="px-3 py-2 font-mono text-xs text-muted-foreground max-h-48 overflow-y-auto whitespace-pre-wrap">
-                    {formattedOutput}
-                  </div>
-                )}
-              </div>
-            )}
-            {(step.toolName === 'read_file' || step.toolName === 'write_file' || step.toolName === 'edit_file') && hasOutput && (
-              <div className="px-3 py-2 font-mono text-xs text-foreground max-h-48 overflow-y-auto whitespace-pre-wrap">
-                {formattedOutput}
-              </div>
-            )}
-            {(step.toolName === 'search_codebase' || step.toolName === 'list_directory') && hasOutput && (
-              <div className="px-3 py-2 font-mono text-xs text-foreground max-h-48 overflow-y-auto whitespace-pre-wrap">
-                {formattedOutput}
-              </div>
-            )}
-          </div>
+      <div className={`overflow-hidden transition-all duration-200 ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className="mt-1.5 rounded-lg border border-border/30 bg-muted/50">
+          <ToolDetailPanel step={step} hasOutput={hasOutput} formattedOutput={formattedOutput} />
         </div>
       </div>
     </div>
@@ -393,7 +396,7 @@ function ExplorerAgentBlock({ step }: { step: TimelineStep }) {
   return (
     <div className="flex flex-col gap-1">
       {/* Header — only part that shimmers */}
-      <div className={`flex items-center gap-2 text-xs ${step.isRunning ? 'thinking-shimmer-text' : ''}`}>
+      <div className={`flex items-center gap-2 text-sm ${step.isRunning ? 'thinking-shimmer-text' : ''}`}>
         <span className="text-foreground font-medium">Explore Task</span>
         <span className="text-muted-foreground/40"> — </span>
         <span className="text-muted-foreground">
@@ -405,7 +408,7 @@ function ExplorerAgentBlock({ step }: { step: TimelineStep }) {
       {step.isRunning && subSteps.length > 0 && (
         <div className="flex flex-col gap-0.5 mt-1">
           {subSteps.slice(-3).map((s: any, i: number) => (
-            <div key={i} className="text-[11px] font-mono text-muted-foreground/60">
+            <div key={i} className="text-[15px] font-mono text-muted-foreground/60">
               {s.toolName}: {(s.toolInput || s.params)?.path || (s.toolInput || s.params)?.query || (s.toolInput || s.params)?.pattern || (s.toolInput || s.params)?.command || ''}
             </div>
           ))}
@@ -414,7 +417,7 @@ function ExplorerAgentBlock({ step }: { step: TimelineStep }) {
 
       {/* When done: show summary */}
       {!step.isRunning && toolCount > 0 && (
-        <div className="text-[11px] text-muted-foreground/60 mt-1">
+        <div className="text-[15px] text-muted-foreground/60 mt-1">
           {toolCount} tool calls in {formatDuration(Math.floor(wallClockMs / 1000))}
         </div>
       )}
@@ -445,8 +448,8 @@ function ToolRow({ step, isStreaming }: { step: TimelineStep; isStreaming: boole
 
   return (
     <div className="flex flex-col gap-1">
-      <div className={`flex items-center gap-2 text-xs ${showShimmer ? 'thinking-shimmer-text' : ''}`}>
-        <span className={`text-xs font-medium font-inter truncate ${isRunning ? '' : 'text-muted-foreground'}`}>
+      <div className={`flex items-center gap-2 text-sm ${showShimmer ? 'thinking-shimmer-text' : ''}`}>
+        <span className={`text-sm font-medium font-inter truncate ${isRunning ? '' : 'text-muted-foreground'}`}>
           {label}
         </span>
       </div>
@@ -533,29 +536,66 @@ export const ThinkingTimeline = React.memo(function ThinkingTimeline({
 
 function extractThinkTagsFromText(text: string): { clean: string; thinking: string } {
   const thinkingParts: string[] = [];
-  let clean = text;
-  const regex = /<think>([\s\S]*?)<\/think>/gi;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(text)) !== null) {
-    thinkingParts.push(match[1].trim());
-    clean = clean.replace(match[0], '');
-  }
-  if (!text.includes('</think>')) {
-    const incompleteRegex = /<think>([\s\S]*?)$/i;
-    const incompleteMatch = incompleteRegex.exec(clean);
-    if (incompleteMatch) {
-      thinkingParts.push(incompleteMatch[1].trim());
-      clean = clean.replace(incompleteMatch[0], '');
+  const cleanParts: string[] = [];
+  let i = 0;
+  const len = text.length;
+
+  while (i < len) {
+    const thinkStart = text.indexOf('<think>', i);
+    if (thinkStart === -1) {
+      cleanParts.push(text.slice(i));
+      break;
     }
+
+    cleanParts.push(text.slice(i, thinkStart));
+
+    const thinkEnd = text.indexOf('</think>', thinkStart);
+    if (thinkEnd === -1) {
+      const content = text.slice(thinkStart + 7);
+      if (content.trim()) thinkingParts.push(content.trim());
+      break;
+    }
+
+    const content = text.slice(thinkStart + 7, thinkEnd);
+    if (content.trim()) thinkingParts.push(content.trim());
+
+    i = thinkEnd + 8;
   }
-  return { clean: clean.trim(), thinking: thinkingParts.join('\n') };
+
+  return { clean: cleanParts.join('').trim(), thinking: thinkingParts.join('\n') };
 }
 
-function isExplorerToolCall(ti: any): boolean {
-  return ti.toolName === 'subagent_run' && (
-    ti.args?.agentType === 'explorer' ||
-    (ti.args?.task && typeof ti.args.task === 'string' && ti.args.task.toLowerCase().includes('explore'))
+function createThinkingStep(stepId: number, text: string) {
+  return { id: `thinking-${stepId}`, type: 'thinking' as const, reasoning: text, isActive: false };
+}
+
+function createToolStep(
+  stepId: number,
+  toolCallId: string | undefined,
+  toolName: string,
+  input: any,
+  output: any,
+  isDone: boolean,
+) {
+  const info = extractInlineInfo(toolName, input, output);
+  const isExplorer = toolName === 'subagent_run' && (
+    input?.agentType === 'explorer' ||
+    (input?.task && typeof input.task === 'string' && input.task.toLowerCase().includes('explore'))
   );
+  return {
+    id: toolCallId || `search-${stepId}`,
+    type: (isExplorer ? 'exploring' : 'searching') as 'exploring' | 'searching',
+    query: input?.query || input?.url || '',
+    isRunning: !isDone,
+    sources: isDone ? buildSourcesFromResult(output) : [],
+    isActive: !isDone,
+    toolName,
+    toolInput: input,
+    toolOutput: isDone ? output : undefined,
+    ...info,
+    toolCount: isExplorer ? (output?.steps || output?.toolCalls || []).length : undefined,
+    wallClockMs: isExplorer ? (output?.durationMs || 0) : undefined,
+  };
 }
 
 function buildStepsFromParts(
@@ -574,53 +614,22 @@ function buildStepsFromParts(
     if (part.type === 'reasoning') {
       const text = part.reasoning || (part as any).text || '';
       if (text) {
-        steps.push({
-          id: `thinking-${stepId++}`,
-          type: 'thinking',
-          reasoning: text,
-          isActive: false,
-        });
+        steps.push(createThinkingStep(stepId++, text) as TimelineStep);
         lastThinkingIdx = steps.length - 1;
       }
     } else if (part.type === 'text') {
       const { thinking } = extractThinkTagsFromText(part.text || '');
       if (thinking) {
-        steps.push({
-          id: `thinking-${stepId++}`,
-          type: 'thinking',
-          reasoning: thinking,
-          isActive: false,
-        });
+        steps.push(createThinkingStep(stepId++, thinking) as TimelineStep);
         lastThinkingIdx = steps.length - 1;
       }
     } else if (part.type === 'dynamic-tool' || part.type.startsWith('tool-')) {
       const toolName = part.toolName || part.type.replace(/^tool-/, '');
       if (toolName === 'writeArtifact') continue;
-
       lastThinkingIdx = -1;
       const hasOutput = !!(part.output || part.result);
       const isToolDone = hasOutput || part.state === 'output-available' || part.state === 'result' || part.state === 'complete';
-      const info = extractInlineInfo(toolName, part.input, part.output || part.result);
-
-      const isExplorer = toolName === 'subagent_run' && (
-        part.input?.agentType === 'explorer' ||
-        (part.input?.task && typeof part.input.task === 'string' && part.input.task.toLowerCase().includes('explore'))
-      );
-
-      steps.push({
-        id: part.toolCallId || `search-${stepId++}`,
-        type: isExplorer ? 'exploring' : 'searching',
-        query: part.input?.query || part.input?.url || '',
-        isRunning: !isToolDone,
-        sources: buildSourcesFromResult(part.output || part.result),
-        isActive: !isToolDone,
-        toolName,
-        toolInput: part.input,
-        toolOutput: part.output || part.result,
-        ...info,
-        toolCount: isExplorer ? (part.output?.steps || part.output?.toolCalls || []).length : undefined,
-        wallClockMs: isExplorer ? (part.output?.durationMs || 0) : undefined,
-      });
+      steps.push(createToolStep(stepId++, part.toolCallId, toolName, part.input, part.output || part.result, isToolDone) as TimelineStep);
     }
   }
 
@@ -633,22 +642,7 @@ function buildStepsFromParts(
     for (const ti of toolInvocations) {
       if (ti.toolName === 'writeArtifact' || existingIds.has(ti.toolCallId)) continue;
       const isDone = ti.state === 'result' || !!ti.result;
-      const info = extractInlineInfo(ti.toolName, ti.args, ti.result);
-      const isExplorer = isExplorerToolCall(ti);
-      steps.push({
-        id: ti.toolCallId || `search-${stepId++}`,
-        type: isExplorer ? 'exploring' : 'searching',
-        query: ti.args?.query || ti.args?.url || '',
-        isRunning: !isDone,
-        sources: isDone ? buildSourcesFromResult(ti.result) : [],
-        isActive: !isDone,
-        toolName: ti.toolName,
-        toolInput: ti.args,
-        toolOutput: isDone ? ti.result : undefined,
-        ...info,
-        toolCount: isExplorer ? (ti.result?.steps || ti.result?.toolCalls || []).length : undefined,
-        wallClockMs: isExplorer ? (ti.result?.durationMs || 0) : undefined,
-      });
+      steps.push(createToolStep(stepId++, ti.toolCallId, ti.toolName, ti.args, ti.result, isDone) as TimelineStep);
     }
   }
 
@@ -661,9 +655,6 @@ function buildStepsFallback(
   isStreaming: boolean,
   hasContent?: boolean,
 ): TimelineStep[] {
-  const searchTools = (toolInvocations || []).filter(
-    (ti) => ti.toolName !== 'writeArtifact',
-  );
   const steps: TimelineStep[] = [];
 
   if (reasoning) {
@@ -672,27 +663,14 @@ function buildStepsFallback(
       type: 'thinking',
       reasoning,
       isActive: isStreaming && !hasContent,
-    });
+    } as TimelineStep);
   }
 
-  for (const ti of searchTools) {
+  let stepId = 0;
+  for (const ti of (toolInvocations || [])) {
+    if (ti.toolName === 'writeArtifact') continue;
     const isDone = ti.state === 'result' || !!ti.result;
-    const info = extractInlineInfo(ti.toolName, ti.args, ti.result);
-    const isExplorer = isExplorerToolCall(ti);
-    steps.push({
-      id: ti.toolCallId || `search-${steps.length}`,
-      type: isExplorer ? 'exploring' : 'searching',
-      query: ti.args?.query || ti.args?.url || '',
-      isRunning: !isDone,
-      sources: isDone ? buildSourcesFromResult(ti.result) : [],
-      isActive: !isDone,
-      toolName: ti.toolName,
-      toolInput: ti.args,
-      toolOutput: isDone ? ti.result : undefined,
-      ...info,
-      toolCount: isExplorer ? (ti.result?.steps || ti.result?.toolCalls || []).length : undefined,
-      wallClockMs: isExplorer ? (ti.result?.durationMs || 0) : undefined,
-    });
+    steps.push(createToolStep(stepId++, ti.toolCallId, ti.toolName, ti.args, ti.result, isDone) as TimelineStep);
   }
 
   return steps;

@@ -2,19 +2,8 @@ package model
 
 import "context"
 
-type Provider string
-
-const (
-	ProviderOpenCodeZen Provider = "opencodezen"
-	ProviderOpenRouter  Provider = "openrouter"
-	ProviderGoogle      Provider = "google"
-	ProviderGroq        Provider = "groq"
-	ProviderMistral     Provider = "mistral"
-	ProviderCerebras    Provider = "cerebras"
-)
-
 type ProviderConfig struct {
-	Provider  Provider
+	Provider  string
 	BaseURL   string
 	APIKey    string
 	Model     string
@@ -67,9 +56,10 @@ type Message struct {
 }
 
 type ToolCall struct {
-	ID       string         `json:"id"`
-	Type     string         `json:"type"`
-	Function ToolCallFunction `json:"function"`
+	ID               string           `json:"id"`
+	Type             string           `json:"type"`
+	Function         ToolCallFunction `json:"function"`
+	ThoughtSignature string           `json:"thoughtSignature,omitempty"`
 }
 
 type ToolCallFunction struct {

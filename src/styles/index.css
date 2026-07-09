@@ -180,12 +180,11 @@ body {
 }
 
 code:not(pre code) {
-  background-color: var(--muted);
   border-radius: 4px;
   padding: 0.1em 0.3em;
   font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
   font-size: 0.85em;
-  color: var(--foreground);
+  color: #fbbf24;
 }
 
 .cm-editor {

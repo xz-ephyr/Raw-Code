@@ -1,6 +1,6 @@
 export type SessionContext = 'new_task' | 'continuing_session';
 
-export interface ToolPolicy {
+interface ToolPolicy {
   ratios: Record<string, number>;
   phases: ToolPhase[];
   rules: string[];

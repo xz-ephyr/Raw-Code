@@ -476,9 +476,4 @@ export async function newsSearch(params: { query: string; maxResults: number; fr
   return result;
 }
 
-export async function cleanupExpiredCache() {
-  const now = Date.now();
-  for (const [tool, ttl] of Object.entries(TTL)) {
-    await query('DELETE FROM search_cache WHERE tool = $1 AND created_at < $2', [tool, now - ttl]);
-  }
-}
+
