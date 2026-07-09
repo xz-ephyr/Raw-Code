@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "entry": ["src", "core"],
+  "ignorePatterns": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    ".vite/**",
+    "public/**"
+  ],
+  "plugins": ["quality", "risk", "architecture", "dependencies", "duplication"]
+}

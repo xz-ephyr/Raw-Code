@@ -1,39 +1,22 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { createGroq } from '@ai-sdk/groq';
-import { createMistral } from '@ai-sdk/mistral';
-import { createOpenAI } from '@ai-sdk/openai';
-import { createCerebras } from '@ai-sdk/cerebras';
 import { streamText, generateText, stepCountIs, convertToModelMessages, wrapLanguageModel, extractReasoningMiddleware } from 'ai';
-import type { OpenAIProvider } from '@ai-sdk/openai';
 import { SYSTEM_PROMPT } from '@core/prompt/systemPrompt';
 import { buildToolPolicy } from '@core/prompt/toolPolicy';
 import { allTools } from '@core/tools/allTools';
-import { API_KEYS, getModelDefinition, getUsedModels, markModelUsed, getAIModels, getStoredSelectedModel, type Provider } from '@core/config/models';
+import { getModelDefinition, getUsedModels, markModelUsed, getAIModels, getStoredSelectedModel } from '@core/config/models';
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { getAgentById } from '@core/agents';
 import { getProjectMemory, setProjectMemory, deleteProjectMemory, extractFactsFromResult, type ProjectMemoryEntry } from '@core/memory/projectMemory';
 import { getSmartSystemPrompt, type ProjectContext } from '@core/memory/contextController';
 import { contractContext } from '@core/memory/contextContractor';
 import { recordUsage } from '@core/utils/usageTracker';
+import { getAllProviders, getProvider, getProviderClient, getModelReasoningConfig } from '@core/providers';
 
-interface ProvidersCache {
-  google: ReturnType<typeof createGoogleGenerativeAI>;
-  groq: ReturnType<typeof createGroq>;
-  mistral: ReturnType<typeof createMistral>;
-  openrouter: OpenAIProvider;
-  opencodezen: OpenAIProvider;
-  cerebras: ReturnType<typeof createCerebras>;
-}
+type ProviderClient = any;
 
 interface ProvidersCacheEntry {
-  providers: ProvidersCache;
-  googleKey: string;
-  groqKey: string;
-  mistralKey: string;
-  openrouterKey: string;
-  opencodezenKey: string;
-  cerebrasKey: string;
-  opencodezenBaseURL: string;
+  clients: Map<string, ProviderClient>;
+  keyHashes: Record<string, string>;
+  baseURLOverrides: Record<string, string>;
 }
 
 const providersCache = new Map<string, ProvidersCacheEntry>();
@@ -49,66 +32,60 @@ export function refreshProviders(cacheKey?: string) {
 
 async function getProviders(projectId?: string) {
   const cacheKey = projectId || GLOBAL_CACHE_KEY;
+  const allProviders = getAllProviders();
 
-  const [
-    currentGoogleKey,
-    currentGroqKey,
-    currentMistralKey,
-    currentOpenrouterKey,
-    currentOpencodezenKey,
-    currentCerebrasKey,
-  ] = await Promise.all([
-    DatabaseService.getConfig(API_KEYS.google).then(r => r || localStorage.getItem(API_KEYS.google) || ''),
-    DatabaseService.getConfig(API_KEYS.groq).then(r => r || localStorage.getItem(API_KEYS.groq) || ''),
-    DatabaseService.getConfig(API_KEYS.mistral).then(r => r || localStorage.getItem(API_KEYS.mistral) || ''),
-    DatabaseService.getConfig(API_KEYS.openrouter).then(r => r || localStorage.getItem(API_KEYS.openrouter) || ''),
-    DatabaseService.getConfig(API_KEYS.opencodezen).then(r => r || localStorage.getItem(API_KEYS.opencodezen) || ''),
-    DatabaseService.getConfig(API_KEYS.cerebras).then(r => r || localStorage.getItem(API_KEYS.cerebras) || ''),
+  const keyPromises = allProviders.map(async (p) => {
+    const key = await DatabaseService.getConfig(p.configKey)
+      .then(r => r || localStorage.getItem(p.configKey) || '');
+    return { id: p.id, key };
+  });
+
+  const baseURLPromises = allProviders
+    .filter(p => p.id === 'opencodezen')
+    .map(async (p) => {
+      const baseURL = await DatabaseService.getConfig('opencodezen-base-url')
+        .then(r => r || localStorage.getItem('opencodezen-base-url') || p.baseURL);
+      return { id: p.id, baseURL };
+    });
+
+  const [keyResults, baseURLResults] = await Promise.all([
+    Promise.all(keyPromises),
+    Promise.all(baseURLPromises),
   ]);
 
-  const opencodezenBaseURL = await DatabaseService.getConfig('opencodezen-base-url')
-    .then(r => r || localStorage.getItem('opencodezen-base-url') || 'https://opencode.ai/zen/v1');
+  const currentKeys: Record<string, string> = {};
+  for (const r of keyResults) currentKeys[r.id] = r.key;
+
+  const currentBaseURLs: Record<string, string> = {};
+  for (const r of baseURLResults) currentBaseURLs[r.id] = r.baseURL;
 
   const existing = providersCache.get(cacheKey);
-  if (
-    existing &&
-    currentGoogleKey === existing.googleKey &&
-    currentGroqKey === existing.groqKey &&
-    currentMistralKey === existing.mistralKey &&
-    currentOpenrouterKey === existing.openrouterKey &&
-    currentOpencodezenKey === existing.opencodezenKey &&
-    currentCerebrasKey === existing.cerebrasKey &&
-    opencodezenBaseURL === existing.opencodezenBaseURL
-  ) {
-    return existing.providers;
+  if (existing) {
+    let match = true;
+    for (const [id, key] of Object.entries(currentKeys)) {
+      if (existing.keyHashes[id] !== key) { match = false; break; }
+    }
+    for (const [id, url] of Object.entries(currentBaseURLs)) {
+      if (existing.baseURLOverrides[id] !== url) { match = false; break; }
+    }
+    if (match) return existing.clients;
   }
 
-  const entry: ProvidersCacheEntry = {
-    googleKey: currentGoogleKey,
-    groqKey: currentGroqKey,
-    mistralKey: currentMistralKey,
-    openrouterKey: currentOpenrouterKey,
-    opencodezenKey: currentOpencodezenKey,
-    cerebrasKey: currentCerebrasKey,
-    opencodezenBaseURL,
-    providers: {
-      google: createGoogleGenerativeAI({ apiKey: currentGoogleKey }),
-      groq: createGroq({ apiKey: currentGroqKey }),
-      mistral: createMistral({ apiKey: currentMistralKey }),
-      openrouter: createOpenAI({
-        apiKey: currentOpenrouterKey,
-        baseURL: 'https://openrouter.ai/api/v1',
-      }),
-      opencodezen: createOpenAI({
-        apiKey: currentOpencodezenKey,
-        baseURL: opencodezenBaseURL,
-      }),
-      cerebras: createCerebras({ apiKey: currentCerebrasKey }),
-    },
-  };
+  const clients = new Map<string, ProviderClient>();
+  for (const p of allProviders) {
+    if (currentKeys[p.id]) {
+      const client = getProviderClient(p.id, currentKeys[p.id], currentBaseURLs[p.id]);
+      if (client) clients.set(p.id, client);
+    }
+  }
 
-  providersCache.set(cacheKey, entry);
-  return entry.providers;
+  providersCache.set(cacheKey, {
+    clients,
+    keyHashes: currentKeys,
+    baseURLOverrides: currentBaseURLs,
+  });
+
+  return clients;
 }
 
 function redactSensitiveInfo(msg: string): string {
@@ -135,72 +112,16 @@ export function getAIErrorMessage(error: unknown) {
   return redactSensitiveInfo(msg);
 }
 
-type ReasoningMode = 'native' | 'tag' | 'none';
-
-interface ModelReasoningConfig {
-  mode: ReasoningMode;
-  tagName?: string;
-  providerOptions?: Record<string, any>;
-}
-
-const MODEL_REASONING: Record<string, ModelReasoningConfig> = {
-  // ── Google ──
-  'gemini-3.5-flash':       { mode: 'native',  providerOptions: { google: { thinkingConfig: { thinkingBudget: 1024 } } } },
-  'gemini-3-flash-preview': { mode: 'native',  providerOptions: { google: { thinkingConfig: { thinkingBudget: 1024 } } } },
-  'gemini-2.5-flash':       { mode: 'native',  providerOptions: { google: { thinkingConfig: { thinkingBudget: 1024 } } } },
-  'gemini-2.5-flash-lite':  { mode: 'native',  providerOptions: { google: { thinkingConfig: { thinkingBudget: 1024 } } } },
-  'gemma-4-31b-it':         { mode: 'none' },
-  'gemma-4-26b-a4b-it':     { mode: 'none' },
-
-  // ── Groq ──
-  'groq/compound':                    { mode: 'native', providerOptions: { groq: { reasoningFormat: 'parsed' } } },
-  'groq/compound-mini':               { mode: 'native', providerOptions: { groq: { reasoningFormat: 'parsed' } } },
-  'openai/gpt-oss-safeguard-20b':     { mode: 'native', providerOptions: { groq: { reasoningFormat: 'parsed' } } },
-  'qwen/qwen3-32b':                   { mode: 'tag',    tagName: 'think' },
-  'llama-3.1-8b-instant':             { mode: 'none' },
-
-  // ── OpenCode Zen (OpenAI-compatible, no native reasoning parts → tag middleware) ──
-  'deepseek-v4-flash-free':           { mode: 'tag',    tagName: 'think' },
-  'big-pickle':                       { mode: 'tag',    tagName: 'think' },
-  'mimo-v2.5-free':                   { mode: 'tag',    tagName: 'think' },
-
-  // ── Mistral ──
-  'mistral-large-latest':             { mode: 'none' },
-  'mistral-medium-latest':            { mode: 'none' },
-  'mistral-small-latest':             { mode: 'none' },
-  'magistral-medium-latest':          { mode: 'tag',    tagName: 'think' },
-  'devstral-latest':                  { mode: 'none' },
-  'codestral-latest':                 { mode: 'none' },
-
-  // ── OpenRouter (reasoning toggle via providerOptions) ──
-  'nvidia/nemotron-3-ultra-550b-a55b:free':    { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
-  'nvidia/nemotron-3-super-120b-a12b:free':    { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
-  'nvidia/nemotron-3-nano-30b-a3b:free':       { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
-  'openai/gpt-oss-20b:free':                   { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
-  'nvidia/nemotron-nano-12b-v2-vl:free':       { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
-  'nvidia/nemotron-nano-9b-v2:free':           { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
-  'openrouter/free':                           { mode: 'native', providerOptions: { openrouter: { reasoning: { enabled: true } } } },
-  'nvidia/nemotron-3.5-content-safety:free':   { mode: 'none' },
-  'tencent/hy3:free':                          { mode: 'none' },
-  'poolside/laguna-m.1:free':                  { mode: 'none' },
-  'poolside/laguna-xs.2:free':                 { mode: 'none' },
-  'cohere/north-mini-code:free':               { mode: 'none' },
-
-  // ── Cerebras ──
-  'gpt-oss-120b':  { mode: 'native', providerOptions: { cerebras: {} } },
-  'zai-glm-4.7':   { mode: 'tag',    tagName: 'think' },
-  'gemma-4-31b':   { mode: 'none' },
-};
-
 const MAX_STEPS = 20;
 
-async function getConfiguredProviders(): Promise<Set<Provider>> {
-  const configured = new Set<Provider>();
-  for (const [provider, key] of Object.entries(API_KEYS)) {
-    const val = await DatabaseService.getConfig(key)
-      .then(r => r || localStorage.getItem(key) || '');
+async function getConfiguredProviderIds(): Promise<Set<string>> {
+  const configured = new Set<string>();
+  const allProviders = getAllProviders();
+  for (const p of allProviders) {
+    const val = await DatabaseService.getConfig(p.configKey)
+      .then(r => r || localStorage.getItem(p.configKey) || '');
     if (val && val.trim()) {
-      configured.add(provider as Provider);
+      configured.add(p.id);
     }
   }
   return configured;
@@ -208,7 +129,7 @@ async function getConfiguredProviders(): Promise<Set<Provider>> {
 
 export async function buildFallbackChain(primaryModelName: string, sessionId?: string, projectId?: string): Promise<string[]> {
   const used = sessionId || projectId ? getUsedModels(projectId, sessionId) : [];
-  const configuredProviders = await getConfiguredProviders();
+  const configuredProviders = await getConfiguredProviderIds();
   const primaryDef = getModelDefinition(primaryModelName);
 
   const others = getAIModels()
@@ -217,25 +138,28 @@ export async function buildFallbackChain(primaryModelName: string, sessionId?: s
       if (used.includes(m)) return false;
       const def = getModelDefinition(m);
       if (!def) return false;
-      return configuredProviders.has(def.provider);
+      const provider = getProvider(def.provider);
+      if (!provider) return false;
+      return configuredProviders.has(provider.id);
     })
     .sort((a, b) => {
       const defA = getModelDefinition(a)!;
       const defB = getModelDefinition(b)!;
 
-      // 1. Prioritize models with the same 'supportsThinking' status as the primary model
       const aMatchesThinking = defA.supportsThinking === primaryDef?.supportsThinking;
       const bMatchesThinking = defB.supportsThinking === primaryDef?.supportsThinking;
       if (aMatchesThinking && !bMatchesThinking) return -1;
       if (!aMatchesThinking && bMatchesThinking) return 1;
 
-      // 2. Prioritize 'google' provider for reliability/daily resets
-      if (defA.provider === 'google' && defB.provider !== 'google') return -1;
-      if (defA.provider !== 'google' && defB.provider === 'google') return 1;
-
+      const providerA = getProvider(defA.provider);
+      const providerB = getProvider(defB.provider);
+      if (providerA && providerB) {
+        const ids = getAllProviders().map(p => p.id);
+        return ids.indexOf(providerA.id) - ids.indexOf(providerB.id);
+      }
       return 0;
     })
-    .slice(0, 5); // Limit to top 5 fallbacks
+    .slice(0, 5);
 
   return [primaryModelName, ...others];
 }
@@ -267,18 +191,17 @@ export async function chatCompletion({
 
   const getLanguageModel = (name: string) => {
     const def = getModelDefinition(name);
-    if (!def) return providers.google('gemini-3.5-flash');
+    if (!def) {
+      const fallback = providers.get('google');
+      return fallback ? fallback('gemini-3.5-flash') : null;
+    }
 
-    const model =
-      def.provider === 'google' ? providers.google(def.id) :
-      def.provider === 'groq' ? providers.groq(def.id) :
-      def.provider === 'mistral' ? providers.mistral(def.id) :
-      def.provider === 'openrouter' ? providers.openrouter(def.id) :
-      def.provider === 'opencodezen' ? providers.opencodezen(def.id) :
-      def.provider === 'cerebras' ? providers.cerebras(def.id) :
-      providers.google('gemini-3.5-flash');
+    const client = providers.get(def.provider);
+    if (!client) return null;
 
-    const reasoning = MODEL_REASONING[name];
+    const model = client(def.id);
+
+    const reasoning = getModelReasoningConfig(name);
     if (reasoning?.mode === 'tag') {
       return wrapLanguageModel({
         model,
@@ -320,7 +243,7 @@ export async function chatCompletion({
     const def = getModelDefinition(currentModelName);
     const shouldApplyThinking = isThinkingEnabled && def?.supportsThinking;
 
-    const reasoning = MODEL_REASONING[currentModelName];
+    const reasoning = getModelReasoningConfig(currentModelName);
     let providerOptions: any = undefined;
     if (shouldApplyThinking && reasoning?.mode === 'native') {
       providerOptions = reasoning.providerOptions;
@@ -450,7 +373,7 @@ export async function generateSessionTitle(userMessage: string): Promise<string>
   const candidates = (() => {
     const stored = getStoredSelectedModel();
     const def = getModelDefinition(stored);
-    if (def && def.provider in providers) {
+    if (def && providers.has(def.provider)) {
       return [stored, ...getAIModels().filter(m => m !== stored)];
     }
     return getAIModels();
@@ -459,11 +382,11 @@ export async function generateSessionTitle(userMessage: string): Promise<string>
   for (const modelId of candidates) {
     const def = getModelDefinition(modelId);
     if (!def) continue;
-    const provider = providers[def.provider as keyof typeof providers];
+    const provider = providers.get(def.provider);
     if (!provider) continue;
     try {
       const { text } = await generateText({
-        model: (provider as any)(modelId.includes('/') ? modelId.split('/').slice(1).join('/') : modelId),
+        model: provider(modelId.includes('/') ? modelId.split('/').slice(1).join('/') : modelId),
         system: 'Read the user\'s request below. Summarise in 5 words or fewer — just the core intent, no articles, no punctuation. Do not use quotes. Do not add commentary.',
         messages: [{ role: 'user', content: userMessage }],
         maxRetries: 1,

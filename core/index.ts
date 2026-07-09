@@ -7,6 +7,7 @@ export * from './memory/contextController';
 export * from './memory/contextContractor';
 export * from './memory/projectMemory';
 export * from './models/aiService';
+export * from './providers';
 export * from './workspace/FileSystemService';
 export * from './utils/DatabaseService';
 export * from './utils/WebSearchService';

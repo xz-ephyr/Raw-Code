@@ -11,6 +11,7 @@ const SchedulePage = lazy(() => import('@/pages/SchedulePage').then(m => ({ defa
 const PluginsPage = lazy(() => import('@/pages/PluginsPage').then(m => ({ default: m.PluginsPage })));
 const WikiPage = lazy(() => import('@/pages/WikiPage').then(m => ({ default: m.WikiPage })));
 const WorkflowPage = lazy(() => import('@/pages/WorkflowPage').then(m => ({ default: m.WorkflowPage })));
+const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 
 export default function App() {
   const [updateInfo, setUpdateInfo] = useState<{
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="/project/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
           <Route path="/project/:folder/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
           <Route path="/chat/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
+          <Route path="/settings" element={<Suspense fallback={null}><SettingsPage /></Suspense>} />
         </Route>
       </Routes>
 

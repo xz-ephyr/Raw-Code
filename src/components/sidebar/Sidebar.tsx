@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+
 import {
   PencilEdit02Icon,
   AlarmClockIcon,
@@ -16,7 +17,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import SidebarTab from './SidebarTab';
 import ProjectItem from './ProjectItem';
-import { SettingsModal } from '../settings/SettingsModal';
+
 import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { FileSystemService } from '@core/workspace/FileSystemService';
 import { Project } from '@/types/chat';
@@ -38,7 +39,6 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const location = useLocation();
@@ -235,14 +235,27 @@ export default function Sidebar() {
             <div className="flex flex-col min-h-0 flex-1 px-4 overflow-hidden">
               <div className="mt-6 flex justify-between items-center mb-2 px-2 shrink-0">
                 <h2 className="text-sm font-bold text-muted-foreground whitespace-nowrap">Projects</h2>
-                <button
-                  onClick={handleAddProject}
-                  className="text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent active:bg-accent p-1 rounded-[6px] transition-all active:scale-95"
-                  aria-label="Add project"
-                  title="Add project"
-                >
-                  +
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => navigate('/settings')}
+                    className="text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent active:bg-accent p-1 rounded-[6px] transition-all active:scale-95"
+                    aria-label="Permissions gateway"
+                    title="Permissions gateway"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={handleAddProject}
+                    className="text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent active:bg-accent p-1 rounded-[6px] transition-all active:scale-95"
+                    aria-label="Add project"
+                    title="Add project"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-1 overflow-y-auto min-h-0 thin-scrollbar pr-3">
@@ -302,13 +315,11 @@ export default function Sidebar() {
           <SidebarTab
             iconElement={settingsIcon}
             label="Settings"
-            path="#"
-            onClick={() => setIsSettingsOpen(true)}
+            path="/settings"
             collapsed={isCollapsed}
           />
         </div>
       </div>
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </>
   );
 }

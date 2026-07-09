@@ -14,7 +14,8 @@
     "tauri:build": "tauri build",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md,json}\"",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "analyze": "fallow"
   },
   "dependencies": {
     "@ai-sdk/cerebras": "^2.0.57",

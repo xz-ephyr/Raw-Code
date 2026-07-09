@@ -1,0 +1,16 @@
+export {
+  registerProvider,
+  getProvider,
+  getAllProviders,
+  getProviderIds,
+  getProviderForModel,
+  getProviderLabel,
+  getProviderConfigKey,
+  getProviderBaseURL,
+  getProviderDefaultModel,
+  getProviderClient,
+  getProviderReasoningConfig,
+  getModelReasoningConfig,
+  hasProviderAPIKey,
+  type KeyProvider,
+} from './providerRegistry';
