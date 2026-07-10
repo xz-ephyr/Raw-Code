@@ -1,8 +1,10 @@
 import { createOpenAI } from '@ai-sdk/openai';
+import { createCloudflare } from './createCloudflare';
 
 export interface KeyProvider {
   id: string;
   label: string;
+  icon: string;
   configKey: string;
   envVar: string;
   baseURL: string;
@@ -59,15 +61,160 @@ export function getProviderApiKeys(): Record<string, string> {
   return keys;
 }
 
-registerProvider({
-  id: 'omniroute',
-  label: 'OmniRoute',
-  configKey: 'omniroute-api-key',
-  envVar: 'OMNIROUTE_API_KEY',
-  baseURL: 'http://localhost:20128/v1',
-  defaultModel: 'auto',
-  modelIdPrefixes: ['auto', 'auto/', 'cc/', 'cx/', 'openai/', 'anthropic/', 'google/', 'gemini/', 'deepseek/', 'qwen/', 'x-ai/', 'mistralai/', 'groq/', 'claude/', 'gpt/'],
-  createClient: (apiKey: string, baseURL?: string) =>
-    createOpenAI({ apiKey, baseURL: baseURL ?? 'http://localhost:20128/v1' }),
-  getReasoningConfig: () => ({ mode: 'native' }),
-});
+const PROVIDERS: KeyProvider[] = [
+  {
+    id: 'google',
+    label: 'Google AI Studio',
+    icon: '/google-color.svg',
+    configKey: 'google-api-key',
+    envVar: 'GOOGLE_API_KEY',
+    baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    defaultModel: 'gemini-2.5-flash',
+    modelIdPrefixes: ['gemini'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://generativelanguage.googleapis.com/v1beta/openai' }),
+    getReasoningConfig: (modelId) => {
+      if (modelId.includes('2.5') || modelId.includes('3.')) return { mode: 'native' };
+      return null;
+    },
+  },
+  {
+    id: 'groq',
+    label: 'Groq',
+    icon: '/groq-color.svg',
+    configKey: 'groq-api-key',
+    envVar: 'GROQ_API_KEY',
+    baseURL: 'https://api.groq.com/openai/v1',
+    defaultModel: 'llama-3.3-70b-versatile',
+    modelIdPrefixes: ['llama', 'qwen', 'deepseek', 'gpt-oss'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.groq.com/openai/v1' }),
+    getReasoningConfig: (modelId) => {
+      if (modelId.includes('deepseek-r1')) return { mode: 'native' };
+      return null;
+    },
+  },
+  {
+    id: 'cerebras',
+    label: 'Cerebras',
+    icon: '/cerebras-color.svg',
+    configKey: 'cerebras-api-key',
+    envVar: 'CEREBRAS_API_KEY',
+    baseURL: 'https://api.cerebras.ai/v1',
+    defaultModel: 'gpt-oss-120b',
+    modelIdPrefixes: ['gpt-oss', 'zai', 'gemma'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.cerebras.ai/v1' }),
+    getReasoningConfig: () => null,
+  },
+  {
+    id: 'mistral',
+    label: 'Mistral AI',
+    icon: '/mistral-color.svg',
+    configKey: 'mistral-api-key',
+    envVar: 'MISTRAL_API_KEY',
+    baseURL: 'https://api.mistral.ai/v1',
+    defaultModel: 'mistral-small-3.2',
+    modelIdPrefixes: ['mistral', 'codestral', 'pixtral'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.mistral.ai/v1' }),
+    getReasoningConfig: (modelId) => {
+      if (modelId.includes('medium') || modelId.includes('large')) return { mode: 'native' };
+      return null;
+    },
+  },
+  {
+    id: 'sambanova',
+    label: 'SambaNova',
+    icon: '/sambanova-color.svg',
+    configKey: 'sambanova-api-key',
+    envVar: 'SAMBANOVA_API_KEY',
+    baseURL: 'https://api.sambanova.ai/v1',
+    defaultModel: 'Meta-Llama-3.3-70B-Instruct',
+    modelIdPrefixes: ['Meta', 'DeepSeek', 'gpt-oss', 'gemma'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.sambanova.ai/v1' }),
+    getReasoningConfig: () => null,
+  },
+  {
+    id: 'cohere',
+    label: 'Cohere',
+    icon: '/commanda-color.svg',
+    configKey: 'cohere-api-key',
+    envVar: 'COHERE_API_KEY',
+    baseURL: 'https://api.cohere.com/compatibility/v1',
+    defaultModel: 'command-a-03-2026',
+    modelIdPrefixes: ['command', 'c4ai'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.cohere.com/compatibility/v1' }),
+    getReasoningConfig: (modelId) => {
+      if (modelId.includes('command-a')) return { mode: 'native' };
+      if (modelId.includes('command-r-plus')) return { mode: 'native' };
+      return null;
+    },
+  },
+  {
+    id: 'huggingface',
+    label: 'Hugging Face',
+    icon: '/huggingface-color.svg',
+    configKey: 'huggingface-api-key',
+    envVar: 'HUGGINGFACE_API_KEY',
+    baseURL: 'https://api-inference.huggingface.co/v1',
+    defaultModel: 'meta-llama/Meta-Llama-3.1-8B-Instruct',
+    modelIdPrefixes: ['meta-llama', 'Qwen', 'google'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api-inference.huggingface.co/v1' }),
+    getReasoningConfig: () => null,
+  },
+  {
+    id: 'cloudflare',
+    label: 'Cloudflare AI',
+    icon: '/cloudflare-color.svg',
+    configKey: 'cloudflare-api-key',
+    envVar: 'CLOUDFLARE_API_KEY',
+    baseURL: 'https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/v1',
+    defaultModel: '@cf/meta/llama-3.1-8b-instruct',
+    modelIdPrefixes: ['@cf', '@hf'],
+    createClient: (apiKey: string, baseURL?: string) => {
+      const accountId = baseURL?.match(/accounts\/([^/]+)/)?.[1] || '';
+      return createCloudflare(apiKey, accountId);
+    },
+    getReasoningConfig: () => null,
+  },
+  {
+    id: 'deepseek',
+    label: 'DeepSeek',
+    icon: '/deepseek-color.svg',
+    configKey: 'deepseek-api-key',
+    envVar: 'DEEPSEEK_API_KEY',
+    baseURL: 'https://api.deepseek.com/v1',
+    defaultModel: 'deepseek-chat',
+    modelIdPrefixes: ['deepseek'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.deepseek.com/v1' }),
+    getReasoningConfig: (modelId) => {
+      if (modelId.includes('reasoner')) return { mode: 'native' };
+      return null;
+    },
+  },
+  {
+    id: 'nvidia',
+    label: 'NVIDIA NIM',
+    icon: '/nvidia-color.svg',
+    configKey: 'nvidia-api-key',
+    envVar: 'NVIDIA_API_KEY',
+    baseURL: 'https://integrate.api.nvidia.com/v1',
+    defaultModel: 'nvidia/llama-3.3-nemotron-super-49b-v1',
+    modelIdPrefixes: ['nvidia', 'meta', 'mistralai', 'google'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://integrate.api.nvidia.com/v1' }),
+    getReasoningConfig: (modelId) => {
+      if (modelId.includes('mistral-large')) return { mode: 'native' };
+      return null;
+    },
+  },
+];
+
+for (const p of PROVIDERS) {
+  registerProvider(p);
+}

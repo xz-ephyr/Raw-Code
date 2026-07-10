@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Settings02Icon, Key01Icon, ZapIcon, FolderLibraryIcon, GlobeIcon, ViewIcon, NoteIcon, ArrowTurnBackwardIcon, Mail01Icon } from '@hugeicons/core-free-icons';
+import { Settings02Icon, Activity01Icon, GlobeIcon, ViewIcon, ZapIcon, FolderLibraryIcon, NoteIcon, Mail01Icon, ArrowLeft03Icon } from '@hugeicons/core-free-icons';
 import { GeneralTab } from './tabs/GeneralTab';
-import { ApiKeysTab } from './tabs/ApiKeysTab';
+import { ApiTab } from './tabs/ApiTab';
 import { WebSearchTab } from './tabs/WebSearchTab';
 import { AppearanceTab } from './tabs/AppearanceTab';
 import { BehaviorTab } from './tabs/BehaviorTab';
@@ -13,7 +13,7 @@ import { GmailTab } from './tabs/GmailTab';
 
 const tabs = [
   { id: 'general', label: 'General', icon: Settings02Icon },
-  { id: 'api-keys', label: 'API Keys', icon: Key01Icon },
+  { id: 'api', label: 'API', icon: Activity01Icon },
   { id: 'web-search', label: 'Web & Search', icon: GlobeIcon },
   { id: 'gmail', label: 'Gmail', icon: Mail01Icon },
   { id: 'appearance', label: 'Appearance', icon: ViewIcon },
@@ -29,19 +29,17 @@ export function SettingsTabLayout() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-4 py-3 border-b border-border shrink-0 flex items-center gap-3">
+    <div className="flex h-full">
+      <nav className="w-64 border-r border-border p-3 space-y-1 shrink-0 overflow-y-auto thin-scrollbar flex flex-col">
         <button
           onClick={() => navigate('/thread/new')}
-          className="text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-[6px] hover:bg-muted mb-2"
         >
-          <HugeiconsIcon icon={ArrowTurnBackwardIcon} size={16} />
+          <HugeiconsIcon icon={ArrowLeft03Icon} size={14} />
+          Back to Home
         </button>
-        <h2 className="text-sm font-bold text-foreground">Settings</h2>
-      </div>
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        <nav className="w-64 border-r border-border p-3 space-y-1 shrink-0 overflow-y-auto thin-scrollbar">
-          {tabs.map((tab) => {
+        <h2 className="text-sm font-bold text-foreground px-3 pt-1 pb-3">Settings</h2>
+        {tabs.map((tab) => {
             const isActive = tab.id === activeTab;
             return (
               <button
@@ -60,9 +58,9 @@ export function SettingsTabLayout() {
           })}
         </nav>
         <div className="flex-1 p-6 overflow-y-auto thin-scrollbar">
-          <div className="max-w-[1000px] mx-auto">
+          <div className="max-w-[1200px] mx-auto">
           {activeTab === 'general' && <GeneralTab />}
-          {activeTab === 'api-keys' && <ApiKeysTab />}
+          {activeTab === 'api' && <ApiTab />}
           {activeTab === 'web-search' && <WebSearchTab />}
           {activeTab === 'gmail' && <GmailTab />}
           {activeTab === 'appearance' && <AppearanceTab />}
@@ -72,6 +70,6 @@ export function SettingsTabLayout() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+

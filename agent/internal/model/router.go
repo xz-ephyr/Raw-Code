@@ -3,7 +3,6 @@ package model
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 )
@@ -91,13 +90,94 @@ func DefaultProviderRegistry() *ProviderRegistry {
 		infos:   make(map[string]*ProviderInfo),
 	}
 	r.Register(ProviderInfo{
-		ID:              "omniroute",
-		BaseURL:         "http://localhost:20128/v1",
-		APIKeyConfigKey:  "omniroute-api-key",
-		EnvVar:          "OMNIROUTE_API_KEY",
-		DefaultModel:    "auto",
-		ModelPrefixes:   []string{"auto", "auto/", "cc/", "cx/", "openai/", "anthropic/", "google/", "gemini/", "deepseek/", "qwen/", "x-ai/", "mistralai/", "groq/", "claude/", "gpt/"},
-		Models:          []string{"auto", "auto/coding", "auto/cheap", "auto/fast"},
+		ID:              "google",
+		BaseURL:         "https://generativelanguage.googleapis.com/v1beta/openai",
+		APIKeyConfigKey:  "google-api-key",
+		EnvVar:          "GOOGLE_API_KEY",
+		DefaultModel:    "gemini-2.5-flash",
+		ModelPrefixes:   []string{"gemini", "gemma"},
+		Models:          []string{"gemini-2.5-flash", "gemini-3.0-flash-preview", "gemini-3.1-flash-lite-preview", "gemma-4-31b-it", "gemma-4-26b-a4b-it"},
+	})
+	r.Register(ProviderInfo{
+		ID:              "groq",
+		BaseURL:         "https://api.groq.com/openai/v1",
+		APIKeyConfigKey:  "groq-api-key",
+		EnvVar:          "GROQ_API_KEY",
+		DefaultModel:    "llama-3.3-70b-versatile",
+		ModelPrefixes:   []string{"llama", "qwen", "deepseek", "gpt-oss"},
+		Models:          []string{"llama-4-scout-17b-16e-instruct", "llama-3.3-70b-versatile", "qwen3-32b", "deepseek-r1-distill-llama-70b", "gpt-oss-120b"},
+	})
+	r.Register(ProviderInfo{
+		ID:              "cerebras",
+		BaseURL:         "https://api.cerebras.ai/v1",
+		APIKeyConfigKey:  "cerebras-api-key",
+		EnvVar:          "CEREBRAS_API_KEY",
+		DefaultModel:    "gpt-oss-120b",
+		ModelPrefixes:   []string{"gpt-oss", "zai", "gemma"},
+		Models:          []string{"cerebras/gpt-oss-120b", "zai-glm-4.7", "gemma-4-31b"},
+	})
+	r.Register(ProviderInfo{
+		ID:              "mistral",
+		BaseURL:         "https://api.mistral.ai/v1",
+		APIKeyConfigKey:  "mistral-api-key",
+		EnvVar:          "MISTRAL_API_KEY",
+		DefaultModel:    "mistral-small-3.2",
+		ModelPrefixes:   []string{"mistral", "codestral"},
+		Models:          []string{"mistral-small-3.2", "mistral-medium-3.5", "codestral"},
+	})
+	r.Register(ProviderInfo{
+		ID:              "sambanova",
+		BaseURL:         "https://api.sambanova.ai/v1",
+		APIKeyConfigKey:  "sambanova-api-key",
+		EnvVar:          "SAMBANOVA_API_KEY",
+		DefaultModel:    "Meta-Llama-3.3-70B-Instruct",
+		ModelPrefixes:   []string{"Meta", "DeepSeek", "gpt-oss", "gemma"},
+		Models:          []string{"Meta-Llama-3.3-70B-Instruct", "DeepSeek-V3.1", "DeepSeek-V3.2", "gemma-4-31B-it"},
+	})
+	r.Register(ProviderInfo{
+		ID:              "cohere",
+		BaseURL:         "https://api.cohere.com/compatibility/v1",
+		APIKeyConfigKey:  "cohere-api-key",
+		EnvVar:          "COHERE_API_KEY",
+		DefaultModel:    "command-a-03-2026",
+		ModelPrefixes:   []string{"command", "c4ai"},
+		Models:          []string{"command-a-03-2026", "command-a-plus", "command-r-plus-08-2024", "command-r-08-2024", "command-r7b-12-2024", "c4ai-aya-expanse-32b"},
+	})
+	r.Register(ProviderInfo{
+		ID:              "huggingface",
+		BaseURL:         "https://api-inference.huggingface.co/v1",
+		APIKeyConfigKey:  "huggingface-api-key",
+		EnvVar:          "HUGGINGFACE_API_KEY",
+		DefaultModel:    "meta-llama/Meta-Llama-3.1-8B-Instruct",
+		ModelPrefixes:   []string{"meta-llama", "Qwen", "google"},
+		Models:          []string{"meta-llama/Llama-3.2-11B-Vision-Instruct", "meta-llama/Meta-Llama-3.1-8B-Instruct", "Qwen/Qwen2.5-72B-Instruct", "google/gemma-2-9b-it"},
+	})
+	r.Register(ProviderInfo{
+		ID:              "cloudflare",
+		BaseURL:         "https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/v1",
+		APIKeyConfigKey:  "cloudflare-api-key",
+		EnvVar:          "CLOUDFLARE_API_KEY",
+		DefaultModel:    "@cf/meta/llama-3.1-8b-instruct",
+		ModelPrefixes:   []string{"@cf", "@hf"},
+		Models:          []string{"@cf/meta/llama-3.1-8b-instruct", "@cf/meta/llama-3.2-3b-instruct", "@cf/qwen/qwen1.5-7b-chat-awq", "@cf/microsoft/phi-2"},
+	})
+	r.Register(ProviderInfo{
+		ID:              "nvidia",
+		BaseURL:         "https://integrate.api.nvidia.com/v1",
+		APIKeyConfigKey:  "nvidia-api-key",
+		EnvVar:          "NVIDIA_API_KEY",
+		DefaultModel:    "nvidia/llama-3.3-nemotron-super-49b-v1",
+		ModelPrefixes:   []string{"nvidia", "meta", "mistralai", "google"},
+		Models:          []string{"nvidia/llama-3.3-nemotron-super-49b-v1", "nvidia/nemotron-3-nano-30b-a3b", "meta/llama-3.1-8b-instruct", "mistralai/mistral-large-2-instruct"},
+	})
+	r.Register(ProviderInfo{
+		ID:              "deepseek",
+		BaseURL:         "https://api.deepseek.com/v1",
+		APIKeyConfigKey:  "deepseek-api-key",
+		EnvVar:          "DEEPSEEK_API_KEY",
+		DefaultModel:    "deepseek-chat",
+		ModelPrefixes:   []string{"deepseek"},
+		Models:          []string{"deepseek-chat", "deepseek-reasoner", "deepseek-coder"},
 	})
 
 	return r
@@ -107,21 +187,19 @@ type RouterClient struct {
 	registry *ProviderRegistry
 	mu       sync.RWMutex
 	cache    map[string]*Client
-	fallback []string
 }
 
 func NewRouterClient(registry *ProviderRegistry) *RouterClient {
 	return &RouterClient{
 		registry: registry,
 		cache:    make(map[string]*Client),
-		fallback: []string{"omniroute"},
 	}
 }
 
 func (r *RouterClient) getOrCreateClient(modelID string) (*Client, error) {
 	provider := r.registry.ResolveProvider(modelID)
 	if provider == "" {
-		provider = "omniroute"
+		return nil, fmt.Errorf("no provider configured for model %q", modelID)
 	}
 
 	r.mu.RLock()
@@ -133,7 +211,7 @@ func (r *RouterClient) getOrCreateClient(modelID string) (*Client, error) {
 
 	cfg := r.registry.Config(provider)
 	if cfg == nil {
-		cfg = r.registry.Config("omniroute")
+		return nil, fmt.Errorf("no provider config for %q (resolved: %s)", modelID, provider)
 	}
 	if cfg == nil {
 		return nil, fmt.Errorf("no provider config for %q (resolved: %s)", modelID, provider)
@@ -149,114 +227,6 @@ func (r *RouterClient) getOrCreateClient(modelID string) (*Client, error) {
 	return client, nil
 }
 
-func (r *RouterClient) tryEach(ctx context.Context, req ChatRequest, modelID string) (*ChatResponse, error) {
-	primaryProvider := r.registry.ResolveProvider(modelID)
-	fallbackOrder := r.fallback
-
-	start := 0
-	for i, p := range fallbackOrder {
-		if p == primaryProvider {
-			start = i
-			break
-		}
-	}
-	orderedProviders := make([]string, 0, len(fallbackOrder))
-	orderedProviders = append(orderedProviders, fallbackOrder[start:]...)
-	orderedProviders = append(orderedProviders, fallbackOrder[:start]...)
-
-	var lastErr error
-	for _, p := range orderedProviders {
-		info := r.registry.Info(p)
-		if info == nil {
-			continue
-		}
-		cfg := r.registry.Config(p)
-		if cfg == nil {
-			continue
-		}
-
-		models := info.Models
-		if len(models) == 0 {
-			models = []string{cfg.Model}
-		}
-		for _, fallbackModel := range models {
-			fallbackReq := req
-			fallbackReq.Model = fallbackModel
-
-			client, err := r.getOrCreateClient(fallbackModel)
-			if err != nil {
-				lastErr = err
-				continue
-			}
-
-			resp, err := client.ChatCompletion(ctx, fallbackReq)
-			if err == nil {
-				if fallbackModel != modelID {
-					log.Printf("[router] model %q failed, fell back to %s/%s", modelID, p, fallbackModel)
-				}
-				return resp, nil
-			}
-			lastErr = err
-			log.Printf("[router] provider %s model %s failed: %v", p, fallbackModel, err)
-		}
-	}
-	return nil, fmt.Errorf("all providers failed, last error: %w", lastErr)
-}
-
-func (r *RouterClient) tryEachStream(ctx context.Context, req ChatRequest, modelID string, onChunk func(StreamChunk)) error {
-	primaryProvider := r.registry.ResolveProvider(modelID)
-	fallbackOrder := r.fallback
-
-	start := 0
-	for i, p := range fallbackOrder {
-		if p == primaryProvider {
-			start = i
-			break
-		}
-	}
-	orderedProviders := make([]string, 0, len(fallbackOrder))
-	orderedProviders = append(orderedProviders, fallbackOrder[start:]...)
-	orderedProviders = append(orderedProviders, fallbackOrder[:start]...)
-
-	var lastErr error
-	for _, p := range orderedProviders {
-		info := r.registry.Info(p)
-		if info == nil {
-			continue
-		}
-		cfg := r.registry.Config(p)
-		if cfg == nil {
-			continue
-		}
-
-		models := info.Models
-		if len(models) == 0 {
-			models = []string{cfg.Model}
-		}
-		for _, fallbackModel := range models {
-			fallbackReq := req
-			fallbackReq.Model = fallbackModel
-
-			client, err := r.getOrCreateClient(fallbackModel)
-			if err != nil {
-				lastErr = err
-				continue
-			}
-
-			err = client.ChatCompletionStream(ctx, fallbackReq, onChunk)
-			if err == nil {
-				if fallbackModel != modelID {
-					log.Printf("[router] model %q failed (stream), fell back to %s/%s", modelID, p, fallbackModel)
-				}
-				return nil
-			}
-			lastErr = err
-			log.Printf("[router] provider %s model %s stream failed: %v", p, fallbackModel, err)
-		}
-	}
-	return fmt.Errorf("all providers failed, last error: %w", lastErr)
-}
-
 func (r *RouterClient) ChatCompletion(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
 	modelID := req.Model
 	if modelID == "" {
@@ -266,12 +236,7 @@ func (r *RouterClient) ChatCompletion(ctx context.Context, req ChatRequest) (*Ch
 	if err != nil {
 		return nil, err
 	}
-	resp, err := client.ChatCompletion(ctx, req)
-	if err == nil {
-		return resp, nil
-	}
-	log.Printf("[router] primary model %q failed: %v — trying fallback providers", modelID, err)
-	return r.tryEach(ctx, req, modelID)
+	return client.ChatCompletion(ctx, req)
 }
 
 func (r *RouterClient) ChatCompletionStream(ctx context.Context, req ChatRequest, onChunk func(StreamChunk)) error {
@@ -283,19 +248,9 @@ func (r *RouterClient) ChatCompletionStream(ctx context.Context, req ChatRequest
 	if err != nil {
 		return err
 	}
-	err = client.ChatCompletionStream(ctx, req, onChunk)
-	if err == nil {
-		return nil
-	}
-	log.Printf("[router] primary model %q failed (stream): %v — trying fallback providers", modelID, err)
-	return r.tryEachStream(ctx, req, modelID, onChunk)
+	return client.ChatCompletionStream(ctx, req, onChunk)
 }
 
 func (r *RouterClient) Model() string {
-	for _, p := range r.fallback {
-		if cfg := r.registry.Config(p); cfg != nil {
-			return cfg.Model
-		}
-	}
 	return "auto"
 }

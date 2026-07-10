@@ -2,14 +2,14 @@ import { streamText, stepCountIs, convertToModelMessages, wrapLanguageModel, ext
 import { SYSTEM_PROMPT } from '@core/prompt/systemPrompt';
 import { buildToolPolicy } from '@core/prompt/toolPolicy';
 import { allTools } from '@core/tools/allTools';
-import { getModelDefinition, getUsedModels, markModelUsed, getAIModels } from '@core/config/models';
+import { getModelDefinition } from '@core/config/models';
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { getAgentById } from '@core/agents';
 import { getProjectMemory, setProjectMemory, deleteProjectMemory, extractFactsFromResult, type ProjectMemoryEntry } from '@core/memory/projectMemory';
 import { getSmartSystemPrompt, type ProjectContext } from '@core/memory/contextController';
 import { contractContext } from '@core/memory/contextContractor';
 import { recordUsage } from '@core/utils/usageTracker';
-import { getAllProviders, getProvider, getProviderClient, getModelReasoningConfig } from '@core/providers';
+import { getAllProviders, getProviderClient, getModelReasoningConfig } from '@core/providers';
 
 type ProviderClient = any;
 
@@ -114,60 +114,6 @@ export function getAIErrorMessage(error: unknown) {
 
 const MAX_STEPS = 20;
 
-async function getConfiguredProviderIds(): Promise<Set<string>> {
-  const configured = new Set<string>();
-  const allProviders = getAllProviders();
-  for (const p of allProviders) {
-    const val = await DatabaseService.getConfig(p.configKey)
-      .then(r => r || localStorage.getItem(p.configKey) || '');
-    if (val && val.trim()) {
-      configured.add(p.id);
-    }
-  }
-  return configured;
-}
-
-export async function buildFallbackChain(primaryModelName: string, sessionId?: string, projectId?: string): Promise<string[]> {
-  if (primaryModelName.startsWith('auto')) {
-    return [primaryModelName];
-  }
-
-  const used = sessionId || projectId ? getUsedModels(projectId, sessionId) : [];
-  const configuredProviders = await getConfiguredProviderIds();
-  const primaryDef = getModelDefinition(primaryModelName);
-
-  const others = getAIModels()
-    .filter((m: string) => {
-      if (m === primaryModelName) return false;
-      if (used.includes(m)) return false;
-      const def = getModelDefinition(m);
-      if (!def) return false;
-      const provider = getProvider(def.provider);
-      if (!provider) return false;
-      return configuredProviders.has(provider.id);
-    })
-    .sort((a, b) => {
-      const defA = getModelDefinition(a)!;
-      const defB = getModelDefinition(b)!;
-
-      const aMatchesThinking = defA.supportsThinking === primaryDef?.supportsThinking;
-      const bMatchesThinking = defB.supportsThinking === primaryDef?.supportsThinking;
-      if (aMatchesThinking && !bMatchesThinking) return -1;
-      if (!aMatchesThinking && bMatchesThinking) return 1;
-
-      const providerA = getProvider(defA.provider);
-      const providerB = getProvider(defB.provider);
-      if (providerA && providerB) {
-        const ids = getAllProviders().map(p => p.id);
-        return ids.indexOf(providerA.id) - ids.indexOf(providerB.id);
-      }
-      return 0;
-    })
-    .slice(0, 5);
-
-  return [primaryModelName, ...others];
-}
-
 export async function chatCompletion({
   messages,
   modelName,
@@ -175,7 +121,6 @@ export async function chatCompletion({
   isWebSearchEnabled = true,
   abortSignal,
   previousModelName,
-  sessionId,
   projectContext,
   modeId,
   projectId,
@@ -186,7 +131,6 @@ export async function chatCompletion({
   isWebSearchEnabled?: boolean;
   abortSignal?: AbortSignal;
   previousModelName?: string;
-  sessionId?: string;
   projectContext?: ProjectContext;
   modeId?: string;
   projectId?: string;
@@ -232,10 +176,6 @@ export async function chatCompletion({
   const toolPolicy = isNewSession ? buildToolPolicy('new_task') : buildToolPolicy('continuing_session');
   const fullSystemPrompt = getSmartSystemPrompt(modeAwarePrompt, projectContext, projectMemory) + '\n\n' + toolPolicy;
 
-  const errors: string[] = [];
-  const chain = await buildFallbackChain(modelName, sessionId, projectId);
-  const uniqueChain = Array.from(new Set(chain));
-
   let searchProvider = 'tavily';
   try {
     const stored = await DatabaseService.getConfig('search-provider');
@@ -244,131 +184,135 @@ export async function chatCompletion({
     searchProvider = 'tavily';
   }
 
-  for (let modelIdx = 0; modelIdx < uniqueChain.length; modelIdx++) {
-    const currentModelName = uniqueChain[modelIdx];
-    const currentModel = getLanguageModel(currentModelName);
-    const def = getModelDefinition(currentModelName);
-    const shouldApplyThinking = isThinkingEnabled && def?.supportsThinking;
+  const currentModelName = modelName;
+  const currentModel = getLanguageModel(currentModelName);
+  const def = getModelDefinition(currentModelName);
+  const shouldApplyThinking = isThinkingEnabled && def?.supportsThinking;
 
-    const reasoning = getModelReasoningConfig(currentModelName);
-    let providerOptions: any = undefined;
-    if (shouldApplyThinking && reasoning?.mode === 'native') {
-      providerOptions = reasoning.providerOptions;
+  const reasoning = getModelReasoningConfig(currentModelName);
+  let providerOptions: any = undefined;
+  if (shouldApplyThinking && reasoning?.mode === 'native') {
+    providerOptions = reasoning.providerOptions;
+  }
+
+  let msgs = messages;
+  const startTime = Date.now();
+
+  try {
+    if (!msgs || msgs.length === 0) {
+      throw new Error('Messages array is empty');
     }
 
-    let msgs = messages;
+    const hasUIMessages = msgs.some((m: any) => Array.isArray(m.parts));
+    if (hasUIMessages) {
+      const withParts = msgs.map((m: any) => {
+        if (Array.isArray(m.parts)) return { ...m, id: m.id || crypto.randomUUID() };
+        return { id: crypto.randomUUID(), role: m.role, parts: [{ type: 'text' as const, text: m.content || '' }] };
+      });
+      msgs = await convertToModelMessages(withParts, { ignoreIncompleteToolCalls: true });
+    } else {
+      msgs = msgs
+        .filter((m: any) => m.role !== 'system')
+        .map((m: any) => ({ role: m.role, content: m.content || '' }));
+    }
 
-    try {
-      if (!msgs || msgs.length === 0) {
-        throw new Error('Messages array is empty');
+    if (previousModelName && previousModelName !== currentModelName) {
+      const incomingModel = getLanguageModel(currentModelName);
+      const contracted = await contractContext(msgs, incomingModel);
+      msgs = contracted.messages;
+
+      if (projectId && contracted.summary) {
+        const summaryKey = `context-summary-${Date.now()}`;
+        setProjectMemory(projectId, summaryKey, contracted.summary, 'auto-summary').catch(e =>
+          console.warn('Failed to store context summary:', e)
+        );
+
+        getProjectMemory(projectId).then(allMemory => {
+          const summaries = allMemory
+            .filter(e => e.key.startsWith('context-summary-'))
+            .sort((a, b) => b.updatedAt - a.updatedAt);
+          if (summaries.length > 5) {
+            const toDelete = summaries.slice(5);
+            for (const entry of toDelete) {
+              deleteProjectMemory(projectId, entry.key).catch(() => {});
+            }
+          }
+        }).catch(() => {});
       }
+    }
 
-      const hasUIMessages = msgs.some((m: any) => Array.isArray(m.parts));
-      if (hasUIMessages) {
-        const withParts = msgs.map((m: any) => {
-          if (Array.isArray(m.parts)) return { ...m, id: m.id || crypto.randomUUID() };
-          return { id: crypto.randomUUID(), role: m.role, parts: [{ type: 'text' as const, text: m.content || '' }] };
+    const filteredMessages = msgs.filter((m: any) => m.role !== 'system');
+
+    const result = streamText({
+      model: currentModel,
+      system: fullSystemPrompt,
+      messages: filteredMessages,
+      tools: allTools.reduce((acc, t) => {
+          const toolObj = t as any;
+          const name = toolObj.name || toolObj.toolName;
+          if (name) {
+            if (name === 'web_search') {
+              if (!isWebSearchEnabled) return acc;
+              if (toolObj.description) {
+                toolObj.description = `Search the web for current information using ${searchProvider}. Use when you need up-to-date data, recent news, documentation, or facts beyond your training cutoff. Trigger on keywords like: search, research, find, look up, latest, news, recent, current, what is, who is, explain, define, compare, how to, verify, check, troubleshoot, fix, debug, status, update, trends, documentation, guide, tutorial, example, vs, versus, difference, best, top, ranking, list, data, facts, details, info, information, background, context, overview, breakdown, summary, elaborate, describe, explain, confirm, validate, fact-check, ensure, correct, accurate, true, real, legitimate, credible, source, citation, reference, proof, evidence, method, approach, strategy, technique, solution, workaround, resolve, recipe, sample, specification, spec, API, docs.`;
+              }
+            }
+            acc[name] = toolObj;
+          }
+          return acc;
+        }, {} as any),
+      providerOptions,
+      abortSignal,
+      maxRetries: 2,
+      stopWhen: stepCountIs(MAX_STEPS),
+      onError({ error }) {
+        console.error(`AI stream failed for ${currentModelName}:`, getAIErrorMessage(error));
+      },
+      onFinish: (result) => {
+        const { usage } = result;
+        recordUsage({
+          model: currentModelName,
+          provider: def?.provider ?? 'unknown',
+          promptTokens: usage.inputTokens ?? 0,
+          completionTokens: usage.outputTokens ?? 0,
+          totalTokens: usage.totalTokens ?? 0,
+          success: true,
+          latency: Date.now() - startTime,
+          timestamp: Date.now(),
         });
-        msgs = await convertToModelMessages(withParts, { ignoreIncompleteToolCalls: true });
-      } else {
-        msgs = msgs
-          .filter((m: any) => m.role !== 'system')
-          .map((m: any) => ({ role: m.role, content: m.content || '' }));
-      }
 
-      if (previousModelName && previousModelName !== currentModelName) {
-        const incomingModel = getLanguageModel(currentModelName);
-        const contracted = await contractContext(msgs, incomingModel);
-        msgs = contracted.messages;
-
-        if (projectId && contracted.summary) {
-          const summaryKey = `context-summary-${Date.now()}`;
-          setProjectMemory(projectId, summaryKey, contracted.summary, 'auto-summary').catch(e =>
-            console.warn('Failed to store context summary:', e)
-          );
-
-          getProjectMemory(projectId).then(allMemory => {
-            const summaries = allMemory
-              .filter(e => e.key.startsWith('context-summary-'))
-              .sort((a, b) => b.updatedAt - a.updatedAt);
-            if (summaries.length > 5) {
-              const toDelete = summaries.slice(5);
-              for (const entry of toDelete) {
-                deleteProjectMemory(projectId, entry.key).catch(() => {});
-              }
-            }
-          }).catch(() => {});
-        }
-      }
-
-      const filteredMessages = msgs.filter((m: any) => m.role !== 'system');
-
-      const result = streamText({
-        model: currentModel,
-        system: fullSystemPrompt,
-        messages: filteredMessages,
-        tools: allTools.reduce((acc, t) => {
-            const toolObj = t as any;
-            const name = toolObj.name || toolObj.toolName;
-            if (name) {
-              if (name === 'web_search') {
-                if (!isWebSearchEnabled) return acc;
-                if (toolObj.description) {
-                  toolObj.description = `Search the web for current information using ${searchProvider}. Use when you need up-to-date data, recent news, documentation, or facts beyond your training cutoff. Trigger on keywords like: search, research, find, look up, latest, news, recent, current, what is, who is, explain, define, compare, how to, verify, check, troubleshoot, fix, debug, status, update, trends, documentation, guide, tutorial, example, vs, versus, difference, best, top, ranking, list, data, facts, details, info, information, background, context, overview, breakdown, summary, elaborate, describe, explain, confirm, validate, fact-check, ensure, correct, accurate, true, real, legitimate, credible, source, citation, reference, proof, evidence, method, approach, strategy, technique, solution, workaround, resolve, recipe, sample, specification, spec, API, docs.`;
-                }
-              }
-              acc[name] = toolObj;
-            }
-            return acc;
-          }, {} as any),
-        providerOptions,
-        abortSignal,
-        maxRetries: 2,
-        stopWhen: stepCountIs(MAX_STEPS),
-        onError({ error }) {
-          console.error(`AI stream failed for ${currentModelName}:`, getAIErrorMessage(error));
-        },
-        onFinish: (result) => {
-          const { usage } = result;
-          recordUsage({
-            model: currentModelName,
-            promptTokens: usage.inputTokens ?? 0,
-            completionTokens: usage.outputTokens ?? 0,
-            totalTokens: usage.totalTokens ?? 0,
-            timestamp: Date.now(),
-          });
-
-          // Auto-discover project facts from tool call results
-          if (projectId && result.steps) {
-            for (const step of result.steps) {
-              for (const part of step.content) {
-                if (part.type === 'tool-result') {
-                  const facts = extractFactsFromResult(part.toolName, part.input, part.output);
-                  for (const fact of facts) {
-                    setProjectMemory(projectId, fact.key, fact.value, 'auto-discovered').catch(e =>
-                      console.warn('Failed to store auto-discovered fact:', e)
-                    );
-                  }
+        // Auto-discover project facts from tool call results
+        if (projectId && result.steps) {
+          for (const step of result.steps) {
+            for (const part of step.content) {
+              if (part.type === 'tool-result') {
+                const facts = extractFactsFromResult(part.toolName, part.input, part.output);
+                for (const fact of facts) {
+                  setProjectMemory(projectId, fact.key, fact.value, 'auto-discovered').catch(e =>
+                    console.warn('Failed to store auto-discovered fact:', e)
+                  );
                 }
               }
             }
           }
-        },
-      });
+        }
+      },
+    });
 
-      return result;
-    } catch (error) {
-      if (sessionId) {
-        markModelUsed(projectId, currentModelName, sessionId);
-      }
-      errors.push(`${currentModelName}: ${getAIErrorMessage(error)}`);
-      console.warn(`Model ${currentModelName} failed, trying fallback...`);
-    }
+    return result;
+  } catch (error) {
+    recordUsage({
+      model: currentModelName,
+      provider: def?.provider ?? 'unknown',
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      success: false,
+      latency: Date.now() - startTime,
+      timestamp: Date.now(),
+    });
+    throw new Error(`Model ${currentModelName} failed: ${getAIErrorMessage(error)}`);
   }
-
-  throw new Error(
-    `All AI models failed. Tried: ${uniqueChain.join(', ')}.\nErrors:\n${errors.join('\n')}\n\nCheck your API keys in Settings.`
-  );
 }
 
 // ── Session title generation ─────────────────────────────────────────

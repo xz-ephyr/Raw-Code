@@ -137,7 +137,7 @@ func TestNewOrchestrator(t *testing.T) {
 	exec := tool.NewExecutor(reg, "http://localhost:3001", "")
 	pool := worker.NewPool(2, tm, exec)
 	mc := model.NewClient(model.ProviderConfig{
-		Provider: "omniroute",
+		Provider: "test-provider",
 		BaseURL:  "http://localhost:8080",
 		APIKey:   "test-key",
 		Model:    "test-model",

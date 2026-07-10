@@ -10,7 +10,7 @@ const TABS = [
   { id: 'skills', label: 'Skills', icon: HandBag01Icon },
 ];
 
-const TAB_CONTENT: Record<string, { title: string; description: string; items: { name: string; description: string; icon?: any; imageSrc?: string; stars?: number; details: string[]; connectorId?: string }[] }> = {
+const TAB_CONTENT: Record<string, { title: string; description: string; items: { name: string; description: string; icon?: any; imageSrc?: string; imageSrcDark?: string; stars?: number; details: string[]; connectorId?: string }[] }> = {
   connectors: {
     title: 'Connectors',
     description: 'Connect your AI to external services and data sources.',
@@ -51,7 +51,7 @@ const TAB_CONTENT: Record<string, { title: string; description: string; items: {
 
 export const PluginTabs = () => {
   const [activeTab, setActiveTab] = useState('connectors');
-  const [selectedItem, setSelectedItem] = useState<{ name: string; description: string; icon?: any; imageSrc?: string; stars?: number; details: string[]; connectorId?: string } | null>(null);
+  const [selectedItem, setSelectedItem] = useState<{ name: string; description: string; icon?: any; imageSrc?: string; imageSrcDark?: string; stars?: number; details: string[]; connectorId?: string } | null>(null);
   const [gmailConnected, setGmailConnected] = useState(false);
   const content = TAB_CONTENT[activeTab];
   const tabType = activeTab === 'connectors' ? 'connector' : activeTab === 'mcp' ? 'mcp' : 'skill' as const;
@@ -106,27 +106,20 @@ export const PluginTabs = () => {
       if (clientId) {
         startGmailOAuth(clientId);
       }
-      // If no clientId, the modal will show the slide-out setup panel
     }
-  };
-
-  const handleGmailClientIdSubmit = async (clientId: string) => {
-    const { DatabaseService } = await import('@core/utils/DatabaseService');
-    await DatabaseService.setConfig('gmail-client-id', clientId);
-    startGmailOAuth(clientId);
   };
 
   return (
     <div>
       <div className="flex items-center gap-4">
-        <div className="flex gap-0.5 border border-border rounded-lg p-0.5 w-fit">
+        <div className="flex gap-1 border border-border rounded-lg p-1 w-fit">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-[6px] transition-all duration-150 ${
                   isActive
                     ? 'bg-muted text-foreground'
                     : 'text-muted-foreground hover:text-foreground'
@@ -151,7 +144,7 @@ export const PluginTabs = () => {
             description={item.description}
             icon={item.icon}
             imageSrc={item.imageSrc}
-            imageSrcDark={(item as any).imageSrcDark}
+            imageSrcDark={undefined}
             type={tabType}
             stars={item.stars}
             connected={item.connectorId === 'gmail' ? gmailConnected : undefined}
@@ -174,7 +167,6 @@ export const PluginTabs = () => {
           connected={selectedItem.connectorId === 'gmail' ? gmailConnected : undefined}
           onClose={() => setSelectedItem(null)}
           onAction={() => handleConnectorAction(selectedItem)}
-          onClientIdSubmit={selectedItem.connectorId === 'gmail' ? handleGmailClientIdSubmit : undefined}
         />
       )}
     </div>

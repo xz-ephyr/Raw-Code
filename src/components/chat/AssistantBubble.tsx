@@ -13,7 +13,6 @@ import { BubbleActions } from './BubbleActions';
 interface AssistantBubbleProps {
   content: string;
   isStreaming: boolean;
-  model?: string;
   version?: number;
   toolInvocations?: any[];
   reasoning?: string;
@@ -32,7 +31,6 @@ export const AssistantBubble = React.memo(
   ({
     content,
     isStreaming,
-    model,
     version,
     toolInvocations,
     reasoning,
@@ -152,7 +150,6 @@ export const AssistantBubble = React.memo(
         {showFooterActions && (
           <BubbleActions
             allSources={allSources}
-            model={model}
             version={version}
             onCopy={onCopy}
             onThumbsUp={onThumbsUp}

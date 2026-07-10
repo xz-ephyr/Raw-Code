@@ -5,7 +5,7 @@ import { DefaultChatTransport } from 'ai';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { ChatSessionManager } from '@/services/ChatSessionManager';
-import { getModelForChatRequest, initUsedModelsCache } from '@core/config/models';
+import { getModelForChatRequest } from '@core/config/models';
 import { chatCompletion, getAIErrorMessage, generateSessionTitle } from '@core/models/aiService';
 import { approveToolConfirmation, denyToolConfirmation } from '@core/utils/toolConfirm';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -207,7 +207,6 @@ export const ChatPage = () => {
         isWebSearchEnabled: isWebSearchEnabledRef.current,
         abortSignal: options?.signal,
         previousModelName: previousModelRef.current || undefined,
-        sessionId: uuid,
         projectContext,
         modeId: currentModeRef.current,
         projectId: projectIdRef.current || undefined,
@@ -283,7 +282,6 @@ export const ChatPage = () => {
     if (uuid) {
       const loadSession = async () => {
         const session = await ChatSessionManager.getSession(uuid).catch(() => null);
-        await initUsedModelsCache(session?.projectId || undefined, uuid);
         if (session && !sessionStorage.getItem('pending-first-message') && uuid !== 'new') {
           const storedMessages = await DatabaseService.getMessages(uuid);
           setMessages(storedMessages.map(mapUIMessageToLegacyMessage));

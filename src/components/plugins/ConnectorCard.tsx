@@ -1,5 +1,5 @@
 import { HugeiconsIcon } from '@hugeicons/react';
-import { StarIcon } from '@hugeicons/core-free-icons';
+import { StarIcon, Download04Icon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons';
 
 interface ConnectorCardProps {
   label: string;
@@ -17,7 +17,7 @@ interface ConnectorCardProps {
 export const ConnectorCard = ({ label, description, icon, imageSrc, imageSrcDark, type = 'connector', stars, connected, onAction, onClick }: ConnectorCardProps) => (
   <button
     onClick={onClick}
-    className="h-[135px] border border-border rounded-lg p-4 flex flex-col justify-between text-left hover:bg-muted transition-colors cursor-pointer"
+    className="h-[100px] border border-border rounded-lg p-3 flex flex-col justify-between text-left hover:bg-muted transition-colors cursor-pointer"
   >
     <div>
       <div className="flex items-center gap-2">
@@ -25,17 +25,17 @@ export const ConnectorCard = ({ label, description, icon, imageSrc, imageSrcDark
           <>
             {imageSrcDark ? (
               <>
-                <img src={imageSrc} alt={label} className="w-6 h-6 dark:hidden" />
-                <img src={imageSrcDark} alt={label} className="w-6 h-6 hidden dark:block" />
+                <img src={imageSrc} alt={label} className="w-5 h-5 dark:hidden" />
+                <img src={imageSrcDark} alt={label} className="w-5 h-5 hidden dark:block" />
               </>
             ) : (
-              <img src={imageSrc} alt={label} className="w-6 h-6" />
+              <img src={imageSrc} alt={label} className="w-5 h-5" />
             )}
           </>
         ) : icon ? (
-          <HugeiconsIcon icon={icon} size={20} className="text-muted-foreground" />
+          <HugeiconsIcon icon={icon} size={18} className="text-muted-foreground" />
         ) : null}
-        <span className="text-sm font-semibold text-foreground">{label}</span>
+        <span className="text-xs font-semibold text-foreground">{label}</span>
       </div>
       {type !== 'connector' && stars !== undefined && (
         <div className="flex items-center gap-0.5 mt-1">
@@ -43,32 +43,27 @@ export const ConnectorCard = ({ label, description, icon, imageSrc, imageSrcDark
             <HugeiconsIcon
               key={i}
               icon={StarIcon}
-              size={12}
+              size={10}
               className={i < stars ? 'text-yellow-500' : 'text-muted-foreground/30'}
             />
           ))}
         </div>
       )}
-      <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{description}</p>
+      <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-1">{description}</p>
     </div>
-    <div className="flex items-center">
-      {type === 'connector' ? (
-        <span
-          onClick={(e) => { e.stopPropagation(); onAction?.(); }}
-          className={`text-xs font-medium px-3 py-1 rounded-md transition-colors ${
-            connected
-              ? 'text-green-500 bg-green-500/10'
-              : 'text-foreground bg-muted hover:bg-muted/80'
-          }`}
-        >
-          {connected ? 'Connected' : 'Connect'}
+    <div className="flex items-center justify-end">
+      {connected ? (
+        <span className="flex items-center gap-1 text-[11px] font-medium text-green-500">
+          <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} />
+          Connected
         </span>
       ) : (
         <span
-          onClick={(e) => { e.stopPropagation(); onAction?.(); }}
-          className="text-xs font-medium text-foreground bg-muted px-3 py-1 rounded-md hover:bg-muted/80 transition-colors"
+          onClick={(e) => { e.stopPropagation(); onAction?.(); onClick?.(); }}
+          className="flex items-center justify-center w-7 h-7 rounded-md bg-muted hover:bg-muted/80 transition-colors"
+          title={type === 'connector' ? 'Connect' : 'Install'}
         >
-          Install
+          <HugeiconsIcon icon={Download04Icon} size={14} className="text-foreground" />
         </span>
       )}
     </div>

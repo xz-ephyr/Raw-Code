@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Add01Icon, File01Icon, Folder01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconRenderer } from '@/components/ui/HugeiconRenderer';
+import { Dropdown } from '@/components/ui/Dropdown';
 import FileTreeItem from './FileTreeItem';
 import type { FileNode } from './types';
 
@@ -70,29 +71,29 @@ const FileExplorer = ({
           >
             <HugeiconRenderer icon={Add01Icon} />
           </button>
-          {showCreateDropdown && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowCreateDropdown(false)} />
-              <div className="absolute right-0 top-full mt-1 w-44 bg-card border border-border rounded-xl shadow-lg py-1 z-50">
-                <button
-                  type="button"
-                  onClick={() => { setShowCreateDropdown(false); setCreateMode('file'); setCreateName(''); }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-muted cursor-pointer"
-                >
-                  <HugeiconRenderer icon={File01Icon} size={14} />
-                  New File...
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowCreateDropdown(false); setCreateMode('folder'); setCreateName(''); }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-muted cursor-pointer"
-                >
-                  <HugeiconRenderer icon={Folder01Icon} size={14} />
-                  New Folder...
-                </button>
-              </div>
-            </>
-          )}
+          <Dropdown
+            isOpen={showCreateDropdown}
+            onClose={() => setShowCreateDropdown(false)}
+            align="right"
+            width="176px"
+          >
+            <button
+              type="button"
+              onClick={() => { setShowCreateDropdown(false); setCreateMode('file'); setCreateName(''); }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-muted cursor-pointer"
+            >
+              <HugeiconRenderer icon={File01Icon} size={14} />
+              New File...
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowCreateDropdown(false); setCreateMode('folder'); setCreateName(''); }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-muted cursor-pointer"
+            >
+              <HugeiconRenderer icon={Folder01Icon} size={14} />
+              New Folder...
+            </button>
+          </Dropdown>
         </div>
       </div>
 

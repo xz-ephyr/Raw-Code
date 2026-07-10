@@ -11,6 +11,7 @@ import { DatabaseService } from '@core/utils/DatabaseService';
 import { getAllProviders, getProviderLabel } from '@core/providers';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { ModelIcon } from '@/components/ui/ModelIcon';
+import { Dropdown } from '@/components/ui/Dropdown';
 
 export function ApiKeysTab() {
   const providers = getAllProviders();
@@ -92,31 +93,33 @@ export function ApiKeysTab() {
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </div>
-            {isModelDropdownOpen && (
-              <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-[10px] shadow-lg shadow-black/30 overflow-hidden">
-                <div className="overflow-y-auto thin-scrollbar" style={{ maxHeight: 155 }}>
-                  {MODELS.map((model, idx) => (
-                    <button
-                      key={`${model.id}-${idx}`}
-                      className={`w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors flex items-center gap-2 ${
-                        selectedModel === model.id ? 'bg-muted font-medium' : ''
-                      }`}
-                      onClick={() => {
-                        setSelectedModel(model.id as typeof selectedModel);
-                        setIsModelDropdownOpen(false);
-                      }}
-                    >
-                      <ModelIcon modelId={model.id} size={14} />
-                      <span className="flex-1 truncate">{model.label}</span>
-                      <span className="text-[11px] text-muted-foreground shrink-0">{getProviderLabel(model.provider) || model.provider}</span>
-                      {model.supportsThinking && (
-                        <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-blue-500 shrink-0 ml-auto" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <Dropdown
+              isOpen={isModelDropdownOpen}
+              onClose={() => setIsModelDropdownOpen(false)}
+              width="100%"
+              maxHeight="155px"
+              className="mt-1"
+            >
+              {MODELS.map((model, idx) => (
+                <button
+                  key={`${model.id}-${idx}`}
+                  className={`w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors flex items-center gap-2 ${
+                    selectedModel === model.id ? 'bg-muted font-medium' : ''
+                  }`}
+                  onClick={() => {
+                    setSelectedModel(model.id as typeof selectedModel);
+                    setIsModelDropdownOpen(false);
+                  }}
+                >
+                  <ModelIcon modelId={model.id} size={14} />
+                  <span className="flex-1 truncate">{model.label}</span>
+                  <span className="text-[11px] text-muted-foreground shrink-0">{getProviderLabel(model.provider) || model.provider}</span>
+                  {model.supportsThinking && (
+                    <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-blue-500 shrink-0 ml-auto" />
+                  )}
+                </button>
+              ))}
+            </Dropdown>
           </div>
         </div>
       </div>

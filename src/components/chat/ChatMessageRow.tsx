@@ -12,7 +12,6 @@ interface ChatMessageRowProps {
   parts?: any[];
   contentBeforeTool?: string;
   contentAfterTool?: string;
-  currentModel: string | undefined;
   isStreaming: boolean;
   messageIndex: number;
   version: number;
@@ -34,7 +33,6 @@ export const ChatMessageRow = memo(function ChatMessageRow({
   parts,
   contentBeforeTool,
   contentAfterTool,
-  currentModel,
   isStreaming,
   messageIndex,
   version,
@@ -71,7 +69,6 @@ export const ChatMessageRow = memo(function ChatMessageRow({
       ) : (
         <AssistantBubble
           content={content}
-          model={currentModel}
           version={version}
           isStreaming={isStreaming}
           toolInvocations={toolInvocations}

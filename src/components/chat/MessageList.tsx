@@ -141,7 +141,6 @@ export function MessageList({
                 parts={m.parts}
                 contentBeforeTool={m.contentBeforeTool}
                 contentAfterTool={m.contentAfterTool}
-                currentModel={currentModel}
                 isStreaming={i === lastAssistantIndex}
                 messageIndex={i}
                 version={getMessageVersion(m, i)}

@@ -15,37 +15,6 @@ type ModelProvider interface {
 	Model() string
 }
 
-type ModelRouter struct {
-	primary   ModelProvider
-	fallbacks []ModelProvider
-}
-
-func NewModelRouter(primary ModelProvider, fallbacks ...ModelProvider) *ModelRouter {
-	return &ModelRouter{primary: primary, fallbacks: fallbacks}
-}
-
-func (r *ModelRouter) ChatCompletion(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
-	resp, err := r.primary.ChatCompletion(ctx, req)
-	if err == nil {
-		return resp, nil
-	}
-	for _, fb := range r.fallbacks {
-		resp, fbErr := fb.ChatCompletion(ctx, req)
-		if fbErr == nil {
-			return resp, nil
-		}
-	}
-	return nil, err
-}
-
-func (r *ModelRouter) ChatCompletionStream(ctx context.Context, req ChatRequest, onChunk func(StreamChunk)) error {
-	return r.primary.ChatCompletionStream(ctx, req, onChunk)
-}
-
-func (r *ModelRouter) Model() string {
-	return r.primary.Model()
-}
-
 type Message struct {
 	Role         string     `json:"role"`
 	Content      string     `json:"content"`

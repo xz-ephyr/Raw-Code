@@ -1,6 +1,3 @@
-import { DatabaseService } from '../utils/DatabaseService';
-import { useSessionStore } from '../../src/stores/sessionStore';
-
 export type Provider = string;
 
 export interface ModelDefinition {
@@ -12,10 +9,69 @@ export interface ModelDefinition {
 }
 
 export const MODELS: ModelDefinition[] = [
-  { id: 'auto', provider: 'omniroute', label: 'Auto (Smart Routing)', supportsThinking: true },
-  { id: 'auto/coding', provider: 'omniroute', label: 'Auto Coding', supportsThinking: true },
-  { id: 'auto/cheap', provider: 'omniroute', label: 'Auto Cheap', supportsThinking: false },
-  { id: 'auto/fast', provider: 'omniroute', label: 'Auto Fast', supportsThinking: false },
+  // Google AI Studio
+  { id: 'gemini-2.5-flash', provider: 'google', label: 'Gemini 2.5 Flash', supportsThinking: true },
+  { id: 'gemini-3.0-flash-preview', provider: 'google', label: 'Gemini 3.0 Flash', supportsThinking: true },
+  { id: 'gemini-3.1-flash-lite-preview', provider: 'google', label: 'Gemini 3.1 Flash Lite', supportsThinking: false },
+  { id: 'gemma-4-31b-it', provider: 'google', label: 'Gemma 4 31B', supportsThinking: true },
+  { id: 'gemma-4-26b-a4b-it', provider: 'google', label: 'Gemma 4 26B', supportsThinking: true },
+
+  // Groq
+  { id: 'llama-4-scout-17b-16e-instruct', provider: 'groq', label: 'Llama 4 Scout', supportsThinking: false },
+  { id: 'llama-3.3-70b-versatile', provider: 'groq', label: 'Llama 3.3 70B', supportsThinking: false },
+  { id: 'qwen3-32b', provider: 'groq', label: 'Qwen3 32B', supportsThinking: false },
+  { id: 'deepseek-r1-distill-llama-70b', provider: 'groq', label: 'DeepSeek R1 70B', supportsThinking: true },
+  { id: 'gpt-oss-120b', provider: 'groq', label: 'GPT-OSS 120B', supportsThinking: false },
+
+  // Cerebras
+  { id: 'cerebras/gpt-oss-120b', provider: 'cerebras', label: 'GPT-OSS 120B', supportsThinking: false },
+  { id: 'zai-glm-4.7', provider: 'cerebras', label: 'Z.ai GLM 4.7', supportsThinking: false },
+  { id: 'gemma-4-31b', provider: 'cerebras', label: 'Gemma 4 31B', supportsThinking: false },
+
+  // Mistral AI
+  { id: 'mistral-small-3.2', provider: 'mistral', label: 'Mistral Small 3.2', supportsThinking: false },
+  { id: 'mistral-medium-3.5', provider: 'mistral', label: 'Mistral Medium 3.5', supportsThinking: true },
+  { id: 'mistral-large-3', provider: 'mistral', label: 'Mistral Large 3', supportsThinking: true },
+  { id: 'codestral', provider: 'mistral', label: 'Codestral', supportsThinking: false },
+  { id: 'pixtral-12b', provider: 'mistral', label: 'Pixtral 12B', supportsThinking: false },
+
+  // SambaNova
+  { id: 'Meta-Llama-3.3-70B-Instruct', provider: 'sambanova', label: 'Llama 3.3 70B', supportsThinking: false },
+  { id: 'DeepSeek-V3.1', provider: 'sambanova', label: 'DeepSeek V3.1', supportsThinking: false },
+  { id: 'sambanova/gpt-oss-120b', provider: 'sambanova', label: 'GPT-OSS 120B', supportsThinking: false },
+  { id: 'DeepSeek-V3.2', provider: 'sambanova', label: 'DeepSeek V3.2', supportsThinking: false },
+  { id: 'gemma-4-31B-it', provider: 'sambanova', label: 'Gemma 4 31B', supportsThinking: false },
+
+  // Cohere
+  { id: 'command-a-03-2026', provider: 'cohere', label: 'Command A', supportsThinking: true },
+  { id: 'command-a-plus', provider: 'cohere', label: 'Command A+', supportsThinking: true },
+  { id: 'command-r-plus-08-2024', provider: 'cohere', label: 'Command R+', supportsThinking: true },
+  { id: 'command-r-08-2024', provider: 'cohere', label: 'Command R', supportsThinking: false },
+  { id: 'command-r7b-12-2024', provider: 'cohere', label: 'Command R7B', supportsThinking: false },
+  { id: 'c4ai-aya-expanse-32b', provider: 'cohere', label: 'Aya Expanse 32B', supportsThinking: false },
+
+  // Hugging Face
+  { id: 'meta-llama/Llama-3.2-11B-Vision-Instruct', provider: 'huggingface', label: 'Llama 3.2 11B Vision', supportsThinking: false },
+  { id: 'meta-llama/Meta-Llama-3.1-8B-Instruct', provider: 'huggingface', label: 'Llama 3.1 8B', supportsThinking: false },
+  { id: 'Qwen/Qwen2.5-72B-Instruct', provider: 'huggingface', label: 'Qwen2.5 72B', supportsThinking: false },
+  { id: 'google/gemma-2-9b-it', provider: 'huggingface', label: 'Gemma 2 9B', supportsThinking: false },
+
+  // Cloudflare Workers AI
+  { id: '@cf/meta/llama-3.1-8b-instruct', provider: 'cloudflare', label: 'Llama 3.1 8B', supportsThinking: false },
+  { id: '@cf/meta/llama-3.2-3b-instruct', provider: 'cloudflare', label: 'Llama 3.2 3B', supportsThinking: false },
+  { id: '@cf/qwen/qwen1.5-7b-chat-awq', provider: 'cloudflare', label: 'Qwen1.5 7B', supportsThinking: false },
+  { id: '@cf/microsoft/phi-2', provider: 'cloudflare', label: 'Phi-2', supportsThinking: false },
+
+  // NVIDIA NIM
+  { id: 'nvidia/llama-3.3-nemotron-super-49b-v1', provider: 'nvidia', label: 'Nemotron Super 49B', supportsThinking: false },
+  { id: 'nvidia/nemotron-3-nano-30b-a3b', provider: 'nvidia', label: 'Nemotron 3 Nano 30B', supportsThinking: false },
+  { id: 'meta/llama-3.1-8b-instruct', provider: 'nvidia', label: 'Llama 3.1 8B', supportsThinking: false },
+  { id: 'mistralai/mistral-large-2-instruct', provider: 'nvidia', label: 'Mistral Large 2', supportsThinking: true },
+
+  // DeepSeek
+  { id: 'deepseek-chat', provider: 'deepseek', label: 'DeepSeek V4-Flash', supportsThinking: false },
+  { id: 'deepseek-reasoner', provider: 'deepseek', label: 'DeepSeek R1', supportsThinking: true },
+  { id: 'deepseek-coder', provider: 'deepseek', label: 'DeepSeek Coder', supportsThinking: false },
 ];
 
 const CLI_MODELS: ModelDefinition[] = [];
@@ -36,77 +92,6 @@ function isAIModel(model: string | null): model is AIModel {
 export function getStoredSelectedModel(): AIModel {
   const storedModel = localStorage.getItem(SELECTED_MODEL_STORAGE_KEY);
   return isAIModel(storedModel) ? storedModel : DEFAULT_MODEL;
-}
-
-function getUsedModelsStorageKey(projectId?: string, sessionId?: string): string {
-  if (projectId && sessionId) return `used-models-${projectId}-${sessionId}`;
-  if (projectId) return `used-models-${projectId}`;
-  if (sessionId) return `used-models-${sessionId}`;
-  return 'used-models-new';
-}
-
-export function getUsedModels(projectId: string | undefined, sessionId?: string): AIModel[] {
-  if (projectId) {
-    const store = useSessionStore.getState();
-    return store.usedModels[projectId] || [];
-  }
-
-  const key = getUsedModelsStorageKey(undefined, sessionId);
-  try {
-    const stored = localStorage.getItem(key);
-    if (stored) return JSON.parse(stored) as AIModel[];
-  } catch {}
-
-  return [];
-}
-
-export function markModelUsed(projectId: string | undefined, model: AIModel, sessionId?: string) {
-  if (projectId) {
-    const store = useSessionStore.getState();
-    const current = store.usedModels[projectId] || [];
-    if (!current.includes(model)) {
-      store.markModelUsed(projectId, model);
-    }
-    return;
-  }
-
-  const key = getUsedModelsStorageKey(undefined, sessionId);
-  const used = getUsedModels(undefined, sessionId);
-  if (!used.includes(model)) {
-    used.push(model);
-    const json = JSON.stringify(used);
-    try { localStorage.setItem(key, json); } catch {}
-    DatabaseService.setConfig(key, json).catch(() => {});
-  }
-}
-
-let cleanedUp = false;
-
-function cleanupUsedModelsStorage() {
-  if (cleanedUp) return;
-  cleanedUp = true;
-  try {
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const key = localStorage.key(i);
-      if (key?.startsWith('used-models-')) {
-        localStorage.removeItem(key);
-      }
-    }
-  } catch {}
-}
-
-export function initUsedModelsCache(projectId: string | undefined, sessionId?: string): Promise<void> {
-  if (projectId) {
-    return Promise.resolve();
-  }
-
-  const key = getUsedModelsStorageKey(undefined, sessionId);
-  cleanupUsedModelsStorage();
-  return DatabaseService.getConfig(key).then(val => {
-    if (val) {
-      try { localStorage.setItem(key, val); } catch {}
-    }
-  }).catch(() => {});
 }
 
 export function getModelForChatRequest(_sessionId: string | undefined, _projectId?: string): AIModel {

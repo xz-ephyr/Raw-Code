@@ -51,7 +51,6 @@ function SourcesFooter({ sources }: { sources: TimelineSource[] }) {
 
 interface BubbleActionsProps {
   allSources: TimelineSource[];
-  model?: string;
   version?: number;
   onCopy: () => void;
   onThumbsUp: () => void;
@@ -59,7 +58,7 @@ interface BubbleActionsProps {
   onRegenerate: () => void;
 }
 
-export function BubbleActions({ allSources, model, version, onCopy, onThumbsUp, onThumbsDown, onRegenerate }: BubbleActionsProps) {
+export function BubbleActions({ allSources, version, onCopy, onThumbsUp, onThumbsDown, onRegenerate }: BubbleActionsProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {

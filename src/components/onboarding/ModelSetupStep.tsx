@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ViewIcon, ViewOffSlashIcon, Key01Icon, GlobeIcon, CheckmarkCircle01Icon, ArrowDown01Icon } from '@hugeicons/core-free-icons';
 import {
@@ -8,6 +8,7 @@ import {
 } from '@core/config/models';
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { ModelIcon } from '@/components/ui/ModelIcon';
+import { Dropdown } from '@/components/ui/Dropdown';
 import { getAllProviders, getProviderLabel } from '@core/providers';
 
 interface ModelSetupStepProps {
@@ -19,18 +20,6 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
   const providers = getAllProviders();
 
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-  const modelDropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!isModelDropdownOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
-        setIsModelDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isModelDropdownOpen]);
 
   const [keys, setKeys] = useState<Record<string, string>>(
     Object.fromEntries(providers.map(p => [p.id, '']))
@@ -124,7 +113,7 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
             <HugeiconsIcon icon={GlobeIcon} size={16} />
             Default Model
           </label>
-          <div className="relative" ref={modelDropdownRef}>
+          <div className="relative">
             <div
               className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border flex items-center cursor-pointer"
               onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
@@ -137,31 +126,33 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
               </span>
               <HugeiconsIcon icon={ArrowDown01Icon} size={16} className="text-muted-foreground shrink-0" />
             </div>
-            {isModelDropdownOpen && (
-              <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-[10px] shadow-lg shadow-black/30 overflow-hidden">
-                <div className="overflow-y-auto thin-scrollbar" style={{ maxHeight: 190 }}>
-                  {MODELS.map((model, idx) => (
-                    <button
-                      key={`${model.id}-${idx}`}
-                      className={`w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors flex items-center gap-2 ${
-                        selectedModel === model.id ? 'bg-muted font-medium' : ''
-                      }`}
-                      onClick={() => {
-                        setSelectedModel(model.id);
-                        setIsModelDropdownOpen(false);
-                      }}
-                    >
-                      <ModelIcon modelId={model.id} size={14} />
-                      <span className="flex-1 truncate">{model.label}</span>
-                      <span className="text-[11px] text-muted-foreground shrink-0">{getProviderLabel(model.provider)}</span>
-                      {model.supportsThinking && (
-                        <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-blue-500 shrink-0 ml-auto" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <Dropdown
+              isOpen={isModelDropdownOpen}
+              onClose={() => setIsModelDropdownOpen(false)}
+              width="100%"
+              maxHeight="190px"
+              className="mt-1"
+            >
+              {MODELS.map((model, idx) => (
+                <button
+                  key={`${model.id}-${idx}`}
+                  className={`w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors flex items-center gap-2 ${
+                    selectedModel === model.id ? 'bg-muted font-medium' : ''
+                  }`}
+                  onClick={() => {
+                    setSelectedModel(model.id);
+                    setIsModelDropdownOpen(false);
+                  }}
+                >
+                  <ModelIcon modelId={model.id} size={14} />
+                  <span className="flex-1 truncate">{model.label}</span>
+                  <span className="text-[11px] text-muted-foreground shrink-0">{getProviderLabel(model.provider)}</span>
+                  {model.supportsThinking && (
+                    <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-blue-500 shrink-0 ml-auto" />
+                  )}
+                </button>
+              ))}
+            </Dropdown>
           </div>
         </div>
       </div>
