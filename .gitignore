@@ -71,3 +71,6 @@ browser/
 # Fallow analysis reports (generated)
 fallow/
 .fallowrc
+
+# Docs with live API keys (never commit)
+docs/FREEProviders.md
