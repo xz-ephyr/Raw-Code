@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../core/utils/DatabaseService', () => {
   const store = new Map<string, string>();
@@ -15,23 +15,12 @@ vi.mock('../core/utils/DatabaseService', () => {
   };
 });
 
-import { registerProvider, getProvider, getAllProviders, getProviderClient, getProviderApiKeys, getProviderLabel } from '../core/providers/providerRegistry';
-
-beforeEach(() => {
-  // Clear and re-register defaults by re-importing
-});
+import { registerProvider, getProvider, getAllProviders, getProviderApiKeys, getProviderLabel } from '../core/providers/providerRegistry';
 
 describe('Pluggable Key Providers', () => {
-  it('should return default providers from registry', () => {
-    const providers = getAllProviders();
-    expect(providers.length).toBeGreaterThanOrEqual(6);
-    const ids = providers.map(p => p.id);
-    expect(ids).toContain('google');
-    expect(ids).toContain('groq');
-    expect(ids).toContain('zenmux');
-    expect(ids).toContain('mistral');
-    expect(ids).toContain('openrouter');
-    expect(ids).toContain('cerebras');
+  it('should have omniroute registered by default', () => {
+    const ids = getAllProviders().map(p => p.id);
+    expect(ids).toContain('omniroute');
   });
 
   it('should allow registering a new custom provider', () => {
@@ -54,13 +43,11 @@ describe('Pluggable Key Providers', () => {
   });
 
   it('should return label and config key helpers', () => {
-    expect(getProviderLabel('google')).toBe('Google Gemini');
+    expect(getProviderLabel('omniroute')).toBe('OmniRoute');
     expect(getProviderLabel('nonexistent')).toBe('nonexistent');
 
     const apiKeys = getProviderApiKeys();
-    expect(apiKeys['google']).toBe('api-key');
-    expect(apiKeys['groq']).toBe('groq-api-key');
-    expect(apiKeys['zenmux']).toBe('zenmux-api-key');
+    expect(apiKeys['omniroute']).toBe('omniroute-api-key');
   });
 
   it('should resolve model prefixes correctly via provider registry', () => {

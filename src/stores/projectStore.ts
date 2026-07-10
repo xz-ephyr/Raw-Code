@@ -32,7 +32,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
   isThinkingEnabled: false,
   isWebSearchEnabled: true,
   currentMode: 'explorer',
-  selectedModel: 'z-ai/glm-4.7-flash-free',
+  selectedModel: 'auto',
   modelRevision: 0,
 
   setCurrentProjectId: (id) => set({ currentProjectId: id }),

@@ -8,7 +8,6 @@ interface SessionState {
 
   setUsedModels: (projectId: string, models: string[]) => void;
   markModelUsed: (projectId: string, model: string) => void;
-  resetUsedModels: (projectId: string) => void;
   setCollapsedSections: (sections: string[]) => void;
   setLastActiveProject: (id: string | null) => void;
 }
@@ -32,13 +31,6 @@ export const useSessionStore = create<SessionState>()(
           return {
             usedModels: { ...state.usedModels, [projectId]: [...current, model] },
           };
-        }),
-
-      resetUsedModels: (projectId) =>
-        set((state) => {
-          const next = { ...state.usedModels };
-          delete next[projectId];
-          return { usedModels: next };
         }),
 
       setCollapsedSections: (sections) => set({ collapsedSections: sections }),

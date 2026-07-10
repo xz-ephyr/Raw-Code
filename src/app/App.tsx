@@ -75,8 +75,8 @@ export default function App() {
           <Route path="/project/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
           <Route path="/project/:folder/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
           <Route path="/chat/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
-          <Route path="/settings" element={<Suspense fallback={null}><SettingsPage /></Suspense>} />
         </Route>
+        <Route path="/settings" element={<Suspense fallback={null}><SettingsPage /></Suspense>} />
       </Routes>
 
       {updateInfo && (

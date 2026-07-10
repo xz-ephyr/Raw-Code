@@ -80,7 +80,7 @@ func (sm *SubAgentManager) Spawn(ctx context.Context, req SubAgentRequest) (*Sub
 	if req.Model == "" && sm.modelClient != nil {
 		req.Model = sm.modelClient.Model()
 	} else if req.Model == "" {
-		req.Model = "gemini-3.5-flash"
+		req.Model = "auto"
 	}
 
 	sub := &SubAgent{

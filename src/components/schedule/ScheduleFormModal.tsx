@@ -47,7 +47,7 @@ export function ScheduleFormModal({ isOpen, onClose, onSave, editTask }: Schedul
       prompt: prompt.trim(),
       cron,
       preset,
-      modelId: modelId || MODELS[0]?.id || 'gemini-3.5-flash',
+      modelId: modelId || MODELS[0]?.id || 'auto',
     });
   };
 

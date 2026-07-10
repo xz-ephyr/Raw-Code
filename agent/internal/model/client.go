@@ -55,7 +55,6 @@ func (c *Client) ChatCompletion(ctx context.Context, req ChatRequest) (*ChatResp
 	if model == "" {
 		model = c.config.Model
 	}
-	req = sanitizeRequest(req, c.config.Provider)
 	apiReq := buildAPIRequest(model, req)
 	body, err := json.Marshal(apiReq)
 	if err != nil {
@@ -119,7 +118,6 @@ func (c *Client) ChatCompletionStream(ctx context.Context, req ChatRequest, onCh
 	if model == "" {
 		model = c.config.Model
 	}
-	req = sanitizeRequest(req, c.config.Provider)
 	apiReq := buildAPIRequest(model, req)
 	apiReq.Stream = true
 
@@ -297,57 +295,6 @@ type openAIStreamDelta struct {
 	Role      string            `json:"role,omitempty"`
 	Content   string            `json:"content,omitempty"`
 	ToolCalls []openAIToolCall  `json:"tool_calls,omitempty"`
-}
-
-var googleProviderNames = []string{"google"}
-
-func isGoogleProvider(provider string) bool {
-	lower := strings.ToLower(provider)
-	for _, name := range googleProviderNames {
-		if lower == name {
-			return true
-		}
-	}
-	return false
-}
-
-// sanitizeRequest strips tool-related fields for providers that do not
-// support function calling (e.g. Google's OpenAI-compatible endpoint).
-func sanitizeRequest(req ChatRequest, provider string) ChatRequest {
-	if !isGoogleProvider(provider) {
-		return req
-	}
-
-	req.Tools = nil
-
-	var sanitized []Message
-	for _, msg := range req.Messages {
-		switch msg.Role {
-		case "assistant":
-			msg.ToolCalls = nil
-			sanitized = append(sanitized, msg)
-		case "tool":
-			content := msg.Content
-			if content == "" {
-				content = "(tool completed)"
-			}
-			if msg.Name != "" {
-				sanitized = append(sanitized, Message{
-					Role:    "user",
-					Content: "Tool " + msg.Name + " returned: " + content,
-				})
-			} else {
-				sanitized = append(sanitized, Message{
-					Role:    "user",
-					Content: "Tool returned: " + content,
-				})
-			}
-		default:
-			sanitized = append(sanitized, msg)
-		}
-	}
-	req.Messages = sanitized
-	return req
 }
 
 func buildAPIRequest(model string, req ChatRequest) openAIRequest {

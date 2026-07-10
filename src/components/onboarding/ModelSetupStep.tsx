@@ -1,11 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ViewIcon, ViewOffSlashIcon, Key01Icon, ZapIcon, GlobeIcon, CheckmarkCircle01Icon, ArrowDown01Icon } from '@hugeicons/core-free-icons';
+import { ViewIcon, ViewOffSlashIcon, Key01Icon, GlobeIcon, CheckmarkCircle01Icon, ArrowDown01Icon } from '@hugeicons/core-free-icons';
 import {
-  MODEL_MODE_STORAGE_KEY,
-  MODEL_MODES,
   SELECTED_MODEL_STORAGE_KEY,
-  getStoredModelMode,
   getStoredSelectedModel,
   MODELS,
 } from '@core/config/models';
@@ -52,7 +49,6 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
 
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [selectedModel, setSelectedModel] = useState(getStoredSelectedModel);
-  const [modelMode, setModelMode] = useState(getStoredModelMode);
 
   const toggleShowKey = (provider: string) => {
     setShowKeys(prev => ({ ...prev, [provider]: !prev[provider] }));
@@ -66,7 +62,6 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
       localStorage.setItem(p.configKey, keys[p.id]);
     });
     localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
-    localStorage.setItem(MODEL_MODE_STORAGE_KEY, modelMode);
     window.dispatchEvent(new CustomEvent('model-changed'));
     onComplete();
   };
@@ -124,21 +119,6 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
       </div>
 
       <div className="space-y-4 pt-2 border-t border-border">
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <HugeiconsIcon icon={ZapIcon} size={16} />
-            Model Mode
-          </label>
-          <select
-            className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-ring transition-all appearance-none cursor-pointer"
-            value={modelMode}
-            onChange={(e) => setModelMode(e.target.value as typeof modelMode)}
-          >
-            <option value={MODEL_MODES.fixed}>Fixed selected model</option>
-            <option value={MODEL_MODES.rotate}>Auto rotate models</option>
-          </select>
-        </div>
-
         <div className="flex flex-col gap-2">
           <label className="text-sm font-semibold text-foreground flex items-center gap-2">
             <HugeiconsIcon icon={GlobeIcon} size={16} />

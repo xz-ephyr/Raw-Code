@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ZapIcon, GlobeIcon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
+import { GlobeIcon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
 import {
-  MODEL_MODE_STORAGE_KEY,
-  MODEL_MODES,
   SELECTED_MODEL_STORAGE_KEY,
-  getStoredModelMode,
   getStoredSelectedModel,
   MODELS,
 } from '@core/config/models';
@@ -34,7 +31,6 @@ export function ApiKeysTab() {
   }, []);
 
   const [selectedModel, setSelectedModel] = useState(getStoredSelectedModel);
-  const [modelMode, setModelMode] = useState(getStoredModelMode);
   const [isSaving, setIsSaving] = useState(false);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
 
@@ -48,7 +44,6 @@ export function ApiKeysTab() {
       localStorage.setItem(p.configKey, keys[p.id]);
     });
     localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
-    localStorage.setItem(MODEL_MODE_STORAGE_KEY, modelMode);
     refreshProviders();
     window.dispatchEvent(new CustomEvent('model-changed'));
     setIsSaving(false);
@@ -77,24 +72,6 @@ export function ApiKeysTab() {
       </div>
 
       <div className="border-t border-border pt-5 space-y-5">
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-            <HugeiconsIcon icon={ZapIcon} size={16} />
-            Model Mode
-          </label>
-          <select
-            className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-ring transition-all appearance-none cursor-pointer"
-            value={modelMode}
-            onChange={(e) => setModelMode(e.target.value as typeof modelMode)}
-          >
-            <option value={MODEL_MODES.fixed}>Fixed selected model</option>
-            <option value={MODEL_MODES.rotate}>Auto rotate models</option>
-          </select>
-          <p className="text-xs text-muted-foreground">
-            Auto rotate cycles through every available model in the active chat session.
-          </p>
-        </div>
-
         <div className="flex flex-col gap-2">
           <label className="text-sm font-semibold text-foreground flex items-center gap-2">
             <HugeiconsIcon icon={GlobeIcon} size={16} />

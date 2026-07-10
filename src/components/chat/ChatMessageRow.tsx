@@ -54,6 +54,10 @@ export const ChatMessageRow = memo(function ChatMessageRow({
     }
   }, [prevUserContent, messageIndex, onRegenerate]);
 
+  const handleUserRetry = useCallback(() => {
+    onRegenerate(messageIndex + 1);
+  }, [messageIndex, onRegenerate]);
+
   const handleOpenMsgArtifact = useCallback(() => {
     if (artifacts && artifacts.length > 0) {
       onOpenArtifact(artifacts[0]);
@@ -63,7 +67,7 @@ export const ChatMessageRow = memo(function ChatMessageRow({
   return (
     <>
       {role === 'user' ? (
-        <UserBubble content={content} createdAt={createdAt} />
+        <UserBubble content={content} createdAt={createdAt} onRegenerate={handleUserRetry} />
       ) : (
         <AssistantBubble
           content={content}

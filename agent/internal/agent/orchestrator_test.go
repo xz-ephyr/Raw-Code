@@ -137,7 +137,7 @@ func TestNewOrchestrator(t *testing.T) {
 	exec := tool.NewExecutor(reg, "http://localhost:3001", "")
 	pool := worker.NewPool(2, tm, exec)
 	mc := model.NewClient(model.ProviderConfig{
-		Provider: "zenmux",
+		Provider: "omniroute",
 		BaseURL:  "http://localhost:8080",
 		APIKey:   "test-key",
 		Model:    "test-model",
@@ -226,7 +226,7 @@ func TestDecomposeTask(t *testing.T) {
 	exec := tool.NewExecutor(reg, "http://localhost:3001", "")
 	pool := worker.NewPool(2, tm, exec)
 	mc := model.NewClient(model.ProviderConfig{
-		Provider: "zenmux",
+		Provider: "omniroute",
 		BaseURL:  "http://localhost:8080",
 		APIKey:   "test-key",
 		Model:    "test-model",

@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { buildFallbackChain } from '../core/models/aiService';
 import * as modelsConfig from '../core/config/models';
+import { registerProvider } from '../core/providers/providerRegistry';
 
 // Mock getAIModels and getModelDefinition
 vi.mock('../core/config/models', async () => {
@@ -14,15 +15,37 @@ vi.mock('../core/config/models', async () => {
 });
 
 describe('buildFallbackChain', () => {
+  beforeAll(() => {
+    registerProvider({
+      id: 'test-alpha',
+      label: 'Alpha',
+      configKey: 'alpha-api-key',
+      envVar: 'ALPHA_API_KEY',
+      baseURL: 'https://alpha.test/v1',
+      defaultModel: 'test-default',
+      modelIdPrefixes: ['alpha/'],
+      createClient: (apiKey: string) => ({ apiKey }),
+      getReasoningConfig: () => null,
+    });
+    registerProvider({
+      id: 'test-beta',
+      label: 'Beta',
+      configKey: 'beta-api-key',
+      envVar: 'BETA_API_KEY',
+      baseURL: 'https://beta.test/v1',
+      defaultModel: 'test-default',
+      modelIdPrefixes: ['beta/'],
+      createClient: (apiKey: string) => ({ apiKey }),
+      getReasoningConfig: () => null,
+    });
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock localStorage
     const store: Record<string, string> = {
-      'api-key': 'google-key',
-      'groq-api-key': 'groq-key',
-      'mistral-api-key': 'mistral-key',
-      'cerebras-api-key': 'cerebras-key',
+      'alpha-api-key': 'alpha-key',
+      'beta-api-key': 'beta-key',
     };
 
     vi.stubGlobal('localStorage', {
@@ -32,63 +55,42 @@ describe('buildFallbackChain', () => {
     });
   });
 
-  it('prioritizes models with the same supportsThinking status as the primary model', () => {
-    const mockModels = ['primary', 'think1', 'nonthink1', 'think2', 'google-nonthink'];
+  it('returns single model for auto-prefixed models', async () => {
+    const chain = await buildFallbackChain('auto');
+    expect(chain).toEqual(['auto']);
+  });
+
+  it('prioritizes models with the same supportsThinking status as the primary model', async () => {
+    const mockModels = ['primary', 'think1', 'nonthink1', 'think2', 'alpha-nonthink'];
     const modelDefs: Record<string, any> = {
-      'primary': { id: 'primary', provider: 'groq', supportsThinking: true },
-      'think1': { id: 'think1', provider: 'mistral', supportsThinking: true },
-      'nonthink1': { id: 'nonthink1', provider: 'groq', supportsThinking: false },
-      'think2': { id: 'think2', provider: 'cerebras', supportsThinking: true },
-      'google-nonthink': { id: 'google-nonthink', provider: 'google', supportsThinking: false },
+      'primary': { id: 'primary', provider: 'test-beta', supportsThinking: true },
+      'think1': { id: 'think1', provider: 'test-alpha', supportsThinking: true },
+      'nonthink1': { id: 'nonthink1', provider: 'test-beta', supportsThinking: false },
+      'think2': { id: 'think2', provider: 'test-beta', supportsThinking: true },
+      'alpha-nonthink': { id: 'alpha-nonthink', provider: 'test-alpha', supportsThinking: false },
     };
 
     vi.mocked(modelsConfig.getAIModels).mockReturnValue(mockModels);
     vi.mocked(modelsConfig.getModelDefinition).mockImplementation((id: string) => modelDefs[id]);
 
-    const chain = buildFallbackChain('primary');
-
-    // Expected order:
-    // 1. primary (always first)
-    // 2. think1 or think2 (both are thinking models like primary)
-    // 3. google-nonthink (google provider prioritized after thinking match)
-    // 4. nonthink1
+    const chain = await buildFallbackChain('primary');
 
     expect(chain[0]).toBe('primary');
     expect(chain.slice(1, 3)).toContain('think1');
     expect(chain.slice(1, 3)).toContain('think2');
-    expect(chain[3]).toBe('google-nonthink');
-    expect(chain[4]).toBe('nonthink1');
   });
 
-  it('prioritizes google provider models when other criteria are equal', () => {
-    const mockModels = ['primary', 'google-model', 'other-model'];
-    const modelDefs: Record<string, any> = {
-      'primary': { id: 'primary', provider: 'mistral', supportsThinking: false },
-      'google-model': { id: 'google-model', provider: 'google', supportsThinking: false },
-      'other-model': { id: 'other-model', provider: 'groq', supportsThinking: false },
-    };
-
-    vi.mocked(modelsConfig.getAIModels).mockReturnValue(mockModels);
-    vi.mocked(modelsConfig.getModelDefinition).mockImplementation((id: string) => modelDefs[id]);
-
-    const chain = buildFallbackChain('primary');
-
-    expect(chain[0]).toBe('primary');
-    expect(chain[1]).toBe('google-model');
-    expect(chain[2]).toBe('other-model');
-  });
-
-  it('limits the fallback chain to 5 additional models (6 total)', () => {
+  it('limits the fallback chain to 5 additional models (6 total)', async () => {
     const mockModels = ['primary', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7'];
     const modelDefs: Record<string, any> = {};
     mockModels.forEach(id => {
-      modelDefs[id] = { id, provider: 'google', supportsThinking: false };
+      modelDefs[id] = { id, provider: 'test-alpha', supportsThinking: false };
     });
 
     vi.mocked(modelsConfig.getAIModels).mockReturnValue(mockModels);
     vi.mocked(modelsConfig.getModelDefinition).mockImplementation((id: string) => modelDefs[id]);
 
-    const chain = buildFallbackChain('primary');
+    const chain = await buildFallbackChain('primary');
 
     expect(chain).toHaveLength(6);
     expect(chain[0]).toBe('primary');

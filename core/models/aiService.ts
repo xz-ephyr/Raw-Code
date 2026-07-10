@@ -1,8 +1,8 @@
-import { streamText, generateText, stepCountIs, convertToModelMessages, wrapLanguageModel, extractReasoningMiddleware } from 'ai';
+import { streamText, stepCountIs, convertToModelMessages, wrapLanguageModel, extractReasoningMiddleware } from 'ai';
 import { SYSTEM_PROMPT } from '@core/prompt/systemPrompt';
 import { buildToolPolicy } from '@core/prompt/toolPolicy';
 import { allTools } from '@core/tools/allTools';
-import { getModelDefinition, getUsedModels, markModelUsed, getAIModels, getStoredSelectedModel } from '@core/config/models';
+import { getModelDefinition, getUsedModels, markModelUsed, getAIModels } from '@core/config/models';
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { getAgentById } from '@core/agents';
 import { getProjectMemory, setProjectMemory, deleteProjectMemory, extractFactsFromResult, type ProjectMemoryEntry } from '@core/memory/projectMemory';
@@ -128,6 +128,10 @@ async function getConfiguredProviderIds(): Promise<Set<string>> {
 }
 
 export async function buildFallbackChain(primaryModelName: string, sessionId?: string, projectId?: string): Promise<string[]> {
+  if (primaryModelName.startsWith('auto')) {
+    return [primaryModelName];
+  }
+
   const used = sessionId || projectId ? getUsedModels(projectId, sessionId) : [];
   const configuredProviders = await getConfiguredProviderIds();
   const primaryDef = getModelDefinition(primaryModelName);
@@ -369,39 +373,6 @@ export async function chatCompletion({
 
 // ── Session title generation ─────────────────────────────────────────
 
-export async function generateSessionTitle(userMessage: string): Promise<string> {
-  const providers = await getProviders();
-  const errors: string[] = [];
-
-  const candidates = (() => {
-    const stored = getStoredSelectedModel();
-    const def = getModelDefinition(stored);
-    if (def && providers.has(def.provider)) {
-      return [stored, ...getAIModels().filter(m => m !== stored)];
-    }
-    return getAIModels();
-  })();
-
-  for (const modelId of candidates) {
-    const def = getModelDefinition(modelId);
-    if (!def) continue;
-    const provider = providers.get(def.provider);
-    if (!provider) continue;
-    try {
-      const { text } = await generateText({
-        model: provider(modelId.includes('/') ? modelId.split('/').slice(1).join('/') : modelId),
-        system: 'Read the user\'s request below. Summarise in 5 words or fewer — just the core intent, no articles, no punctuation. Do not use quotes. Do not add commentary.',
-        messages: [{ role: 'user', content: userMessage }],
-        maxRetries: 1,
-      });
-      const cleaned = text.replace(/["''"]/g, '').trim();
-      if (cleaned) return cleaned.length > 60 ? cleaned.slice(0, 60) : cleaned;
-    } catch (e: any) {
-      errors.push(`${modelId}: ${e?.message || 'unknown error'}`);
-      continue;
-    }
-  }
-
-  console.warn('All models failed for title generation:', errors.join(' | '));
+export async function generateSessionTitle(_userMessage: string): Promise<string> {
   return 'New conversation';
 }

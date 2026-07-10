@@ -115,10 +115,6 @@ export function BubbleActions({ allSources, model, version, onCopy, onThumbsUp, 
         <span className="text-[11px] font-medium text-muted-foreground/70 ml-0">v{version}</span>
       )}
 
-      {model && (
-        <span className="text-xs text-muted-foreground">{model}</span>
-      )}
-
       {allSources.length > 0 && (
         <>
           <div className="w-px h-5 bg-border mx-1" />

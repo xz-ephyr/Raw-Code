@@ -91,59 +91,15 @@ func DefaultProviderRegistry() *ProviderRegistry {
 		infos:   make(map[string]*ProviderInfo),
 	}
 	r.Register(ProviderInfo{
-		ID:              "zenmux",
-		BaseURL:         "https://zenmux.ai/api/v1",
-		APIKeyConfigKey:  "zenmux-api-key",
-		EnvVar:          "ZENMUX_API_KEY",
-		DefaultModel:    "z-ai/glm-4.7-flash-free",
-		ModelPrefixes:   []string{"deepseek/", "stepfun/", "xiaomi/", "z-ai/", "anthropic/", "openai/", "google/", "qwen/", "x-ai/", "moonshotai/", "minimax/", "mistralai/", "bytedance/", "inclusionai/"},
-		Models:          []string{"z-ai/glm-4.7-flash-free", "deepseek/deepseek-v3.2", "z-ai/glm-4.6v-flash-free", "anthropic/claude-fable-5-free"},
+		ID:              "omniroute",
+		BaseURL:         "http://localhost:20128/v1",
+		APIKeyConfigKey:  "omniroute-api-key",
+		EnvVar:          "OMNIROUTE_API_KEY",
+		DefaultModel:    "auto",
+		ModelPrefixes:   []string{"auto", "auto/", "cc/", "cx/", "openai/", "anthropic/", "google/", "gemini/", "deepseek/", "qwen/", "x-ai/", "mistralai/", "groq/", "claude/", "gpt/"},
+		Models:          []string{"auto", "auto/coding", "auto/cheap", "auto/fast"},
 	})
-	r.Register(ProviderInfo{
-		ID:              "google",
-		BaseURL:         "https://generativelanguage.googleapis.com/v1beta/openai/",
-		APIKeyConfigKey:  "api-key",
-		EnvVar:          "API_KEY",
-		DefaultModel:    "gemini-3.5-flash",
-		ModelPrefixes:   []string{"gemini-", "gemma-"},
-		Models:          []string{"gemini-3.5-flash", "gemini-3-flash-preview", "gemma-4-31b-it", "gemini-2.5-flash", "gemma-4-26b-a4b-it", "gemini-2.5-flash-lite"},
-	})
-	r.Register(ProviderInfo{
-		ID:              "groq",
-		BaseURL:         "https://api.groq.com/openai/v1",
-		APIKeyConfigKey:  "groq-api-key",
-		EnvVar:          "GROQ_API_KEY",
-		DefaultModel:    "groq/compound",
-		ModelPrefixes:   []string{"groq/", "qwen/", "llama-", "openai/gpt-oss-"},
-		Models:          []string{"groq/compound", "groq/compound-mini", "qwen/qwen3-32b", "llama-3.1-8b-instant", "openai/gpt-oss-safeguard-20b"},
-	})
-	r.Register(ProviderInfo{
-		ID:              "mistral",
-		BaseURL:         "https://api.mistral.ai/v1",
-		APIKeyConfigKey:  "mistral-api-key",
-		EnvVar:          "MISTRAL_API_KEY",
-		DefaultModel:    "mistral-large-latest",
-		ModelPrefixes:   []string{"mistral-", "codestral-", "devstral-", "magistral-"},
-		Models:          []string{"mistral-large-latest", "mistral-medium-latest", "mistral-small-latest", "magistral-medium-latest", "devstral-latest", "codestral-latest"},
-	})
-	r.Register(ProviderInfo{
-		ID:              "openrouter",
-		BaseURL:         "https://openrouter.ai/api/v1",
-		APIKeyConfigKey:  "openrouter-api-key",
-		EnvVar:          "OPENROUTER_API_KEY",
-		DefaultModel:    "openrouter/free",
-		ModelPrefixes:   []string{":free", "tencent/", "nvidia/", "poolside/", "cohere/", "openrouter/", "openai/"},
-		Models:          []string{"tencent/hy3:free", "nvidia/nemotron-3-ultra-550b-a55b:free", "poolside/laguna-m.1:free", "nvidia/nemotron-3-super-120b-a12b:free", "nvidia/nemotron-3-nano-30b-a3b:free", "openai/gpt-oss-20b:free", "nvidia/nemotron-nano-12b-v2-vl:free", "poolside/laguna-xs.2:free", "nvidia/nemotron-nano-9b-v2:free", "openrouter/free", "cohere/north-mini-code:free", "nvidia/nemotron-3.5-content-safety:free"},
-	})
-	r.Register(ProviderInfo{
-		ID:              "cerebras",
-		BaseURL:         "https://api.cerebras.ai/v1",
-		APIKeyConfigKey:  "cerebras-api-key",
-		EnvVar:          "CEREBRAS_API_KEY",
-		DefaultModel:    "gpt-oss-120b",
-		ModelPrefixes:   []string{"gpt-oss-", "zai-"},
-		Models:          []string{"gpt-oss-120b", "zai-glm-4.7", "gemma-4-31b"},
-	})
+
 	return r
 }
 
@@ -158,14 +114,14 @@ func NewRouterClient(registry *ProviderRegistry) *RouterClient {
 	return &RouterClient{
 		registry: registry,
 		cache:    make(map[string]*Client),
-		fallback: []string{"zenmux", "google", "mistral", "openrouter", "groq", "cerebras"},
+		fallback: []string{"omniroute"},
 	}
 }
 
 func (r *RouterClient) getOrCreateClient(modelID string) (*Client, error) {
 	provider := r.registry.ResolveProvider(modelID)
 	if provider == "" {
-		provider = "zenmux"
+		provider = "omniroute"
 	}
 
 	r.mu.RLock()
@@ -177,7 +133,7 @@ func (r *RouterClient) getOrCreateClient(modelID string) (*Client, error) {
 
 	cfg := r.registry.Config(provider)
 	if cfg == nil {
-		cfg = r.registry.Config("zenmux")
+		cfg = r.registry.Config("omniroute")
 	}
 	if cfg == nil {
 		return nil, fmt.Errorf("no provider config for %q (resolved: %s)", modelID, provider)
@@ -304,7 +260,7 @@ func (r *RouterClient) tryEachStream(ctx context.Context, req ChatRequest, model
 func (r *RouterClient) ChatCompletion(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
 	modelID := req.Model
 	if modelID == "" {
-		modelID = "z-ai/glm-4.7-flash-free"
+		modelID = "auto"
 	}
 	client, err := r.getOrCreateClient(modelID)
 	if err != nil {
@@ -321,7 +277,7 @@ func (r *RouterClient) ChatCompletion(ctx context.Context, req ChatRequest) (*Ch
 func (r *RouterClient) ChatCompletionStream(ctx context.Context, req ChatRequest, onChunk func(StreamChunk)) error {
 	modelID := req.Model
 	if modelID == "" {
-		modelID = "z-ai/glm-4.7-flash-free"
+		modelID = "auto"
 	}
 	client, err := r.getOrCreateClient(modelID)
 	if err != nil {
@@ -341,5 +297,5 @@ func (r *RouterClient) Model() string {
 			return cfg.Model
 		}
 	}
-	return "z-ai/glm-4.7-flash-free"
+	return "auto"
 }
