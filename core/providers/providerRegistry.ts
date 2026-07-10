@@ -33,7 +33,11 @@ export function getAllProviders(): KeyProvider[] {
 export function getProviderClient(providerId: string, apiKey: string, baseURL?: string): ProviderClient | undefined {
   const provider = getProvider(providerId);
   if (!provider) return undefined;
-  return provider.createClient(apiKey, baseURL ?? provider.baseURL);
+  const target = baseURL ?? provider.baseURL;
+  // When in browser, route through local proxy to avoid CORS
+  // Skip for providers that construct URLs dynamically (e.g. Cloudflare with {accountId})
+  const proxyPrefix = typeof window !== 'undefined' && !target.includes('{') ? 'http://localhost:3001/proxy/' : '';
+  return provider.createClient(apiKey, proxyPrefix + target);
 }
 
 export function getModelReasoningConfig(modelId: string): { mode: 'native' | 'tag' | 'none'; tagName?: string; providerOptions?: any } | null {

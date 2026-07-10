@@ -5,6 +5,7 @@ import { getUsageStats, getUsageLog, type UsageRecord } from '@core/utils/usageT
 import { getProviderLabel, getProvider } from '@core/providers';
 import { MODELS, type ModelDefinition } from '@core/config/models';
 import { DatabaseService } from '@core/utils/DatabaseService';
+import { ModelIcon } from '@/components/ui/ModelIcon';
 
 export function OverviewTab() {
   const [stats, setStats] = useState(getUsageStats());
