@@ -56,17 +56,17 @@ export const PluginTabs = () => {
   const content = TAB_CONTENT[activeTab];
   const tabType = activeTab === 'connectors' ? 'connector' : activeTab === 'mcp' ? 'mcp' : 'skill' as const;
 
-  useEffect(() => {
-    checkGmailStatus();
-  }, []);
-
   const checkGmailStatus = async () => {
     try {
       const res = await fetch('http://localhost:3001/gmail/status', { method: 'POST' });
       const data = await res.json();
       setGmailConnected(data.connected);
-    } catch {}
+    } catch { /* ignore */ }
   };
+
+  useEffect(() => {
+    checkGmailStatus();
+  }, []);
 
   const startGmailOAuth = async (clientId: string) => {
     try {

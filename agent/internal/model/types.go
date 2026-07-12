@@ -13,6 +13,7 @@ type ModelProvider interface {
 	ChatCompletion(ctx context.Context, req ChatRequest) (*ChatResponse, error)
 	ChatCompletionStream(ctx context.Context, req ChatRequest, onChunk func(StreamChunk)) error
 	Model() string
+	GetCapability(modelID string) ModelCapability
 }
 
 type Message struct {
@@ -57,10 +58,11 @@ type ChatResponse struct {
 }
 
 type StreamChunk struct {
-	Content   string     `json:"content,omitempty"`
-	ToolCalls []ToolCall `json:"toolCalls,omitempty"`
-	FinishReason string  `json:"finishReason,omitempty"`
-	Error     string     `json:"error,omitempty"`
+	Content      string     `json:"content,omitempty"`
+	Reasoning    string     `json:"reasoning,omitempty"`
+	ToolCalls    []ToolCall `json:"toolCalls,omitempty"`
+	FinishReason string     `json:"finishReason,omitempty"`
+	Error        string     `json:"error,omitempty"`
 }
 
 type CompletionRequest struct {

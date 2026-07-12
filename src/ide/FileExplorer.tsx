@@ -6,7 +6,7 @@ import FileTreeItem from './FileTreeItem';
 import type { FileNode } from './types';
 
 const FolderIcon = () => (
-  <img src="/wiki-folder.png" alt="" className="w-5 h-[14px] shrink-0" />
+  <HugeiconRenderer icon={Folder01Icon} className="w-5 h-[14px] shrink-0" />
 );
 
 interface FileExplorerProps {

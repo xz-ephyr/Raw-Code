@@ -1,9 +1,9 @@
 1. today, am going to add more providers to omniroute
 2. fix the isse of unabe to use enter key to insert the plugin in teh input box. i also want to make some modification to the plugin page, cards, modal popup.
-3. download ai model icon for gemini, opencode, groq, cerebras, and other free providers
+[^]3. download ai model icon for gemini, opencode, groq, cerebras, and other free providers
 scrap teh timeline and trn it to on be actual text streaming instead of streaming on the pad. also scrap teh ide and rename it to some else and also download all favicon for languages and add tehm to public. 
 4. pick teh feature one by one and tackle them on. this will allow me to finish this project faster and much more easier for me to do on teh long run. start with;
-    1. models provider fixing forever 
+   [^] 1. models provider fixing forever 
     2. sub agent fixng forerver
     3. fix teh issue of teh explorer agent to always explre and rip off teh hand offing of task to teamwork completely. this will onlymean iving it complete permission that it can run anything it want ing tool givne to it only. also chane it icon to something else like a single hand ptting it index up. chane the bug bster name to auto-debug and give a red-gold color
     4. fix teh ui of permission card that show on top of teh box when in active state.

@@ -52,9 +52,31 @@ async function getConfig(key: string): Promise<string | null> {
   return result.rows.length > 0 ? (result.rows[0] as any).value : null;
 }
 
+async function requireConfig(key: string, label: string): Promise<string> {
+  const val = await getConfig(key);
+  if (!val) throw new Error(`${label} API key not configured`);
+  return val;
+}
+
+interface SearchResultItem {
+  title: string;
+  url: string;
+  snippet: string;
+  content: string;
+  publishedDate: string;
+  source: string;
+}
+
+function normalizeResults(items: any[], source: string, mapper: (item: any) => Omit<SearchResultItem, 'source'>): { results: SearchResultItem[]; totalResults: number; answer: string } {
+  return {
+    results: (items || []).map((r) => ({ ...mapper(r), source })),
+    totalResults: items?.length || 0,
+    answer: '',
+  };
+}
+
 async function tavilySearch(query: string, maxResults: number, searchDepth = 'basic', topic?: string) {
-  const apiKey = await getConfig('search-api-key');
-  if (!apiKey) throw new Error('Tavily API key not configured');
+  const apiKey = await requireConfig('search-api-key', 'Tavily');
 
   const res = await fetch(`${TAVILY_URL}/search`, {
     method: 'POST',
@@ -77,23 +99,19 @@ async function tavilySearch(query: string, maxResults: number, searchDepth = 'ba
   }
 
   const data = await res.json();
-  return {
-    results: (data.results || []).map((r: any) => ({
-      title: r.title || '',
-      url: r.url || '',
-      snippet: (r.content || '').slice(0, 500),
-      content: r.content || '',
-      publishedDate: r.published_date || '',
-      source: 'tavily',
-    })),
-    totalResults: data.results?.length || 0,
-    answer: data.answer || '',
-  };
+  const results = normalizeResults(data.results, 'tavily', (r: any) => ({
+    title: r.title || '',
+    url: r.url || '',
+    snippet: (r.content || '').slice(0, 500),
+    content: r.content || '',
+    publishedDate: r.published_date || '',
+  }));
+  results.answer = data.answer || '';
+  return results;
 }
 
 async function firecrawlSearch(query: string, maxResults: number) {
-  const apiKey = await getConfig('search-firecrawl-api-key');
-  if (!apiKey) throw new Error('Firecrawl API key not configured');
+  const apiKey = await requireConfig('search-firecrawl-api-key', 'Firecrawl');
 
   const res = await fetch(`${FIRECRAWL_URL}/v1/search`, {
     method: 'POST',
@@ -115,18 +133,13 @@ async function firecrawlSearch(query: string, maxResults: number) {
   }
 
   const data = await res.json();
-  return {
-    results: (data.data || []).map((r: any) => ({
-      title: r.metadata?.title || '',
-      url: r.url || r.metadata?.sourceURL || '',
-      snippet: r.metadata?.description || '',
-      content: r.markdown || '',
-      publishedDate: '',
-      source: 'firecrawl',
-    })),
-    totalResults: data.data?.length || 0,
-    answer: '',
-  };
+  return normalizeResults(data.data, 'firecrawl', (r: any) => ({
+    title: r.metadata?.title || '',
+    url: r.url || r.metadata?.sourceURL || '',
+    snippet: r.metadata?.description || '',
+    content: r.markdown || '',
+    publishedDate: '',
+  }));
 }
 
 async function firecrawlScrape(url: string, formats: string[]) {
@@ -164,22 +177,19 @@ async function googleSearch(query: string, maxResults: number) {
   const data = await res.json();
 
   return {
-    results: (data.items || []).map((r: any) => ({
+    ...normalizeResults(data.items, 'google', (r: any) => ({
       title: r.title || '',
       url: r.link || '',
       snippet: r.snippet || '',
       content: '',
       publishedDate: '',
-      source: 'google',
     })),
     totalResults: Number(data.searchInformation?.totalResults) || 0,
-    answer: '',
   };
 }
 
 async function exaSearch(query: string, maxResults: number) {
-  const apiKey = await getConfig('search-exa-api-key');
-  if (!apiKey) throw new Error('Exa API key not configured');
+  const apiKey = await requireConfig('search-exa-api-key', 'Exa');
 
   const res = await fetch(`${EXA_URL}/search`, {
     method: 'POST',
@@ -199,23 +209,17 @@ async function exaSearch(query: string, maxResults: number) {
   if (!res.ok) throw new Error(`Exa API error (${res.status})`);
   const data = await res.json();
 
-  return {
-    results: (data.results || []).map((r: any) => ({
-      title: r.title || '',
-      url: r.url || '',
-      snippet: (r.highlights || []).join(' ') || (r.text || '').slice(0, 500),
-      content: r.text || '',
-      publishedDate: r.publishedDate || '',
-      source: 'exa',
-    })),
-    totalResults: data.results?.length || 0,
-    answer: '',
-  };
+  return normalizeResults(data.results, 'exa', (r: any) => ({
+    title: r.title || '',
+    url: r.url || '',
+    snippet: (r.highlights || []).join(' ') || (r.text || '').slice(0, 500),
+    content: r.text || '',
+    publishedDate: r.publishedDate || '',
+  }));
 }
 
 async function exaNewsSearch(query: string, maxResults: number, freshness: string) {
-  const apiKey = await getConfig('search-exa-api-key');
-  if (!apiKey) throw new Error('Exa API key not configured');
+  const apiKey = await requireConfig('search-exa-api-key', 'Exa');
 
   const now = new Date();
   const hoursMap: Record<string, number> = { hour: 1, day: 24, week: 168, month: 720 };
@@ -242,18 +246,13 @@ async function exaNewsSearch(query: string, maxResults: number, freshness: strin
   if (!res.ok) throw new Error(`Exa News API error (${res.status})`);
   const data = await res.json();
 
-  return {
-    results: (data.results || []).map((r: any) => ({
-      title: r.title || '',
-      url: r.url || '',
-      snippet: (r.highlights || []).join(' '),
-      content: '',
-      publishedDate: r.publishedDate || '',
-      source: 'exa-news',
-    })),
-    totalResults: data.results?.length || 0,
-    answer: '',
-  };
+  return normalizeResults(data.results, 'exa-news', (r: any) => ({
+    title: r.title || '',
+    url: r.url || '',
+    snippet: (r.highlights || []).join(' '),
+    content: '',
+    publishedDate: r.publishedDate || '',
+  }));
 }
 
 export async function webSearch(params: { query: string; maxResults: number; site?: string }) {
@@ -395,8 +394,7 @@ async function googleImageSearch(query: string, maxResults: number, safeSearch: 
 }
 
 async function tavilyNewsSearch(query: string, maxResults: number, freshness: string) {
-  const apiKey = await getConfig('search-api-key');
-  if (!apiKey) throw new Error('Tavily API key not configured');
+  const apiKey = await requireConfig('search-api-key', 'Tavily');
 
   const freshnessMap: Record<string, string> = {
     hour: '1h',
@@ -427,18 +425,15 @@ async function tavilyNewsSearch(query: string, maxResults: number, freshness: st
   }
 
   const data = await res.json();
-  return {
-    results: (data.results || []).map((r: any) => ({
-      title: r.title || '',
-      url: r.url || '',
-      snippet: (r.content || '').slice(0, 500),
-      content: r.content || '',
-      publishedDate: r.published_date || '',
-      source: 'tavily-news',
-    })),
-    totalResults: data.results?.length || 0,
-    answer: data.answer || '',
-  };
+  const results = normalizeResults(data.results, 'tavily-news', (r: any) => ({
+    title: r.title || '',
+    url: r.url || '',
+    snippet: (r.content || '').slice(0, 500),
+    content: r.content || '',
+    publishedDate: r.published_date || '',
+  }));
+  results.answer = data.answer || '';
+  return results;
 }
 
 export async function imageSearch(params: { query: string; maxResults: number; safeSearch: boolean }) {

@@ -3,9 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
   PencilEdit02Icon,
-  AlarmClockIcon,
   ResourcesAddIcon,
-  TreePalmIcon,
   Settings02Icon,
   PanelLeftIcon,
   PanelRightIcon,
@@ -28,9 +26,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 const newThreadIcon = <HugeiconRenderer icon={PencilEdit02Icon} />;
 const chatsIcon = <HugeiconRenderer icon={FolderLibraryIcon} />;
-const scheduleIcon = <HugeiconRenderer icon={AlarmClockIcon} />;
 const pluginsIcon = <HugeiconRenderer icon={ResourcesAddIcon} />;
-const wikiIcon = <HugeiconRenderer icon={TreePalmIcon} />;
 const downloadIcon = <HugeiconRenderer icon={Download01Icon} />;
 const workflowIcon = <HugeiconRenderer icon={CursorRectangleSelection02Icon} />;
 const settingsIcon = <HugeiconRenderer icon={Settings02Icon} />;
@@ -202,13 +198,6 @@ export default function Sidebar() {
               collapsed={isCollapsed}
             />
             <SidebarTab
-              iconElement={scheduleIcon}
-              label="Schedule"
-              path="/schedule"
-              active={location.pathname === '/schedule'}
-              collapsed={isCollapsed}
-            />
-            <SidebarTab
               iconElement={workflowIcon}
               label="Workflow"
               path="/workflow"
@@ -220,13 +209,6 @@ export default function Sidebar() {
               label="Plugins"
               path="/plugins"
               active={location.pathname === '/plugins'}
-              collapsed={isCollapsed}
-            />
-            <SidebarTab
-              iconElement={wikiIcon}
-              label="Wiki"
-              path="/wiki"
-              active={location.pathname === '/wiki'}
               collapsed={isCollapsed}
             />
           </div>

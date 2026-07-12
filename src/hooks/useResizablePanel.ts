@@ -57,7 +57,7 @@ export function useResizablePanel(
     document.addEventListener('mouseup', onMouseUp);
     document.addEventListener('touchmove', onTouchMove, { passive: false });
     document.addEventListener('touchend', onTouchEnd);
-  }, [minWidth, maxWidth]);
+  }, [minWidth, maxWidth, storageKey]);
 
   const handleDividerKeyDown = useCallback((e: React.KeyboardEvent) => {
     const step = e.shiftKey ? 50 : 20;
@@ -86,7 +86,7 @@ export function useResizablePanel(
       setPanelWidth(newWidth);
       localStorage.setItem(storageKey, String(newWidth));
     }
-  }, [panelWidth, minWidth, maxWidth]);
+  }, [panelWidth, minWidth, maxWidth, storageKey]);
 
   return {
     panelWidth,

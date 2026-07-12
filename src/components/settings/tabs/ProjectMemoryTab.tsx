@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getProjectMemory, setProjectMemory, deleteProjectMemory } from '@core/memory/projectMemory';
 import type { ProjectMemoryEntry } from '@core/memory/projectMemory';
 import { useProjectStore } from '@/stores/projectStore';
@@ -10,7 +10,7 @@ export function ProjectMemoryTab() {
   const [editValue, setEditValue] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const reloadEntries = () => {
+  const reloadEntries = useCallback(() => {
     if (!currentProjectId) return;
     getProjectMemory(currentProjectId).then(data => {
       setEntries(data.sort((a, b) => b.updatedAt - a.updatedAt));
@@ -19,11 +19,11 @@ export function ProjectMemoryTab() {
     }).finally(() => {
       setLoading(false);
     });
-  };
+  }, [currentProjectId]);
 
   useEffect(() => {
     reloadEntries();
-  }, [currentProjectId]);
+  }, [reloadEntries]);
 
   const handleEdit = async (key: string) => {
     if (!currentProjectId) return;

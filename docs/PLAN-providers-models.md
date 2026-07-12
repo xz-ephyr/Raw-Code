@@ -37,7 +37,7 @@ registerProvider({
   defaultModel: 'gemini-2.5-flash',
   modelIdPrefixes: ['gemini'],
   createClient: (apiKey, baseURL) =>
-    createOpenAI({ apiKey, baseURL: baseURL ?? 'https://generativelanguage.googleapis.com/v1beta/openai' }),
+    createOpenAI({ apiKey, baseURL: baseURL ?? 'https://generativelanguage.googleapis.com/v1beta/openai' }).chat,
   getReasoningConfig: (modelId) => {
     if (modelId.includes('2.5') || modelId.includes('3.')) return { mode: 'native' };
     return null;
@@ -87,7 +87,6 @@ Replace the current 4-model array with all models from `FREEProviders.md`. Each 
 | `llama-4-scout-17b-16e-instruct` | Llama 4 Scout | 131K | No |
 | `llama-3.3-70b-versatile` | Llama 3.3 70B | 131K | No |
 | `qwen3-32b` | Qwen3 32B | 131K | No |
-| `deepseek-r1-distill-llama-70b` | DeepSeek R1 70B | 131K | Yes |
 | `gpt-oss-120b` | GPT-OSS 120B | 131K | No |
 
 #### Cerebras

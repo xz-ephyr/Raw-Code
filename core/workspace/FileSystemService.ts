@@ -1,5 +1,5 @@
-import { isTauri } from '@/lib/tauri';
 import { DatabaseService } from '@core/utils/DatabaseService';
+import { isTauri } from '@core/utils/platform';
 
 export interface FileEntry {
   name: string;
@@ -8,7 +8,7 @@ export interface FileEntry {
   children?: FileEntry[];
 }
 
-export interface FileContent {
+interface FileContent {
   path: string;
   size: number;
   text: string;

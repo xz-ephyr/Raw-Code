@@ -211,11 +211,6 @@ export async function sendMessage(to: string, subject: string, body: string) {
   return { id: result.id, threadId: result.threadId, labelIds: result.labelIds };
 }
 
-export async function listLabels() {
-  const data = await gmailFetch('/users/me/labels');
-  return (data.labels || []).map((l: any) => ({ id: l.id, name: l.name }));
-}
-
 export async function isConnected(): Promise<boolean> {
   const connected = await getConfig('gmail-connected');
   return connected === 'true';

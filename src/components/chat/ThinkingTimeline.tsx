@@ -104,7 +104,7 @@ function formatDuration(seconds: number): string {
 
 function shortenPath(fullPath: string): string {
   if (!fullPath) return '';
-  const segments = fullPath.split(/[\\\/]/).filter(Boolean);
+  const segments = fullPath.split(/[\\/]/).filter(Boolean);
   const sep = fullPath.includes('\\') ? '\\' : '/';
 
   let start = 0;
@@ -534,37 +534,6 @@ export const ThinkingTimeline = React.memo(function ThinkingTimeline({
 
 // ── Hook to build timeline steps from raw props ────────────────────
 
-function extractThinkTagsFromText(text: string): { clean: string; thinking: string } {
-  const thinkingParts: string[] = [];
-  const cleanParts: string[] = [];
-  let i = 0;
-  const len = text.length;
-
-  while (i < len) {
-    const thinkStart = text.indexOf('<think>', i);
-    if (thinkStart === -1) {
-      cleanParts.push(text.slice(i));
-      break;
-    }
-
-    cleanParts.push(text.slice(i, thinkStart));
-
-    const thinkEnd = text.indexOf('</think>', thinkStart);
-    if (thinkEnd === -1) {
-      const content = text.slice(thinkStart + 7);
-      if (content.trim()) thinkingParts.push(content.trim());
-      break;
-    }
-
-    const content = text.slice(thinkStart + 7, thinkEnd);
-    if (content.trim()) thinkingParts.push(content.trim());
-
-    i = thinkEnd + 8;
-  }
-
-  return { clean: cleanParts.join('').trim(), thinking: thinkingParts.join('\n') };
-}
-
 function createThinkingStep(stepId: number, text: string) {
   return { id: `thinking-${stepId}`, type: 'thinking' as const, reasoning: text, isActive: false };
 }
@@ -603,6 +572,7 @@ function buildStepsFromParts(
   toolInvocations: any[] | undefined,
   isStreaming: boolean,
   hasContent?: boolean,
+  reasoning?: string,
 ): TimelineStep[] {
   const steps: TimelineStep[] = [];
   let stepId = 0;
@@ -612,15 +582,9 @@ function buildStepsFromParts(
     if (!part || !part.type) continue;
 
     if (part.type === 'reasoning') {
-      const text = part.reasoning || (part as any).text || '';
+      const text = (part as any).text || '';
       if (text) {
         steps.push(createThinkingStep(stepId++, text) as TimelineStep);
-        lastThinkingIdx = steps.length - 1;
-      }
-    } else if (part.type === 'text') {
-      const { thinking } = extractThinkTagsFromText(part.text || '');
-      if (thinking) {
-        steps.push(createThinkingStep(stepId++, thinking) as TimelineStep);
         lastThinkingIdx = steps.length - 1;
       }
     } else if (part.type === 'dynamic-tool' || part.type.startsWith('tool-')) {
@@ -644,6 +608,15 @@ function buildStepsFromParts(
       const isDone = ti.state === 'result' || !!ti.result;
       steps.push(createToolStep(stepId++, ti.toolCallId, ti.toolName, ti.args, ti.result, isDone) as TimelineStep);
     }
+  }
+
+  if (lastThinkingIdx === -1 && reasoning) {
+    steps.push({
+      id: 'thinking',
+      type: 'thinking',
+      reasoning,
+      isActive: isStreaming && !hasContent,
+    } as TimelineStep);
   }
 
   return steps;
@@ -686,7 +659,7 @@ export function useTimelineSteps(
   return useMemo(() => {
     const hasParts = parts && Array.isArray(parts) && parts.length > 0;
     return hasParts
-      ? buildStepsFromParts(parts, toolInvocations, isStreaming, hasContent)
+      ? buildStepsFromParts(parts, toolInvocations, isStreaming, hasContent, reasoning)
       : buildStepsFallback(reasoning, toolInvocations, isStreaming, hasContent);
   }, [reasoning, toolInvocations, isStreaming, parts, hasContent]);
 }

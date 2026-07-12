@@ -22,10 +22,10 @@ type ChatResponse struct {
 }
 
 type StreamEvent struct {
-	Type    string `json:"type"`
-	Content string `json:"content,omitempty"`
-	Done    bool   `json:"done,omitempty"`
-	Error   string `json:"error,omitempty"`
+	Type  string `json:"type"`
+	Delta string `json:"delta,omitempty"`
+	Done  bool   `json:"done,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
 type AgentTask struct {

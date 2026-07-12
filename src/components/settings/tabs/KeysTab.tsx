@@ -1,49 +1,37 @@
-import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ViewIcon, ViewOffSlashIcon, Key01Icon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
-import { getAllProviders } from '@core/providers';
-import { DatabaseService } from '@core/utils/DatabaseService';
 import { refreshProviders } from '@core/models/aiService';
+import { DatabaseService } from '@core/utils/DatabaseService';
+import { useProviderKeys } from '@/hooks/useProviderKeys';
 
 export interface KeysTabHandle {
   save: () => Promise<void>;
 }
 
 export const KeysTab = forwardRef<KeysTabHandle>((_, ref) => {
-  const providers = getAllProviders().filter(p => p.id !== 'omniroute');
-  const [keys, setKeys] = useState<Record<string, string>>({});
-  const [cloudflareAccountId, setCloudflareAccountId] = useState('');
+  const { providers, keys, setKeys, extras, setExtraValue } = useProviderKeys([
+    { key: 'cloudflare-account-id', storageKey: 'cloudflare-account-id' },
+  ]);
+
+  const filteredProviders = providers.filter(p => p.id !== 'omniroute');
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    (async () => {
-      const initial: Record<string, string> = {};
-      for (const p of providers) {
-        initial[p.id] = await DatabaseService.getConfig(p.configKey)
-          .then(r => r || localStorage.getItem(p.configKey) || '');
-      }
-      setKeys(initial);
-
-      const cfAccount = await DatabaseService.getConfig('cloudflare-account-id')
-        .then(r => r || localStorage.getItem('cloudflare-account-id') || '');
-      setCloudflareAccountId(cfAccount);
-    })();
-  }, []);
 
   useImperativeHandle(ref, () => ({
     save: async () => {
-      await Promise.allSettled(providers.map((p) =>
+      await Promise.allSettled(filteredProviders.map((p) =>
         DatabaseService.setConfig(p.configKey, keys[p.id])
       ));
-      providers.forEach((p) => {
+      filteredProviders.forEach((p) => {
         localStorage.setItem(p.configKey, keys[p.id]);
       });
 
-      if (cloudflareAccountId) {
-        await DatabaseService.setConfig('cloudflare-account-id', cloudflareAccountId).catch(() => {});
-        localStorage.setItem('cloudflare-account-id', cloudflareAccountId);
+      const cfAccountId = extras['cloudflare-account-id'];
+      if (cfAccountId) {
+        await DatabaseService.setConfig('cloudflare-account-id', cfAccountId).catch(() => {});
+        localStorage.setItem('cloudflare-account-id', cfAccountId);
 
-        const cfBaseURL = `https://api.cloudflare.com/client/v4/accounts/${cloudflareAccountId}/ai/v1`;
+        const cfBaseURL = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/v1`;
         await DatabaseService.setConfig('cloudflare-base-url', cfBaseURL).catch(() => {});
         localStorage.setItem('cloudflare-base-url', cfBaseURL);
       }
@@ -54,7 +42,7 @@ export const KeysTab = forwardRef<KeysTabHandle>((_, ref) => {
 
   return (
     <div className="grid grid-cols-2 gap-3">
-      {providers.map((p) => (
+      {filteredProviders.map((p) => (
         <div key={p.id} className="p-3 space-y-2.5">
           <div className="flex items-center gap-2.5">
             <img src={p.icon} alt={p.label} className="shrink-0" style={{ width: 22, height: 22 }} />
@@ -88,8 +76,8 @@ export const KeysTab = forwardRef<KeysTabHandle>((_, ref) => {
               <label className="text-[11px] font-medium text-muted-foreground">Account ID (required for Cloudflare)</label>
               <input
                 type="text"
-                value={cloudflareAccountId}
-                onChange={(e) => setCloudflareAccountId(e.target.value)}
+                value={extras['cloudflare-account-id'] || ''}
+                onChange={(e) => setExtraValue('cloudflare-account-id', e.target.value)}
                 placeholder="Enter your Cloudflare Account ID"
                 className="h-8 bg-muted rounded-lg px-3 outline-none text-xs w-full border border-border focus:border-ring transition-colors"
               />

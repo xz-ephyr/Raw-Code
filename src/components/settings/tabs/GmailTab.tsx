@@ -1,60 +1,27 @@
-import { useState, useEffect } from 'react';
-import { DatabaseService } from '@core/utils/DatabaseService';
+import { useState, useEffect, useCallback } from 'react';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { CheckmarkCircle02Icon, Cancel01Icon } from '@hugeicons/core-free-icons';
+import { DatabaseService } from '@core/utils/DatabaseService';
+import { useSettingsConfig } from '@/hooks/useSettingsConfig';
 
 export function GmailTab() {
-  const [config, setConfig] = useState<Record<string, string>>({});
-  const [loaded, setLoaded] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const { config, setConfig, loaded, isSaving, save: handleSave } = useSettingsConfig(['gmail-client-id', 'gmail-client-secret']);
   const [connected, setConnected] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [didAutoConnect, setDidAutoConnect] = useState(false);
 
-  useEffect(() => {
-    if (loaded) return;
-    const keys = ['gmail-client-id', 'gmail-client-secret'];
-    Promise.all(keys.map(k => DatabaseService.getConfig(k).then(v => ({ key: k, value: v || '' }))))
-      .then((entries) => {
-        const map: Record<string, string> = {};
-        entries.forEach(e => { map[e.key] = e.value; });
-        setConfig(map);
-        setLoaded(true);
-
-        // Auto-connect if user came from plugin card with credentials already saved
-        const pending = sessionStorage.getItem('gmail-pending-connect');
-        if (pending && map['gmail-client-id']) {
-          sessionStorage.removeItem('gmail-pending-connect');
-          setTimeout(() => handleConnectWithId(map['gmail-client-id']), 500);
-        }
-      })
-      .catch(() => setLoaded(true));
-
-    checkStatus();
-  }, [loaded]);
-
-  const checkStatus = async () => {
+  const checkStatus = useCallback(async () => {
     try {
       const res = await fetch('http://localhost:3001/gmail/status', { method: 'POST' });
       const data = await res.json();
       setConnected(data.connected);
       setEmail(data.email);
-    } catch {}
-  };
+    } catch { /* ignore */ }
+  }, []);
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    await Promise.all(
-      Object.entries(config).map(([key, value]) =>
-        DatabaseService.setConfig(key, value)
-      )
-    );
-    await new Promise((r) => setTimeout(r, 200));
-    setIsSaving(false);
-  };
-
-  const handleConnectWithId = async (clientId: string) => {
+  const handleConnectWithId = useCallback(async (clientId: string) => {
     setIsAuthenticating(true);
     try {
       const res = await fetch('http://localhost:3001/gmail/auth-url', {
@@ -75,7 +42,21 @@ export function GmailTab() {
       console.error('Gmail auth error:', err);
       setIsAuthenticating(false);
     }
-  };
+  }, [checkStatus]);
+
+  useEffect(() => {
+    if (!loaded || didAutoConnect) return;
+    const pending = sessionStorage.getItem('gmail-pending-connect');
+    if (pending && config['gmail-client-id']) {
+      sessionStorage.removeItem('gmail-pending-connect');
+      setDidAutoConnect(true);
+      setTimeout(() => handleConnectWithId(config['gmail-client-id']), 500);
+    }
+  }, [loaded, didAutoConnect, config, handleConnectWithId]);
+
+  useEffect(() => {
+    if (loaded) checkStatus();
+  }, [loaded, checkStatus]);
 
   const handleConnect = async () => {
     if (!config['gmail-client-id']) return;
@@ -108,7 +89,7 @@ export function GmailTab() {
             setIsAuthenticating(false);
             await checkStatus();
           }
-        } catch {}
+        } catch { /* ignore */ }
       }, 1000);
     } catch (err) {
       console.error('Gmail auth error:', err);

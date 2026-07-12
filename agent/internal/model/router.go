@@ -7,6 +7,20 @@ import (
 	"sync"
 )
 
+type ReasoningMode int
+
+const (
+	ReasoningNone   ReasoningMode = 0
+	ReasoningNative ReasoningMode = 1
+	ReasoningTagged ReasoningMode = 2
+)
+
+type ModelCapability struct {
+	Reasoning ReasoningMode
+	OpenTag   string
+	CloseTag  string
+}
+
 type ProviderInfo struct {
 	ID             string
 	BaseURL        string
@@ -15,6 +29,7 @@ type ProviderInfo struct {
 	DefaultModel   string
 	ModelPrefixes  []string
 	Models         []string
+	Capabilities   map[string]ModelCapability
 }
 
 type ProviderRegistry struct {
@@ -97,6 +112,13 @@ func DefaultProviderRegistry() *ProviderRegistry {
 		DefaultModel:    "gemini-2.5-flash",
 		ModelPrefixes:   []string{"gemini", "gemma"},
 		Models:          []string{"gemini-2.5-flash", "gemini-3.0-flash-preview", "gemini-3.1-flash-lite-preview", "gemma-4-31b-it", "gemma-4-26b-a4b-it"},
+		Capabilities: map[string]ModelCapability{
+			"gemini-2.5-flash":        {Reasoning: ReasoningNative},
+			"gemini-3.0-flash-preview": {Reasoning: ReasoningNative},
+			"gemini-3.1-flash-lite-preview": {Reasoning: ReasoningNone},
+			"gemma-4-31b-it":          {Reasoning: ReasoningTagged, OpenTag: "<thought>", CloseTag: "</thought>"},
+			"gemma-4-26b-a4b-it":      {Reasoning: ReasoningTagged, OpenTag: "<thought>", CloseTag: "</thought>"},
+		},
 	})
 	r.Register(ProviderInfo{
 		ID:              "groq",
@@ -104,15 +126,18 @@ func DefaultProviderRegistry() *ProviderRegistry {
 		APIKeyConfigKey:  "groq-api-key",
 		EnvVar:          "GROQ_API_KEY",
 		DefaultModel:    "llama-3.3-70b-versatile",
-		ModelPrefixes:   []string{"llama", "qwen", "deepseek", "gpt-oss"},
-		Models:          []string{"llama-4-scout-17b-16e-instruct", "llama-3.3-70b-versatile", "qwen3-32b", "deepseek-r1-distill-llama-70b", "gpt-oss-120b"},
+		ModelPrefixes:   []string{"llama", "qwen", "deepseek", "gpt-oss", "meta-llama", "openai"},
+		Models:          []string{"meta-llama/llama-4-scout-17b-16e-instruct", "llama-3.3-70b-versatile", "qwen/qwen3-32b", "openai/gpt-oss-120b"},
+		Capabilities: map[string]ModelCapability{
+			"qwen/qwen3.6-27b": {Reasoning: ReasoningTagged, OpenTag: "<think>", CloseTag: "</think>"},
+		},
 	})
 	r.Register(ProviderInfo{
 		ID:              "cerebras",
 		BaseURL:         "https://api.cerebras.ai/v1",
 		APIKeyConfigKey:  "cerebras-api-key",
 		EnvVar:          "CEREBRAS_API_KEY",
-		DefaultModel:    "gpt-oss-120b",
+		DefaultModel:    "cerebras/gpt-oss-120b",
 		ModelPrefixes:   []string{"gpt-oss", "zai", "gemma"},
 		Models:          []string{"cerebras/gpt-oss-120b", "zai-glm-4.7", "gemma-4-31b"},
 	})
@@ -121,9 +146,13 @@ func DefaultProviderRegistry() *ProviderRegistry {
 		BaseURL:         "https://api.mistral.ai/v1",
 		APIKeyConfigKey:  "mistral-api-key",
 		EnvVar:          "MISTRAL_API_KEY",
-		DefaultModel:    "mistral-small-3.2",
-		ModelPrefixes:   []string{"mistral", "codestral"},
-		Models:          []string{"mistral-small-3.2", "mistral-medium-3.5", "codestral"},
+		DefaultModel:    "mistral-small-latest",
+		ModelPrefixes:   []string{"mistral", "codestral", "pixtral"},
+		Models:          []string{"mistral-small-latest", "mistral-medium-3.5", "mistral-large-latest", "codestral-latest", "pixtral-12b"},
+		Capabilities: map[string]ModelCapability{
+			"mistral-medium-3.5": {Reasoning: ReasoningNative},
+			"mistral-large-latest": {Reasoning: ReasoningNative},
+		},
 	})
 	r.Register(ProviderInfo{
 		ID:              "sambanova",
@@ -132,7 +161,7 @@ func DefaultProviderRegistry() *ProviderRegistry {
 		EnvVar:          "SAMBANOVA_API_KEY",
 		DefaultModel:    "Meta-Llama-3.3-70B-Instruct",
 		ModelPrefixes:   []string{"Meta", "DeepSeek", "gpt-oss", "gemma"},
-		Models:          []string{"Meta-Llama-3.3-70B-Instruct", "DeepSeek-V3.1", "DeepSeek-V3.2", "gemma-4-31B-it"},
+		Models:          []string{"Meta-Llama-3.3-70B-Instruct", "DeepSeek-V3.1", "sambanova/gpt-oss-120b", "DeepSeek-V3.2", "gemma-4-31B-it"},
 	})
 	r.Register(ProviderInfo{
 		ID:              "cohere",
@@ -142,6 +171,11 @@ func DefaultProviderRegistry() *ProviderRegistry {
 		DefaultModel:    "command-a-03-2026",
 		ModelPrefixes:   []string{"command", "c4ai"},
 		Models:          []string{"command-a-03-2026", "command-a-plus", "command-r-plus-08-2024", "command-r-08-2024", "command-r7b-12-2024", "c4ai-aya-expanse-32b"},
+		Capabilities: map[string]ModelCapability{
+			"command-a-03-2026":    {Reasoning: ReasoningNative},
+			"command-a-plus":       {Reasoning: ReasoningNative},
+			"command-r-plus-08-2024": {Reasoning: ReasoningNative},
+		},
 	})
 	r.Register(ProviderInfo{
 		ID:              "huggingface",
@@ -168,7 +202,10 @@ func DefaultProviderRegistry() *ProviderRegistry {
 		EnvVar:          "NVIDIA_API_KEY",
 		DefaultModel:    "nvidia/llama-3.3-nemotron-super-49b-v1",
 		ModelPrefixes:   []string{"nvidia", "meta", "mistralai", "google"},
-		Models:          []string{"nvidia/llama-3.3-nemotron-super-49b-v1", "nvidia/nemotron-3-nano-30b-a3b", "meta/llama-3.1-8b-instruct", "mistralai/mistral-large-2-instruct"},
+		Models:          []string{"nvidia/llama-3.3-nemotron-super-49b-v1", "nvidia/nemotron-3-nano-30b-a3b", "meta/llama-3.1-8b-instruct", "mistralai/mistral-large-3-675b-instruct-2512"},
+		Capabilities: map[string]ModelCapability{
+			"mistralai/mistral-large-3-675b-instruct-2512": {Reasoning: ReasoningNative},
+		},
 	})
 	r.Register(ProviderInfo{
 		ID:              "deepseek",
@@ -178,6 +215,9 @@ func DefaultProviderRegistry() *ProviderRegistry {
 		DefaultModel:    "deepseek-chat",
 		ModelPrefixes:   []string{"deepseek"},
 		Models:          []string{"deepseek-chat", "deepseek-reasoner", "deepseek-coder"},
+		Capabilities: map[string]ModelCapability{
+			"deepseek-reasoner": {Reasoning: ReasoningNative},
+		},
 	})
 
 	return r
@@ -225,6 +265,24 @@ func (r *RouterClient) getOrCreateClient(modelID string) (*Client, error) {
 	r.mu.Unlock()
 
 	return client, nil
+}
+
+func (r *RouterClient) GetCapability(modelID string) ModelCapability {
+	provider := r.registry.ResolveProvider(modelID)
+	if provider == "" {
+		return ModelCapability{}
+	}
+	info := r.registry.Info(provider)
+	if info == nil || info.Capabilities == nil {
+		return ModelCapability{}
+	}
+	id := strings.ToLower(modelID)
+	for pattern, cap := range info.Capabilities {
+		if strings.Contains(id, strings.ToLower(pattern)) {
+			return cap
+		}
+	}
+	return ModelCapability{}
 }
 
 func (r *RouterClient) ChatCompletion(ctx context.Context, req ChatRequest) (*ChatResponse, error) {

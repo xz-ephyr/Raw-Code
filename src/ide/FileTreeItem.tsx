@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   File01Icon,
+  Folder01Icon,
   Add01Icon,
   Edit02Icon,
   Delete02Icon,
@@ -10,7 +11,7 @@ import { cn } from '@/lib/utils';
 import type { FileNode } from './types';
 
 const FolderIcon = () => (
-  <img src="/wiki-folder.png" alt="" className="w-5 h-[14px] shrink-0" />
+  <HugeiconRenderer icon={Folder01Icon} className="w-5 h-[14px] shrink-0" />
 );
 
 interface FileTreeItemProps {

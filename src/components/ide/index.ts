@@ -1,0 +1,10 @@
+export { default as IDEPanel } from './IDEPanel';
+export { default as IDEShell } from '../../ide/IDEShell';
+export { ActivityBar } from '../../ide/ActivityBar';
+export { default as CommandPalette } from '../../ide/CommandPalette';
+export { Editor } from '../../ide/Editor';
+export { EditorTab } from '../../ide/EditorTab';
+export { default as FileExplorer } from '../../ide/FileExplorer';
+export { VirtualFileSystem } from '../../ide/FileSystem';
+export { default as FileTreeItem } from '../../ide/FileTreeItem';
+export { default as StatusBar } from '../../ide/StatusBar';

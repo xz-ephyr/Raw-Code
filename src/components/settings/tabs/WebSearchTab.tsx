@@ -1,35 +1,10 @@
-import { useState, useEffect } from 'react';
-import { DatabaseService } from '@core/utils/DatabaseService';
 import { PasswordInput } from '@/components/ui/PasswordInput';
+import { useSettingsConfig } from '@/hooks/useSettingsConfig';
 
 export function WebSearchTab() {
-  const [searchConfig, setSearchConfig] = useState<Record<string, string>>({});
-  const [searchKeysLoaded, setSearchKeysLoaded] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    if (searchKeysLoaded) return;
-    const keys = ['search-provider', 'search-api-key', 'search-exa-api-key', 'search-firecrawl-api-key'];
-    Promise.all(keys.map(k => DatabaseService.getConfig(k).then(v => ({ key: k, value: v || '' }))))
-      .then((entries) => {
-        const map: Record<string, string> = {};
-        entries.forEach(e => { map[e.key] = e.value; });
-        setSearchConfig(map);
-        setSearchKeysLoaded(true);
-      })
-      .catch(() => setSearchKeysLoaded(true));
-  }, [searchKeysLoaded]);
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    await Promise.all(
-      Object.entries(searchConfig).map(([key, value]) =>
-        DatabaseService.setConfig(key, value)
-      )
-    );
-    await new Promise((r) => setTimeout(r, 200));
-    setIsSaving(false);
-  };
+  const { config: searchConfig, setConfig: setSearchConfig, loaded: searchKeysLoaded, isSaving, save: handleSave } = useSettingsConfig([
+    'search-provider', 'search-api-key', 'search-exa-api-key', 'search-firecrawl-api-key',
+  ]);
 
   if (!searchKeysLoaded) {
     return (

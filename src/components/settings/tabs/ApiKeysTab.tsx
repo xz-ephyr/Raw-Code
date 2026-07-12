@@ -1,49 +1,23 @@
-import { useState, useEffect } from 'react';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { GlobeIcon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
+import { useState } from 'react';
 import {
   SELECTED_MODEL_STORAGE_KEY,
   getStoredSelectedModel,
-  MODELS,
 } from '@core/config/models';
 import { refreshProviders } from '@core/models/aiService';
-import { DatabaseService } from '@core/utils/DatabaseService';
-import { getAllProviders, getProviderLabel } from '@core/providers';
 import { PasswordInput } from '@/components/ui/PasswordInput';
-import { ModelIcon } from '@/components/ui/ModelIcon';
-import { Dropdown } from '@/components/ui/Dropdown';
+import { DefaultModelSelector } from '@/components/ui/DefaultModelSelector';
+import { useProviderKeys } from '@/hooks/useProviderKeys';
 
 export function ApiKeysTab() {
-  const providers = getAllProviders();
-
-  const [keys, setKeys] = useState<Record<string, string>>(
-    Object.fromEntries(providers.map(p => [p.id, '']))
-  );
-
-  useEffect(() => {
-    (async () => {
-      const initial: any = {};
-      for (const p of providers) {
-        initial[p.id] = await DatabaseService.getConfig(p.configKey)
-          .then(r => r || localStorage.getItem(p.configKey) || '');
-      }
-      setKeys(initial);
-    })();
-  }, []);
+  const { providers, keys, setKeys, saveAll } = useProviderKeys();
 
   const [selectedModel, setSelectedModel] = useState(getStoredSelectedModel);
   const [isSaving, setIsSaving] = useState(false);
-  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
 
   const handleSaveApiKeys = async () => {
     setIsSaving(true);
     await new Promise((r) => setTimeout(r, 300));
-    await Promise.all(providers.map((p) =>
-      DatabaseService.setConfig(p.configKey, keys[p.id])
-    ));
-    providers.forEach((p) => {
-      localStorage.setItem(p.configKey, keys[p.id]);
-    });
+    await saveAll();
     localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
     refreshProviders();
     window.dispatchEvent(new CustomEvent('model-changed'));
@@ -73,55 +47,7 @@ export function ApiKeysTab() {
       </div>
 
       <div className="border-t border-border pt-5 space-y-5">
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <HugeiconsIcon icon={GlobeIcon} size={16} />
-            Default Model
-          </label>
-          <div className="relative">
-            <div
-              className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border flex items-center cursor-pointer"
-              onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-            >
-              <span className="flex-1 truncate">
-                {(() => {
-                  const def = MODELS.find(m => m.id === selectedModel);
-                  return def ? `${def.label} (${getProviderLabel(def.provider) || def.provider})` : selectedModel;
-                })()}
-              </span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground shrink-0">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </div>
-            <Dropdown
-              isOpen={isModelDropdownOpen}
-              onClose={() => setIsModelDropdownOpen(false)}
-              width="100%"
-              maxHeight="155px"
-              className="mt-1"
-            >
-              {MODELS.map((model, idx) => (
-                <button
-                  key={`${model.id}-${idx}`}
-                  className={`w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors flex items-center gap-2 ${
-                    selectedModel === model.id ? 'bg-muted font-medium' : ''
-                  }`}
-                  onClick={() => {
-                    setSelectedModel(model.id as typeof selectedModel);
-                    setIsModelDropdownOpen(false);
-                  }}
-                >
-                  <ModelIcon modelId={model.id} size={14} />
-                  <span className="flex-1 truncate">{model.label}</span>
-                  <span className="text-[11px] text-muted-foreground shrink-0">{getProviderLabel(model.provider) || model.provider}</span>
-                  {model.supportsThinking && (
-                    <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-blue-500 shrink-0 ml-auto" />
-                  )}
-                </button>
-              ))}
-            </Dropdown>
-          </div>
-        </div>
+        <DefaultModelSelector selectedModel={selectedModel} onChange={setSelectedModel as (id: string) => void} maxHeight="155px" />
       </div>
 
       <div className="flex justify-end pt-2">

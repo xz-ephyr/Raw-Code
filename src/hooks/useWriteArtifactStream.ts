@@ -14,7 +14,10 @@ export function useWriteArtifactStream(
   const prevIntentionRef = useRef('');
   const prevExplanationRef = useRef('');
   const contentAfterToolRef = useRef(contentAfterTool);
-  contentAfterToolRef.current = contentAfterTool;
+
+  useEffect(() => {
+    contentAfterToolRef.current = contentAfterTool;
+  }, [contentAfterTool]);
 
   // Idle → intention/shimmer/done
   useEffect(() => {

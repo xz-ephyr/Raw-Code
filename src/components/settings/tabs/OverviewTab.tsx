@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Activity01Icon, CheckmarkCircle01Icon, Cancel01Icon, CpuIcon, Clock01Icon, ArrowDown01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import { getUsageStats, getUsageLog, type UsageRecord } from '@core/utils/usageTracker';
@@ -11,12 +11,14 @@ export function OverviewTab() {
   const [stats, setStats] = useState(getUsageStats());
   const [log, setLog] = useState<UsageRecord[]>([]);
 
-  const providerModels = MODELS;
-  const grouped = new Map<string, ModelDefinition[]>();
-  for (const m of providerModels) {
-    if (!grouped.has(m.provider)) grouped.set(m.provider, []);
-    grouped.get(m.provider)!.push(m);
-  }
+  const grouped = useMemo(() => {
+    const map = new Map<string, ModelDefinition[]>();
+    for (const m of MODELS) {
+      if (!map.has(m.provider)) map.set(m.provider, []);
+      map.get(m.provider)!.push(m);
+    }
+    return map;
+  }, []);
   const [expanded, setExpanded] = useState<Record<string, boolean>>(
     () => Object.fromEntries([...grouped.keys()].map(k => [k, false]))
   );
@@ -24,7 +26,8 @@ export function OverviewTab() {
 
   const loadConfigured = useCallback(async () => {
     const configured = new Set<string>();
-    for (const [provider] of grouped) {
+    const keys = [...grouped.keys()];
+    for (const provider of keys) {
       const p = getProvider(provider);
       if (p) {
         const val = await DatabaseService.getConfig(p.configKey)
@@ -34,7 +37,7 @@ export function OverviewTab() {
       }
     }
     setConfiguredProviders(configured);
-  }, []);
+  }, [grouped]);
 
   useEffect(() => {
     loadConfigured();
@@ -43,8 +46,10 @@ export function OverviewTab() {
   }, [loadConfigured]);
 
   useEffect(() => {
-    setStats(getUsageStats());
-    setLog(getUsageLog().reverse().slice(0, 50));
+    const s = getUsageStats();
+    const l = getUsageLog().reverse().slice(0, 50);
+    setStats(s);
+    setLog(l);
   }, []);
 
   const formatTime = (ts: number) => {

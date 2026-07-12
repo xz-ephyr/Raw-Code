@@ -22,8 +22,6 @@ interface MessageListProps {
   onSend: (content: string) => void;
   onRegenerate: (index: number) => void;
   onStop: () => void;
-  onAddProject: () => void;
-  onOpenIDE?: () => void;
   currentProjectName: string | undefined;
   currentMode?: string;
   onModeChange?: (modeId: string | undefined) => void;
@@ -47,9 +45,6 @@ export function MessageList({
   onSend,
   onRegenerate,
   onStop,
-  onAddProject,
-  onOpenIDE,
-  currentProjectName,
   currentMode,
   onModeChange,
   isProject,
@@ -121,10 +116,10 @@ export function MessageList({
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className={`flex-1 overflow-y-auto thin-scrollbar ${!hasMessages ? 'flex flex-col items-center justify-start pt-[15vh] p-4' : ''}`}
+        className={`thin-scrollbar transition-all duration-300 ease-in-out ${!hasMessages ? 'overflow-visible flex-initial flex flex-col items-center justify-start p-4' : 'overflow-y-auto flex-1'}`} style={!hasMessages ? { paddingTop: '25vh' } : undefined}
       >
         {hasMessages && <div className="h-[8px] bg-card w-full shrink-0" />}
-        <div className="w-full mx-auto px-4 pb-24" style={{ maxWidth: 'min(880px, 100%)' }}>
+        <div className="w-full mx-auto px-4 pb-24" style={{ maxWidth: hasMessages ? 'min(780px, 100%)' : 'min(1100px, 100%)' }}>
           {messages.map((m: any, i: number) => {
             const prevUserContent = i > 0 && messages[i - 1]?.role === 'user'
               ? messages[i - 1]?.content
@@ -155,34 +150,33 @@ export function MessageList({
           })}
 
           {!hasMessages && (
-            <div className="w-full mt-4 flex flex-col items-center overflow-visible pb-10">
+            <div className="w-full mt-4 flex flex-col items-center">
               <h1 className="text-[38px] font-serif-source mb-[10px] text-foreground text-center">
                 Hello, how can I help?
               </h1>
-              <ChatInputContainer
-                idle={true}
-                onSend={onSend}
-                isLoading={isLoading}
-                onStop={onStop}
-                isThinkingEnabled={isThinkingEnabled}
-                onToggleThinking={onToggleThinking}
-                isWebSearchEnabled={isWebSearchEnabled}
-                onToggleWebSearch={onToggleWebSearch}
-                onCreateProject={onAddProject}
-                onOpenIDE={onOpenIDE}
-                currentProjectName={currentProjectName}
-                currentModel={currentModel}
-                currentMode={currentMode}
-                onModeChange={onModeChange}
-                isProject={isProject}
-              />
+              <div className="w-full">
+                <ChatInputContainer
+                  idle={true}
+                  onSend={onSend}
+                  isLoading={isLoading}
+                  onStop={onStop}
+                  isThinkingEnabled={isThinkingEnabled}
+                  onToggleThinking={onToggleThinking}
+                  isWebSearchEnabled={isWebSearchEnabled}
+                  onToggleWebSearch={onToggleWebSearch}
+                  currentModel={currentModel}
+                  currentMode={currentMode}
+                  onModeChange={onModeChange}
+                  isProject={isProject}
+                />
+              </div>
             </div>
           )}
         </div>
       </div>
 
       {bottomSlot && (
-        <div className="shrink-0 w-full mx-auto px-4" style={{ maxWidth: 'min(880px, 100%)' }}>
+        <div className="shrink-0 w-full mx-auto px-4" style={{ maxWidth: 'min(780px, 100%)' }}>
           {bottomSlot}
         </div>
       )}
@@ -198,7 +192,6 @@ export function MessageList({
           </button>
         </div>
       )}
-
       {hasMessages && (
         <ChatInputContainer
           idle={false}
@@ -209,9 +202,6 @@ export function MessageList({
           onToggleThinking={onToggleThinking}
           isWebSearchEnabled={isWebSearchEnabled}
           onToggleWebSearch={onToggleWebSearch}
-          onCreateProject={onAddProject}
-          onOpenIDE={onOpenIDE}
-          currentProjectName={currentProjectName}
           currentModel={currentModel}
           currentMode={currentMode}
           onModeChange={onModeChange}
