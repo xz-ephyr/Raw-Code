@@ -2,38 +2,30 @@ import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { getModelForChatRequest } from '@core/config/models';
 import { chatCompletion, getAIErrorMessage, generateSessionTitle } from '@core/models/aiService';
 import { approveToolConfirmation, denyToolConfirmation } from '@core/utils/toolConfirm';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { FileSystemService } from '@core/workspace/FileSystemService';
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { useToast } from '../components/ui/Toast';
 import { useProjectStore } from '@/stores/projectStore';
-import { useTerminal } from '@/contexts/TerminalContext';
 import { mapUIMessageToLegacyMessage } from '../lib/chatUtils';
 import { ArtifactPanel } from '../components/artifact/ArtifactPanel';
 import type { Artifact } from '../types/artifact';
 import { useArtifacts } from '../hooks/useArtifacts';
-import { useProjectContext } from '../hooks/useProjectContext';
-import IDEShell from '../ide/IDEShell';
+import ResizeDivider from '../components/layout/ResizeDivider';
 import { useSessionTitle } from '../hooks/useSessionTitle';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useResizablePanel } from '../hooks/useResizablePanel';
-import { PageGradient } from '../components/ui/PageGradient';
 import { MessageList } from '../components/chat/MessageList';
 import TitleBar from '../components/layout/TitleBar';
-import { isTauri } from '../lib/tauri';
-import type { Project } from '../types/chat';
-import type { ProjectFileEntry } from '../ide/types';
+
 
 const MOBILE_BREAKPOINT = 768;
 
 export const ChatPage = () => {
-  const { uuid, folder } = useParams();
+  const { uuid } = useParams();
   const navigate = useNavigate();
   const isThinkingEnabled = useProjectStore(s => s.isThinkingEnabled);
   const setIsThinkingEnabled = useProjectStore(s => s.setIsThinkingEnabled);
@@ -41,15 +33,12 @@ export const ChatPage = () => {
   const setIsWebSearchEnabled = useProjectStore(s => s.setIsWebSearchEnabled);
   const currentMode = useProjectStore(s => s.currentMode);
   const setCurrentMode = useProjectStore(s => s.setCurrentMode);
-  const setProjectContext = useProjectStore(s => s.setProjectContext);
-  const currentProjectId = useProjectStore(s => s.currentProjectId);
-  const setCurrentProjectId = useProjectStore(s => s.setCurrentProjectId);
+
   const previousModelRef = useRef<string | null>(null);
   const isThinkingEnabledRef = useRef(false);
   const isWebSearchEnabledRef = useRef(true);
   const currentModelRef = useRef<string | null>(null);
   const currentModeRef = useRef<string | undefined>('explorer');
-  const projectIdRef = useRef<string | null>(null);
   const { addToast } = useToast();
   const { setTitle: setSessionTitle, setSessionId, setIsTitleGenerating } = useSessionTitle();
   const isMobile = useMediaQuery(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -62,23 +51,16 @@ export const ChatPage = () => {
     PANEL_MAX_WIDTH,
   } = useResizablePanel();
 
-  const {
-    panelWidth: idePanelWidth,
-    startResize: startIDEResize,
-    handleTouchStart: handleIDETouchStart,
-    handleDividerKeyDown: handleIDEDividerKeyDown,
-    PANEL_MIN_WIDTH: IDE_PANEL_MIN_WIDTH,
-    PANEL_MAX_WIDTH: IDE_PANEL_MAX_WIDTH,
-  } = useResizablePanel('ide-panel-width', { maxWidth: 9999 });
-
-  const isProject = !!folder;
-  const currentProjectName = useMemo(() => {
-    if (!folder) return undefined;
-    return folder.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-  }, [folder]);
-
-  const toggleThinking = () => setIsThinkingEnabled(!isThinkingEnabled);
-  const toggleWebSearch = () => setIsWebSearchEnabled(!isWebSearchEnabled);
+  const toggleThinking = () => {
+    const next = !isThinkingEnabled;
+    if (next) setIsWebSearchEnabled(false);
+    setIsThinkingEnabled(next);
+  };
+  const toggleWebSearch = () => {
+    const next = !isWebSearchEnabled;
+    if (next) setIsThinkingEnabled(false);
+    setIsWebSearchEnabled(next);
+  };
   const handleModeChange = useCallback((modeId: string | undefined) => {
     setCurrentMode(modeId);
     currentModeRef.current = modeId;
@@ -96,42 +78,15 @@ export const ChatPage = () => {
     clearArtifacts,
   } = useArtifacts();
 
-  const [isIDEPanelOpen, setIsIDEPanelOpen] = useState(false);
-  const [projectFiles, setProjectFiles] = useState<ProjectFileEntry[]>([]);
-  const openIDEPanel = useCallback(() => setIsIDEPanelOpen(true), []);
-  const closeIDEPanel = useCallback(() => setIsIDEPanelOpen(false), []);
-  const { visible: terminalVisible, toggle: toggleTerminal } = useTerminal();
+
 
   const handleNewThread = useCallback(async () => {
     if (!uuid || uuid === 'new') return;
     try {
-      const session = await ChatSessionManager.getSession(uuid);
-      if (!session?.projectId) return;
-      const newSession = await ChatSessionManager.create('New conversation', undefined, session.projectId);
-      const slug = folder || newSession.id;
-      navigate(`/project/${slug}/${newSession.id}`);
+      const newSession = await ChatSessionManager.create('New conversation');
+      navigate(`/thread/${newSession.id}`);
     } catch { /* ignore */ }
-  }, [uuid, folder, navigate]);
-
-  useEffect(() => {
-    if (!isIDEPanelOpen || !uuid || uuid === 'new') return;
-    const loadProjectFiles = async () => {
-      try {
-        const session = await ChatSessionManager.getSession(uuid);
-        if (!session?.projectId) return;
-        const projects = await DatabaseService.getProjects();
-        const project = projects.find(p => p.id === session.projectId);
-        if (!project) return;
-        const pc = await FileSystemService.getProjectContent(project.path, project.id);
-        const entries: ProjectFileEntry[] = pc.contents.map(c => ({
-          path: c.path,
-          content: c.text,
-        }));
-        if (entries.length > 0) setProjectFiles(entries);
-      } catch { /* ignore */ }
-    };
-    loadProjectFiles();
-  }, [isIDEPanelOpen, uuid]);
+  }, [uuid, navigate]);
 
   const handleCopyMessage = useCallback((content: string) => {
     navigator.clipboard.writeText(content);
@@ -165,9 +120,7 @@ export const ChatPage = () => {
         }
       }
       if (uuid && uuid !== 'new') {
-        const msgToSave = { ...message };
-        delete msgToSave.artifacts;
-        DatabaseService.saveMessages(uuid, [msgToSave]).catch((e) =>
+        DatabaseService.saveMessages(uuid, [message]).catch((e) =>
           console.error('Failed to save assistant message to DB:', e)
         );
       }
@@ -186,10 +139,8 @@ export const ChatPage = () => {
 
   const currentModel = useMemo(() => {
     void modelRevision;
-    return getModelForChatRequest(uuid, currentProjectId || undefined);
-  }, [uuid, modelRevision, currentProjectId]);
-
-  const { getProjectContext, invalidateCache, clearCache } = useProjectContext(uuid);
+    return getModelForChatRequest(uuid);
+  }, [uuid, modelRevision]);
 
   // eslint-disable-next-line react-hooks/refs
   const transport = useMemo(() => new DefaultChatTransport({
@@ -199,29 +150,42 @@ export const ChatPage = () => {
       }
       const body = JSON.parse(options.body as string);
       const effectiveModel = currentModelRef.current || body.model;
-      const projectContext = uuid && uuid !== 'new' ? await getProjectContext() : undefined;
+
+      let connectedProviders: string[] = [];
+      try {
+        const results = await Promise.allSettled(
+          ['gmail', 'github', 'telegram', 'youtube', 'reddit', 'twitter'].map(p =>
+            fetch(`http://localhost:3001/connector/${p}/status`, { method: 'POST' })
+              .then(r => r.json())
+              .then(d => d.connected ? p : null)
+          )
+        );
+        connectedProviders = results
+          .map(r => r.status === 'fulfilled' ? r.value : null)
+          .filter(Boolean) as string[];
+      } catch { /* ignore */ }
+
       const result = await chatCompletion({
         messages: body.messages,
         modelName: effectiveModel,
-        isThinkingEnabled: isThinkingEnabledRef.current,
         isWebSearchEnabled: isWebSearchEnabledRef.current,
+        connectedConnectors: connectedProviders,
         abortSignal: options?.signal,
         previousModelName: previousModelRef.current || undefined,
-        projectContext,
         modeId: currentModeRef.current,
-        projectId: projectIdRef.current || undefined,
       });
 
       previousModelRef.current = effectiveModel;
 
       return (result as any).toUIMessageStreamResponse({
+        sendReasoning: isThinkingEnabledRef.current,
         getErrorMessage: getAIErrorMessage,
       });
     },
     body: {
       model: currentModel,
     },
-  }), [uuid, currentModel, getProjectContext]);
+  }), [uuid, currentModel]);
 
   const chat = useChat({
     id: uuid,
@@ -284,10 +248,16 @@ export const ChatPage = () => {
         const session = await ChatSessionManager.getSession(uuid).catch(() => null);
         if (session && !sessionStorage.getItem('pending-first-message') && uuid !== 'new') {
           const storedMessages = await DatabaseService.getMessages(uuid);
-          setMessages(storedMessages.map(mapUIMessageToLegacyMessage));
+          const mapped = storedMessages.map(mapUIMessageToLegacyMessage);
+          setMessages(mapped);
+
+          const allArtifacts = mapped.flatMap((m: any) => m.artifacts || []);
+          if (allArtifacts.length > 0) {
+            addArtifacts(allArtifacts);
+          }
+
           setSessionId(uuid);
           setSessionTitle(session.title);
-          if (session.projectId) setCurrentProjectId(session.projectId);
         } else if (uuid === 'new') {
           setSessionId('new');
           setSessionTitle('New conversation');
@@ -298,7 +268,7 @@ export const ChatPage = () => {
     } else {
       setSessionId(null);
     }
-  }, [uuid, setMessages, setSessionId, setSessionTitle, clearArtifacts, setCurrentProjectId]);
+  }, [uuid, setMessages, setSessionId, setSessionTitle, clearArtifacts, addArtifacts]);
 
   useEffect(() => {
     isThinkingEnabledRef.current = isThinkingEnabled;
@@ -311,10 +281,6 @@ export const ChatPage = () => {
   useEffect(() => {
     currentModelRef.current = currentModel;
   }, [currentModel]);
-
-  useEffect(() => {
-    projectIdRef.current = currentProjectId;
-  }, [currentProjectId]);
 
   const messages = useMemo(
     () => rawMessages.map(mapUIMessageToLegacyMessage).filter(Boolean) as any[],
@@ -339,6 +305,36 @@ export const ChatPage = () => {
 
   const titleGeneratedRef = useRef(false);
   const lastUuidRef = useRef<string | undefined>(undefined);
+  const messageCountRef = useRef(0);
+  const TITLE_REFRESH_INTERVAL = 5;
+
+  const maybeGenerateTitle = async (
+    sessionUuid: string,
+    content: string,
+    setTitle: (t: string) => void,
+    setIsGenerating: (v: boolean) => void,
+    generatedRef: { current: boolean }
+  ) => {
+    const session = await ChatSessionManager.getSession(sessionUuid).catch(() => null);
+    const sessionTitle = session?.title || '';
+    const needsInitialTitle = sessionTitle === 'New conversation' || sessionTitle === '';
+    if (needsInitialTitle || generatedRef.current) {
+      setIsGenerating(true);
+      try {
+        const generatedTitle = await generateSessionTitle(content);
+        if (generatedTitle && generatedTitle !== 'New conversation') {
+          await ChatSessionManager.rename(sessionUuid, generatedTitle);
+          window.dispatchEvent(new CustomEvent('session-title-changed'));
+          setTitle(generatedTitle);
+        }
+      } catch { /* ignore */ }
+      setIsGenerating(false);
+      generatedRef.current = true;
+    } else {
+      setTitle(sessionTitle);
+      generatedRef.current = true;
+    }
+  };
 
   const handleSend = useCallback(
     async (content: string) => {
@@ -350,22 +346,6 @@ export const ChatPage = () => {
         return;
       }
 
-      if (uuid) {
-        const existingSession = await ChatSessionManager.getSession(uuid).catch(() => null);
-        if (!existingSession) {
-          const projects = await ChatSessionManager.getProjects();
-          const project = projects.find(p => uuid.includes(p.id));
-          if (project) {
-            const session = await ChatSessionManager.create('New conversation', undefined, project.id);
-            setSessionId(session.id);
-            sessionStorage.setItem('pending-first-message', content);
-            const slug = project.name.toLowerCase().replace(/\s+/g, '-');
-            navigate(`/project/${slug}/${session.id}`);
-            return;
-          }
-        }
-      }
-
       const userMsg = {
         id: crypto.randomUUID(),
         role: 'user' as const,
@@ -374,12 +354,6 @@ export const ChatPage = () => {
       };
 
       if (uuid) {
-        const session = await ChatSessionManager.getSession(uuid).catch(() => null);
-        if (session?.projectId) {
-          invalidateCache(session.projectId);
-          setProjectContext(null);
-        }
-
         DatabaseService.saveMessages(uuid, [userMsg]).catch((e) =>
           console.error('Failed to save user message to DB:', e)
         );
@@ -390,66 +364,21 @@ export const ChatPage = () => {
       if (lastUuidRef.current !== uuid) {
         titleGeneratedRef.current = false;
         lastUuidRef.current = uuid;
+        messageCountRef.current = 0;
       }
 
-      if (!titleGeneratedRef.current && uuid && uuid !== 'new') {
-        const session = await ChatSessionManager.getSession(uuid).catch(() => null);
-        const sessionTitle = session?.title || '';
-        if (sessionTitle === 'New conversation' || sessionTitle === '') {
-          setIsTitleGenerating(true);
-          generateSessionTitle(content).then(async (generatedTitle) => {
-            if (generatedTitle && generatedTitle !== 'New conversation') {
-              await ChatSessionManager.rename(uuid, generatedTitle);
-              const session = await ChatSessionManager.getSession(uuid).catch(() => null);
-              window.dispatchEvent(new CustomEvent('session-title-changed', { detail: { projectId: session?.projectId } }));
-              setSessionTitle(generatedTitle);
-            }
-            setIsTitleGenerating(false);
-            titleGeneratedRef.current = true;
-          }).catch(() => {
-            setIsTitleGenerating(false);
-            titleGeneratedRef.current = true;
-          });
-        } else {
-          setSessionTitle(sessionTitle);
-          titleGeneratedRef.current = true;
+      messageCountRef.current += 1;
+
+      if (uuid && uuid !== 'new') {
+        const isFirstMessage = !titleGeneratedRef.current;
+        const isRefreshInterval = messageCountRef.current > 1 && (messageCountRef.current % TITLE_REFRESH_INTERVAL === 0);
+        if (isFirstMessage || isRefreshInterval) {
+          await maybeGenerateTitle(uuid, content, setSessionTitle, setIsTitleGenerating, titleGeneratedRef);
         }
       }
     },
-    [uuid, sendMessage, navigate, setSessionId, setSessionTitle, setIsTitleGenerating, setProjectContext, invalidateCache]
+    [uuid, sendMessage, navigate, setSessionId, setSessionTitle, setIsTitleGenerating]
   );
-
-  const handleAddProject = useCallback(async () => {
-    try {
-      clearCache();
-      setProjectContext(null);
-      let newProject: Project | null = null;
-      let folderName = '';
-      if (isTauri()) {
-        const { open } = await import('@tauri-apps/plugin-dialog');
-        const selected = await open({ directory: true, multiple: false, title: 'Select Project Folder' });
-        if (selected && typeof selected === 'string') {
-          folderName = selected.split(/[/\\]/).pop() || 'New Project';
-          newProject = await ChatSessionManager.createProject(folderName, selected);
-        }
-      } else if ('showDirectoryPicker' in window) {
-        const dirHandle = await (window as any).showDirectoryPicker();
-        folderName = dirHandle.name || 'New Project';
-        newProject = await ChatSessionManager.createProject(folderName, folderName);
-        await FileSystemService.importDirectory(dirHandle, newProject.id);
-      } else {
-        addToast('Your browser does not support folder selection. Please use a supported browser or the desktop app.', 'error');
-      }
-      if (!newProject) return;
-      window.dispatchEvent(new CustomEvent('projects-changed'));
-      const newSession = await ChatSessionManager.create('New conversation', undefined, newProject.id);
-      const slug = folderName.toLowerCase().replace(/\s+/g, '-');
-      navigate(`/project/${slug}/${newSession.id}`);
-    } catch (err) {
-      console.error('Failed to open directory:', err);
-      addToast('Could not open folder. Make sure the server is running and try again.', 'error');
-    }
-  }, [navigate, addToast, setProjectContext]);
 
   useEffect(() => {
     if (uuid && uuid !== 'new') {
@@ -485,21 +414,15 @@ export const ChatPage = () => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background relative">
-      <PageGradient />
       {uuid !== 'new' && messages.length > 0 && (
         <TitleBar
-          isProject={isProject}
-          isIDEVisible={isIDEPanelOpen}
-          isTerminalVisible={terminalVisible}
-          onToggleIDE={() => setIsIDEPanelOpen(p => !p)}
-          onToggleTerminal={toggleTerminal}
-          onNewThread={isProject ? handleNewThread : undefined}
+          onNewThread={handleNewThread}
         />
       )}
       <div className="flex flex-1 min-h-0 relative z-10">
         <div
           className={`flex flex-col min-w-0 bg-background relative ${
-            isMobile && (isPanelOpen || isIDEPanelOpen)
+            isMobile && isPanelOpen
               ? 'hidden'
               : 'flex-1'
           }`}
@@ -520,12 +443,8 @@ export const ChatPage = () => {
             onSend={handleSend}
             onRegenerate={handleRegenerate}
             onStop={stop}
-            onAddProject={handleAddProject}
-            onOpenIDE={openIDEPanel}
-            currentProjectName={currentProjectName}
             currentMode={currentMode}
             onModeChange={handleModeChange}
-            isProject={isProject}
             bottomSlot={pendingConfirm ? (
               <ConfirmDialog
                 open
@@ -554,20 +473,14 @@ export const ChatPage = () => {
             className="flex overflow-hidden min-w-0"
             style={{ width: panelWidth, flex: 'none' }}
           >
-            <div
+            <ResizeDivider
               onMouseDown={startResize}
               onTouchStart={handleTouchStart}
               onKeyDown={handleDividerKeyDown}
-              tabIndex={0}
-              role="separator"
-              aria-orientation="vertical"
-              aria-valuenow={panelWidth}
-              aria-valuemin={PANEL_MIN_WIDTH}
-              aria-valuemax={PANEL_MAX_WIDTH}
-              className="w-[5px] shrink-0 cursor-col-resize bg-transparent relative flex items-center justify-center group/divider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-inset"
-            >
-               <div className="w-px h-full bg-border group-hover/divider:bg-muted-foreground group-active/divider:bg-muted-foreground transition-colors" />
-            </div>
+              ariaValueNow={panelWidth}
+              ariaValueMin={PANEL_MIN_WIDTH}
+              ariaValueMax={PANEL_MAX_WIDTH}
+            />
             {isMobile && (
               <div className="absolute inset-0 z-50 bg-black/30" onClick={closePanel} />
             )}
@@ -588,42 +501,7 @@ export const ChatPage = () => {
           </div>
         )}
 
-        {isIDEPanelOpen && (
-          <div className="flex overflow-hidden min-w-0" style={{ width: idePanelWidth, flex: 'none' }}>
-            <div
-              onMouseDown={startIDEResize}
-              onTouchStart={handleIDETouchStart}
-              onKeyDown={handleIDEDividerKeyDown}
-              tabIndex={0}
-              role="separator"
-              aria-orientation="vertical"
-              aria-valuenow={idePanelWidth}
-              aria-valuemin={IDE_PANEL_MIN_WIDTH}
-              aria-valuemax={IDE_PANEL_MAX_WIDTH}
-              className="w-[5px] shrink-0 cursor-col-resize bg-transparent relative flex items-center justify-center group/divider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-inset"
-            >
-              <div className="w-px h-full bg-border group-hover/divider:bg-muted-foreground group-active/divider:bg-muted-foreground transition-colors" />
-            </div>
-            {isMobile && (
-              <div className="absolute inset-0 z-50 bg-black/30" onClick={closeIDEPanel} />
-            )}
-            <div className="flex flex-col flex-1 min-w-0">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-                <span className="text-sm font-semibold">IDE</span>
-                <button
-                  onClick={closeIDEPanel}
-                  className="p-1 hover:bg-muted rounded-[6px] text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="Close IDE panel"
-                >
-                  <HugeiconsIcon icon={Cancel01Icon} size={16} />
-                </button>
-              </div>
-              <div className="flex-1 min-h-0">
-                <IDEShell projectName={currentProjectName} projectFiles={projectFiles} />
-              </div>
-            </div>
-          </div>
-        )}
+
       </div>
 
 

@@ -1,7 +1,7 @@
 import type { Artifact, ArtifactType } from '../types/artifact';
 import { MIME_TO_ARTIFACT_TYPE } from '../types/artifact';
 
-const antArtifactRegex = /<antArtifact\s+([^>]*)>([\s\S]*?)<\/antArtifact>/gi;
+const antArtifactRegex = /<(?:antArtifact|write_artifact)\s+([^>]*)>([\s\S]*?)<\/(?:antArtifact|write_artifact)>/gi;
 
 function parseAttributes(attrString: string): Record<string, string> {
   const attrs: Record<string, string> = {};

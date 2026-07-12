@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Raw Code",
+  "productName": "DokTor",
   "version": "0.15.0",
-  "identifier": "ai.xz.desktop",
+  "identifier": "ai.doktor.desktop",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:4028",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Raw Code",
+        "title": "DokTor",
         "width": 1280,
         "height": 820,
         "minWidth": 960,
@@ -41,12 +41,12 @@
       "icons/icon.ico"
     ],
     "category": "Productivity",
-    "shortDescription": "Raw Code - Autonomous Research Workstation",
-    "longDescription": "Raw Code is an autonomous research and content generation desktop application."
+    "shortDescription": "DokTor - Content Creation Suite",
+    "longDescription": "DokTor is an autonomous content creation desktop application."
   },
   "plugins": {
     "updater": {
-      "endpoints": ["https://updates.xz.ai/update/{{target}}/{{version}}"],
+      "endpoints": ["https://updates.doktor.app/update/{{target}}/{{version}}"],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQxODE2MjdBOEIzRkIxMjMKUldRanNUK0xlbUtCMFRJR2Y2UUNMdXhTc0huOFJpMURWV2YxdnVka2RTVEsvZy9iUWNpNkdrc3cK"
     }
   }

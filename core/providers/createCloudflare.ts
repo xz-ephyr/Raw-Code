@@ -3,7 +3,7 @@ export function createCloudflare(apiKey: string, accountId: string) {
 
   const provider = (modelId: string) => ({
     modelId,
-    specVersion: 'v1',
+    specificationVersion: 'v2',
     provider: 'cloudflare',
     async doStream(messages: any[], options?: any) {
       const response = await fetch(`${baseURL}/${modelId}`, {
@@ -27,7 +27,14 @@ export function createCloudflare(apiKey: string, accountId: string) {
       return {
         stream: new ReadableStream({
           start(controller: any) {
-            controller.enqueue({ type: 'text-delta', textDelta: text });
+            if (text) {
+              controller.enqueue({ type: 'text-delta', textDelta: text });
+            }
+            controller.enqueue({
+              type: 'finish',
+              finishReason: 'stop',
+              usage: { inputTokens: 0, outputTokens: 0 },
+            });
             controller.close();
           },
         }),

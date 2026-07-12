@@ -70,7 +70,9 @@ export default [
     rules: {
       ...ts.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
-      '@typescript-eslint/no-explicit-any': 'off', // Turn off to prevent any-related lint failures
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', caughtErrors: 'none' }],
+      'react-hooks/set-state-in-effect': 'off',
       'no-undef': 'off',
     },
   },

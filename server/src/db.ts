@@ -10,7 +10,7 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-const db = new Database(path.join(DATA_DIR, 'raw-code.db'));
+const db = new Database(path.join(DATA_DIR, 'doktor.db'));
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
@@ -69,6 +69,18 @@ export function querySync<T = Record<string, unknown>>(
   return { rows: [] as T[] };
 }
 
+export async function getAppConfig(key: string): Promise<string | null> {
+  try {
+    const result = await query<{ value: string }>(
+      'SELECT value FROM app_config WHERE key = $1',
+      [key]
+    );
+    return result.rows.length > 0 ? result.rows[0].value : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function query<T = Record<string, unknown>>(
   text: string,
   params?: any[],
@@ -91,7 +103,8 @@ export async function migrate() {
       last_message TEXT,
       project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
       archived INTEGER NOT NULL DEFAULT 0,
-      created_at INTEGER NOT NULL
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER
     );
 
     CREATE INDEX IF NOT EXISTS idx_chat_sessions_project_id ON chat_sessions(project_id, created_at DESC);
@@ -144,6 +157,25 @@ export async function migrate() {
       updated_at INTEGER NOT NULL,
       PRIMARY KEY (project_id, key)
     );
+
+    CREATE TABLE IF NOT EXISTS oauth_tokens (
+      provider TEXT PRIMARY KEY,
+      access_token TEXT NOT NULL,
+      refresh_token TEXT,
+      expires_at INTEGER,
+      scope TEXT,
+      email TEXT,
+      connected INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
   `);
+
+  // Schema migrations for existing tables
+  try { db.exec('ALTER TABLE chat_sessions ADD COLUMN updated_at INTEGER'); } catch { /* column may already exist */ }
+
+  // OAuth tokens schema migration: email → identity + metadata
+  try { db.exec('ALTER TABLE oauth_tokens RENAME COLUMN email TO identity'); } catch { /* column may already be renamed or doesn't exist */ }
+  try { db.exec("ALTER TABLE oauth_tokens ADD COLUMN metadata TEXT DEFAULT '{}'"); } catch { /* column may already exist */ }
+
   console.log('Migration complete');
 }

@@ -1,14 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useOnboarding, StepId } from '../hooks/useOnboarding';
 import { ProgressBar } from '../components/onboarding/ProgressBar';
 import { WelcomeStep } from '../components/onboarding/WelcomeStep';
-import { ProjectSetupStep } from '../components/onboarding/ProjectSetupStep';
 import { ModelSetupStep } from '../components/onboarding/ModelSetupStep';
 import { PreferencesStep } from '../components/onboarding/PreferencesStep';
 import { ReadyStep } from '../components/onboarding/ReadyStep';
-import { ChatSessionManager } from '@/services/ChatSessionManager';
-import { Project } from '../types/chat';
 
 export const OnboardingPage = () => {
   const {
@@ -23,12 +20,7 @@ export const OnboardingPage = () => {
     STEPS,
   } = useOnboarding();
 
-  const [projects, setProjects] = useState<Project[]>([]);
   const [isFinishing, setIsFinishing] = useState(false);
-
-  useEffect(() => {
-    ChatSessionManager.getProjects().then(setProjects);
-  }, []);
 
   if (loading) {
     return (
@@ -44,7 +36,7 @@ export const OnboardingPage = () => {
 
   const handleFullSetup = () => {
     markStepDone('welcome');
-    goToStep('project');
+    goToStep('model');
   };
 
   const handleQuickStart = async () => {
@@ -89,13 +81,6 @@ export const OnboardingPage = () => {
     switch (activeStep) {
       case 'welcome':
         return <WelcomeStep onFullSetup={handleFullSetup} onQuickStart={handleQuickStart} />;
-      case 'project':
-        return (
-          <ProjectSetupStep
-            onComplete={() => handleStepComplete('project')}
-            onSkip={() => handleStepSkip('project')}
-          />
-        );
       case 'model':
         return (
           <ModelSetupStep
@@ -114,7 +99,6 @@ export const OnboardingPage = () => {
         return (
           <ReadyStep
             stepStatuses={stepStatuses}
-            projects={projects}
             onFinish={handleFinish}
             isFinishing={isFinishing}
           />

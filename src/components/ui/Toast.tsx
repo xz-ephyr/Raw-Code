@@ -109,7 +109,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const addToast = useCallback((message: string, type: ToastType = 'info', duration?: number) => {
+  const addToast = useCallback((message: string, type: ToastType = 'info', duration: number = 4000) => {
     const id = String(++idCounter.current);
     setToasts((prev) => [...prev, { id, message, type, duration }]);
   }, []);

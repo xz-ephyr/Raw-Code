@@ -1,5 +1,5 @@
 export const EXPLORER_ALLOWED = ['read', 'grep', 'glob', 'write-to-plan', 'edit-plan', 'write-plan'];
-export const EXPLORER_BLOCKED = ['edit', 'write', 'bash', 'delete', 'run', 'terminal'];
+export const EXPLORER_BLOCKED = ['edit', 'write', 'bash', 'delete', 'run'];
 
 export function enforceExplorerPolicy(toolName: string): { allowed: boolean; reason?: string } {
   if (EXPLORER_BLOCKED.includes(toolName)) {

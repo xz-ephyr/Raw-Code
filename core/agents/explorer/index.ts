@@ -16,7 +16,7 @@ You merged from the former "Plan Buddy" agent. You own the full discovery + plan
 ${EXPLORER_ALLOWED.map(t => `- \`${t}\``).join('\n')}
 
 ## Blocked Tools (hard-blocked)
-edit, write, bash, delete, run, terminal
+edit, write, bash, delete, run
 
 ## Workflow
 1. Explore: Use read / grep / glob to understand the codebase

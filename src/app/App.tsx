@@ -7,9 +7,7 @@ import UpdateModal from '@/components/ui/UpdateModal';
 
 const ChatPage = lazy(() => import('@/pages/ChatPage').then(m => ({ default: m.ChatPage })));
 const ChatsPage = lazy(() => import('@/pages/ChatsPage').then(m => ({ default: m.ChatsPage })));
-const SchedulePage = lazy(() => import('@/pages/SchedulePage').then(m => ({ default: m.SchedulePage })));
 const PluginsPage = lazy(() => import('@/pages/PluginsPage').then(m => ({ default: m.PluginsPage })));
-const WikiPage = lazy(() => import('@/pages/WikiPage').then(m => ({ default: m.WikiPage })));
 const WorkflowPage = lazy(() => import('@/pages/WorkflowPage').then(m => ({ default: m.WorkflowPage })));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 
@@ -68,12 +66,8 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/thread/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
           <Route path="/chats" element={<Suspense fallback={null}><ChatsPage /></Suspense>} />
-          <Route path="/schedule" element={<Suspense fallback={null}><SchedulePage /></Suspense>} />
           <Route path="/plugins" element={<Suspense fallback={null}><PluginsPage /></Suspense>} />
           <Route path="/workflow" element={<Suspense fallback={null}><WorkflowPage /></Suspense>} />
-          <Route path="/wiki" element={<Suspense fallback={null}><WikiPage /></Suspense>} />
-          <Route path="/project/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
-          <Route path="/project/:folder/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
           <Route path="/chat/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
         </Route>
         <Route path="/settings" element={<Suspense fallback={null}><SettingsPage /></Suspense>} />

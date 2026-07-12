@@ -10,18 +10,18 @@ export interface ModelDefinition {
 
 export const MODELS: ModelDefinition[] = [
   // Google AI Studio
-  { id: 'gemini-2.5-flash', provider: 'google', label: 'Gemini 2.5 Flash', supportsThinking: true },
-  { id: 'gemini-3.0-flash-preview', provider: 'google', label: 'Gemini 3.0 Flash', supportsThinking: true },
+  { id: 'gemini-2.5-flash', provider: 'google', label: 'Gemini 2.5 Flash', supportsThinking: false },
+  { id: 'gemini-3-flash-preview', provider: 'google', label: 'Gemini 3 Flash', supportsThinking: false },
   { id: 'gemini-3.1-flash-lite-preview', provider: 'google', label: 'Gemini 3.1 Flash Lite', supportsThinking: false },
-  { id: 'gemma-4-31b-it', provider: 'google', label: 'Gemma 4 31B', supportsThinking: true },
-  { id: 'gemma-4-26b-a4b-it', provider: 'google', label: 'Gemma 4 26B', supportsThinking: true },
+  { id: 'gemma-4-31b-it', provider: 'google', label: 'Gemma 4 31B', supportsThinking: false },
+  { id: 'gemma-4-26b-a4b-it', provider: 'google', label: 'Gemma 4 26B', supportsThinking: false },
 
   // Groq
-  { id: 'llama-4-scout-17b-16e-instruct', provider: 'groq', label: 'Llama 4 Scout', supportsThinking: false },
+  { id: 'meta-llama/llama-4-scout-17b-16e-instruct', provider: 'groq', label: 'Llama 4 Scout', supportsThinking: false },
   { id: 'llama-3.3-70b-versatile', provider: 'groq', label: 'Llama 3.3 70B', supportsThinking: false },
-  { id: 'qwen3-32b', provider: 'groq', label: 'Qwen3 32B', supportsThinking: false },
-  { id: 'deepseek-r1-distill-llama-70b', provider: 'groq', label: 'DeepSeek R1 70B', supportsThinking: true },
-  { id: 'gpt-oss-120b', provider: 'groq', label: 'GPT-OSS 120B', supportsThinking: false },
+  { id: 'qwen/qwen3-32b', provider: 'groq', label: 'Qwen3 32B', supportsThinking: false },
+  { id: 'qwen/qwen3.6-27b', provider: 'groq', label: 'Qwen3.6 27B', supportsThinking: false },
+  { id: 'openai/gpt-oss-120b', provider: 'groq', label: 'GPT-OSS 120B', supportsThinking: false },
 
   // Cerebras
   { id: 'cerebras/gpt-oss-120b', provider: 'cerebras', label: 'GPT-OSS 120B', supportsThinking: false },
@@ -29,10 +29,10 @@ export const MODELS: ModelDefinition[] = [
   { id: 'gemma-4-31b', provider: 'cerebras', label: 'Gemma 4 31B', supportsThinking: false },
 
   // Mistral AI
-  { id: 'mistral-small-3.2', provider: 'mistral', label: 'Mistral Small 3.2', supportsThinking: false },
-  { id: 'mistral-medium-3.5', provider: 'mistral', label: 'Mistral Medium 3.5', supportsThinking: true },
-  { id: 'mistral-large-3', provider: 'mistral', label: 'Mistral Large 3', supportsThinking: true },
-  { id: 'codestral', provider: 'mistral', label: 'Codestral', supportsThinking: false },
+  { id: 'mistral-small-latest', provider: 'mistral', label: 'Mistral Small 4', supportsThinking: false },
+  { id: 'mistral-medium-3.5', provider: 'mistral', label: 'Mistral Medium 3.5', supportsThinking: false },
+  { id: 'mistral-large-latest', provider: 'mistral', label: 'Mistral Large 3', supportsThinking: false },
+  { id: 'codestral-latest', provider: 'mistral', label: 'Codestral', supportsThinking: false },
   { id: 'pixtral-12b', provider: 'mistral', label: 'Pixtral 12B', supportsThinking: false },
 
   // SambaNova
@@ -43,9 +43,9 @@ export const MODELS: ModelDefinition[] = [
   { id: 'gemma-4-31B-it', provider: 'sambanova', label: 'Gemma 4 31B', supportsThinking: false },
 
   // Cohere
-  { id: 'command-a-03-2026', provider: 'cohere', label: 'Command A', supportsThinking: true },
-  { id: 'command-a-plus', provider: 'cohere', label: 'Command A+', supportsThinking: true },
-  { id: 'command-r-plus-08-2024', provider: 'cohere', label: 'Command R+', supportsThinking: true },
+  { id: 'command-a-03-2026', provider: 'cohere', label: 'Command A', supportsThinking: false },
+  { id: 'command-a-plus', provider: 'cohere', label: 'Command A+', supportsThinking: false },
+  { id: 'command-r-plus-08-2024', provider: 'cohere', label: 'Command R+', supportsThinking: false },
   { id: 'command-r-08-2024', provider: 'cohere', label: 'Command R', supportsThinking: false },
   { id: 'command-r7b-12-2024', provider: 'cohere', label: 'Command R7B', supportsThinking: false },
   { id: 'c4ai-aya-expanse-32b', provider: 'cohere', label: 'Aya Expanse 32B', supportsThinking: false },
@@ -66,17 +66,17 @@ export const MODELS: ModelDefinition[] = [
   { id: 'nvidia/llama-3.3-nemotron-super-49b-v1', provider: 'nvidia', label: 'Nemotron Super 49B', supportsThinking: false },
   { id: 'nvidia/nemotron-3-nano-30b-a3b', provider: 'nvidia', label: 'Nemotron 3 Nano 30B', supportsThinking: false },
   { id: 'meta/llama-3.1-8b-instruct', provider: 'nvidia', label: 'Llama 3.1 8B', supportsThinking: false },
-  { id: 'mistralai/mistral-large-2-instruct', provider: 'nvidia', label: 'Mistral Large 2', supportsThinking: true },
+  { id: 'mistralai/mistral-large-3-675b-instruct-2512', provider: 'nvidia', label: 'Mistral Large 3', supportsThinking: false },
 
   // DeepSeek
   { id: 'deepseek-chat', provider: 'deepseek', label: 'DeepSeek V4-Flash', supportsThinking: false },
-  { id: 'deepseek-reasoner', provider: 'deepseek', label: 'DeepSeek R1', supportsThinking: true },
+  { id: 'deepseek-reasoner', provider: 'deepseek', label: 'DeepSeek R1', supportsThinking: false },
   { id: 'deepseek-coder', provider: 'deepseek', label: 'DeepSeek Coder', supportsThinking: false },
 ];
 
 const CLI_MODELS: ModelDefinition[] = [];
 
-export function getAIModels(): string[] {
+function getAIModels(): string[] {
   return [...MODELS.map(m => m.id), ...CLI_MODELS.map(m => m.id)];
 }
 export type AIModel = string;

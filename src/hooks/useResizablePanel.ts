@@ -1,21 +1,26 @@
 import { useState, useCallback, useRef } from 'react';
 
 const PANEL_MIN_WIDTH = 320;
-const PANEL_MAX_WIDTH = 960;
 const DEFAULT_PANEL_WIDTH = 480;
+
+function getPanelMaxWidth(): number {
+  return Math.floor(Math.max(960, window.innerWidth * 0.85));
+}
 
 export function useResizablePanel(
   storageKey: string = 'artifact-panel-width',
   options?: { minWidth?: number; maxWidth?: number }
 ) {
   const minWidth = options?.minWidth ?? PANEL_MIN_WIDTH;
-  const maxWidth = options?.maxWidth ?? PANEL_MAX_WIDTH;
+
+  const computeMaxWidth = useCallback(() => options?.maxWidth ?? getPanelMaxWidth(), [options?.maxWidth]);
 
   const [panelWidth, setPanelWidth] = useState<number>(() => {
     try {
       const saved = localStorage.getItem(storageKey);
       if (saved) {
-        return Math.max(minWidth, Math.min(maxWidth, parseInt(saved, 10)));
+        const max = computeMaxWidth();
+        return Math.max(minWidth, Math.min(max, parseInt(saved, 10)));
       }
     } catch { /* ignore */ }
     return DEFAULT_PANEL_WIDTH;
@@ -29,7 +34,8 @@ export function useResizablePanel(
 
     const onMove = (clientX: number) => {
       if (!isResizing.current) return;
-      const clamped = Math.max(minWidth, Math.min(maxWidth, window.innerWidth - clientX));
+      const max = computeMaxWidth();
+      const clamped = Math.max(minWidth, Math.min(max, window.innerWidth - clientX));
       setPanelWidth(clamped);
     };
 
@@ -57,25 +63,26 @@ export function useResizablePanel(
     document.addEventListener('mouseup', onMouseUp);
     document.addEventListener('touchmove', onTouchMove, { passive: false });
     document.addEventListener('touchend', onTouchEnd);
-  }, [minWidth, maxWidth]);
+  }, [minWidth, computeMaxWidth, storageKey]);
 
   const handleDividerKeyDown = useCallback((e: React.KeyboardEvent) => {
     const step = e.shiftKey ? 50 : 20;
     let newWidth = panelWidth;
     let handled = true;
+    const max = computeMaxWidth();
 
     switch (e.key) {
       case 'ArrowLeft':
         newWidth = Math.max(minWidth, panelWidth - step);
         break;
       case 'ArrowRight':
-        newWidth = Math.min(maxWidth, panelWidth + step);
+        newWidth = Math.min(max, panelWidth + step);
         break;
       case 'Home':
         newWidth = minWidth;
         break;
       case 'End':
-        newWidth = maxWidth;
+        newWidth = max;
         break;
       default:
         handled = false;
@@ -86,7 +93,7 @@ export function useResizablePanel(
       setPanelWidth(newWidth);
       localStorage.setItem(storageKey, String(newWidth));
     }
-  }, [panelWidth, minWidth, maxWidth]);
+  }, [panelWidth, minWidth, computeMaxWidth, storageKey]);
 
   return {
     panelWidth,
@@ -102,6 +109,6 @@ export function useResizablePanel(
     }, [startResize]),
     handleDividerKeyDown,
     PANEL_MIN_WIDTH: minWidth,
-    PANEL_MAX_WIDTH: maxWidth,
+    PANEL_MAX_WIDTH: computeMaxWidth(),
   };
 }

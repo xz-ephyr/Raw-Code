@@ -1,12 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { MarkdownMessage } from './MarkdownMessage';
 import { ArtifactsPreviewCard } from './ArtifactsPreviewCard';
-import { ThoughtLabel } from './ThoughtLabel';
-import {
-  ThinkingTimeline,
-  useTimelineSteps,
-  useAggregatedSources,
-} from './ThinkingTimeline';
 import { useWriteArtifactStream } from '@/hooks/useWriteArtifactStream';
 import { BubbleActions } from './BubbleActions';
 
@@ -27,14 +21,20 @@ interface AssistantBubbleProps {
   onRegenerate: () => void;
 }
 
+function extractArtifactSummary(content: string): string {
+  if (!content) return '';
+  const cleaned = content.replace(/^#+\s*/gm, '').trim();
+  const paragraphs = cleaned.split(/\n\n+/);
+  const firstPara = paragraphs[0] || '';
+  return firstPara.length > 350 ? firstPara.slice(0, 347) + '...' : firstPara;
+}
+
 export const AssistantBubble = React.memo(
   ({
     content,
     isStreaming,
     version,
     toolInvocations,
-    reasoning,
-    parts,
     artifacts,
     contentBeforeTool,
     contentAfterTool,
@@ -44,101 +44,82 @@ export const AssistantBubble = React.memo(
     onThumbsDown,
     onRegenerate,
   }: AssistantBubbleProps) => {
-    const [isReasoningOpen, setIsReasoningOpen] = useState(true);
+    const hasWriteArtifact = toolInvocations?.some((ti) => ti.toolName === 'write_artifact');
+    const artifactCall = hasWriteArtifact
+      ? toolInvocations?.find((ti) => ti.toolName === 'write_artifact')
+      : null;
+    const artifactTitle =
+      artifactCall?.args?.title ||
+      artifactCall?.args?.identifier ||
+      artifacts?.[0]?.title ||
+      artifacts?.[0]?.identifier ||
+      '';
+    const artifactContent = artifactCall?.args?.content || artifacts?.[0]?.content || '';
+    const artifactSummary = useMemo(() => extractArtifactSummary(artifactContent), [artifactContent]);
 
-    const hasWriteArtifact = toolInvocations?.some((ti) => ti.toolName === 'writeArtifact');
-
-    const timelineSteps = useTimelineSteps(reasoning, toolInvocations, isStreaming, parts, !!content);
-    const hasTimeline = timelineSteps.length > 0;
-
-    const [hasOpenedReasoning, setHasOpenedReasoning] = useState(false);
-    const isNewThinkingSession = isStreaming && !content;
-    useEffect(() => {
-      if (isNewThinkingSession && !hasOpenedReasoning) {
-        setIsReasoningOpen(true);
-        setHasOpenedReasoning(true);
-      }
-      if (!isStreaming) {
-        setHasOpenedReasoning(false);
-      }
-    }, [isNewThinkingSession, hasOpenedReasoning, isStreaming]);
-    const allSources = useAggregatedSources(toolInvocations);
+    const isToolDone = !hasWriteArtifact || toolInvocations?.every(
+      (ti) => ti.toolName !== 'write_artifact' || ti.state === 'result',
+    );
 
     const {
       phase,
       streamedIntention,
-      streamedExplanation,
-    } = useWriteArtifactStream(!!hasWriteArtifact, contentBeforeTool, contentAfterTool, content);
+    } = useWriteArtifactStream(!!hasWriteArtifact, contentBeforeTool, isToolDone);
 
     const hasPendingSearch = toolInvocations?.some(
-      (ti) => ti.toolName !== 'writeArtifact' && ti.state !== 'result',
+      (ti) => ti.toolName !== 'write_artifact' && ti.state !== 'result',
     );
     const showFooterActions = !isStreaming && !hasPendingSearch;
 
-    const timelineScrollRef = useRef<HTMLDivElement>(null);
-    useEffect(() => {
-      if (isStreaming && timelineScrollRef.current) {
-        requestAnimationFrame(() => {
-          timelineScrollRef.current?.scrollTo(0, timelineScrollRef.current.scrollHeight);
-        });
-      }
-    }, [reasoning, toolInvocations, isStreaming]);
+    const showWritingLine = hasWriteArtifact && artifactTitle && (
+      phase === 'intention' || phase === 'writing'
+    );
 
     return (
       <div className="mb-6 w-full group/bubble">
-        <div className="text-base px-4 break-words flex flex-col gap-0">
-          {hasTimeline && (
+        <div className="text-base px-4 break-words flex flex-col gap-1">
+          {hasWriteArtifact ? (
             <>
-              <ThoughtLabel
-                isActivelyThinking={isStreaming && !hasPendingSearch && !content}
-                isOpen={isReasoningOpen}
-                onClick={() => setIsReasoningOpen((p) => !p)}
-              />
-              <div
-                className={`grid -ml-4 ${
-                  isReasoningOpen
-                    ? 'grid-rows-[1fr] opacity-100'
-                    : 'grid-rows-[0fr] opacity-0'
-                }`}
-              >
-                <div className="overflow-hidden min-h-0">
-                    <div
-                      ref={timelineScrollRef}
-                      className="overflow-y-auto no-scrollbar flex flex-col gap-2 max-h-[45vh] rounded-lg bg-muted/90 pt-3 pb-3 pr-3 pl-3"
-                    >
-                      <ThinkingTimeline
-                        steps={timelineSteps}
-                        isStreaming={isStreaming}
-                      />
-                    </div>
+              {phase === 'intention' && streamedIntention && (
+                <div className="font-normal text-foreground stagger-item stagger-0 leading-[1.2]">
+                  <MarkdownMessage content={streamedIntention} sources={[]} />
                 </div>
-              </div>
-            </>
-          )}
+              )}
 
-          {phase === 'idle' || phase === 'done' ? (
+              {(phase === 'writing' || phase === 'done') && contentBeforeTool && (
+                <div className="font-normal text-foreground leading-[1.2]">
+                  <MarkdownMessage content={contentBeforeTool} sources={[]} />
+                </div>
+              )}
+
+              {showWritingLine && (
+                <div className={`text-xs ${phase === 'writing' ? 'writing-shimmer-text' : 'text-muted-foreground'}`}>
+                  writing — {artifactTitle}
+                </div>
+              )}
+
+              {phase === 'done' && artifactSummary && (
+                <div className="text-xs text-muted-foreground/80 leading-relaxed">
+                  {artifactSummary}
+                </div>
+              )}
+
+              {phase === 'done' && contentAfterTool && (
+                <div className="font-normal text-foreground leading-[1.2]">
+                  <MarkdownMessage content={contentAfterTool} sources={[]} />
+                </div>
+              )}
+            </>
+          ) : (
             content && (
               <div className="font-normal text-foreground leading-[1.2]">
-                <MarkdownMessage content={content} sources={allSources} />
+                <MarkdownMessage content={content} sources={[]} />
               </div>
             )
-          ) : (
-            <>
-              {streamedIntention && (
-                <div className="font-normal text-foreground stagger-item stagger-0 leading-[1.2]">
-                  <MarkdownMessage content={streamedIntention} sources={allSources} />
-                </div>
-              )}
-              {phase === 'explanation' && streamedExplanation && (
-                <div className="font-normal text-foreground stagger-item stagger-2 leading-[1.2]">
-                  <MarkdownMessage content={streamedExplanation} sources={allSources} />
-                </div>
-              )}
-            </>
           )}
         </div>
 
-        {artifacts && artifacts.length > 0 && !isStreaming && onOpenArtifact && (
+        {phase === 'done' && artifacts && artifacts.length > 0 && onOpenArtifact && (
           <div className="px-4 pb-2">
             <ArtifactsPreviewCard
               artifact={artifacts[0]}
@@ -149,7 +130,7 @@ export const AssistantBubble = React.memo(
 
         {showFooterActions && (
           <BubbleActions
-            allSources={allSources}
+            allSources={[]}
             version={version}
             onCopy={onCopy}
             onThumbsUp={onThumbsUp}

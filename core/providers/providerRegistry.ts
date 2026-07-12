@@ -1,6 +1,81 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { createCloudflare } from './createCloudflare';
 
+function makeGoogleFetch(): typeof globalThis.fetch {
+  const GOOGLE_TIMEOUT = 60_000;
+
+  return async (input, init) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), GOOGLE_TIMEOUT);
+    try {
+      const response = await globalThis.fetch(input, { ...init, signal: controller.signal });
+      if (!response.ok || !response.body) return response;
+      const ct = response.headers.get('content-type') || '';
+      if (!ct.includes('stream') && !ct.includes('event-stream')) return response;
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let toolIdx = 0;
+
+      const stream = new ReadableStream<Uint8Array>({
+        async start(ctrl) {
+          let buf = '';
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buf += decoder.decode(value, { stream: true });
+              const lines = buf.split('\n');
+              buf = lines.pop() || '';
+              for (const line of lines) {
+                if (!line.startsWith('data: ')) {
+                  ctrl.enqueue(new TextEncoder().encode(line + '\n'));
+                  continue;
+                }
+                const data = line.slice(6);
+                if (data === '[DONE]') {
+                  ctrl.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+                  continue;
+                }
+                try {
+                  const parsed = JSON.parse(data);
+                  const tcs = parsed?.choices?.[0]?.delta?.tool_calls;
+                  if (tcs && Array.isArray(tcs)) {
+                    for (const tc of tcs) {
+                      if (tc.index === undefined) tc.index = toolIdx++;
+                    }
+                  }
+                  ctrl.enqueue(new TextEncoder().encode('data: ' + JSON.stringify(parsed) + '\n\n'));
+                } catch {
+                  ctrl.enqueue(new TextEncoder().encode(line + '\n'));
+                }
+              }
+            }
+            if (buf) ctrl.enqueue(new TextEncoder().encode(buf + '\n'));
+          } catch (e) {
+            ctrl.error(e instanceof Error ? e : new Error(String(e)));
+          } finally {
+            ctrl.close();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      });
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') {
+        throw new Error('Google API request timed out');
+      }
+      throw e instanceof Error ? e : new Error(String(e));
+    } finally {
+      clearTimeout(timeout);
+    }
+  };
+}
+
 export interface KeyProvider {
   id: string;
   label: string;
@@ -11,7 +86,6 @@ export interface KeyProvider {
   defaultModel: string;
   modelIdPrefixes: string[];
   createClient: (apiKey: string, baseURL?: string) => any;
-  getReasoningConfig: (modelId: string) => { mode: 'native' | 'tag' | 'none'; tagName?: string; providerOptions?: any } | null;
 }
 
 type ProviderClient = any;
@@ -36,26 +110,14 @@ export function getProviderClient(providerId: string, apiKey: string, baseURL?: 
   const target = baseURL ?? provider.baseURL;
   // When in browser, route through local proxy to avoid CORS
   // Skip for providers that construct URLs dynamically (e.g. Cloudflare with {accountId})
-  const proxyPrefix = typeof window !== 'undefined' && !target.includes('{') ? 'http://localhost:3001/proxy/' : '';
+  const proxyPrefix = typeof window !== 'undefined' && !target.includes('{') ? '/proxy/' : '';
   return provider.createClient(apiKey, proxyPrefix + target);
-}
-
-export function getModelReasoningConfig(modelId: string): { mode: 'native' | 'tag' | 'none'; tagName?: string; providerOptions?: any } | null {
-  const prefix = modelId.split('/')[0];
-  const provider = getProvider(prefix);
-  if (provider) {
-    return provider.getReasoningConfig(modelId);
-  }
-  return null;
 }
 
 export function getProviderLabel(id: string): string {
   return getProvider(id)?.label ?? id;
 }
 
-export function getProviderConfigKey(id: string): string {
-  return getProvider(id)?.configKey ?? '';
-}
 
 export function getProviderApiKeys(): Record<string, string> {
   const keys: Record<string, string> = {};
@@ -75,11 +137,9 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
     defaultModel: 'gemini-2.5-flash',
     modelIdPrefixes: ['gemini'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://generativelanguage.googleapis.com/v1beta/openai' }),
-    getReasoningConfig: (modelId) => {
-      if (modelId.includes('2.5') || modelId.includes('3.')) return { mode: 'native' };
-      return null;
+    createClient: (apiKey: string, baseURL?: string) => {
+      const target = baseURL ?? 'https://generativelanguage.googleapis.com/v1beta/openai';
+      return createOpenAI({ apiKey, baseURL: target, fetch: makeGoogleFetch() }).chat;
     },
   },
   {
@@ -90,13 +150,9 @@ const PROVIDERS: KeyProvider[] = [
     envVar: 'GROQ_API_KEY',
     baseURL: 'https://api.groq.com/openai/v1',
     defaultModel: 'llama-3.3-70b-versatile',
-    modelIdPrefixes: ['llama', 'qwen', 'deepseek', 'gpt-oss'],
+    modelIdPrefixes: ['llama', 'qwen', 'deepseek', 'gpt-oss', 'meta-llama', 'openai'],
     createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.groq.com/openai/v1' }),
-    getReasoningConfig: (modelId) => {
-      if (modelId.includes('deepseek-r1')) return { mode: 'native' };
-      return null;
-    },
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.groq.com/openai/v1' }).chat,
   },
   {
     id: 'cerebras',
@@ -105,11 +161,12 @@ const PROVIDERS: KeyProvider[] = [
     configKey: 'cerebras-api-key',
     envVar: 'CEREBRAS_API_KEY',
     baseURL: 'https://api.cerebras.ai/v1',
-    defaultModel: 'gpt-oss-120b',
+    defaultModel: 'cerebras/gpt-oss-120b',
     modelIdPrefixes: ['gpt-oss', 'zai', 'gemma'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.cerebras.ai/v1' }),
-    getReasoningConfig: () => null,
+    createClient: (apiKey: string, baseURL?: string) => {
+      const chat = createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.cerebras.ai/v1' }).chat;
+      return (modelId: string) => chat(modelId.replace(/^cerebras\//, ''));
+    },
   },
   {
     id: 'mistral',
@@ -118,14 +175,10 @@ const PROVIDERS: KeyProvider[] = [
     configKey: 'mistral-api-key',
     envVar: 'MISTRAL_API_KEY',
     baseURL: 'https://api.mistral.ai/v1',
-    defaultModel: 'mistral-small-3.2',
+    defaultModel: 'mistral-small-latest',
     modelIdPrefixes: ['mistral', 'codestral', 'pixtral'],
     createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.mistral.ai/v1' }),
-    getReasoningConfig: (modelId) => {
-      if (modelId.includes('medium') || modelId.includes('large')) return { mode: 'native' };
-      return null;
-    },
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.mistral.ai/v1' }).chat,
   },
   {
     id: 'sambanova',
@@ -136,9 +189,10 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://api.sambanova.ai/v1',
     defaultModel: 'Meta-Llama-3.3-70B-Instruct',
     modelIdPrefixes: ['Meta', 'DeepSeek', 'gpt-oss', 'gemma'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.sambanova.ai/v1' }),
-    getReasoningConfig: () => null,
+    createClient: (apiKey: string, baseURL?: string) => {
+      const chat = createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.sambanova.ai/v1' }).chat;
+      return (modelId: string) => chat(modelId.replace(/^sambanova\//, ''));
+    },
   },
   {
     id: 'cohere',
@@ -150,12 +204,7 @@ const PROVIDERS: KeyProvider[] = [
     defaultModel: 'command-a-03-2026',
     modelIdPrefixes: ['command', 'c4ai'],
     createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.cohere.com/compatibility/v1' }),
-    getReasoningConfig: (modelId) => {
-      if (modelId.includes('command-a')) return { mode: 'native' };
-      if (modelId.includes('command-r-plus')) return { mode: 'native' };
-      return null;
-    },
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.cohere.com/compatibility/v1' }).chat,
   },
   {
     id: 'huggingface',
@@ -167,8 +216,7 @@ const PROVIDERS: KeyProvider[] = [
     defaultModel: 'meta-llama/Meta-Llama-3.1-8B-Instruct',
     modelIdPrefixes: ['meta-llama', 'Qwen', 'google'],
     createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api-inference.huggingface.co/v1' }),
-    getReasoningConfig: () => null,
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api-inference.huggingface.co/v1' }).chat,
   },
   {
     id: 'cloudflare',
@@ -180,10 +228,12 @@ const PROVIDERS: KeyProvider[] = [
     defaultModel: '@cf/meta/llama-3.1-8b-instruct',
     modelIdPrefixes: ['@cf', '@hf'],
     createClient: (apiKey: string, baseURL?: string) => {
-      const accountId = baseURL?.match(/accounts\/([^/]+)/)?.[1] || '';
+      let accountId = baseURL?.match(/accounts\/([^/]+)/)?.[1] || '';
+      if (accountId === '{accountId}') {
+        accountId = (typeof process !== 'undefined' && (process as any).env?.CLOUDFLARE_ACCOUNT_ID) || '';
+      }
       return createCloudflare(apiKey, accountId);
     },
-    getReasoningConfig: () => null,
   },
   {
     id: 'deepseek',
@@ -195,11 +245,7 @@ const PROVIDERS: KeyProvider[] = [
     defaultModel: 'deepseek-chat',
     modelIdPrefixes: ['deepseek'],
     createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.deepseek.com/v1' }),
-    getReasoningConfig: (modelId) => {
-      if (modelId.includes('reasoner')) return { mode: 'native' };
-      return null;
-    },
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.deepseek.com/v1' }).chat,
   },
   {
     id: 'nvidia',
@@ -211,11 +257,7 @@ const PROVIDERS: KeyProvider[] = [
     defaultModel: 'nvidia/llama-3.3-nemotron-super-49b-v1',
     modelIdPrefixes: ['nvidia', 'meta', 'mistralai', 'google'],
     createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://integrate.api.nvidia.com/v1' }),
-    getReasoningConfig: (modelId) => {
-      if (modelId.includes('mistral-large')) return { mode: 'native' };
-      return null;
-    },
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://integrate.api.nvidia.com/v1' }).chat,
   },
 ];
 

@@ -1,15 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ViewIcon, ViewOffSlashIcon, Key01Icon, GlobeIcon, CheckmarkCircle01Icon, ArrowDown01Icon } from '@hugeicons/core-free-icons';
+import { ViewIcon, ViewOffSlashIcon, Key01Icon } from '@hugeicons/core-free-icons';
 import {
   SELECTED_MODEL_STORAGE_KEY,
   getStoredSelectedModel,
-  MODELS,
 } from '@core/config/models';
-import { DatabaseService } from '@core/utils/DatabaseService';
-import { ModelIcon } from '@/components/ui/ModelIcon';
-import { Dropdown } from '@/components/ui/Dropdown';
-import { getAllProviders, getProviderLabel } from '@core/providers';
+import { saveProviderKeys, useProviderKeys } from '@/hooks/useProviderKeys';
+import { DefaultModelSelector } from '@/components/ui/DefaultModelSelector';
 
 interface ModelSetupStepProps {
   onComplete: () => void;
@@ -17,24 +14,7 @@ interface ModelSetupStepProps {
 }
 
 export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
-  const providers = getAllProviders();
-
-  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-
-  const [keys, setKeys] = useState<Record<string, string>>(
-    Object.fromEntries(providers.map(p => [p.id, '']))
-  );
-
-  useEffect(() => {
-    (async () => {
-      const initial: any = {};
-      for (const p of providers) {
-        initial[p.id] = await DatabaseService.getConfig(p.configKey)
-          .then(r => r || localStorage.getItem(p.configKey) || '');
-      }
-      setKeys(initial);
-    })();
-  }, []);
+  const { providers, keys, setKeys } = useProviderKeys();
 
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [selectedModel, setSelectedModel] = useState(getStoredSelectedModel);
@@ -44,12 +24,7 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
   };
 
   const handleSave = async () => {
-    await Promise.all(providers.map((p) =>
-      DatabaseService.setConfig(p.configKey, keys[p.id])
-    ));
-    providers.forEach((p) => {
-      localStorage.setItem(p.configKey, keys[p.id]);
-    });
+    await saveProviderKeys(providers, keys);
     localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
     window.dispatchEvent(new CustomEvent('model-changed'));
     onComplete();
@@ -64,7 +39,7 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
       <div className="text-center">
         <h2 className="text-2xl font-bold text-foreground">Configure AI Model</h2>
         <p className="text-muted-foreground text-sm mt-1">
-          Set up your AI provider to start coding with AI assistance.
+           Set up your AI provider to start creating with AI assistance.
         </p>
       </div>
 
@@ -108,53 +83,7 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
       </div>
 
       <div className="space-y-4 pt-2 border-t border-border">
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <HugeiconsIcon icon={GlobeIcon} size={16} />
-            Default Model
-          </label>
-          <div className="relative">
-            <div
-              className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border flex items-center cursor-pointer"
-              onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-            >
-              <span className="flex-1 truncate">
-                {(() => {
-                  const def = MODELS.find(m => m.id === selectedModel);
-                  return def ? `${def.label} (${getProviderLabel(def.provider)})` : selectedModel;
-                })()}
-              </span>
-              <HugeiconsIcon icon={ArrowDown01Icon} size={16} className="text-muted-foreground shrink-0" />
-            </div>
-            <Dropdown
-              isOpen={isModelDropdownOpen}
-              onClose={() => setIsModelDropdownOpen(false)}
-              width="100%"
-              maxHeight="190px"
-              className="mt-1"
-            >
-              {MODELS.map((model, idx) => (
-                <button
-                  key={`${model.id}-${idx}`}
-                  className={`w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors flex items-center gap-2 ${
-                    selectedModel === model.id ? 'bg-muted font-medium' : ''
-                  }`}
-                  onClick={() => {
-                    setSelectedModel(model.id);
-                    setIsModelDropdownOpen(false);
-                  }}
-                >
-                  <ModelIcon modelId={model.id} size={14} />
-                  <span className="flex-1 truncate">{model.label}</span>
-                  <span className="text-[11px] text-muted-foreground shrink-0">{getProviderLabel(model.provider)}</span>
-                  {model.supportsThinking && (
-                    <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-blue-500 shrink-0 ml-auto" />
-                  )}
-                </button>
-              ))}
-            </Dropdown>
-          </div>
-        </div>
+        <DefaultModelSelector selectedModel={selectedModel} onChange={setSelectedModel} maxHeight="190px" />
       </div>
 
       <div className="flex gap-3 pt-2">

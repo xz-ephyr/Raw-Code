@@ -12,9 +12,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[4px] z-50">
-      <div className="bg-card rounded-[16px] w-[min(1100px,95vw)] h-[85vh] min-h-[500px] shadow-2xl shadow-black/30 border border-border flex flex-col overflow-hidden">
+      <div className="bg-card rounded-2xl w-[min(1100px,95vw)] h-[85vh] min-h-[500px] shadow-2xl shadow-black/30 border border-border flex flex-col overflow-hidden">
         <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
-          <h2 className="text-[18px] font-bold text-foreground flex items-center gap-2">
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <HugeiconsIcon icon={Settings02Icon} size={20} className="text-muted-foreground" />
             Settings
           </h2>

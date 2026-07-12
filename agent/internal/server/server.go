@@ -372,28 +372,81 @@ func (s *Server) handleChatStream(w http.ResponseWriter, r *http.Request) {
 		modelMsgs[i] = m
 	}
 
+	cap := s.modelClient.GetCapability(req.Model)
+
+	var hasStartedText bool
+	var hasStartedReasoning bool
+	var taggedParser *model.TaggedReasoningParser
+
+	if cap.Reasoning == model.ReasoningTagged && cap.OpenTag != "" {
+		taggedParser = model.NewTaggedReasoningParser(cap.OpenTag, cap.CloseTag)
+	}
+
+	emitEvent := func(etype, id, delta string) {
+		ev := api.StreamEvent{Type: etype, Delta: delta}
+		data, _ := json.Marshal(ev)
+		fmt.Fprintf(w, "data: %s\n\n", data)
+		flusher.Flush()
+	}
+
 	if err := s.modelClient.ChatCompletionStream(r.Context(), model.ChatRequest{
 		Messages: modelMsgs,
 		Tools:    toolDefs,
 		Stream:   true,
 	}, func(chunk model.StreamChunk) {
-		event := api.StreamEvent{Type: "chunk", Content: chunk.Content}
-		if chunk.FinishReason != "" {
-			event.Type = "done"
-			event.Done = true
-		}
 		if chunk.Error != "" {
-			event.Type = "error"
-			event.Error = chunk.Error
+			emitEvent("error", "", chunk.Error)
+			return
 		}
-		data, _ := json.Marshal(event)
-		fmt.Fprintf(w, "data: %s\n\n", data)
-		flusher.Flush()
+		if chunk.FinishReason != "" {
+			if hasStartedReasoning {
+				emitEvent("reasoning_end", "", "")
+			}
+			if hasStartedText {
+				emitEvent("text_end", "", "")
+			}
+			emitEvent("done", "", "")
+			return
+		}
+
+		if cap.Reasoning == model.ReasoningNative && chunk.Reasoning != "" {
+			if !hasStartedReasoning {
+				emitEvent("reasoning_start", "", "")
+				hasStartedReasoning = true
+			}
+			emitEvent("reasoning_delta", "", chunk.Reasoning)
+		}
+
+		if cap.Reasoning == model.ReasoningTagged && taggedParser != nil && chunk.Content != "" {
+			events := taggedParser.Push(chunk.Content)
+			for _, ev := range events {
+				if !hasStartedReasoning && ev.Type == "reasoning" {
+					emitEvent("reasoning_start", "", "")
+					hasStartedReasoning = true
+				}
+				if !hasStartedText && ev.Type == "text" {
+					emitEvent("text_start", "", "")
+					hasStartedText = true
+				}
+				if ev.Type == "reasoning" {
+					if ev.Delta != "" {
+						emitEvent("reasoning_delta", "", ev.Delta)
+					}
+				} else {
+					if ev.Delta != "" {
+						emitEvent("text_delta", "", ev.Delta)
+					}
+				}
+			}
+		} else if chunk.Content != "" {
+			if !hasStartedText {
+				emitEvent("text_start", "", "")
+				hasStartedText = true
+			}
+			emitEvent("text_delta", "", chunk.Content)
+		}
 	}); err != nil {
-		event := api.StreamEvent{Type: "error", Error: err.Error()}
-		data, _ := json.Marshal(event)
-		fmt.Fprintf(w, "data: %s\n\n", data)
-		flusher.Flush()
+		emitEvent("error", "", err.Error())
 	}
 }
 

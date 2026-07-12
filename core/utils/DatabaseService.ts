@@ -27,6 +27,7 @@ interface SessionRow {
   projectId: string | null;
   archived: boolean;
   createdAt: number;
+  updatedAt: number | null;
 }
 
 interface MessageRow {
@@ -64,19 +65,20 @@ export const DatabaseService = {
     const rows = await request<SessionRow[]>('get_sessions', {
       projectId: projectId ?? null,
     });
-    return rows.map(({ createdAt, lastMessage, projectId: pid, ...rest }) => ({
+    return rows.map(({ createdAt, updatedAt, lastMessage, projectId: pid, ...rest }) => ({
       ...rest,
       lastMessage: lastMessage ?? undefined,
       projectId: pid ?? undefined,
       createdAt: Number(createdAt),
+      updatedAt: updatedAt ? Number(updatedAt) : undefined,
     }));
   },
 
   async getSession(id: string) {
     const row = await request<SessionRow | null>('get_session', { id });
     if (!row) return null;
-    const { lastMessage, projectId: pid, createdAt, ...rest } = row;
-    return { ...rest, lastMessage: lastMessage ?? undefined, projectId: pid ?? undefined, createdAt: Number(createdAt) };
+    const { lastMessage, projectId: pid, createdAt, updatedAt, ...rest } = row;
+    return { ...rest, lastMessage: lastMessage ?? undefined, projectId: pid ?? undefined, createdAt: Number(createdAt), updatedAt: updatedAt ? Number(updatedAt) : undefined };
   },
 
   async createSession(
@@ -92,7 +94,7 @@ export const DatabaseService = {
       projectId: projectId || null,
       existingId: id,
     });
-    return { ...row, archived: false, createdAt: Number(row.createdAt) };
+    return { ...row, archived: false, createdAt: Number(row.createdAt), updatedAt: Number(row.createdAt) };
   },
 
   async updateSession(
@@ -105,6 +107,10 @@ export const DatabaseService = {
       lastMessage: updates.lastMessage ?? null,
       archived: updates.archived ?? null,
     });
+  },
+
+  async touchSession(id: string) {
+    await request('update_session', { id, title: null, lastMessage: null, archived: null });
   },
 
   async deleteSession(id: string) {

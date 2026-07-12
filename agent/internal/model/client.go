@@ -41,6 +41,10 @@ func (c *Client) Provider() string {
 	return c.config.Provider
 }
 
+func (c *Client) GetCapability(modelID string) ModelCapability {
+	return ModelCapability{}
+}
+
 func (c *Client) chatURL() string {
 	base := strings.TrimRight(c.config.BaseURL, "/")
 	u, err := url.JoinPath(base, "/chat/completions")
@@ -173,6 +177,7 @@ func (c *Client) ChatCompletionStream(ctx context.Context, req ChatRequest, onCh
 		choice := streamResp.Choices[0]
 		chunk := StreamChunk{
 			Content:      choice.Delta.Content,
+			Reasoning:    choice.Delta.ReasoningContent,
 			FinishReason: choice.FinishReason,
 		}
 
@@ -292,9 +297,10 @@ type openAIStreamChoice struct {
 }
 
 type openAIStreamDelta struct {
-	Role      string            `json:"role,omitempty"`
-	Content   string            `json:"content,omitempty"`
-	ToolCalls []openAIToolCall  `json:"tool_calls,omitempty"`
+	Role             string            `json:"role,omitempty"`
+	Content          string            `json:"content,omitempty"`
+	ReasoningContent string            `json:"reasoning_content,omitempty"`
+	ToolCalls        []openAIToolCall  `json:"tool_calls,omitempty"`
 }
 
 func buildAPIRequest(model string, req ChatRequest) openAIRequest {

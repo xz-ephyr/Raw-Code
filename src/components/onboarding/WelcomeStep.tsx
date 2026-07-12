@@ -14,10 +14,10 @@ export function WelcomeStep({ onFullSetup, onQuickStart }: WelcomeStepProps) {
       </div>
 
       <div className="space-y-3">
-        <h1 className="text-4xl font-bold text-foreground">Welcome to XZ</h1>
+        <h1 className="text-4xl font-bold text-foreground">Welcome to DokTor</h1>
         <p className="text-muted-foreground text-lg leading-relaxed">
-          Your AI-powered coding assistant. Chat with AI, edit code, manage projects,
-          and build faster — all from one place.
+          Your AI-powered content creation studio. Chat with AI, create content, manage projects,
+          and produce faster — all from one place.
         </p>
       </div>
 

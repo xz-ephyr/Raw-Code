@@ -6,7 +6,7 @@ interface ToolPolicy {
   rules: string[];
 }
 
-export interface ToolPhase {
+interface ToolPhase {
   name: string;
   tools: string[];
   description: string;
@@ -92,7 +92,7 @@ const CONTINUING_SESSION_POLICY: ToolPolicy = {
 export function buildToolPolicy(context: SessionContext): string {
   const policy = context === 'new_task' ? NEW_TASK_POLICY : CONTINUING_SESSION_POLICY;
   const ratioLines = Object.entries(policy.ratios)
-    .filter(([_, v]) => v > 0)
+    .filter(([, v]) => v > 0)
     .map(([tool, pct]) => `  - ${tool}: ~${pct}%`);
   const phaseLines = policy.phases.map(p =>
     `  ${p.name}: ${p.description}\n    Tools: ${p.tools.join(', ')}`

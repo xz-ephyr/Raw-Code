@@ -19,7 +19,7 @@ function load(): UsageRecord[] {
 }
 
 function save(records: UsageRecord[]) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); } catch {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); } catch { /* ignore */ }
 }
 
 export function recordUsage(record: UsageRecord) {

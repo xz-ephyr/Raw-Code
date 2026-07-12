@@ -18,8 +18,8 @@ const SidebarTab = React.memo(
         to={path}
         onClick={onClick}
         title={collapsed ? label : undefined}
-        className={cn(
-          'flex items-center py-1.5 px-2 rounded-[8px] cursor-pointer active:scale-[0.99] transition-transform w-full',
+className={cn(
+          'flex items-center px-3 py-1 rounded-[8px] cursor-pointer active:scale-[0.99] transition-transform w-full',
           collapsed ? 'justify-center' : 'gap-3',
           active ? 'bg-sidebar-accent' : 'hover:bg-sidebar-accent'
         )}

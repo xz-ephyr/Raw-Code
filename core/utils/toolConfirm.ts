@@ -1,4 +1,4 @@
-export interface PendingConfirmation {
+interface PendingConfirmation {
   tool: string;
   description: string;
   params: Record<string, any>;

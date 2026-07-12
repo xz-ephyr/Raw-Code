@@ -58,6 +58,9 @@ AUDIT_SUBAGENT.md
 FIX_LOG.md
 PLAN.md
 
+# Migration analysis (dok-tor → raw-code mapping)
+migration/
+
 # AI-generated images
 ChatGPT_Image_Jul_8__2026__02_00_50_PM-removebg-preview.png
 ChatGPT_Image_Jul_8__2026__02_00_59_PM-removebg-preview.png
@@ -67,6 +70,10 @@ staging/
 
 # Browser subproject
 browser/
+
+# Attached local workspace folder
+# (kept out of Git history locally)
+dok-tor/
 
 # Fallow analysis reports (generated)
 fallow/

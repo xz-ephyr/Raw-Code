@@ -12,7 +12,7 @@ export function ZoomControl() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-[10px] text-sm border border-border bg-muted hover:bg-muted transition-colors"
+        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm border border-border bg-muted hover:bg-muted transition-colors"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-muted-foreground">
           <circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.2" />
@@ -28,7 +28,7 @@ export function ZoomControl() {
         width="176px"
         className="py-2"
       >
-        <div className="px-4 py-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+        <div className="px-4 py-1.5 text-xs font-bold text-muted-foreground uppercase tracking-widest">
           Zoom
         </div>
         <div className="px-2 py-1 flex flex-col gap-0.5">

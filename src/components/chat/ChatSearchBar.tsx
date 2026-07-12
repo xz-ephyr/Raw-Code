@@ -8,9 +8,11 @@ interface ChatSearchBarProps {
   onSearchChange: (query: string) => void;
   filter: 'active' | 'archived';
   onFilterChange: (filter: 'active' | 'archived') => void;
+  activeCount?: number;
+  archivedCount?: number;
 }
 
-export function ChatSearchBar({ searchQuery, onSearchChange, filter, onFilterChange }: ChatSearchBarProps) {
+export function ChatSearchBar({ searchQuery, onSearchChange, filter, onFilterChange, activeCount, archivedCount }: ChatSearchBarProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterMenuPos, setFilterMenuPos] = useState<{ top: number; left: number } | null>(null);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -80,7 +82,7 @@ export function ChatSearchBar({ searchQuery, onSearchChange, filter, onFilterCha
               className="w-full flex items-center justify-between px-4 py-3 text-sm text-foreground hover:bg-muted transition-colors"
             >
               <span className={cn('font-medium', filter === 'active' ? 'text-foreground' : 'text-muted-foreground')}>
-                Active Chats
+                Active Chats{activeCount !== undefined ? ` (${activeCount})` : ''}
               </span>
               {filter === 'active' && (
                 <HugeiconRenderer icon={CheckmarkCircle02Icon} size={18} className="text-foreground" />
@@ -91,7 +93,7 @@ export function ChatSearchBar({ searchQuery, onSearchChange, filter, onFilterCha
               className="w-full flex items-center justify-between px-4 py-3 text-sm text-foreground hover:bg-muted transition-colors"
             >
               <span className={cn('font-medium', filter === 'archived' ? 'text-foreground' : 'text-muted-foreground')}>
-                Archived Chats
+                Archived Chats{archivedCount !== undefined ? ` (${archivedCount})` : ''}
               </span>
               {filter === 'archived' && (
                 <HugeiconRenderer icon={CheckmarkCircle02Icon} size={18} className="text-foreground" />

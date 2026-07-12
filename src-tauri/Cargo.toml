@@ -1,8 +1,8 @@
 [package]
-name = "xz-desktop"
+name = "doktor-desktop"
 version = "0.15.0"
-description = "xz desktop shell"
-authors = ["xz Team"]
+description = "DokTor desktop shell"
+authors = ["DokTor Team"]
 license = "MIT"
 repository = "https://github.com/nbuvhvj8/superious"
 edition = "2021"
