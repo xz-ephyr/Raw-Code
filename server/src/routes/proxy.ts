@@ -4,6 +4,9 @@ const router = Router();
 
 const ALLOWED_HOST_RE = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*(\.[a-zA-Z]{2,})?$/;
 const PRIVATE_IPS = /^(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|0\.|169\.254\.|::1|fe80:)/;
+const ALLOWED_PROXY_HOSTS = new Set<string>([
+  'api.example.com',
+]);
 
 router.all('/proxy/*', async (req, res) => {
   const raw = req.path.replace(/^\//, '');
@@ -21,8 +24,16 @@ router.all('/proxy/*', async (req, res) => {
     return;
   }
   const hostname = parsed.hostname;
+  if (!ALLOWED_HOST_RE.test(hostname)) {
+    res.status(400).json({ error: 'Invalid hostname' });
+    return;
+  }
   if (PRIVATE_IPS.test(hostname) || hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0' || hostname === '[::1]') {
     res.status(403).json({ error: 'Requests to private addresses are not allowed' });
+    return;
+  }
+  if (!ALLOWED_PROXY_HOSTS.has(hostname)) {
+    res.status(403).json({ error: 'Host is not allowed' });
     return;
   }
 
@@ -36,7 +47,7 @@ router.all('/proxy/*', async (req, res) => {
   const timeout = setTimeout(() => controller.abort(), 120_000);
 
   try {
-    const response = await fetch(actualUrl, {
+    const response = await fetch(parsed.toString(), {
       method: req.method,
       headers: { ...headers, 'accept-encoding': 'identity' },
       body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
