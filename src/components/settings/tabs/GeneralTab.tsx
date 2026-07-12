@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ArrowDown01Icon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
+import { ArrowDown01Icon, CheckmarkCircle01Icon, SidebarBottomIcon, ZoomIcon } from '@hugeicons/core-free-icons';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { DefaultModelSelector } from '@/components/ui/DefaultModelSelector';
 import { useLocalStorageSetting } from '@/hooks/useLocalStorageSetting';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { ZoomControl } from '@/components/settings/ZoomControl';
+import { useTheme } from '@/contexts/ThemeContext';
 import { SELECTED_MODEL_STORAGE_KEY, MODELS } from '@core/config/models';
 
 const STYLE_OPTIONS = [
@@ -17,6 +19,7 @@ const STYLE_OPTIONS = [
 const DEFAULT_MODEL_ID = MODELS.length > 0 ? MODELS[0].id : 'gemini-2.5-flash';
 
 export function GeneralTab() {
+  const { theme, setTheme } = useTheme();
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     const stored = localStorage.getItem(SELECTED_MODEL_STORAGE_KEY);
     return stored || DEFAULT_MODEL_ID;
@@ -103,6 +106,56 @@ export function GeneralTab() {
           onChange={setEnterToSend}
         />
       </SettingsSection>
+
+      <div className="border-t border-border pt-5">
+        <h3 className="text-sm font-bold text-foreground mb-3">Appearance</h3>
+        <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-muted/20 mb-5">
+          <span className="text-sm font-medium text-foreground">Dark Mode</span>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={theme === 'dark'}
+              onChange={(e) => setTheme(e.target.checked ? 'dark' : 'light')}
+            />
+            <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-accent peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-foreground after:rounded-full after:h-4 after:w-4 after:transition-all" />
+          </label>
+        </div>
+
+        <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/20 mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-accent/30 flex items-center justify-center">
+              <HugeiconsIcon icon={SidebarBottomIcon} size={16} className="text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Collapse Sidebar on Startup</p>
+              <p className="text-xs text-muted-foreground">Start with the sidebar closed</p>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              defaultChecked={localStorage.getItem('sidebar_collapsed') === 'true'}
+              onChange={(e) => localStorage.setItem('sidebar_collapsed', String(e.target.checked))}
+            />
+            <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-accent peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-foreground after:rounded-full after:h-4 after:w-4 after:transition-all" />
+          </label>
+        </div>
+
+        <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/20">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-accent/30 flex items-center justify-center">
+              <HugeiconsIcon icon={ZoomIcon} size={16} className="text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Interface Zoom</p>
+              <p className="text-xs text-muted-foreground">Adjust the overall UI scaling</p>
+            </div>
+          </div>
+          <ZoomControl />
+        </div>
+      </div>
     </div>
   );
 }
