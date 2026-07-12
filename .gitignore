@@ -68,6 +68,10 @@ staging/
 # Browser subproject
 browser/
 
+# Attached local workspace folder
+# (kept out of Git history locally)
+dok-tor/
+
 # Fallow analysis reports (generated)
 fallow/
 .fallowrc
