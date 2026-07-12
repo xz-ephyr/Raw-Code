@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Cancel01Icon, StarIcon, CheckmarkCircle02Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
 
@@ -15,6 +16,7 @@ interface ConnectorDetailModalProps {
   onClose: () => void;
   onAction?: () => void;
   onSetToken?: (token: string) => void;
+  onSetCredentials?: (clientId: string, clientSecret: string) => void;
 }
 
 const badgeColors: Record<string, string> = {
@@ -23,8 +25,36 @@ const badgeColors: Record<string, string> = {
   skills: 'bg-green-500/20 text-green-500',
 };
 
-export const ConnectorDetailModal = ({ label, description, icon, imageSrc, type = 'connector', stars, details, isOpen, connected, authType, onClose, onAction, onSetToken }: ConnectorDetailModalProps) => {
+export const ConnectorDetailModal = ({ label, description, icon, imageSrc, type = 'connector', stars, details, isOpen, connected, authType, onClose, onAction, onSetToken, onSetCredentials }: ConnectorDetailModalProps) => {
+  const [clientId, setClientId] = useState('');
+  const [clientSecret, setClientSecret] = useState('');
+  const [token, setToken] = useState('');
+  const [showCredentialForm, setShowCredentialForm] = useState(false);
+
   if (!isOpen) return null;
+
+  const needsCredentials = authType === 'oauth2' && onSetCredentials && !connected;
+  const needsToken = authType === 'token' && onSetToken && !connected;
+
+  const handleConnectClick = () => {
+    if (needsCredentials && !clientId) {
+      setShowCredentialForm(true);
+      return;
+    }
+    if (needsCredentials && clientId && clientSecret) {
+      onSetCredentials!(clientId, clientSecret);
+      return;
+    }
+    if (needsToken && !token) {
+      // Show the token input - it's already visible
+      return;
+    }
+    if (needsToken && token) {
+      onSetToken!(token);
+      return;
+    }
+    onAction?.();
+  };
 
   return (
     <>
@@ -87,27 +117,37 @@ export const ConnectorDetailModal = ({ label, description, icon, imageSrc, type 
         </div>
 
         <div className="px-5 py-4 border-t border-border shrink-0 space-y-3">
-          {authType === 'token' && !connected && onSetToken && (
+          {showCredentialForm && needsCredentials && (
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                placeholder="Client ID"
+                className="w-full px-3 py-2 text-sm bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <input
+                type="password"
+                value={clientSecret}
+                onChange={(e) => setClientSecret(e.target.value)}
+                placeholder="Client Secret"
+                className="w-full px-3 py-2 text-sm bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+          )}
+          {needsToken && !connected && (
             <div>
               <input
                 type="password"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
                 placeholder={`Enter ${label} Bot Token`}
-                className="w-full px-3 py-2 text-sm bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring mb-2"
-                onChange={(e) => {
-                  const token = e.target.value.trim();
-                  (e.target as any)._token = token;
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const token = (e.target as any)._token || (e.target as HTMLInputElement).value.trim();
-                    if (token) onSetToken(token);
-                  }
-                }}
+                className="w-full px-3 py-2 text-sm bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
           )}
           <button
-            onClick={onAction}
+            onClick={handleConnectClick}
             disabled={connected}
             className={`w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
               connected
@@ -122,7 +162,7 @@ export const ConnectorDetailModal = ({ label, description, icon, imageSrc, type 
               </>
             ) : (
               <>
-                {type === 'connector' ? 'Connect' : 'Install'}
+                {showCredentialForm ? 'Save & Connect' : type === 'connector' ? 'Connect' : 'Install'}
                 <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
               </>
             )}

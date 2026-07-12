@@ -23,7 +23,7 @@ export class TwitterConnectorService extends ConnectorService {
   }): Promise<string> {
     const clientId = options?.clientId && options.clientId !== 'env'
       ? options.clientId
-      : this.getEnvVar('TWITTER_CLIENT_ID');
+      : await this.resolveCredential('TWITTER_CLIENT_ID', 'twitter-client-id');
 
     const params: Record<string, string> = {
       client_id: clientId,
@@ -39,8 +39,8 @@ export class TwitterConnectorService extends ConnectorService {
   }
 
   async exchangeCode(code: string, codeVerifier?: string | null): Promise<{ identity: string }> {
-    const clientId = this.getEnvVar('TWITTER_CLIENT_ID');
-    const clientSecret = this.getEnvVar('TWITTER_CLIENT_SECRET');
+    const clientId = await this.resolveCredential('TWITTER_CLIENT_ID', 'twitter-client-id');
+    const clientSecret = await this.resolveCredential('TWITTER_CLIENT_SECRET', 'twitter-client-secret');
     const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
     const body: Record<string, string> = {
@@ -101,8 +101,8 @@ export class TwitterConnectorService extends ConnectorService {
     const row = await this.getTokenRow();
     if (row?.refresh_token) {
       try {
-        const clientId = this.getEnvVar('TWITTER_CLIENT_ID');
-        const clientSecret = this.getEnvVar('TWITTER_CLIENT_SECRET');
+        const clientId = await this.resolveCredential('TWITTER_CLIENT_ID', 'twitter-client-id');
+        const clientSecret = await this.resolveCredential('TWITTER_CLIENT_SECRET', 'twitter-client-secret');
         const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
         await fetch(this.oauthConfig.revokeEndpoint!, {
           method: 'POST',

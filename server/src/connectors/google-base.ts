@@ -19,13 +19,19 @@ export abstract class GoogleConnectorService extends ConnectorService {
     };
   }
 
-  protected getClientId(clientId?: string): string {
-    const id = clientId && clientId !== 'env' ? clientId : this.getEnvVar(`${this.envPrefix}CLIENT_ID`);
-    return id;
+  protected async getClientId(clientId?: string): Promise<string> {
+    if (clientId && clientId !== 'env') return clientId;
+    return this.resolveCredential(
+      `${this.envPrefix}CLIENT_ID`,
+      `${this.provider}-client-id`
+    );
   }
 
-  protected getClientSecret(): string {
-    return this.getEnvVar(`${this.envPrefix}CLIENT_SECRET`);
+  protected async getClientSecret(): Promise<string> {
+    return this.resolveCredential(
+      `${this.envPrefix}CLIENT_SECRET`,
+      `${this.provider}-client-secret`
+    );
   }
 
   protected getRedirectUri(): string {
@@ -41,7 +47,7 @@ export abstract class GoogleConnectorService extends ConnectorService {
     codeChallengeMethod?: string;
     state?: string;
   }): Promise<string> {
-    const effectiveClientId = this.getClientId(options?.clientId);
+    const effectiveClientId = await this.getClientId(options?.clientId);
     const scopes = this.googleScopes;
 
     const params: Record<string, string> = {
@@ -63,8 +69,8 @@ export abstract class GoogleConnectorService extends ConnectorService {
   }
 
   async exchangeCode(code: string, codeVerifier?: string | null): Promise<{ identity: string }> {
-    const clientId = this.getClientId();
-    const clientSecret = this.getClientSecret();
+    const clientId = await this.getClientId();
+    const clientSecret = await this.getClientSecret();
 
     const body: Record<string, string> = {
       client_id: clientId,

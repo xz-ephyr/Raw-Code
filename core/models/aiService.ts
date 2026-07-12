@@ -418,7 +418,7 @@ function sanitizeForTitleInput(raw: string): string {
     .replace(/```[\s\S]*?```/g, '')
     .replace(/`[^`]+`/g, '')
     .replace(/https?:\/\/\S+/g, '')
-    .replace(/^[>\$]\s*/gm, '')
+    .replace(/^[>$]\s*/gm, '')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 800);

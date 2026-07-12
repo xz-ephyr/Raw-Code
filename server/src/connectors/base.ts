@@ -1,4 +1,4 @@
-import { query } from '../db.js';
+import { query, getAppConfig } from '../db.js';
 import { encrypt, decrypt } from '../crypto.js';
 import type { AuthType, ConnectorStatus, TokenRow, AuthUrlOptions } from './types.js';
 
@@ -46,7 +46,7 @@ export abstract class ConnectorService {
     this.refreshInProgress = true;
     this.refreshPromise = (async () => {
       try {
-        const config = this.getRefreshConfig();
+        const config = await this.getRefreshConfig();
         if (!config) return null;
 
         const res = await fetch(config.tokenEndpoint, {
@@ -91,11 +91,18 @@ export abstract class ConnectorService {
     return this.refreshPromise;
   }
 
-  protected getRefreshConfig(): { tokenEndpoint: string; clientId: string; clientSecret: string } | null {
+  protected async getRefreshConfig(): Promise<{ tokenEndpoint: string; clientId: string; clientSecret: string } | null> {
     const config = this.oauthConfig;
     if (!config) return null;
-    const clientId = this.getEnvVar(`${this.provider.toUpperCase()}_CLIENT_ID`);
-    const clientSecret = this.getEnvVar(`${this.provider.toUpperCase()}_CLIENT_SECRET`);
+    const envPrefix = this.provider.toUpperCase();
+    const clientId = await this.resolveCredential(
+      `${envPrefix}_CLIENT_ID`,
+      `${this.provider}-client-id`
+    );
+    const clientSecret = await this.resolveCredential(
+      `${envPrefix}_CLIENT_SECRET`,
+      `${this.provider}-client-secret`
+    );
     return { tokenEndpoint: config.tokenEndpoint, clientId, clientSecret };
   }
 
@@ -125,6 +132,14 @@ export abstract class ConnectorService {
     const val = process.env[name];
     if (!val) throw new Error(`${name} environment variable not set for ${this.provider} connector`);
     return val;
+  }
+
+  protected async resolveCredential(envName: string, configKey: string): Promise<string> {
+    const fromEnv = process.env[envName];
+    if (fromEnv) return fromEnv;
+    const fromDb = await getAppConfig(configKey);
+    if (fromDb) return fromDb;
+    throw new Error(`${envName} not set. Set it in the .env file or in Settings > ${this.provider} connector.`);
   }
 
   protected async saveToken(data: {

@@ -22,7 +22,7 @@ export class GitHubConnectorService extends ConnectorService {
   }): Promise<string> {
     const clientId = options?.clientId && options.clientId !== 'env'
       ? options.clientId
-      : this.getEnvVar('GITHUB_CLIENT_ID');
+      : await this.resolveCredential('GITHUB_CLIENT_ID', 'github-client-id');
 
     const params: Record<string, string> = {
       client_id: clientId,
@@ -37,8 +37,8 @@ export class GitHubConnectorService extends ConnectorService {
   }
 
   async exchangeCode(code: string, _codeVerifier?: string | null): Promise<{ identity: string }> {
-    const clientId = this.getEnvVar('GITHUB_CLIENT_ID');
-    const clientSecret = this.getEnvVar('GITHUB_CLIENT_SECRET');
+    const clientId = await this.resolveCredential('GITHUB_CLIENT_ID', 'github-client-id');
+    const clientSecret = await this.resolveCredential('GITHUB_CLIENT_SECRET', 'github-client-secret');
 
     const res = await fetch(this.oauthConfig.tokenEndpoint, {
       method: 'POST',

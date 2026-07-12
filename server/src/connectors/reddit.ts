@@ -23,7 +23,7 @@ export class RedditConnectorService extends ConnectorService {
   }): Promise<string> {
     const clientId = options?.clientId && options.clientId !== 'env'
       ? options.clientId
-      : this.getEnvVar('REDDIT_CLIENT_ID');
+      : await this.resolveCredential('REDDIT_CLIENT_ID', 'reddit-client-id');
 
     const params: Record<string, string> = {
       client_id: clientId,
@@ -38,8 +38,8 @@ export class RedditConnectorService extends ConnectorService {
   }
 
   async exchangeCode(code: string, _codeVerifier?: string | null): Promise<{ identity: string }> {
-    const clientId = this.getEnvVar('REDDIT_CLIENT_ID');
-    const clientSecret = this.getEnvVar('REDDIT_CLIENT_SECRET');
+    const clientId = await this.resolveCredential('REDDIT_CLIENT_ID', 'reddit-client-id');
+    const clientSecret = await this.resolveCredential('REDDIT_CLIENT_SECRET', 'reddit-client-secret');
     const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
     const res = await fetch(this.oauthConfig.tokenEndpoint, {
@@ -97,8 +97,8 @@ export class RedditConnectorService extends ConnectorService {
     const row = await this.getTokenRow();
     if (row?.refresh_token) {
       try {
-        const clientId = this.getEnvVar('REDDIT_CLIENT_ID');
-        const clientSecret = this.getEnvVar('REDDIT_CLIENT_SECRET');
+    const clientId = await this.resolveCredential('REDDIT_CLIENT_ID', 'reddit-client-id');
+    const clientSecret = await this.resolveCredential('REDDIT_CLIENT_SECRET', 'reddit-client-secret');
         const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
         await fetch(this.oauthConfig.revokeEndpoint!, {
           method: 'POST',

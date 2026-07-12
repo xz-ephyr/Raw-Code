@@ -5,6 +5,7 @@ import { ConnectorCard } from './ConnectorCard';
 import { ConnectorDetailModal } from './ConnectorDetailModal';
 import { useToast } from '../ui/Toast';
 import { useAllConnectorsStatus } from '@/hooks/useConnectorStatus';
+import { DatabaseService } from '@core/utils/DatabaseService';
 
 const TABS = [
   { id: 'connectors', label: 'Connectors', icon: ResourcesAddIcon },
@@ -206,13 +207,16 @@ export const PluginTabs = () => {
   const handleConnectorAction = async (item: ConnectorItem) => {
     const id = item.connectorId;
     if (!id) return;
-    const authType = CONNECTOR_AUTH_TYPES[id] || 'oauth2';
-    if (authType === 'token') {
-      // Token input is handled by the detail modal's onSetToken
-      return;
-    }
     if (connectorStatus[id]) return; // already connected
-    startOAuth(id, 'env');
+    // Modal handles credential entry via onSetToken / onSetCredentials
+  };
+
+  const handleSetCredentials = async (provider: string, clientId: string, clientSecret: string) => {
+    // Save credentials to config
+    await DatabaseService.setConfig(`${provider}-client-id`, clientId);
+    await DatabaseService.setConfig(`${provider}-client-secret`, clientSecret);
+    // Start OAuth with the provided credentials
+    startOAuth(provider, clientId);
   };
 
   const filteredCategories = useMemo(() => {
@@ -327,23 +331,30 @@ export const PluginTabs = () => {
         </div>
       )}
 
-      {selectedItem && (
-        <ConnectorDetailModal
-          label={selectedItem.name}
-          description={selectedItem.description}
-          icon={selectedItem.icon!}
-          imageSrc={selectedItem.imageSrc}
-          type={tabType}
-          stars={selectedItem.stars}
-          details={selectedItem.details ?? []}
-          isOpen={!!selectedItem}
-          connected={selectedItem.connectorId ? connectorStatus[selectedItem.connectorId] : undefined}
-          authType={selectedItem.connectorId ? CONNECTOR_AUTH_TYPES[selectedItem.connectorId] : undefined}
-          onClose={() => setSelectedItem(null)}
-          onAction={() => handleConnectorAction(selectedItem)}
-          onSetToken={selectedItem.connectorId === 'telegram' ? setTelegramToken : undefined}
-        />
-      )}
+      {selectedItem && (() => {
+        const id = selectedItem.connectorId;
+        const authType = id ? CONNECTOR_AUTH_TYPES[id] : undefined;
+        return (
+          <ConnectorDetailModal
+            label={selectedItem.name}
+            description={selectedItem.description}
+            icon={selectedItem.icon!}
+            imageSrc={selectedItem.imageSrc}
+            type={tabType}
+            stars={selectedItem.stars}
+            details={selectedItem.details ?? []}
+            isOpen={!!selectedItem}
+            connected={id ? connectorStatus[id] : undefined}
+            authType={authType}
+            onClose={() => setSelectedItem(null)}
+            onAction={() => handleConnectorAction(selectedItem)}
+            onSetToken={id === 'telegram' ? setTelegramToken : undefined}
+            onSetCredentials={authType === 'oauth2' && id && !connectorStatus[id]
+              ? (cId, cSecret) => handleSetCredentials(id, cId, cSecret)
+              : undefined}
+          />
+        );
+      })()}
     </div>
   );
 };

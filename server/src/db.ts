@@ -69,6 +69,18 @@ export function querySync<T = Record<string, unknown>>(
   return { rows: [] as T[] };
 }
 
+export async function getAppConfig(key: string): Promise<string | null> {
+  try {
+    const result = await query<{ value: string }>(
+      'SELECT value FROM app_config WHERE key = $1',
+      [key]
+    );
+    return result.rows.length > 0 ? result.rows[0].value : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function query<T = Record<string, unknown>>(
   text: string,
   params?: any[],

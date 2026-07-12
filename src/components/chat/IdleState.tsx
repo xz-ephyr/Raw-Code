@@ -50,7 +50,7 @@ export function IdleState({
   );
 
   return (
-    <div className="w-full flex flex-col items-center" style={{ paddingTop: '15vh' }}>
+    <div className="w-full flex flex-col items-center" style={{ paddingTop: '22vh' }}>
       <h1 className="text-[38px] font-serif-source mb-[10px] text-foreground text-center">
         What would you like to create?
       </h1>
@@ -83,23 +83,6 @@ export function IdleState({
           </div>
         )}
 
-        <div className="mb-6 px-4">
-          <div className="flex flex-wrap gap-2 justify-center">
-            {CONTENT_STARTERS.map(starter => (
-              <button
-                key={starter.label}
-                onClick={() => {
-                  if (starter.prompt) onSend(starter.prompt);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sidebar hover:bg-muted border border-border/50 text-sm text-foreground transition-colors"
-              >
-                <span>{starter.icon}</span>
-                <span>{starter.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="px-4">
           <ChatInput
             isIdle={true}
@@ -114,6 +97,23 @@ export function IdleState({
             currentMode={currentMode}
             onModeChange={onModeChange}
           />
+        </div>
+
+        <div className="mt-4 mb-6 px-4">
+          <div className="flex flex-wrap gap-2 justify-center">
+            {CONTENT_STARTERS.map(starter => (
+              <button
+                key={starter.label}
+                onClick={() => {
+                  if (starter.prompt) onSend(starter.prompt);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sidebar hover:bg-muted border border-border/50 text-sm text-foreground transition-colors"
+              >
+                <span>{starter.icon}</span>
+                <span>{starter.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

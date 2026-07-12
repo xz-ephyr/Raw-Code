@@ -1,23 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Settings02Icon, Activity01Icon, GlobeIcon, ViewIcon, ZapIcon, FolderLibraryIcon, NoteIcon, Mail01Icon, ArrowLeft03Icon } from '@hugeicons/core-free-icons';
+import { Settings02Icon, Activity01Icon, GlobeIcon, ViewIcon, FolderLibraryIcon, NoteIcon, ArrowLeft03Icon } from '@hugeicons/core-free-icons';
 import { GeneralTab } from './tabs/GeneralTab';
 import { ApiTab } from './tabs/ApiTab';
 import { WebSearchTab } from './tabs/WebSearchTab';
 import { AppearanceTab } from './tabs/AppearanceTab';
-import { BehaviorTab } from './tabs/BehaviorTab';
 import { StorageTab } from './tabs/StorageTab';
 import { ProjectMemoryTab } from './tabs/ProjectMemoryTab';
-import { GmailTab } from './tabs/GmailTab';
 
 const tabs = [
   { id: 'general', label: 'General', icon: Settings02Icon },
   { id: 'api', label: 'API', icon: Activity01Icon },
   { id: 'web-search', label: 'Web & Search', icon: GlobeIcon },
-  { id: 'gmail', label: 'Gmail', icon: Mail01Icon },
   { id: 'appearance', label: 'Appearance', icon: ViewIcon },
-  { id: 'behavior', label: 'Behavior', icon: ZapIcon },
   { id: 'project-memory', label: 'Project Memory', icon: NoteIcon },
   { id: 'storage', label: 'Storage', icon: FolderLibraryIcon },
 ] as const;
@@ -62,14 +58,11 @@ export function SettingsTabLayout() {
           {activeTab === 'general' && <GeneralTab />}
           {activeTab === 'api' && <ApiTab />}
           {activeTab === 'web-search' && <WebSearchTab />}
-          {activeTab === 'gmail' && <GmailTab />}
           {activeTab === 'appearance' && <AppearanceTab />}
-          {activeTab === 'behavior' && <BehaviorTab />}
           {activeTab === 'project-memory' && <ProjectMemoryTab />}
           {activeTab === 'storage' && <StorageTab />}
           </div>
         </div>
       </div>
-    );
-  }
-
+  );
+}
