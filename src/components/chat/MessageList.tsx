@@ -2,7 +2,8 @@ import { useRef, useCallback, useEffect, useState } from 'react';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 import { ArrowDown02Icon } from '@hugeicons/core-free-icons';
 import { ChatMessageRow } from './ChatMessageRow';
-import ChatInputContainer from './ChatInputContainer';
+import ChatInput from './ChatInput';
+import { IdleState } from './IdleState';
 
 const SCROLL_THRESHOLD = 150;
 
@@ -22,10 +23,8 @@ interface MessageListProps {
   onSend: (content: string) => void;
   onRegenerate: (index: number) => void;
   onStop: () => void;
-  currentProjectName: string | undefined;
   currentMode?: string;
   onModeChange?: (modeId: string | undefined) => void;
-  isProject?: boolean;
   bottomSlot?: React.ReactNode;
 }
 
@@ -47,7 +46,6 @@ export function MessageList({
   onStop,
   currentMode,
   onModeChange,
-  isProject,
   bottomSlot,
 }: MessageListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -111,15 +109,46 @@ export function MessageList({
 
   const hasMessages = messages.length > 0;
 
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown' || e.key === 'j') {
+        e.preventDefault();
+        el.scrollBy({ top: 80, behavior: 'smooth' });
+      } else if (e.key === 'ArrowUp' || e.key === 'k') {
+        e.preventDefault();
+        el.scrollBy({ top: -80, behavior: 'smooth' });
+      } else if (e.key === 'PageDown') {
+        e.preventDefault();
+        el.scrollBy({ top: el.clientHeight * 0.8, behavior: 'smooth' });
+      } else if (e.key === 'PageUp') {
+        e.preventDefault();
+        el.scrollBy({ top: -el.clientHeight * 0.8, behavior: 'smooth' });
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        el.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      }
+    };
+
+    el.addEventListener('keydown', handleKeyDown);
+    return () => el.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <>
       <div
         ref={scrollContainerRef}
+        tabIndex={0}
         onScroll={handleScroll}
-        className={`thin-scrollbar transition-all duration-300 ease-in-out ${!hasMessages ? 'overflow-visible flex-initial flex flex-col items-center justify-start p-4' : 'overflow-y-auto flex-1'}`} style={!hasMessages ? { paddingTop: '25vh' } : undefined}
+        className="thin-scrollbar outline-none overflow-y-auto flex-1 min-h-0 scroll-smooth"
       >
         {hasMessages && <div className="h-[8px] bg-card w-full shrink-0" />}
-        <div className="w-full mx-auto px-4 pb-24" style={{ maxWidth: hasMessages ? 'min(780px, 100%)' : 'min(1100px, 100%)' }}>
+        <div className="w-full mx-auto px-4 pb-24" style={{ maxWidth: 'min(780px, 100%)' }}>
           {messages.map((m: any, i: number) => {
             const prevUserContent = i > 0 && messages[i - 1]?.role === 'user'
               ? messages[i - 1]?.content
@@ -150,27 +179,18 @@ export function MessageList({
           })}
 
           {!hasMessages && (
-            <div className="w-full mt-4 flex flex-col items-center">
-              <h1 className="text-[38px] font-serif-source mb-[10px] text-foreground text-center">
-                Hello, how can I help?
-              </h1>
-              <div className="w-full">
-                <ChatInputContainer
-                  idle={true}
-                  onSend={onSend}
-                  isLoading={isLoading}
-                  onStop={onStop}
-                  isThinkingEnabled={isThinkingEnabled}
-                  onToggleThinking={onToggleThinking}
-                  isWebSearchEnabled={isWebSearchEnabled}
-                  onToggleWebSearch={onToggleWebSearch}
-                  currentModel={currentModel}
-                  currentMode={currentMode}
-                  onModeChange={onModeChange}
-                  isProject={isProject}
-                />
-              </div>
-            </div>
+            <IdleState
+              onSend={onSend}
+              isLoading={isLoading}
+              onStop={onStop}
+              isThinkingEnabled={isThinkingEnabled}
+              onToggleThinking={onToggleThinking}
+              isWebSearchEnabled={isWebSearchEnabled}
+              onToggleWebSearch={onToggleWebSearch}
+              currentModel={currentModel}
+              currentMode={currentMode}
+              onModeChange={onModeChange}
+            />
           )}
         </div>
       </div>
@@ -193,8 +213,7 @@ export function MessageList({
         </div>
       )}
       {hasMessages && (
-        <ChatInputContainer
-          idle={false}
+        <ChatInput
           onSend={onSend}
           isLoading={isLoading}
           onStop={onStop}
@@ -205,7 +224,6 @@ export function MessageList({
           currentModel={currentModel}
           currentMode={currentMode}
           onModeChange={onModeChange}
-          isProject={isProject}
         />
       )}
     </>

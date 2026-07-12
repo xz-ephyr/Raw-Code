@@ -11,10 +11,77 @@ import configRoutes from './routes/config.js';
 import memoryRoutes from './routes/memory.js';
 import gmailRoutes from './routes/gmail.js';
 import websearchRoutes from './routes/websearch.js';
+import connectorRoutes from './routes/connector.js';
+import { GmailConnectorService } from './connectors/gmail.js';
+import { GitHubConnectorService } from './connectors/github.js';
+import { YouTubeConnectorService } from './connectors/youtube.js';
+import { TelegramConnectorService } from './connectors/telegram.js';
+import { RedditConnectorService } from './connectors/reddit.js';
+import { TwitterConnectorService } from './connectors/twitter.js';
+import { registry } from './connectors/registry.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: Infinity }));
+
+// Generic OAuth callback — must be before auth middleware (OAuth providers don't send API key)
+app.get('/auth/:provider/callback', async (req, res) => {
+  const { provider, code, state, error } = req.params as any;
+  // Try to get params from query string (Express extracts route params, actual params are in query)
+  const actualProvider = req.params.provider;
+  const actualCode = req.query.code as string;
+  const actualState = req.query.state as string;
+  const actualError = req.query.error as string;
+
+  if (actualError) {
+    return res.send(`<script>window.close();</script><p>Authorization denied. You can close this window.</p>`);
+  }
+  if (!actualCode || typeof actualCode !== 'string') {
+    return res.status(400).send('Missing authorization code');
+  }
+
+  const service = registry.get(actualProvider);
+  const type = service ? `${actualProvider}-oauth-callback` : 'oauth-callback';
+
+  res.send(`
+    <!DOCTYPE html>
+    <html><body><script>
+      if (window.opener) {
+        window.opener.postMessage({
+          type: '${type}',
+          code: '${actualCode.replace(/'/g, "\\'")}',
+          state: '${actualState ? String(actualState).replace(/'/g, "\\'") : ''}'
+        }, '*');
+      }
+      window.close();
+    </script><p>Authentication successful. You can close this window.</p></body></html>
+  `);
+});
+
+// Backward compat Gmail OAuth callback
+app.get('/auth/gmail/callback', async (req, res) => {
+  const { code, state, error } = req.query;
+  if (error) {
+    return res.send(`<script>window.close();</script><p>Authorization denied. You can close this window.</p>`);
+  }
+  if (!code || typeof code !== 'string') {
+    return res.status(400).send('Missing authorization code');
+  }
+  res.send(`
+    <!DOCTYPE html>
+    <html><body><script>
+      if (window.opener) {
+        window.opener.postMessage({
+          type: 'gmail-oauth-callback',
+          code: '${code.replace(/'/g, "\\'")}',
+          state: '${state ? String(state).replace(/'/g, "\\'") : ''}'
+        }, '*');
+      }
+      window.close();
+    </script><p>Authentication successful. You can close this window.</p></body></html>
+  `);
+});
+
 app.use(auth);
 
 app.use(proxyRoutes);
@@ -26,13 +93,23 @@ app.use(configRoutes);
 app.use(memoryRoutes);
 app.use(gmailRoutes);
 app.use(websearchRoutes);
+app.use(connectorRoutes);
 
 const PORT = process.env.PORT || 3001;
 
 async function start() {
   await migrate();
+
+  // Register connectors
+  registry.register(new GmailConnectorService());
+  registry.register(new GitHubConnectorService());
+  registry.register(new YouTubeConnectorService());
+  registry.register(new TelegramConnectorService());
+  registry.register(new RedditConnectorService());
+  registry.register(new TwitterConnectorService());
+
   app.listen(PORT, () => {
-    console.log(`raw-code server running on http://localhost:${PORT}`);
+    console.log(`DokTor server running on http://localhost:${PORT}`);
   });
 }
 

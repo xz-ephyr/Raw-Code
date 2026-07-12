@@ -30,19 +30,14 @@ interface NTabDropdownProps {
   isIdle?: boolean;
   currentMode?: string;
   onModeChange?: (modeId: string | undefined) => void;
-  isProject?: boolean;
 }
 
-export default function NTabDropdown({ isIdle, currentMode, onModeChange, isProject }: NTabDropdownProps) {
+export default function NTabDropdown({ isIdle, currentMode, onModeChange }: NTabDropdownProps) {
   const currentIndex = currentMode ? MODES.findIndex((m) => m.id === currentMode) : -1;
   const [currentTab, setCurrentTab] = useState(currentIndex);
   const [isOpen, setIsOpen] = useState(false);
 
   const tab = currentTab >= 0 ? NTABS[currentTab] : undefined;
-
-  if (!isProject) {
-    return null;
-  }
 
   return (
     <div className="relative">

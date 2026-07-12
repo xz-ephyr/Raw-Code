@@ -8,7 +8,7 @@ export function sanitizeMarkdownContent(content: string): string {
 }
 
 export function hasPartialArtifact(content: string): boolean {
-  return /<antArtifact\b/i.test(content);
+  return /<antArtifact\b|<write_artifact\b/i.test(content);
 }
 
 interface ToolInvocationPart {
@@ -79,6 +79,61 @@ function extractToolInvocations(parts: any[]): ToolInvocationPart[] {
     });
 }
 
+export function extractThinkTags(content: string): { cleanContent: string; thinking: string } {
+  const thinkingParts: string[] = [];
+
+  let cleanContent = content.replace(/<(?:think|thought)>([\s\S]*?)<\/(?:think|thought)>/g, (_, inner) => {
+    thinkingParts.push(inner.trim());
+    return '';
+  });
+
+  cleanContent = cleanContent.replace(/<(?:think|thought)>([\s\S]*)$/g, (_, inner) => {
+    thinkingParts.push(inner.trim());
+    return '';
+  });
+
+  return {
+    cleanContent,
+    thinking: thinkingParts.join('\n'),
+  };
+}
+
+export function cleanReasoning(content: string): string {
+  if (!content) return '';
+
+  let result = content;
+
+  // Strip artifact metadata lines (merge with \n)
+  result = result.replace(/(?:\n|^)(?:\* (?:Type|Identifier|Title):\s*`[^`]*`\s*\n?)+/g, '\n');
+
+  // Strip inline artifact format (full merge)
+  result = result.replace(/(?:\n|^)(?:`[^`]+`:\s*`[^`]+`\s*\*\s*`[^`]+`:\s*`[^`]+`\s*\*\s*`[^`]+`:\s*`[^`]+`\s*\n?)+/g, '');
+
+  // Strip search result headers (full merge)
+  result = result.replace(/(?:\n|^)(?:Search results \d+:\n?)+/g, '');
+  result = result.replace(/(?:\n|^)(?:Results:\n?)+/g, '');
+
+  // Strip URLs in bullet lists (merge with \n)
+  result = result.replace(/(?:\n|^)(?:- https?:\/\/\S+\n?)+/g, '\n');
+
+  // Strip numbered reference URLs (merge with \n)
+  result = result.replace(/(?:\n|^)(?:\d+\.\s+\[[^\]]+\]\(https?:\/\/\S+\)\n?)+/g, '\n');
+  result = result.replace(/(?:\n|^)(?:\[\d+\]:\s+https?:\/\/\S+\n?)+/g, '\n');
+
+  // Strip meta-cognition lines (preserve surrounding newlines)
+  result = result.replace(/^I am struggling with (?:the |this |a )?(?:same )?tool call[^.\n]*\.?$/gim, '');
+
+  // Strip explicit failure loops (preserve surrounding newlines)
+  result = result.replace(/^I am struggling with the same error repeatedly[^.\n]*\.?$/gim, '');
+
+  // Collapse excessive newlines (3+ → 2)
+  result = result.replace(/\n{3,}/g, '\n\n');
+
+  result = result.trim();
+
+  return result;
+}
+
 function buildContentBeforeAfter(parts: any[] | undefined, contentBeforeTool?: string, contentAfterTool?: string) {
   if (!Array.isArray(parts)) return { contentBeforeTool, contentAfterTool };
 
@@ -87,7 +142,7 @@ function buildContentBeforeAfter(parts: any[] | undefined, contentBeforeTool?: s
       const type = part.type || '';
       const name = part.toolName || '';
       return (type === 'dynamic-tool' || type.startsWith('tool-')) &&
-             (name === 'writeArtifact' || type.includes('writeArtifact'));
+             (name === 'write_artifact' || type.includes('write_artifact') || type.includes('writeArtifact'));
     }
   );
 
@@ -105,9 +160,12 @@ function buildContentBeforeAfter(parts: any[] | undefined, contentBeforeTool?: s
     .map((p: any) => p.text)
     .join('');
 
+  const { cleanContent: cleanBefore } = extractThinkTags(rawBefore);
+  const { cleanContent: cleanAfter } = extractThinkTags(rawAfter);
+
   return {
-    contentBeforeTool: rawBefore.trim() || undefined,
-    contentAfterTool: rawAfter.trim() || undefined,
+    contentBeforeTool: cleanBefore.trim() || undefined,
+    contentAfterTool: cleanAfter.trim() || undefined,
   };
 }
 
@@ -117,13 +175,24 @@ export const mapUIMessageToLegacyMessage = (m: UIMessage | null | undefined): Le
   const content = m.content || (Array.isArray(m.parts) ? extractPartsContent(m.parts) : '');
   const reasoning = m.reasoning || (Array.isArray(m.parts) ? extractPartsReasoning(m.parts) : '');
 
+  const { cleanContent, thinking } = extractThinkTags(content);
+
+  let dedupedContent = cleanContent;
+  if (reasoning && dedupedContent.includes(reasoning)) {
+    dedupedContent = dedupedContent.replace(reasoning, '');
+  }
+
+  const finalReasoning = thinking
+    ? (reasoning ? `${reasoning}\n${thinking}` : thinking)
+    : reasoning;
+
   let toolInvocations = m.toolInvocations;
   if (!toolInvocations && Array.isArray(m.parts)) {
     toolInvocations = extractToolInvocations(m.parts);
   }
 
   const writeArtifactCalls = (toolInvocations || [])
-    .filter((ti: any) => ti.toolName === 'writeArtifact' && ti.args?.identifier && ti.args?.content);
+    .filter((ti: any) => ti.toolName === 'write_artifact' && ti.args?.identifier && ti.args?.content);
 
   let parsedArtifacts: Artifact[] = [];
   let toolArtifacts: any[] = [];
@@ -139,23 +208,23 @@ export const mapUIMessageToLegacyMessage = (m: UIMessage | null | undefined): Le
       createdAt: Date.now(),
     }));
   } else {
-    const parsed = parseArtifacts(content);
+    const parsed = parseArtifacts(dedupedContent);
     parsedArtifacts = parsed.artifacts;
   }
 
   const allArtifacts = [...parsedArtifacts, ...toolArtifacts];
-  const finalContent = sanitizeMarkdownContent(content);
+  const finalContent = sanitizeMarkdownContent(dedupedContent);
 
   const { contentBeforeTool, contentAfterTool } = buildContentBeforeAfter(m.parts);
 
   return {
     ...m,
     content: finalContent,
-    reasoning,
+    reasoning: finalReasoning,
     toolInvocations,
     contentBeforeTool: contentBeforeTool ?? m.contentBeforeTool,
     contentAfterTool: contentAfterTool ?? m.contentAfterTool,
     artifacts: allArtifacts,
-    hasPartialArtifact: hasPartialArtifact(content),
+    hasPartialArtifact: hasPartialArtifact(dedupedContent),
   };
 };

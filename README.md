@@ -1,9 +1,9 @@
 <div align="center">
 
-# xz
-### *AI-Native Code Editor*
+# DokTor
+### *AI-Native Content Creation Studio*
 
-**A local-first, multi-model AI coding environment with live artifact previews, project-aware context, and a built-in IDE.**
+**A local-first, multi-model AI content creation environment with live artifact previews, project-aware context, and a built-in editor.**
 
 ---
 
@@ -18,14 +18,14 @@
 
 ## Overview
 
-xz is a desktop AI coding assistant that runs on your local machine. Chat with multiple AI models (Gemini, Groq, Mistral, OpenAI-compatible, Cerebras) in a context that understands your project structure — files, folders, and code.
+DokTor is a desktop content creation agent that runs on your local machine. Chat with multiple AI models (Gemini, Groq, Mistral, OpenAI-compatible, Cerebras) in a context that understands your project structure — files, folders, and content.
 
 ## Features
 
 - **AI Chat with Project Context** — The model knows what project you're in, sees your file tree, and can read/write files directly on disk
 - **Multi-Model Support** — Google Gemini, Groq, Mistral, OpenAI-compatible (OpenRouter, OpenCode Zen), Cerebras with automatic fallback chains
 - **Live Artifact Preview** — HTML, React, SVG, and Markdown render in a sandboxed side panel, streaming in real-time as the model generates
-- **Built-in IDE** — Full file tree explorer with a CodeMirror 6 editor, syntax highlighting, and direct file save
+- **Built-in Editor** — Full file tree explorer with a CodeMirror 6 editor, syntax highlighting, and direct file save
 - **Extended Thinking** — Collapsible chain-of-thought display for models that support reasoning
 - **Project-Aware** — Dedicated project folders with persistent context; the AI knows which project it's working in
 - **Local-First** — All data stored in local SQLite via an Express backend. No cloud dependency.
@@ -64,10 +64,10 @@ npm run tauri:dev
 ## Project Structure
 
 ```
-xz/
+DokTor/
 ├── src/                    # React frontend
 │   ├── components/         # UI components
-│   │   ├── artifacts/      # Artifact preview, IDE pane, renderer
+│   │   ├── artifacts/      # Artifact preview, editor pane, renderer
 │   │   ├── chat/           # Chat bubbles, input, thinking display
 │   │   └── ui/             # Shared UI primitives
 │   ├── hooks/              # React hooks (useArtifacts, etc.)
@@ -85,5 +85,5 @@ xz/
 ---
 
 <div align="center">
-  <sub>Built for local-first AI-assisted development.</sub>
+  <sub>Built for local-first AI-assisted content creation.</sub>
 </div>

@@ -24,11 +24,11 @@ export function StorageTab() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'raw-code-backup.json';
+            a.download = 'doktor-backup.json';
             a.click();
             URL.revokeObjectURL(url);
           }}
-          className="w-full px-4 py-2.5 text-sm font-semibold text-foreground bg-muted hover:bg-accent rounded-[10px] transition-colors text-left"
+          className="w-full px-4 py-2.5 text-sm font-semibold text-foreground bg-muted hover:bg-accent rounded-lg transition-colors text-left"
         >
           Export All Data
         </button>
@@ -42,7 +42,7 @@ export function StorageTab() {
               }
             }
           }}
-          className="w-full px-4 py-2.5 text-sm font-semibold text-red-400 bg-red-900/20 hover:bg-red-900/30 rounded-[14px] transition-colors text-left"
+          className="w-full px-4 py-2.5 text-sm font-semibold text-red-400 bg-red-900/20 hover:bg-red-900/30 rounded-xl transition-colors text-left"
         >
           Clear Chat History
         </button>
@@ -53,7 +53,7 @@ export function StorageTab() {
               localStorage.removeItem('onboarding_completed');
             }
           }}
-          className="w-full px-4 py-2.5 text-sm font-semibold text-foreground bg-muted hover:bg-accent rounded-[10px] transition-colors text-left"
+          className="w-full px-4 py-2.5 text-sm font-semibold text-foreground bg-muted hover:bg-accent rounded-lg transition-colors text-left"
         >
           Reset Onboarding
         </button>

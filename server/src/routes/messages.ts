@@ -52,6 +52,13 @@ router.post('/save_messages', async (req, res) => {
        tool_invocations = EXCLUDED.tool_invocations`,
     params
   );
+
+  const newestCreatedAt = Math.max(...messages.map((m: any) => m.createdAt));
+  await query(
+    `UPDATE chat_sessions SET updated_at = $1 WHERE id = $2 AND (COALESCE(updated_at, 0) < $3)`,
+    [newestCreatedAt, sessionId, newestCreatedAt]
+  );
+
   res.json({ success: true });
 });
 

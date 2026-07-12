@@ -1,17 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Add01Icon, Attachment01Icon, CameraAdd01Icon, Atom02Icon, InternetIcon, HandBag01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { Add01Icon, Attachment01Icon, CameraAdd01Icon, Atom02Icon, HandBag01Icon, ArrowRight01Icon, InternetIcon } from '@hugeicons/core-free-icons';
 import { Dropdown } from '../ui/Dropdown';
 
 interface ToolbarDropdownProps {
   isThinkingEnabled: boolean;
   onToggleThinking: () => void;
-  isWebSearchEnabled: boolean;
   onToggleWebSearch: () => void;
   isIdle?: boolean;
 }
 
-export default function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, isWebSearchEnabled, onToggleWebSearch, isIdle }: ToolbarDropdownProps) {
+export default function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, onToggleWebSearch, isIdle }: ToolbarDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSkillsOpen, setIsSkillsOpen] = useState(false);
   const skillsRef = useRef<HTMLDivElement>(null);
@@ -36,11 +35,11 @@ export default function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, i
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-muted transition-colors text-foreground"
+        className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-muted transition-colors text-foreground"
         aria-label="Add content"
         title="Add content"
       >
-        <HugeiconsIcon icon={Add01Icon} size={18} />
+        <HugeiconsIcon icon={Add01Icon} size={16} />
       </button>
       <Dropdown
         isOpen={isOpen}
@@ -70,17 +69,6 @@ export default function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, i
             <span className={`absolute top-[3px] left-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${isThinkingEnabled ? 'translate-x-4' : ''}`} />
           </button>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 text-xs text-foreground rounded-[6px] cursor-pointer hover:bg-muted" onClick={onToggleWebSearch}>
-          <HugeiconsIcon icon={InternetIcon} size={16} />
-          <span className="flex-1">Web Search</span>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onToggleWebSearch(); }}
-            className={`relative w-9 h-5 rounded-full transition-colors ${isWebSearchEnabled ? 'bg-blue-500' : 'bg-muted-foreground'}`}
-          >
-            <span className={`absolute top-[3px] left-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${isWebSearchEnabled ? 'translate-x-4' : ''}`} />
-          </button>
-        </div>
         <div className="h-px bg-border mx-3" />
         <div className="relative" ref={skillsRef}>
           <div
@@ -102,6 +90,14 @@ export default function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, i
             <div className="px-3 py-2 text-xs text-muted-foreground">Skills and templates</div>
           </Dropdown>
         </div>
+        <button
+          type="button"
+          className="w-full text-left px-3 py-2 text-xs hover:bg-muted text-foreground flex items-center gap-2 rounded-md"
+          onClick={onToggleWebSearch}
+        >
+          <HugeiconsIcon icon={InternetIcon} size={16} />
+          <span>Web Search</span>
+        </button>
       </Dropdown>
     </div>
   );

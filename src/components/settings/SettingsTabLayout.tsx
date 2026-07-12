@@ -30,10 +30,10 @@ export function SettingsTabLayout() {
 
   return (
     <div className="flex h-full">
-      <nav className="w-64 border-r border-border p-3 space-y-1 shrink-0 overflow-y-auto thin-scrollbar flex flex-col">
+      <nav className="w-64 border-r border-border p-3 space-y-1 shrink-0 overflow-y-auto thin-scrollbar flex flex-col bg-sidebar">
         <button
           onClick={() => navigate('/thread/new')}
-          className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-[6px] hover:bg-muted mb-2"
+          className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-muted mb-2"
         >
           <HugeiconsIcon icon={ArrowLeft03Icon} size={14} />
           Back to Home
@@ -45,7 +45,7 @@ export function SettingsTabLayout() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center px-3 py-2 rounded-[8px] cursor-pointer active:scale-[0.99] transition-transform w-full gap-3 ${
+                className={`flex items-center px-3 py-2 rounded-lg cursor-pointer active:scale-[0.99] transition-transform w-full gap-3 ${
                   isActive ? 'bg-muted' : 'hover:bg-muted'
                 }`}
               >
@@ -57,7 +57,7 @@ export function SettingsTabLayout() {
             );
           })}
         </nav>
-        <div className="flex-1 p-6 overflow-y-auto thin-scrollbar">
+        <div className="flex-1 p-6 overflow-y-auto thin-scrollbar bg-background">
           <div className="max-w-[1200px] mx-auto">
           {activeTab === 'general' && <GeneralTab />}
           {activeTab === 'api' && <ApiTab />}

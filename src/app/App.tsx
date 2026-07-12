@@ -68,8 +68,6 @@ export default function App() {
           <Route path="/chats" element={<Suspense fallback={null}><ChatsPage /></Suspense>} />
           <Route path="/plugins" element={<Suspense fallback={null}><PluginsPage /></Suspense>} />
           <Route path="/workflow" element={<Suspense fallback={null}><WorkflowPage /></Suspense>} />
-          <Route path="/project/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
-          <Route path="/project/:folder/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
           <Route path="/chat/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
         </Route>
         <Route path="/settings" element={<Suspense fallback={null}><SettingsPage /></Suspense>} />

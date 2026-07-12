@@ -1,19 +1,14 @@
-import { useState, useEffect } from 'react';
-import { ChatSession } from '@/types/chat';
-import { ChatSessionManager } from '@/services/ChatSessionManager';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useChatsStore } from '@/stores/chatsStore';
 
 export default function ChatsList({ collapsed }: { collapsed: boolean }) {
-  const [chats, setChats] = useState<ChatSession[]>([]);
+  const chats = useChatsStore((s) => s.chats);
+  const refresh = useChatsStore((s) => s.refresh);
 
   useEffect(() => {
-    // This will need to be reactive in a real app
-    const loadChats = async () => {
-      const allChats = await ChatSessionManager.getAll();
-      setChats(allChats);
-    };
-    loadChats();
-  }, []);
+    refresh();
+  }, [refresh]);
 
   if (collapsed) return null;
 
@@ -22,7 +17,7 @@ export default function ChatsList({ collapsed }: { collapsed: boolean }) {
       {chats.map((chat) => (
         <Link
           key={chat.id}
-          to={`/chat/${chat.id}`}
+          to={`/thread/${chat.id}`}
           className="block px-4 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent rounded-[6px] truncate"
         >
           {chat.title}

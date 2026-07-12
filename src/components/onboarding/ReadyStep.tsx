@@ -1,22 +1,19 @@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { CheckmarkCircle01Icon, Key01Icon, FolderLibraryIcon } from '@hugeicons/core-free-icons';
 import { StepStatus } from '@/hooks/useOnboarding';
-import { Project } from '@/types/chat';
 
 interface ReadyStepProps {
   stepStatuses: Record<string, StepStatus>;
-  projects: Project[];
   onFinish: () => void;
   isFinishing: boolean;
 }
 
-export function ReadyStep({ stepStatuses, projects, onFinish, isFinishing }: ReadyStepProps) {
-  const hasProject = stepStatuses['project'] === 'done' || projects.length > 0;
+export function ReadyStep({ stepStatuses, onFinish, isFinishing }: ReadyStepProps) {
   const hasModel = stepStatuses['model'] === 'done';
   const hasPreferences = stepStatuses['preferences'] === 'done';
 
   const items = [
-    { label: 'Project connected', done: hasProject, icon: FolderLibraryIcon },
+    { label: 'Connected', done: true, icon: FolderLibraryIcon },
     { label: 'AI provider configured', done: hasModel, icon: Key01Icon },
     { label: 'AI preferences set', done: hasPreferences, icon: CheckmarkCircle01Icon },
   ];
@@ -75,7 +72,7 @@ export function ReadyStep({ stepStatuses, projects, onFinish, isFinishing }: Rea
             Setting up...
           </>
         ) : (
-          'Start coding'
+          'Start creating'
         )}
       </button>
     </div>

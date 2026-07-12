@@ -1,4 +1,4 @@
-import { ChatSession, Project } from '@/types/chat';
+import { ChatSession } from '@/types/chat';
 import { DatabaseService } from '@core/utils/DatabaseService';
 
 export const ChatSessionManager = {
@@ -36,15 +36,8 @@ export const ChatSessionManager = {
     await DatabaseService.updateSession(id, { title: newTitle });
   },
 
-  getProjects: async (): Promise<Project[]> => {
-    return DatabaseService.getProjects() as unknown as Promise<Project[]>;
+  touch: async (id: string) => {
+    await DatabaseService.touchSession(id);
   },
 
-  createProject: async (name: string, path: string): Promise<Project> => {
-    return DatabaseService.createProject(name, path) as unknown as Promise<Project>;
-  },
-
-  deleteProject: async (id: string) => {
-    await DatabaseService.deleteProject(id);
-  },
 };

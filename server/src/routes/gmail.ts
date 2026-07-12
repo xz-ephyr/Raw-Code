@@ -15,10 +15,10 @@ router.post('/gmail/status', async (_req, res) => {
 
 router.post('/gmail/auth-url', async (req, res) => {
   try {
-    const { clientId } = req.body;
+    const { clientId, codeChallenge, codeChallengeMethod, state } = req.body;
     if (!clientId) return res.status(400).json({ error: 'clientId required' });
     const { getAuthUrl } = await import('../gmailService.js');
-    const url = await getAuthUrl(clientId);
+    const url = await getAuthUrl(clientId, codeChallenge, codeChallengeMethod, state);
     res.json({ url });
   } catch (error: any) {
     res.status(502).json({ error: error.message });
@@ -27,10 +27,10 @@ router.post('/gmail/auth-url', async (req, res) => {
 
 router.post('/gmail/exchange', async (req, res) => {
   try {
-    const { code } = req.body;
+    const { code, codeVerifier } = req.body;
     if (!code) return res.status(400).json({ error: 'code required' });
     const { exchangeCode } = await import('../gmailService.js');
-    const result = await exchangeCode(code);
+    const result = await exchangeCode(code, codeVerifier || null);
     res.json(result);
   } catch (error: any) {
     res.status(502).json({ error: error.message });

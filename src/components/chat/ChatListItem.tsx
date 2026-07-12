@@ -5,9 +5,7 @@ import {
   Delete02Icon,
   PencilEdit02Icon,
   MoreVerticalIcon,
-  StarIcon,
   CheckIcon,
-  SparklesIcon,
 } from '@hugeicons/core-free-icons';
 import { ChatSession } from '@/types/chat';
 import { cn, formatRelativeTime } from '@/lib/utils';
@@ -15,7 +13,7 @@ import { useToast } from '../ui/Toast';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 
 interface ChatListItemProps {
-  chat: ChatSession & { messageCount?: number; isPinned?: boolean };
+  chat: ChatSession;
   onDelete: (id: string) => void;
   onArchive: (id: string) => void;
   onRename: (id: string, newTitle: string) => void;
@@ -106,15 +104,15 @@ export function ChatListItem({
     onToggleSelect?.(chat.id);
   };
 
-  const chatLink = chat.projectId ? `/project/session/${chat.id}` : `/thread/${chat.id}`;
+  const chatLink = `/thread/${chat.id}`;
 
   return (
     <div
       className={cn(
         'group relative w-full rounded-[6px] transition-all duration-200',
         'hover:bg-muted active:bg-muted',
-        isBulkMode ? 'flex items-center gap-3 px-3 py-1.5' : 'flex items-center gap-3 px-3 py-1.5',
-        isSelected && !isBulkMode && 'bg-accent/10 border-l-2 border-accent',
+        isBulkMode ? 'flex items-center gap-3 px-4 py-3' : 'flex items-center gap-3 px-4 py-3',
+        isSelected && 'bg-accent/10 border-l-2 border-accent',
         isMenuOpen ? 'z-20' : 'z-0 hover:z-10'
       )}
     >
@@ -159,25 +157,14 @@ export function ChatListItem({
             <div className="flex flex-col">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium text-foreground line-clamp-2">{chat.title}</span>
-                <span className="text-xs text-muted-foreground shrink-0">{formatRelativeTime(chat.createdAt, time)}</span>
+                <span className="text-xs text-muted-foreground shrink-0">{formatRelativeTime(chat.updatedAt ?? chat.createdAt, time)}</span>
               </div>
               {chat.lastMessage && (
                 <span className="text-xs text-muted-foreground truncate mt-0.5">
                   {chat.lastMessage.length > 100 ? chat.lastMessage.slice(0, 100) + '…' : chat.lastMessage}
                 </span>
               )}
-              {chat.messageCount !== undefined && (
-                <span className="text-[10px] text-muted-foreground/60 mt-0.5 inline-flex items-center gap-1">
-                  <HugeiconRenderer icon={SparklesIcon} size={10} />
-                  {chat.messageCount} messages
-                </span>
-              )}
-              {chat.isPinned && (
-                <span className="text-[10px] text-yellow-500 mt-0.5 inline-flex items-center gap-1">
-                  <HugeiconRenderer icon={StarIcon} size={10} className="fill-current" />
-                  Pinned
-                </span>
-              )}
+              
             </div>
           )}
         </div>

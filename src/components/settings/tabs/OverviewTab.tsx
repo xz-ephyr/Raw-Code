@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Activity01Icon, CheckmarkCircle01Icon, Cancel01Icon, CpuIcon, Clock01Icon, ArrowDown01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import { getUsageStats, getUsageLog, type UsageRecord } from '@core/utils/usageTracker';
@@ -39,11 +39,31 @@ export function OverviewTab() {
     setConfiguredProviders(configured);
   }, [grouped]);
 
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startPolling = useCallback(() => {
+    intervalRef.current = setInterval(loadConfigured, 10000);
+  }, [loadConfigured]);
+
   useEffect(() => {
     loadConfigured();
-    const interval = setInterval(loadConfigured, 2000);
-    return () => clearInterval(interval);
-  }, [loadConfigured]);
+    startPolling();
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+      } else {
+        loadConfigured();
+        startPolling();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [loadConfigured, startPolling]);
 
   useEffect(() => {
     const s = getUsageStats();
@@ -73,7 +93,7 @@ export function OverviewTab() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {cards.map((card) => (
           <div key={card.label} className="border border-border rounded-xl p-4 flex items-center gap-3">
             <div className={`w-10 h-10 rounded-lg ${card.bg} flex items-center justify-center shrink-0`}>
@@ -94,16 +114,16 @@ export function OverviewTab() {
             <p className="text-sm text-muted-foreground">No recent activity. Activity will appear here once you start sending messages using any of the configured providers.</p>
           </div>
         ) : (
-          <div className="border border-border rounded-xl overflow-hidden max-h-[300px] overflow-y-auto thin-scrollbar">
+          <div className="border border-border rounded-xl max-h-[300px] overflow-y-auto thin-scrollbar">
             <div className="space-y-0">
               {log.map((r, i) => (
                 <div key={i} className="flex items-center gap-3 px-4 py-2 border-b border-border last:border-0 hover:bg-muted/30">
                   <div className={`w-2 h-2 rounded-full shrink-0 ${r.success ? 'bg-green-500' : 'bg-red-500'}`} />
                   <span className="text-xs text-muted-foreground shrink-0 w-16">{formatTime(r.timestamp)}</span>
                   <span className="text-xs text-foreground truncate min-w-0 flex-1">{r.model}</span>
-                  <span className="text-[10px] text-muted-foreground shrink-0">{getProviderLabel(r.provider)}</span>
-                  <span className="text-[10px] text-muted-foreground shrink-0">{formatLatency(r.latency)}</span>
-                  {r.success && <span className="text-[10px] text-muted-foreground shrink-0">{r.totalTokens}t</span>}
+                  <span className="text-xs text-muted-foreground shrink-0">{getProviderLabel(r.provider)}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{formatLatency(r.latency)}</span>
+                  {r.success && <span className="text-xs text-muted-foreground shrink-0">{r.totalTokens}t</span>}
                 </div>
               ))}
             </div>
@@ -111,8 +131,7 @@ export function OverviewTab() {
         )}
       </div>
 
-      {/* Provider model sections */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {Array.from(grouped.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([provider, models]) => {
           const isExpanded = expanded[provider] !== false;
           return (
@@ -123,10 +142,10 @@ export function OverviewTab() {
               >
                 <img src={getProvider(provider)?.icon || ''} alt={getProviderLabel(provider)} className="shrink-0" style={{ width: 22, height: 22 }} />
                 <span className="text-sm font-semibold text-foreground flex-1">{getProviderLabel(provider)}</span>
-                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${configuredProviders.has(provider) ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
+                <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full border ${configuredProviders.has(provider) ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
                   {configuredProviders.has(provider) ? 'Connected' : 'Not config'}
                 </span>
-                <span className="text-[11px] text-muted-foreground">{models.length} models</span>
+                <span className="text-xs text-muted-foreground">{models.length} models</span>
                 <HugeiconsIcon icon={isExpanded ? ArrowDown01Icon : ArrowRight01Icon} size={14} className="text-muted-foreground" />
               </button>
               {isExpanded && (
@@ -136,10 +155,10 @@ export function OverviewTab() {
                       <ModelIcon modelId={m.id} size={14} />
                       <div className="min-w-0 flex-1">
                         <span className="text-sm text-foreground">{m.label}</span>
-                        <span className="text-[11px] text-muted-foreground ml-2">{m.id}</span>
+                        <span className="text-xs text-muted-foreground ml-2">{m.id}</span>
                       </div>
                       {m.supportsThinking && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-blue-500/10 text-blue-500 font-medium">Thinking</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-500 font-medium">Thinking</span>
                       )}
                     </div>
                   ))}

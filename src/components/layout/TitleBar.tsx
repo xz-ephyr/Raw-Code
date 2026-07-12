@@ -3,18 +3,13 @@ import { useSessionTitle } from '@/hooks/useSessionTitle';
 import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { useParams } from 'react-router-dom';
 import { HugeiconRenderer } from '@/components/ui/HugeiconRenderer';
-import { VisualStudioCodeIcon, MessageAdd01Icon, ComputerTerminal01Icon } from '@hugeicons/core-free-icons';
+import { MessageAdd01Icon } from '@hugeicons/core-free-icons';
 
 interface TitleBarProps {
-  isProject?: boolean;
-  isIDEVisible?: boolean;
-  isTerminalVisible?: boolean;
-  onToggleIDE?: () => void;
-  onToggleTerminal?: () => void;
   onNewThread?: () => void;
 }
 
-export default function TitleBar({ isProject, isIDEVisible, isTerminalVisible, onToggleIDE, onToggleTerminal, onNewThread }: TitleBarProps) {
+export default function TitleBar({ onNewThread }: TitleBarProps) {
   const { sessionTitle, setTitle, isTitleGenerating } = useSessionTitle();
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -66,7 +61,7 @@ export default function TitleBar({ isProject, isIDEVisible, isTerminalVisible, o
   const displayTitle = sessionTitle || 'New conversation';
 
   return (
-    <div className="group flex items-center h-9 px-4 bg-background shrink-0 select-none border-b border-border">
+    <div className="group flex items-center h-9 px-4 bg-background shrink-0 select-none">
       <div className="flex items-center min-w-0 flex-1">
         {isEditing ? (
           <input
@@ -99,8 +94,7 @@ export default function TitleBar({ isProject, isIDEVisible, isTerminalVisible, o
         )}
       </div>
 
-      {isProject && (
-        <div className="flex items-center gap-1.5 shrink-0 ml-2">
+      <div className="flex items-center gap-1.5 shrink-0 ml-2">
           {onNewThread && (
             <button
               type="button"
@@ -111,38 +105,8 @@ export default function TitleBar({ isProject, isIDEVisible, isTerminalVisible, o
               <HugeiconRenderer icon={MessageAdd01Icon} size={16} />
             </button>
           )}
-          <div className="flex items-center rounded-[6px] bg-muted/40 overflow-hidden">
-            {onToggleIDE && (
-              <button
-                type="button"
-                onClick={onToggleIDE}
-                className={`flex items-center px-2 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                  isIDEVisible
-                    ? 'bg-muted text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
-                }`}
-                title={isIDEVisible ? 'Close IDE' : 'Open IDE'}
-              >
-                <HugeiconRenderer icon={VisualStudioCodeIcon} size={15} />
-              </button>
-            )}
-            {onToggleTerminal && (
-              <button
-                type="button"
-                onClick={onToggleTerminal}
-                className={`flex items-center px-2 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                  isTerminalVisible
-                    ? 'bg-muted text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
-                }`}
-                title={isTerminalVisible ? 'Close terminal' : 'Open terminal'}
-              >
-                <HugeiconRenderer icon={ComputerTerminal01Icon} size={15} />
-              </button>
-            )}
-          </div>
+
         </div>
-      )}
     </div>
   );
 }

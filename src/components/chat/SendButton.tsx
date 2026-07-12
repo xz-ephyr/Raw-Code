@@ -15,13 +15,13 @@ export default function SendButton({ isLoading, onStop, onSend, hasValue }: Send
       type="button"
       onClick={isLoading ? onStop : onSend}
       disabled={!hasValue && !isLoading}
-      className="p-1.5 text-background rounded-full bg-foreground disabled:opacity-50 transition-opacity hover:opacity-90 active:scale-95"
+      className="flex items-center justify-center w-7 h-7 text-background rounded-[8px] bg-foreground disabled:opacity-50 transition-opacity hover:opacity-90 active:scale-95"
       aria-label={label}
       title={label}
     >
       <HugeiconsIcon
         icon={isLoading ? StopIcon : ArrowUp02Icon}
-        size={18}
+        size={16}
         color="currentColor"
         strokeWidth={1.5}
       />

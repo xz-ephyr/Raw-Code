@@ -2,64 +2,77 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createCloudflare } from './createCloudflare';
 
 function makeGoogleFetch(): typeof globalThis.fetch {
+  const GOOGLE_TIMEOUT = 60_000;
+
   return async (input, init) => {
-    const response = await globalThis.fetch(input, init);
-    if (!response.ok || !response.body) return response;
-    const ct = response.headers.get('content-type') || '';
-    if (!ct.includes('stream') && !ct.includes('event-stream')) return response;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), GOOGLE_TIMEOUT);
+    try {
+      const response = await globalThis.fetch(input, { ...init, signal: controller.signal });
+      if (!response.ok || !response.body) return response;
+      const ct = response.headers.get('content-type') || '';
+      if (!ct.includes('stream') && !ct.includes('event-stream')) return response;
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let toolIdx = 0;
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let toolIdx = 0;
 
-    const stream = new ReadableStream<Uint8Array>({
-      async start(controller) {
-        let buf = '';
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buf += decoder.decode(value, { stream: true });
-            const lines = buf.split('\n');
-            buf = lines.pop() || '';
-            for (const line of lines) {
-              if (!line.startsWith('data: ')) {
-                controller.enqueue(new TextEncoder().encode(line + '\n'));
-                continue;
-              }
-              const data = line.slice(6);
-              if (data === '[DONE]') {
-                controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
-                continue;
-              }
-              try {
-                const parsed = JSON.parse(data);
-                const tcs = parsed?.choices?.[0]?.delta?.tool_calls;
-                if (tcs && Array.isArray(tcs)) {
-                  for (const tc of tcs) {
-                    if (tc.index === undefined) tc.index = toolIdx++;
-                  }
+      const stream = new ReadableStream<Uint8Array>({
+        async start(ctrl) {
+          let buf = '';
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buf += decoder.decode(value, { stream: true });
+              const lines = buf.split('\n');
+              buf = lines.pop() || '';
+              for (const line of lines) {
+                if (!line.startsWith('data: ')) {
+                  ctrl.enqueue(new TextEncoder().encode(line + '\n'));
+                  continue;
                 }
-                controller.enqueue(new TextEncoder().encode('data: ' + JSON.stringify(parsed) + '\n\n'));
-              } catch {
-                controller.enqueue(new TextEncoder().encode(line + '\n'));
+                const data = line.slice(6);
+                if (data === '[DONE]') {
+                  ctrl.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+                  continue;
+                }
+                try {
+                  const parsed = JSON.parse(data);
+                  const tcs = parsed?.choices?.[0]?.delta?.tool_calls;
+                  if (tcs && Array.isArray(tcs)) {
+                    for (const tc of tcs) {
+                      if (tc.index === undefined) tc.index = toolIdx++;
+                    }
+                  }
+                  ctrl.enqueue(new TextEncoder().encode('data: ' + JSON.stringify(parsed) + '\n\n'));
+                } catch {
+                  ctrl.enqueue(new TextEncoder().encode(line + '\n'));
+                }
               }
             }
+            if (buf) ctrl.enqueue(new TextEncoder().encode(buf + '\n'));
+          } catch (e) {
+            ctrl.error(e instanceof Error ? e : new Error(String(e)));
+          } finally {
+            ctrl.close();
           }
-          if (buf) controller.enqueue(new TextEncoder().encode(buf + '\n'));
-        } catch (e) {
-          controller.error(e);
-        } finally {
-          controller.close();
-        }
-      },
-    });
+        },
+      });
 
-    return new Response(stream, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-    });
+      return new Response(stream, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      });
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') {
+        throw new Error('Google API request timed out');
+      }
+      throw e instanceof Error ? e : new Error(String(e));
+    } finally {
+      clearTimeout(timeout);
+    }
   };
 }
 
@@ -97,7 +110,7 @@ export function getProviderClient(providerId: string, apiKey: string, baseURL?: 
   const target = baseURL ?? provider.baseURL;
   // When in browser, route through local proxy to avoid CORS
   // Skip for providers that construct URLs dynamically (e.g. Cloudflare with {accountId})
-  const proxyPrefix = typeof window !== 'undefined' && !target.includes('{') ? 'http://localhost:3001/proxy/' : '';
+  const proxyPrefix = typeof window !== 'undefined' && !target.includes('{') ? '/proxy/' : '';
   return provider.createClient(apiKey, proxyPrefix + target);
 }
 

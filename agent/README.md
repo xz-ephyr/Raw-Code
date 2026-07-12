@@ -1,17 +1,17 @@
-# xz Agent Framework
+# DokTor Agent Framework
 
-A Go-based agent framework for the xz AI-native code editor. Handles sub-agent
+A Go-based agent framework for the DokTor AI-native content creation studio. Handles sub-agent
 orchestration, parallel tool execution, MCP integration, and background task
 processing — offloading heavy work from the frontend and Express backend.
 
 ## Architecture
 
 ```
-xz Frontend (React/Vite)
+DokTor Frontend (React/Vite)
     │ HTTP POST /agent/run
     ▼
 ┌────────────────────────────────────────────────────────────┐
-│              xz Agent Framework (Go, :3002)                  │
+│              DokTor Agent Framework (Go, :3002)              │
 │                                                              │
 │  ┌─ Orchestrator ──────────────────────────────────────┐   │
 │  │  Routes tasks: direct | delegate | workflow           │   │
@@ -43,7 +43,7 @@ xz Frontend (React/Vite)
 │  └──────────────────────────────────────────────────────┘   │
 │                                                              │
 │  ┌─ CLI Detection ──────────────────────────────────────┐   │
-│  │  Detects installed AI coding CLIs via which/where     │   │
+│  │  Detects installed AI CLIs via which/where              │   │
 │  │  Reports binary path, version, config location        │   │
 │  └──────────────────────────────────────────────────────┘   │
 └──────────────────────────────────────────────────────────────┘
@@ -61,7 +61,7 @@ xz Frontend (React/Vite)
 ### Prerequisites
 
 - Go 1.26+
-- The xz Express backend running on `localhost:3001`
+- The DokTor Express backend running on `localhost:3001`
 
 ### Run
 
@@ -94,7 +94,7 @@ make build
 | GET | `/api/tasks/{id}` | Get task status and result |
 | POST | `/api/tasks/{id}/cancel` | Cancel a running task |
 | GET | `/api/tasks` | List all tasks (?sessionId=...) |
-| GET | `/api/clis` | Detect installed AI coding CLIs |
+| GET | `/api/clis` | Detect installed AI CLIs |
 | GET | `/api/clis/{name}` | Get info about a specific CLI |
 | POST | `/api/chat` | Submit a chat message as a delegated task |
 | GET | `/api/workflows` | List available workflow definitions |
@@ -110,7 +110,7 @@ single-step operations.
 {
   "sessionId": "abc-123",
   "type": "direct",
-  "prompt": "Search for xz documentation",
+  "prompt": "Search for DokTor documentation",
   "toolScope": ["research"]
 }
 ```
@@ -124,7 +124,7 @@ The sub-agent has an isolated context and tool scope.
 {
   "sessionId": "abc-123",
   "type": "delegate",
-  "prompt": "Research the top 5 AI coding agents and create a comparison",
+  "prompt": "Research the top 5 AI agents and create a comparison",
   "model": "gemini-3.5-flash",
   "maxSteps": 10,
   "toolScope": ["research"]
@@ -147,7 +147,7 @@ results between each other using `$variable` references.
 
 ## CLI Detection
 
-The framework detects which AI coding CLIs are installed on the system:
+The framework detects which AI CLIs are installed on the system:
 
 ```bash
 curl http://localhost:3002/api/clis

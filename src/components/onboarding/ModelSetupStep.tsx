@@ -39,7 +39,7 @@ export function ModelSetupStep({ onComplete, onSkip }: ModelSetupStepProps) {
       <div className="text-center">
         <h2 className="text-2xl font-bold text-foreground">Configure AI Model</h2>
         <p className="text-muted-foreground text-sm mt-1">
-          Set up your AI provider to start coding with AI assistance.
+           Set up your AI provider to start creating with AI assistance.
         </p>
       </div>
 

@@ -4,15 +4,15 @@ import ModelList from './ModelList';
 import NTabDropdown from './NTabDropdown';
 import ToolbarDropdown from './ToolbarDropdown';
 import ThinkingPill from './ThinkingPill';
+import WebSearchPill from './WebSearchPill';
 import SendButton from './SendButton';
 import ConnectorMentionDropdown from './ConnectorMentionDropdown';
 import {
   CONNECTOR_BRAND_COLORS,
   CONNECTOR_ICONS,
   CONNECTORS,
-  type ConnectorName,
+  SHORTCUT_NAMES,
 } from './connectorMentions';
-import { addRecentlyUsed } from './connectorRecent';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -26,12 +26,11 @@ interface ChatInputProps {
   currentModel?: string;
   currentMode?: string;
   onModeChange?: (modeId: string | undefined) => void;
-  isProject?: boolean;
 }
 
 
 
-export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkingEnabled, onToggleThinking, isWebSearchEnabled, onToggleWebSearch, currentModel, currentMode, onModeChange, isProject }: ChatInputProps) {
+export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkingEnabled, onToggleThinking, isWebSearchEnabled, onToggleWebSearch, currentModel, currentMode, onModeChange }: ChatInputProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
@@ -42,11 +41,14 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
   useEffect(() => {
     const checkConnections = async () => {
       const connected = new Set<string>();
-      try {
-        const res = await fetch('http://localhost:3001/gmail/status', { method: 'POST' });
-        const data = await res.json();
-        if (data.connected) connected.add('Gmail');
-      } catch { /* ignore */ }
+      const providers = ['Gmail', 'GitHub', 'Telegram', 'YouTube', 'Reddit', 'Twitter'];
+      for (const name of providers) {
+        try {
+          const res = await fetch(`http://localhost:3001/connector/${name.toLowerCase()}/status`, { method: 'POST' });
+          const data = await res.json();
+          if (data.connected) connected.add(name);
+        } catch { /* ignore */ }
+      }
       setConnectedConnectors(connected);
     };
     checkConnections();
@@ -96,6 +98,21 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
   }, [getTextContent, isLoading, onSend]);
 
   const insertMention = useCallback((name: string, action?: string) => {
+    if (name === 'reasoning') {
+      onToggleThinking();
+      setShowMentionDropdown(false);
+      setMentionQuery('');
+      setMentionSelectedIndex(0);
+      return;
+    }
+    if (name === 'web-search') {
+      onToggleWebSearch();
+      setShowMentionDropdown(false);
+      setMentionQuery('');
+      setMentionSelectedIndex(0);
+      return;
+    }
+
     const editor = editorRef.current;
     if (!editor) return;
 
@@ -140,8 +157,6 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
       }
     }
 
-    addRecentlyUsed(name as ConnectorName);
-
     const colors = CONNECTOR_BRAND_COLORS[name];
     const iconSrc = CONNECTOR_ICONS[name];
 
@@ -181,15 +196,18 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
     setMentionSelectedIndex(0);
     adjustHeight();
     updateIsEmpty();
-  }, [adjustHeight, updateIsEmpty]);
+  }, [adjustHeight, onToggleThinking, onToggleWebSearch, updateIsEmpty]);
 
   const getSelectedConnectorName = useCallback(() => {
-    const filtered = CONNECTORS.filter((c) =>
-      c.toLowerCase().includes(mentionQuery.toLowerCase())
+    const query = mentionQuery.toLowerCase();
+    const connectors = CONNECTORS.filter((c) =>
+      c.toLowerCase().includes(query)
     );
-    if (filtered.length === 0) return null;
-    const idx = Math.min(mentionSelectedIndex, filtered.length - 1);
-    return filtered[idx] || filtered[0] || null;
+    const totalCount = SHORTCUT_NAMES.length + connectors.length;
+    if (totalCount === 0) return null;
+    const idx = Math.min(mentionSelectedIndex, totalCount - 1);
+    if (idx < SHORTCUT_NAMES.length) return SHORTCUT_NAMES[idx];
+    return connectors[idx - SHORTCUT_NAMES.length] || connectors[0] || null;
   }, [mentionQuery, mentionSelectedIndex]);
 
   const handleBackspace = useCallback(() => {
@@ -268,9 +286,12 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     if (showMentionDropdown) {
-      const count = CONNECTORS.filter((c) =>
-        c.toLowerCase().includes(mentionQuery.toLowerCase())
+      const query = mentionQuery.toLowerCase();
+      const shortcutCount = SHORTCUT_NAMES.length;
+      const connectorCount = CONNECTORS.filter((c) =>
+        c.toLowerCase().includes(query)
       ).length;
+      const count = shortcutCount + connectorCount;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setMentionSelectedIndex((i) => (count === 0 ? 0 : (i + 1) % count));
@@ -307,9 +328,19 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
         return;
       }
     }
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+    if (e.key === 'Enter') {
+      const enterToSend = localStorage.getItem('enter_to_send') !== 'false';
+      if (enterToSend) {
+        if (!e.shiftKey) {
+          e.preventDefault();
+          handleSend();
+        }
+      } else {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          handleSend();
+        }
+      }
     }
   }, [handleSend, showMentionDropdown, handleBackspace, getSelectedConnectorName, insertMention, mentionQuery]);
 
@@ -320,7 +351,7 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
   }, []);
 
   return (
-    <div className="shrink-0 w-full mx-auto px-4 pb-3" style={{ maxWidth: 'min(780px, 100%)' }}>
+    <div className="shrink-0 w-full mx-auto px-2 pb-1.5 mb-3 bg-sidebar rounded-[12px]" style={{ maxWidth: 'min(780px, 100%)' }}>
       <div className="relative">
         {showMentionDropdown && (
           <ConnectorMentionDropdown
@@ -328,12 +359,14 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
             selectedIndex={mentionSelectedIndex}
             onSelect={insertMention}
             onClose={() => setShowMentionDropdown(false)}
+            onToggleThinking={onToggleThinking}
+            onToggleWebSearch={onToggleWebSearch}
             isIdle={isIdle}
             connectedConnectors={connectedConnectors}
           />
         )}
-        <div className="bg-muted rounded-[12px] relative z-10 border border-border/60">
-          <ThinScrollbar className="max-h-[135px]">
+        <div className="relative z-10">
+          <ThinScrollbar className="max-h-[165px]">
             <div
               ref={editorRef}
               contentEditable={!isLoading}
@@ -341,17 +374,18 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
               data-placeholder={isLoading ? 'Generating...' : 'Ask anything...'}
-              className="w-full py-2.5 px-4 resize-none outline-none text-[15px] min-h-[38px] bg-transparent overflow-hidden empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none"
+              className="w-full py-2.5 px-2 resize-none outline-none text-[15px] min-h-[68px] bg-sidebar overflow-hidden empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none"
               suppressContentEditableWarning
             />
           </ThinScrollbar>
 
-          <div className="flex flex-col px-3 py-1.5 bg-transparent gap-1">
+          <div className="flex flex-col px-1 pb-0.5 bg-transparent gap-1">
               <div className="flex items-center justify-between">
               <div className="flex items-center gap-0.5">
-                <ToolbarDropdown isThinkingEnabled={isThinkingEnabled} onToggleThinking={onToggleThinking} isWebSearchEnabled={isWebSearchEnabled} onToggleWebSearch={onToggleWebSearch} isIdle={isIdle} />
-                <NTabDropdown isIdle={isIdle} currentMode={currentMode} onModeChange={onModeChange} isProject={isProject} />
+                <ToolbarDropdown isThinkingEnabled={isThinkingEnabled} onToggleThinking={onToggleThinking} onToggleWebSearch={onToggleWebSearch} isIdle={isIdle} />
+                <NTabDropdown isIdle={isIdle} currentMode={currentMode} onModeChange={onModeChange} />
                 {isThinkingEnabled && <ThinkingPill onToggleThinking={onToggleThinking} size="small" />}
+                {isWebSearchEnabled && <WebSearchPill onToggleWebSearch={onToggleWebSearch} size="small" />}
               </div>
               <div className="flex items-center gap-1">
                 {currentModel && <ModelList currentModel={currentModel} showThinkingOnly={isThinkingEnabled} isIdle={isIdle} />}

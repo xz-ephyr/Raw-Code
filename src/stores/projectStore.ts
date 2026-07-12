@@ -1,22 +1,14 @@
 import { create } from 'zustand';
-import type { ProjectContext } from '@core/memory/contextController';
-import type { ProjectMemoryEntry } from '@core/memory/projectMemory';
 
-interface ProjectState {
-  currentProjectId: string | null;
+interface ThreadState {
   currentSessionId: string | null;
-  projectContext: ProjectContext | null;
-  projectMemory: ProjectMemoryEntry[];
   isThinkingEnabled: boolean;
   isWebSearchEnabled: boolean;
   currentMode: string | undefined;
   selectedModel: string;
   modelRevision: number;
 
-  setCurrentProjectId: (id: string | null) => void;
   setCurrentSessionId: (id: string | null) => void;
-  setProjectContext: (context: ProjectContext | null) => void;
-  setProjectMemory: (memory: ProjectMemoryEntry[]) => void;
   setIsThinkingEnabled: (enabled: boolean) => void;
   setIsWebSearchEnabled: (enabled: boolean) => void;
   setCurrentMode: (mode: string | undefined) => void;
@@ -24,21 +16,15 @@ interface ProjectState {
   incrementModelRevision: () => void;
 }
 
-export const useProjectStore = create<ProjectState>((set) => ({
-  currentProjectId: null,
+export const useProjectStore = create<ThreadState>((set) => ({
   currentSessionId: null,
-  projectContext: null,
-  projectMemory: [],
   isThinkingEnabled: false,
-  isWebSearchEnabled: true,
+  isWebSearchEnabled: false,
   currentMode: 'explorer',
   selectedModel: 'auto',
   modelRevision: 0,
 
-  setCurrentProjectId: (id) => set({ currentProjectId: id }),
   setCurrentSessionId: (id) => set({ currentSessionId: id }),
-  setProjectContext: (context) => set({ projectContext: context }),
-  setProjectMemory: (memory) => set({ projectMemory: memory }),
   setIsThinkingEnabled: (enabled) => set({ isThinkingEnabled: enabled }),
   setIsWebSearchEnabled: (enabled) => set({ isWebSearchEnabled: enabled }),
   setCurrentMode: (mode) => {

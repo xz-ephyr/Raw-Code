@@ -26,6 +26,8 @@ export function useProviderKeys(extraConfigs?: ExtraConfig[]) {
     Object.fromEntries(providers.map(p => [p.id, '']))
   )
   const [extras, setExtras] = useState<Record<string, string>>({})
+  const [loaded, setLoaded] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     (async () => {
@@ -44,6 +46,8 @@ export function useProviderKeys(extraConfigs?: ExtraConfig[]) {
         }
         setExtras(extraInit)
       }
+
+      setLoaded(true)
     })()
   }, [providers, extraConfigs])
 
@@ -52,17 +56,22 @@ export function useProviderKeys(extraConfigs?: ExtraConfig[]) {
   }, [])
 
   const saveAll = useCallback(async (useAllSettled?: boolean) => {
-    await saveProviderKeys(providers, keys, useAllSettled)
+    setIsSaving(true)
+    try {
+      await saveProviderKeys(providers, keys, useAllSettled)
 
-    if (extraConfigs) {
-      for (const ec of extraConfigs) {
-        await DatabaseService.setConfig(ec.key, extras[ec.key] || '').catch(() => {})
-        if (ec.storageKey) {
-          localStorage.setItem(ec.storageKey, extras[ec.key] || '')
+      if (extraConfigs) {
+        for (const ec of extraConfigs) {
+          await DatabaseService.setConfig(ec.key, extras[ec.key] || '').catch(() => {})
+          if (ec.storageKey) {
+            localStorage.setItem(ec.storageKey, extras[ec.key] || '')
+          }
         }
       }
+    } finally {
+      setIsSaving(false)
     }
   }, [providers, keys, extras, extraConfigs])
 
-  return { providers, keys, setKeys, extras, setExtraValue, saveAll }
+  return { providers, keys, setKeys, extras, setExtraValue, saveAll, loaded, isSaving }
 }

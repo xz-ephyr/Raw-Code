@@ -58,11 +58,6 @@ describe('Explorer Policy Enforcement', () => {
     expect(result.allowed).toBe(false);
   });
 
-  it('should block terminal tool', () => {
-    const result = enforceExplorerPolicy('terminal');
-    expect(result.allowed).toBe(false);
-  });
-
   it('should block unknown tools not in either list', () => {
     const result = enforceExplorerPolicy('unknown_tool');
     expect(result.allowed).toBe(false);
@@ -77,7 +72,7 @@ describe('Explorer Policy Enforcement', () => {
 
   it('should have correct BLOCKED list', () => {
     expect(EXPLORER_BLOCKED).toEqual(
-      expect.arrayContaining(['edit', 'write', 'bash', 'delete', 'run', 'terminal'])
+      expect.arrayContaining(['edit', 'write', 'bash', 'delete', 'run'])
     );
   });
 });

@@ -138,4 +138,5 @@ Report findings, not transcripts. Pull out the fact that actually answers the qu
 | Fetch a specific URL | \`web_search\` or \`run_command curl\` |
 | Delegate research or an audit | \`subagent_run\` (task needs 3+ sequential calls you don't need to watch) |
 | Verify a change | run the test/build/lint yourself and read the actual output — never assume |
+| Create a code, HTML, SVG, Mermaid, or markdown preview | \`write_artifact\` (say what you're building first, include a summary inside the content) |
 `;

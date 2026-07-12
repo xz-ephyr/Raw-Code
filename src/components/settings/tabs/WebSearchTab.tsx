@@ -24,7 +24,7 @@ export function WebSearchTab() {
       <div className="flex flex-col gap-2">
         <label className="text-sm font-semibold text-foreground">Search Provider</label>
         <select
-          className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border focus:border-ring transition-all appearance-none cursor-pointer"
+          className="h-9 bg-muted rounded-lg px-3 text-sm outline-none w-full border border-border focus:border-ring transition-all appearance-none cursor-pointer"
           value={searchConfig['search-provider'] || 'tavily'}
           onChange={(e) => setSearchConfig(p => ({ ...p, 'search-provider': e.target.value }))}
         >
@@ -67,7 +67,7 @@ export function WebSearchTab() {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="mt-4 px-6 py-2 text-sm font-bold text-accent-foreground bg-accent hover:bg-muted rounded-[10px] transition-all flex items-center gap-2 shadow-lg shadow-black/30 active:scale-[0.98] disabled:opacity-50"
+          className="mt-4 px-6 py-2 text-sm font-bold text-accent-foreground bg-accent hover:bg-muted rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-black/30 active:scale-[0.98] disabled:opacity-50"
         >
           {isSaving ? (
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -88,7 +88,7 @@ function SearchKeyField({ label, subtitle, hint, value, onChange }: {
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-<label className="text-[12px] font-medium text-muted-foreground ml-1">
+<label className="text-xs font-medium text-muted-foreground ml-1">
         {label} {subtitle && <span className="text-muted-foreground">({subtitle})</span>}
       </label>
       <PasswordInput

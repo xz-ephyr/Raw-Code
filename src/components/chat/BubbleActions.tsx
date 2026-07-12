@@ -7,7 +7,12 @@ import {
   Copy01Icon,
   Tick01Icon,
 } from '@hugeicons/core-free-icons';
-import type { TimelineSource } from './ThinkingTimeline';
+
+interface TimelineSource {
+  url: string;
+  title: string;
+  snippet?: string;
+}
 
 function SourcesFooter({ sources }: { sources: TimelineSource[] }) {
   const maxVisible = 4;

@@ -52,17 +52,17 @@ export default function ModelList({ currentModel, showThinkingOnly, isIdle }: Mo
         className="flex items-center gap-1 px-2 py-1 rounded-[6px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-xs"
         title="Select model"
       >
-        <ModelIcon modelId={currentModel} size={14} />
+        <ModelIcon modelId={currentModel} size={18} />
         <span className="max-w-[100px] truncate">{currentDef?.label || currentModel}</span>
-        <HugeiconsIcon icon={ArrowDown01Icon} size={12} />
+        <HugeiconsIcon icon={ArrowDown01Icon} size={14} />
       </button>
       <Dropdown
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         position={isIdle ? 'bottom' : 'top'}
         align="right"
-        width="260px"
-        maxHeight="213px"
+        width="280px"
+        maxHeight="240px"
       >
         {sortedGroups.map(([providerId, models]) => {
           return (
@@ -83,7 +83,7 @@ export default function ModelList({ currentModel, showThinkingOnly, isIdle }: Mo
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >
-                    <ModelIcon modelId={m.id} size={14} />
+                    <ModelIcon modelId={m.id} size={16} />
                     <span className="flex-1 truncate">{m.label}</span>
                     {m.supportsThinking && (
                       <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} className="text-blue-500 shrink-0" />

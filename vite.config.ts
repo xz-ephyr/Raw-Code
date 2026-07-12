@@ -13,6 +13,12 @@ export default defineConfig({
   server: {
     port: 4028,
     strictPort: true,
+    proxy: {
+      '/proxy': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     outDir: 'dist',

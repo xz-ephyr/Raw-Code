@@ -14,17 +14,17 @@ export function GmailTab() {
 
   const checkStatus = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:3001/gmail/status', { method: 'POST' });
+      const res = await fetch('http://localhost:3001/connector/gmail/status', { method: 'POST' });
       const data = await res.json();
       setConnected(data.connected);
-      setEmail(data.email);
+      setEmail(data.identity);
     } catch { /* ignore */ }
   }, []);
 
   const handleConnectWithId = useCallback(async (clientId: string) => {
     setIsAuthenticating(true);
     try {
-      const res = await fetch('http://localhost:3001/gmail/auth-url', {
+      const res = await fetch('http://localhost:3001/connector/gmail/auth-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId }),
@@ -71,7 +71,7 @@ export function GmailTab() {
       );
 
       // Get auth URL
-      const res = await fetch('http://localhost:3001/gmail/auth-url', {
+      const res = await fetch('http://localhost:3001/connector/gmail/auth-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId: config['gmail-client-id'] }),
@@ -98,7 +98,7 @@ export function GmailTab() {
   };
 
   const handleDisconnect = async () => {
-    await fetch('http://localhost:3001/gmail/disconnect', { method: 'POST' });
+    await fetch('http://localhost:3001/connector/gmail/disconnect', { method: 'POST' });
     setConnected(false);
     setEmail(null);
   };

@@ -11,8 +11,10 @@ interface ConnectorDetailModalProps {
   details: string[];
   isOpen: boolean;
   connected?: boolean;
+  authType?: 'oauth2' | 'token';
   onClose: () => void;
   onAction?: () => void;
+  onSetToken?: (token: string) => void;
 }
 
 const badgeColors: Record<string, string> = {
@@ -21,7 +23,7 @@ const badgeColors: Record<string, string> = {
   skills: 'bg-green-500/20 text-green-500',
 };
 
-export const ConnectorDetailModal = ({ label, description, icon, imageSrc, type = 'connector', stars, details, isOpen, connected, onClose, onAction }: ConnectorDetailModalProps) => {
+export const ConnectorDetailModal = ({ label, description, icon, imageSrc, type = 'connector', stars, details, isOpen, connected, authType, onClose, onAction, onSetToken }: ConnectorDetailModalProps) => {
   if (!isOpen) return null;
 
   return (
@@ -84,7 +86,26 @@ export const ConnectorDetailModal = ({ label, description, icon, imageSrc, type 
           </div>
         </div>
 
-        <div className="px-5 py-4 border-t border-border shrink-0">
+        <div className="px-5 py-4 border-t border-border shrink-0 space-y-3">
+          {authType === 'token' && !connected && onSetToken && (
+            <div>
+              <input
+                type="password"
+                placeholder={`Enter ${label} Bot Token`}
+                className="w-full px-3 py-2 text-sm bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring mb-2"
+                onChange={(e) => {
+                  const token = e.target.value.trim();
+                  (e.target as any)._token = token;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const token = (e.target as any)._token || (e.target as HTMLInputElement).value.trim();
+                    if (token) onSetToken(token);
+                  }
+                }}
+              />
+            </div>
+          )}
           <button
             onClick={onAction}
             disabled={connected}

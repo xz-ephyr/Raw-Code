@@ -21,7 +21,7 @@ export function PasswordInput({ value, onChange, placeholder, showKeyIcon = fals
       )}
       <input
         type={visible ? 'text' : 'password'}
-        className={`h-9 bg-muted rounded-[8px] outline-none text-sm w-full border border-border focus:border-ring transition-colors ${showKeyIcon ? 'pl-8 pr-9' : 'pl-3 pr-9'}`}
+        className={`h-9 bg-muted rounded-lg outline-none text-sm w-full border border-border focus:border-ring transition-colors ${showKeyIcon ? 'pl-8 pr-9' : 'pl-3 pr-9'}`}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}

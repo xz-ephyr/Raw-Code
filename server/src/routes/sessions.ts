@@ -7,10 +7,10 @@ router.post('/get_sessions', async (req, res) => {
   const { projectId } = req.body;
   let sql: string, params: any[];
   if (projectId === null || projectId === undefined) {
-    sql = 'SELECT id, title, last_message, project_id, archived, created_at FROM chat_sessions WHERE project_id IS NULL ORDER BY created_at DESC';
+    sql = 'SELECT id, title, last_message, project_id, archived, created_at, updated_at FROM chat_sessions WHERE project_id IS NULL ORDER BY COALESCE(updated_at, created_at) DESC';
     params = [];
   } else {
-    sql = 'SELECT id, title, last_message, project_id, archived, created_at FROM chat_sessions WHERE project_id = $1 ORDER BY created_at DESC';
+    sql = 'SELECT id, title, last_message, project_id, archived, created_at, updated_at FROM chat_sessions WHERE project_id = $1 ORDER BY COALESCE(updated_at, created_at) DESC';
     params = [projectId];
   }
   const result = await query(sql, params);
@@ -19,24 +19,26 @@ router.post('/get_sessions', async (req, res) => {
     lastMessage: r.last_message,
     projectId: r.project_id,
     createdAt: Number(r.created_at),
+    updatedAt: r.updated_at ? Number(r.updated_at) : undefined,
     archived: Boolean(r.archived),
   })));
 });
 
 router.post('/get_all_sessions', async (_req, res) => {
-  const result = await query('SELECT id, title, last_message, project_id, archived, created_at FROM chat_sessions ORDER BY created_at DESC');
+  const result = await query('SELECT id, title, last_message, project_id, archived, created_at, updated_at FROM chat_sessions ORDER BY COALESCE(updated_at, created_at) DESC');
   res.json(result.rows.map(r => ({
     ...r,
     lastMessage: r.last_message,
     projectId: r.project_id,
     createdAt: Number(r.created_at),
+    updatedAt: r.updated_at ? Number(r.updated_at) : undefined,
     archived: Boolean(r.archived),
   })));
 });
 
 router.post('/get_session', async (req, res) => {
   const { id } = req.body;
-  const result = await query('SELECT id, title, last_message, project_id, archived, created_at FROM chat_sessions WHERE id = $1', [id]);
+  const result = await query('SELECT id, title, last_message, project_id, archived, created_at, updated_at FROM chat_sessions WHERE id = $1', [id]);
   if (result.rows.length === 0) return res.json(null);
   const r = result.rows[0];
   res.json({
@@ -44,6 +46,7 @@ router.post('/get_session', async (req, res) => {
     lastMessage: r.last_message,
     projectId: r.project_id,
     createdAt: Number(r.created_at),
+    updatedAt: r.updated_at ? Number(r.updated_at) : undefined,
     archived: Boolean(r.archived),
   });
 });
@@ -61,10 +64,10 @@ router.post('/create_session', async (req, res) => {
   }
 
   await query(
-    'INSERT INTO chat_sessions (id, title, last_message, project_id, created_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
-    [id, title, lastMessage || null, projectId || null, createdAt]
+    'INSERT INTO chat_sessions (id, title, last_message, project_id, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO NOTHING',
+    [id, title, lastMessage || null, projectId || null, createdAt, createdAt]
   );
-  res.json({ id, title, lastMessage: lastMessage || null, projectId: projectId || null, archived: false, createdAt });
+  res.json({ id, title, lastMessage: lastMessage || null, projectId: projectId || null, archived: false, createdAt, updatedAt: createdAt });
 });
 
 router.post('/update_session', async (req, res) => {
@@ -87,6 +90,9 @@ router.post('/update_session', async (req, res) => {
   }
 
   if (sets.length === 0) return res.json({ success: true });
+
+  sets.push(`updated_at = $${idx++}`);
+  params.push(Date.now());
 
   params.push(id);
   await query(`UPDATE chat_sessions SET ${sets.join(', ')} WHERE id = $${idx}`, params);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
@@ -12,13 +12,14 @@ import {
   CursorRectangleSelection02Icon,
   Moon01Icon,
   Sun01Icon,
+  MoreVerticalIcon,
+  ArchiveIcon,
+  Delete02Icon,
 } from '@hugeicons/core-free-icons';
 import SidebarTab from './SidebarTab';
-import ProjectItem from './ProjectItem';
 
 import { ChatSessionManager } from '@/services/ChatSessionManager';
-import { FileSystemService } from '@core/workspace/FileSystemService';
-import { Project } from '@/types/chat';
+import type { ChatSession } from '@/types/chat';
 import { isTauri } from '@/lib/tauri';
 import { useToast } from '../ui/Toast';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
@@ -31,41 +32,42 @@ const downloadIcon = <HugeiconRenderer icon={Download01Icon} />;
 const workflowIcon = <HugeiconRenderer icon={CursorRectangleSelection02Icon} />;
 const settingsIcon = <HugeiconRenderer icon={Settings02Icon} />;
 
+const MAX_THREADS = 15;
+
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
-  const [projects, setProjects] = useState<Project[]>([]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [threads, setThreads] = useState<ChatSession[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { theme, toggleTheme } = useTheme();
 
-  const hasLoadedRef = useRef(false);
-
   useEffect(() => {
-    const loadProjects = async () => {
-      const allProjects = await ChatSessionManager.getProjects();
-      setProjects(allProjects);
+    const loadThreads = async () => {
+      const all = await ChatSessionManager.getAll();
+      all.sort((a, b) => b.createdAt - a.createdAt);
+      setThreads(all.slice(0, MAX_THREADS));
     };
-    if (!hasLoadedRef.current) {
-      hasLoadedRef.current = true;
-      loadProjects();
-    }
+    loadThreads();
+
+    const handleSessionChange = () => loadThreads();
+    window.addEventListener('session-title-changed', handleSessionChange);
+    window.addEventListener('projects-changed', handleSessionChange);
+    window.addEventListener('thread-deleted', handleSessionChange);
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
     };
-    const handleProjectsChanged = () => {
-      loadProjects();
-    };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('projects-changed', handleProjectsChanged);
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('projects-changed', handleProjectsChanged);
+      window.removeEventListener('session-title-changed', handleSessionChange);
+      window.removeEventListener('projects-changed', handleSessionChange);
+      window.removeEventListener('thread-deleted', handleSessionChange);
     };
   }, []);
 
@@ -88,7 +90,7 @@ export default function Sidebar() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'raw-code-instructions.txt';
+      a.download = 'doktor-instructions.txt';
       a.click();
       URL.revokeObjectURL(url);
       addToast(
@@ -104,55 +106,10 @@ export default function Sidebar() {
     localStorage.setItem('sidebar_collapsed', String(nextState));
   };
 
-  const handleAddProject = async () => {
-    try {
-      if (isTauri()) {
-        // Desktop: use native folder-picker dialog
-        const { open } = await import('@tauri-apps/plugin-dialog');
-        const selected = await open({
-          directory: true,
-          multiple: false,
-          title: 'Select Project Folder',
-        });
-        if (selected && typeof selected === 'string') {
-          const folderName = selected.split(/[/\\]/).pop() || 'New Project';
-          const newProject = await ChatSessionManager.createProject(folderName, selected);
-          const allProjects = await ChatSessionManager.getProjects();
-          setProjects(allProjects);
-          const slug = folderName.toLowerCase().replace(/\s+/g, '-');
-          navigate(`/project/${slug}-${newProject.id}`);
-        }
-      } else if ('showDirectoryPicker' in window) {
-        const dirHandle = await (window as any).showDirectoryPicker();
-        const folderName = dirHandle.name || 'New Project';
-        const newProject = await ChatSessionManager.createProject(folderName, folderName);
-        await FileSystemService.importDirectory(dirHandle, newProject.id);
-        const allProjects = await ChatSessionManager.getProjects();
-        setProjects(allProjects);
-        const slug = folderName.toLowerCase().replace(/\s+/g, '-');
-        navigate(`/project/${slug}-${newProject.id}`);
-      } else {
-        addToast('Your browser does not support folder selection. Please use a supported browser or the desktop app.', 'error');
-      }
-    } catch (err) {
-      console.error('Failed to open directory:', err);
-      addToast('Could not open folder. Make sure the server is running and try again.', 'error');
-    }
-  };
-
-  const handleDeleteProject = useCallback(async (id: string) => {
-    await ChatSessionManager.deleteProject(id);
-    const allProjects = await ChatSessionManager.getProjects();
-    setProjects(allProjects);
-    if (location.pathname.includes('/chat/')) {
-      navigate('/chats');
-    }
-  }, [location.pathname, navigate]);
-
   return (
     <>
-      <div
-        className={`bg-sidebar border-r border-sidebar-border h-screen transition-[width] duration-300 ease-in-out flex flex-col shrink-0 ${isCollapsed ? 'w-[48px]' : 'w-[320px]'}`}
+<div
+        className={`bg-sidebar h-screen transition-[width] duration-300 ease-in-out flex flex-col shrink-0 ${isCollapsed ? 'w-[48px]' : 'w-[320px]'}`}
       >
         <div className={`flex items-center shrink-0 ${isCollapsed ? 'p-2 justify-center' : 'pl-4 pr-2 py-2'}`}>
           {!isCollapsed && (
@@ -214,43 +171,34 @@ export default function Sidebar() {
           </div>
 
           {!isCollapsed && (
-            <div className="flex flex-col min-h-0 flex-1 px-4 overflow-hidden">
-              <div className="mt-6 flex justify-between items-center mb-2 px-2 shrink-0">
-                <h2 className="text-sm font-bold text-muted-foreground whitespace-nowrap">Projects</h2>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => navigate('/settings')}
-                    className="text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent active:bg-accent p-1 rounded-[6px] transition-all active:scale-95"
-                    aria-label="Permissions gateway"
-                    title="Permissions gateway"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={handleAddProject}
-                    className="text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent active:bg-accent p-1 rounded-[6px] transition-all active:scale-95"
-                    aria-label="Add project"
-                    title="Add project"
-                  >
-                    +
-                  </button>
-                </div>
+            <div className="flex-1 min-h-0 px-4 flex flex-col overflow-hidden">
+              <div className="pt-5 pb-1 px-2 shrink-0 sticky top-0 bg-sidebar z-10">
+                <h2 className="text-sm font-bold text-muted-foreground">Threads</h2>
               </div>
-
-              <div className="space-y-1 overflow-y-auto min-h-0 thin-scrollbar pr-3">
-                {projects.map((project) => (
-                  <ProjectItem
-                    key={project.id}
-                    project={project}
-                    onDelete={handleDeleteProject}
+              <div className="flex-1 overflow-y-auto min-h-0 thin-scrollbar space-y-0.5 pr-1 pb-2">
+                {threads.map((t) => (
+                  <ThreadItem
+                    key={t.id}
+                    session={t}
+                    isActive={location.pathname === `/thread/${t.id}`}
+                    onNavigate={() => navigate(`/thread/${t.id}`)}
+                    onRename={async (id, title) => {
+                      await ChatSessionManager.rename(id, title);
+                      window.dispatchEvent(new CustomEvent('session-title-changed'));
+                    }}
+                    onArchive={async (id) => {
+                      await ChatSessionManager.archive(id);
+                      window.dispatchEvent(new CustomEvent('projects-changed'));
+                    }}
+                    onDelete={async (id) => {
+                      await ChatSessionManager.delete(id);
+                      window.dispatchEvent(new CustomEvent('thread-deleted'));
+                    }}
                   />
                 ))}
-                {projects.length === 0 && (
-                  <p className="text-[11px] text-muted-foreground px-2 italic">
-                    Click + to add a project
+                {threads.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground px-2 italic pt-1">
+                    No threads yet
                   </p>
                 )}
               </div>
@@ -303,5 +251,142 @@ export default function Sidebar() {
         </div>
       </div>
     </>
+  );
+}
+
+function ThreadItem({
+  session,
+  isActive,
+  onNavigate,
+  onRename,
+  onArchive,
+  onDelete,
+}: {
+  session: ChatSession;
+  isActive: boolean;
+  onNavigate: () => void;
+  onRename: (id: string, title: string) => Promise<void>;
+  onArchive: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(session.title);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const { confirmAsync } = useToast();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMenuOpen]);
+
+  const handleRename = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(true);
+    setIsMenuOpen(false);
+  };
+
+  const submitRename = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onRename(session.id, editTitle);
+    setIsEditing(false);
+  };
+
+  const handleArchive = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onArchive(session.id);
+    setIsMenuOpen(false);
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (await confirmAsync('Are you sure you want to delete this thread?')) {
+      onDelete(session.id);
+    }
+    setIsMenuOpen(false);
+  };
+
+  return (
+    <div
+      className={`group relative w-full rounded-[6px] text-sm transition-colors ${
+        isActive
+          ? 'bg-sidebar-accent text-sidebar-foreground'
+          : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground'
+      } ${isMenuOpen ? 'z-20' : ''}`}
+    >
+      <div className="flex items-center px-2 py-1.5">
+        <button
+          onClick={onNavigate}
+          className="flex-1 min-w-0 text-left"
+        >
+          {isEditing ? (
+            <form onSubmit={submitRename} onClick={(e) => e.stopPropagation()}>
+              <input
+                autoFocus
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onBlur={() => setIsEditing(false)}
+                className="w-full bg-card border border-border rounded px-1.5 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </form>
+          ) : (
+            <span className="truncate block">{session.title}</span>
+          )}
+        </button>
+
+        {!isEditing && (
+          <div ref={menuRef} className="shrink-0">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMenuOpen(!isMenuOpen);
+              }}
+              className={`p-0.5 rounded text-muted-foreground hover:text-sidebar-foreground transition-all opacity-0 group-hover:opacity-100 ${
+                isMenuOpen ? 'opacity-100' : ''
+              }`}
+              aria-label="Thread actions"
+            >
+              <HugeiconRenderer icon={MoreVerticalIcon} size={14} />
+            </button>
+
+            {isMenuOpen && (
+              <div className="fixed w-36 bg-sidebar border border-sidebar-border rounded-lg shadow-xl shadow-black/30 py-1 z-[9999]"
+                style={{ top: 'auto', left: 'auto' }}
+              >
+                <button
+                  onClick={handleRename}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-sidebar-accent transition-colors"
+                >
+                  <HugeiconRenderer icon={PencilEdit02Icon} size={13} className="text-muted-foreground" />
+                  <span>Rename</span>
+                </button>
+                <button
+                  onClick={handleArchive}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-sidebar-accent transition-colors"
+                >
+                  <HugeiconRenderer icon={ArchiveIcon} size={13} className="text-muted-foreground" />
+                  <span>{session.archived ? 'Unarchive' : 'Archive'}</span>
+                </button>
+                <div className="h-px bg-sidebar-border my-1" />
+                <button
+                  onClick={handleDelete}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:bg-red-900/20 transition-colors"
+                >
+                  <HugeiconRenderer icon={Delete02Icon} size={13} />
+                  <span>Delete</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

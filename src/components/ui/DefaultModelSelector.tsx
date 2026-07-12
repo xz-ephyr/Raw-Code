@@ -25,9 +25,10 @@ export function DefaultModelSelector({ selectedModel, onChange, maxHeight = '190
       </label>
       <div className="relative">
         <div
-          className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border flex items-center cursor-pointer"
+          className="h-10 bg-muted rounded-[10px] px-3 text-sm outline-none w-full border border-border flex items-center gap-2 cursor-pointer"
           onClick={() => setIsOpen(!isOpen)}
         >
+          <ModelIcon modelId={selectedModel} size={18} />
           <span className="flex-1 truncate">
             {def ? `${def.label} (${getProviderLabel(def.provider) || def.provider})` : selectedModel}
           </span>

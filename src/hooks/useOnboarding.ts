@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { ChatSessionManager } from '@/services/ChatSessionManager';
 
-export type StepId = 'welcome' | 'project' | 'model' | 'preferences' | 'ready';
+export type StepId = 'welcome' | 'model' | 'preferences' | 'ready';
 
 export interface StepInfo {
   id: StepId;
@@ -13,8 +13,7 @@ export interface StepInfo {
 }
 
 export const STEPS: StepInfo[] = [
-  { id: 'welcome', label: 'Welcome', description: 'Get started with XZ', optional: false },
-  { id: 'project', label: 'Project', description: 'Connect your codebase', optional: true },
+  { id: 'welcome', label: 'Welcome', description: 'Get started', optional: false },
   { id: 'model', label: 'AI Model', description: 'Configure your AI provider', optional: true },
   { id: 'preferences', label: 'Preferences', description: 'AI memory & style', optional: true },
   { id: 'ready', label: 'Ready', description: 'You\'re all set', optional: false },
@@ -35,7 +34,6 @@ export function useOnboarding() {
   const [activeStep, setActiveStep] = useState<StepId>('welcome');
   const [stepStatuses, setStepStatuses] = useState<Record<StepId, StepStatus>>({
     welcome: 'pending',
-    project: 'pending',
     model: 'pending',
     preferences: 'pending',
     ready: 'pending',
