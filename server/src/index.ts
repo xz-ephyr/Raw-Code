@@ -43,14 +43,17 @@ app.get('/auth/:provider/callback', async (req, res) => {
   const service = registry.get(actualProvider);
   const type = service ? `${actualProvider}-oauth-callback` : 'oauth-callback';
 
+  const safeCode = jsEscape(actualCode);
+  const safeState = jsEscape(actualState ? String(actualState) : '');
+
   res.send(`
     <!DOCTYPE html>
     <html><body><script>
       if (window.opener) {
         window.opener.postMessage({
           type: '${type}',
-          code: '${actualCode.replace(/'/g, "\\'")}',
-          state: '${actualState ? String(actualState).replace(/'/g, "\\'") : ''}'
+          code: '${safeCode}',
+          state: '${safeState}'
         }, '*');
       }
       window.close();
@@ -67,20 +70,26 @@ app.get('/auth/gmail/callback', async (req, res) => {
   if (!code || typeof code !== 'string') {
     return res.status(400).send('Missing authorization code');
   }
+  const safeCode = jsEscape(code);
+  const safeState = jsEscape(state ? String(state) : '');
   res.send(`
     <!DOCTYPE html>
     <html><body><script>
       if (window.opener) {
         window.opener.postMessage({
           type: 'gmail-oauth-callback',
-          code: '${code.replace(/'/g, "\\'")}',
-          state: '${state ? String(state).replace(/'/g, "\\'") : ''}'
+          code: '${safeCode}',
+          state: '${safeState}'
         }, '*');
       }
       window.close();
     </script><p>Authentication successful. You can close this window.</p></body></html>
   `);
 });
+
+function jsEscape(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\//g, '\\/');
+}
 
 app.use(auth);
 

@@ -2,9 +2,29 @@ import { Router } from 'express';
 
 const router = Router();
 
+const ALLOWED_HOST_RE = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*(\.[a-zA-Z]{2,})?$/;
+const PRIVATE_IPS = /^(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|0\.|169\.254\.|::1|fe80:)/;
+
 router.all('/proxy/*', async (req, res) => {
   const raw = req.path.replace(/^\//, '');
   const actualUrl = raw.replace(/^proxy\//, '');
+
+  let parsed: URL;
+  try {
+    parsed = new URL(actualUrl);
+  } catch {
+    res.status(400).json({ error: 'Invalid URL' });
+    return;
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    res.status(400).json({ error: 'Only http/https URLs allowed' });
+    return;
+  }
+  const hostname = parsed.hostname;
+  if (PRIVATE_IPS.test(hostname) || hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0' || hostname === '[::1]') {
+    res.status(403).json({ error: 'Requests to private addresses are not allowed' });
+    return;
+  }
 
   const headers: Record<string, string> = {};
   for (const [key, value] of Object.entries(req.headers)) {
