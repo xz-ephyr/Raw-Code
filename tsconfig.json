@@ -21,9 +21,13 @@
 
     "paths": {
       "@/*": ["./src/*"],
-      "@core/*": ["./core/*"]
+      "@core/*": ["./core/*"],
+      "@doktor/tool-runtime": ["./packages/tool-runtime/src"],
+      "@doktor/tool-runtime/*": ["./packages/tool-runtime/src/*"],
+      "@doktor/subagent": ["./packages/subagent/src"],
+      "@doktor/subagent/*": ["./packages/subagent/src/*"]
     }
   },
-  "include": ["src", "core"],
+  "include": ["src", "core", "packages/tool-runtime", "packages/subagent"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

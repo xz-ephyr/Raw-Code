@@ -1,37 +1,54 @@
-import { tool, zodSchema } from 'ai';
-import { z } from 'zod';
-import { callGoTool } from '@core/utils/goProxy';
-import { requestToolConfirmation } from '@core/utils/toolConfirm';
+import { Effect, Schema } from 'effect';
+import { make } from '@doktor/tool-runtime';
 
-export const runCommandTool = {
-  name: 'run_command',
-  ...tool({
-    description: 'Execute a shell command and return stdout, stderr, and exit code. Use PowerShell syntax. Always set cwd to the project root. Prefer npm scripts over raw tools. NEVER run destructive commands (rm -rf, format, mass delete) without explicit user approval.',
-    inputSchema: zodSchema(z.object({
-      command: z.string().describe('The full PowerShell command to execute. Use project npm scripts when available (npm run build, npm test). For multiple steps, chain with semicolons.'),
-      cwd: z.string().optional().describe('Working directory. ALWAYS set this to the project root — never assume the default.'),
-      timeout: z.number().int().positive().max(300000).optional().default(30000).describe('Timeout in ms. Quick checks: 10000. Package installs: 60000. Builds: 120000. Max: 300000.'),
-    })),
-    execute: async ({ command, cwd, timeout }) => {
-      const confirmResult = await requestToolConfirmation(
-        'run_command',
-        `Run command: ${command.slice(0, 200)}${command.length > 200 ? '...' : ''}`,
-        { command, cwd, timeout }
-      );
-      if (confirmResult.denied) {
-        return { denied: true, message: confirmResult.message || 'User denied this action' };
-      }
-      const effectiveTimeoutMs = Math.max(timeout ?? 30000, 1000);
-      return callGoTool(
-        'run_command',
-        {
-          command,
-          workdir: cwd,
-          confirm: true,
-          timeout: Math.floor(effectiveTimeoutMs / 1000)
-        },
-        { idempotent: false, timeout: effectiveTimeoutMs + 5000 }
-      );
+const inputSchema = Schema.Struct({
+  command: Schema.String,
+  cwd: Schema.optional(Schema.String),
+  timeout: Schema.optional(Schema.Number),
+});
+
+const outputSchema = Schema.Struct({
+  stdout: Schema.String,
+  stderr: Schema.String,
+  exitCode: Schema.Number,
+});
+
+export const runCommandTool = make({
+  description: 'Execute a shell command and return stdout, stderr, and exit code. Use PowerShell syntax on Windows. Always set cwd to the project root.',
+  input: inputSchema,
+  output: outputSchema,
+  inputJsonSchema: {
+    type: 'object',
+    properties: {
+      command: { type: 'string', description: 'The full PowerShell command to execute' },
+      cwd: { type: 'string', description: 'Working directory (defaults to project root)' },
+      timeout: { type: 'number', description: 'Timeout in ms (max 300000)' },
     },
-  }),
-};
+    required: ['command'],
+  },
+  execute: (input) =>
+    Effect.tryPromise({
+      try: () => new Promise<{ stdout: string; stderr: string; exitCode: number }>((resolve, reject) => {
+        const timeout = input.timeout ?? 30000;
+        const cwd = input.cwd ?? process.cwd();
+
+        const child = require('child_process').spawn('powershell.exe', ['-Command', input.command], {
+          cwd,
+          shell: true,
+          timeout,
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        child.stdout.on('data', (data: Buffer) => { stdout += data.toString(); });
+        child.stderr.on('data', (data: Buffer) => { stderr += data.toString(); });
+
+        child.on('close', (code: number | null) => {
+          resolve({ stdout, stderr, exitCode: code ?? 1 });
+        });
+        child.on('error', (err: Error) => reject(err));
+      }),
+      catch: (err) => new Error(`Command execution failed: ${err instanceof Error ? err.message : String(err)}`),
+    }),
+});

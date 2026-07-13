@@ -1,0 +1,23 @@
+{
+  "name": "@doktor/tool-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tool": "./src/tool/index.ts",
+    "./registry": "./src/registry/index.ts",
+    "./content": "./src/content/index.ts",
+    "./video": "./src/video/index.ts"
+  },
+  "dependencies": {
+    "effect": "^3.14.0",
+    "ai": "^6.0.197",
+    "zod": "^3.24.1"
+  },
+  "peerDependencies": {
+    "ai": "^6.0.0",
+    "zod": "^3.0.0"
+  }
+}

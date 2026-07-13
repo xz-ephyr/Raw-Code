@@ -8,6 +8,8 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@core': path.resolve(__dirname, './core'),
+      '@doktor/tool-runtime': path.resolve(__dirname, './packages/tool-runtime/src'),
+      '@doktor/subagent': path.resolve(__dirname, './packages/subagent/src'),
     },
   },
   server: {

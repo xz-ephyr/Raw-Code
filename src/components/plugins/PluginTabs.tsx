@@ -341,13 +341,10 @@ export const PluginTabs = () => {
             icon={selectedItem.icon!}
             imageSrc={selectedItem.imageSrc}
             type={tabType}
-            stars={selectedItem.stars}
-            details={selectedItem.details ?? []}
             isOpen={!!selectedItem}
             connected={id ? connectorStatus[id] : undefined}
             authType={authType}
             onClose={() => setSelectedItem(null)}
-            onAction={() => handleConnectorAction(selectedItem)}
             onSetToken={id === 'telegram' ? setTelegramToken : undefined}
             onSetCredentials={authType === 'oauth2' && id && !connectorStatus[id]
               ? (cId, cSecret) => handleSetCredentials(id, cId, cSecret)
