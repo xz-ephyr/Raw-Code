@@ -79,7 +79,7 @@ export function ProjectMemoryTab() {
     try {
       const val = await DatabaseService.getConfig(STORAGE_KEY);
       setContent(val || '');
-    } catch { /* ignore */ }
+    } catch (e) { console.warn('Failed to load project memory:', e); }
     setLoading(false);
   }, []);
 
@@ -89,7 +89,7 @@ export function ProjectMemoryTab() {
     setSaving(true);
     try {
       await DatabaseService.setConfig(STORAGE_KEY, content);
-    } catch { /* ignore */ }
+    } catch (e) { console.warn('Failed to save project memory:', e); }
     setSaving(false);
   };
 
@@ -120,7 +120,7 @@ export function ProjectMemoryTab() {
         const existing = content ? content + '\n' : '';
         setContent(existing + extracted.join('\n') + '\n');
       }
-    } catch { /* ignore */ }
+    } catch (e) { console.warn('Failed to generate project memory:', e); }
     setGenerating(false);
   };
 

@@ -8,22 +8,36 @@ interface ToggleSwitchProps {
 
 export function ToggleSwitch({ label, description, defaultChecked, checked, onChange }: ToggleSwitchProps) {
   const isControlled = checked !== undefined;
+  const on = isControlled ? checked : defaultChecked;
+
   return (
     <div className="flex items-center justify-between">
-      <div>
+      <div className="pr-4">
         <label className="text-sm font-semibold text-foreground">{label}</label>
         {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
       </div>
-      <label className="relative inline-flex items-center cursor-pointer">
-        <input
-          type="checkbox"
-          className="sr-only peer"
-          checked={isControlled ? checked : undefined}
-          defaultChecked={!isControlled ? defaultChecked : undefined}
-          onChange={(e) => onChange(e.target.checked)}
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        onClick={() => onChange(isControlled ? !checked : !defaultChecked)}
+        className="group relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        <span
+          className={`absolute inset-0 rounded-full transition-all duration-300 ease-out ${
+            on
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-900 shadow-[inset_0_1px_3px_rgba(0,0,0,0.2)]'
+              : 'bg-neutral-200 dark:bg-neutral-700 shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)]'
+          }`}
         />
-        <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent" />
-      </label>
+        <span
+          className={`pointer-events-none relative inline-block h-[22px] w-[22px] rounded-full bg-white transition-all duration-300 ease-out mt-[3px] ${
+            on
+              ? 'translate-x-[23px] shadow-[0_2px_8px_rgba(37,99,235,0.4)] group-hover:shadow-[0_2px_12px_rgba(37,99,235,0.6)]'
+              : 'translate-x-[3px] shadow-[0_1px_4px_rgba(0,0,0,0.1)] group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]'
+          }`}
+        />
+      </button>
     </div>
   );
 }

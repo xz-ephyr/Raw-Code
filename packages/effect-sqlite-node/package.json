@@ -1,0 +1,12 @@
+{
+  "name": "@doktor/effect-sqlite-node",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "effect": "catalog:",
+    "better-sqlite3": "catalog:"
+  }
+}

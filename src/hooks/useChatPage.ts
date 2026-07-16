@@ -1,0 +1,414 @@
+import { useEffect, useCallback, useRef, useMemo, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import type { UIMessage } from '../lib/chatUtils';
+import { ChatSessionManager } from '@/services/ChatSessionManager';
+import { ChatStreamService, setActiveSessionId } from '@/services/ChatStreamService';
+import { getModelForChatRequest, getModelDefinition } from '@core/config/models';
+import { getAIErrorMessage, generateSessionTitle } from '@core/models/aiService';
+import { DatabaseService } from '@core/utils/DatabaseService';
+import { useToast } from '../components/ui/Toast';
+import { useProjectStore } from '@/stores/projectStore';
+import { hydrateStoredMessage } from '../lib/chatUtils';
+import { useFilePanel } from '../hooks/useFilePanel';
+import { useSessionTitle } from '../hooks/useSessionTitle';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useResizablePanel } from '../hooks/useResizablePanel';
+import { usePendingConfirm } from '../hooks/usePendingConfirm';
+import type { FileItem } from '../types/file-panel';
+
+const MOBILE_BREAKPOINT = 768;
+
+export function useChatPage() {
+  const { uuid } = useParams();
+  const navigate = useNavigate();
+  const isThinkingEnabled = useProjectStore(s => s.isThinkingEnabled);
+  const setIsThinkingEnabled = useProjectStore(s => s.setIsThinkingEnabled);
+  const isWebSearchEnabled = useProjectStore(s => s.isWebSearchEnabled);
+  const setIsWebSearchEnabled = useProjectStore(s => s.setIsWebSearchEnabled);
+  const currentMode = useProjectStore(s => s.currentMode);
+  const setCurrentMode = useProjectStore(s => s.setCurrentMode);
+
+  const { addToast } = useToast();
+  const {
+    pendingConfirm,
+    pendingQuestion,
+    setPendingQuestion,
+    handleQuestionAnswer,
+    handleConfirmApprove,
+    handleConfirmDeny,
+  } = usePendingConfirm();
+  const { setTitle: setSessionTitle, setSessionId, setIsTitleGenerating } = useSessionTitle();
+  const isMobile = useMediaQuery(`(max-width: ${MOBILE_BREAKPOINT}px)`);
+  const {
+    panelWidth,
+    startResize,
+    handleTouchStart,
+    handleDividerKeyDown,
+    PANEL_MIN_WIDTH,
+    PANEL_MAX_WIDTH,
+  } = useResizablePanel();
+
+  const toggleThinking = () => {
+    const next = !isThinkingEnabled;
+    if (next) setIsWebSearchEnabled(false);
+    setIsThinkingEnabled(next);
+  };
+  const toggleWebSearch = () => {
+    const next = !isWebSearchEnabled;
+    if (next) setIsThinkingEnabled(false);
+    setIsWebSearchEnabled(next);
+  };
+  const handleModeChange = useCallback((modeId: string | undefined) => {
+    setCurrentMode(modeId);
+    currentModeRef.current = modeId;
+  }, [setCurrentMode]);
+
+const {
+    files,
+    activeFileId,
+    isPanelOpen,
+    addFiles,
+    selectFile,
+    closePanel,
+    openPanel,
+  } = useFilePanel();
+
+  const handleNewThread = useCallback(async () => {
+    if (!uuid || uuid === 'new') return;
+    try {
+      const newSession = await ChatSessionManager.create('New conversation');
+      navigate(`/thread/${newSession.id}`);
+    } catch (e) { console.error('Failed to create new thread:', e); }
+  }, [uuid, navigate]);
+
+  const handleCopyMessage = useCallback((content: string) => {
+    navigator.clipboard.writeText(content).catch((e) =>
+      console.error('Failed to copy:', e)
+    );
+  }, []);
+
+  const [completionDurations, setCompletionDurations] = useState<Record<string, number>>({});
+
+  const modelRevision = useProjectStore(s => s.modelRevision);
+  const incrementModelRevision = useProjectStore(s => s.incrementModelRevision);
+
+  useEffect(() => {
+    const handler = () => incrementModelRevision();
+    window.addEventListener('model-changed', handler);
+    return () => window.removeEventListener('model-changed', handler);
+  }, [incrementModelRevision]);
+
+  const currentModel = useMemo(() => {
+    return getModelForChatRequest(uuid);
+  }, [uuid, modelRevision]);
+
+  const modelSupportsThinking = useMemo(() => {
+    if (currentModel === 'auto') return undefined;
+    return getModelDefinition(currentModel)?.supportsThinking;
+  }, [currentModel]);
+
+  const [messages, setMessages] = useState<UIMessage[]>([]);
+  const [status, setStatus] = useState<'idle' | 'streaming' | 'submitted' | 'error'>('idle');
+  const [streamError, setStreamError] = useState<string | undefined>();
+  const [streamingBanner, setStreamingBanner] = useState<'loading' | 'ready' | null>(null);
+
+  const currentModeRef = useRef<string | undefined>(undefined);
+  const isThinkingEnabledRef = useRef(false);
+  const isWebSearchEnabledRef = useRef(false);
+  const lastUuidRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    isThinkingEnabledRef.current = isThinkingEnabled;
+  }, [isThinkingEnabled]);
+
+  useEffect(() => {
+    isWebSearchEnabledRef.current = isWebSearchEnabled;
+  }, [isWebSearchEnabled]);
+
+  useEffect(() => {
+    if (!uuid || uuid === 'new') return;
+    setActiveSessionId(uuid);
+    return () => setActiveSessionId(null);
+  }, [uuid]);
+
+  useEffect(() => {
+    const prev = document.body.style.userSelect;
+    if (status === 'submitted' || status === 'streaming') {
+      document.body.style.userSelect = 'none';
+    }
+    return () => {
+      document.body.style.userSelect = prev;
+    };
+  }, [status]);
+
+  useEffect(() => {
+    if (!uuid || uuid === 'new') return;
+
+    const loadSession = async () => {
+      const session = await ChatSessionManager.getSession(uuid).catch(() => null);
+      if (!session) return;
+
+      const storedMessages = await DatabaseService.getMessages(uuid);
+      const mapped = storedMessages.map(hydrateStoredMessage).filter(Boolean) as UIMessage[];
+      setMessages(mapped);
+
+      const allFiles = mapped.flatMap((m: any) => m.files || []);
+      if (allFiles.length > 0) {
+        addFiles(allFiles);
+      }
+
+setSessionId(uuid);
+      setSessionTitle(session.title);
+
+      // Clear unread when opening the thread
+      ChatSessionManager.markAsRead(uuid);
+
+      const streamStatus = ChatStreamService.getStatus(uuid);
+    if (streamStatus === 'streaming') {
+      setStatus('streaming');
+      const unsubscribe = ChatStreamService.subscribe(uuid, (msg, isPartial) => {
+        setMessages(prev => {
+          const exists = prev.findIndex(m => m.id === msg.id);
+          if (exists >= 0) {
+            const updated = [...prev];
+            updated[exists] = msg;
+            return updated;
+          }
+          return [...prev, msg];
+        });
+        if (!isPartial) {
+          setStatus('idle');
+        }
+      });
+      return () => unsubscribe();
+    }
+
+    // Detect abandoned stream: DB says streaming but no active stream in memory
+    if (session.streaming) {
+      setStreamingBanner('ready');
+    }
+    };
+    loadSession();
+  }, [uuid, addFiles, setMessages, setSessionId, setSessionTitle]);
+
+  const handleSend = useCallback(async (content: string) => {
+    if (uuid === 'new') {
+      const session = await ChatSessionManager.create('New conversation');
+      setSessionId(session.id);
+      sessionStorage.setItem('pending-first-message', content);
+      navigate(`/thread/${session.id}`);
+      return;
+    }
+
+    const userMsg: UIMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content,
+      createdAt: Date.now(),
+      parts: [{ type: 'text', text: content }],
+    };
+
+    if (uuid) {
+      DatabaseService.saveMessages(uuid, [userMsg]).catch((e) =>
+        console.error('Failed to save user message to DB:', e)
+      );
+    }
+
+    setMessages(prev => [...prev, userMsg]);
+    setStreamingBanner(null);
+
+    if (lastUuidRef.current !== uuid) {
+      titleGeneratedRef.current = false;
+      lastUuidRef.current = uuid;
+    }
+
+    if (uuid && uuid !== 'new' && !titleGeneratedRef.current) {
+      await maybeGenerateTitle(uuid, content);
+    }
+
+    ChatStreamService.start({
+      sessionId: uuid!,
+      messages,
+      modelName: currentModel,
+      modeId: currentMode,
+      projectContext: undefined,
+      connectedConnectors: [],
+      isWebSearchEnabled: isWebSearchEnabledRef.current,
+      isThinkingEnabled: isThinkingEnabledRef.current,
+    }, {
+      onMessage: (msg, isPartial) => {
+        setMessages(prev => {
+          const exists = prev.findIndex(m => m.id === msg.id);
+          if (exists >= 0) {
+            const updated = [...prev];
+            updated[exists] = msg;
+            return updated;
+          }
+          return [...prev, msg];
+        });
+        if (!isPartial) {
+          setStatus('idle');
+        } else {
+          setStatus('streaming');
+        }
+      },
+      onFinish: (msg) => {
+        setStatus('idle');
+        const duration = Date.now() - (msg.createdAt || Date.now());
+        if (msg.id) {
+          setCompletionDurations(prev => ({ ...prev, [msg.id as string]: duration }));
+        }
+        if (msg.files?.length > 0) {
+          const autoFiles = localStorage.getItem('auto_files') !== 'false';
+          if (autoFiles) {
+            addFiles(msg.files);
+          }
+        }
+        if (uuid && uuid !== 'new') {
+          const savedModel = currentModelRef.current || currentModel;
+          DatabaseService.saveMessages(uuid, [{ ...msg, model: savedModel }]).catch((e) =>
+            console.error('Failed to save assistant message to DB:', e)
+          );
+        }
+      },
+      onError: (err) => {
+        const msg = getAIErrorMessage(err);
+        console.error('Chat stream failed:', msg);
+        addToast(msg, 'error');
+        setStreamError(msg);
+        setStatus('error');
+      },
+    });
+  }, [uuid, navigate, setSessionId, setSessionTitle, addFiles, currentModel, currentMode]);
+
+  const stop = useCallback(() => {
+    if (uuid) {
+      ChatStreamService.stop(uuid);
+      setStatus('idle');
+    }
+  }, [uuid]);
+
+  useEffect(() => {
+    if (uuid && uuid !== 'new') {
+      const pendingMessage = sessionStorage.getItem('pending-first-message');
+      if (pendingMessage) {
+        sessionStorage.removeItem('pending-first-message');
+        handleSend(pendingMessage);
+      }
+    }
+  }, [uuid, handleSend]);
+
+  useEffect(() => {
+    const handleResetChat = () => {
+      setMessages([]);
+    };
+    window.addEventListener('reset-chat', handleResetChat);
+    return () => window.removeEventListener('reset-chat', handleResetChat);
+  }, [setMessages]);
+
+  const titleGeneratedRef = useRef(false);
+  const titleGeneratingRef = useRef(false);
+
+  const maybeGenerateTitle = async (
+    sessionUuid: string,
+    content: string,
+  ) => {
+    if (titleGeneratingRef.current || titleGeneratedRef.current) return;
+
+    titleGeneratingRef.current = true;
+    setIsTitleGenerating(true);
+    try {
+      const generatedTitle = await generateSessionTitle(content);
+      if (generatedTitle && generatedTitle !== 'New conversation') {
+        await ChatSessionManager.rename(sessionUuid, generatedTitle);
+        window.dispatchEvent(new CustomEvent('session-title-changed'));
+        setSessionTitle(generatedTitle);
+      }
+    } catch (e) { console.error('Failed to generate title:', e); }
+    setIsTitleGenerating(false);
+    titleGeneratingRef.current = false;
+    titleGeneratedRef.current = true;
+  };
+
+  const handleOpenFile = useCallback(
+    (file: FileItem) => {
+      const existing = files.find(f => f.identifier === file.identifier);
+      if (existing && (file.version ?? 0) <= existing.version) return;
+      addFiles([file]);
+      selectFile(file.identifier);
+      openPanel();
+    },
+    [addFiles, selectFile, openPanel, files]
+  );
+
+  const refreshMessages = useCallback(async () => {
+    if (!uuid || uuid === 'new') return;
+    setStreamingBanner('loading');
+    try {
+      const storedMessages = await DatabaseService.getMessages(uuid);
+      const mapped = storedMessages.map(hydrateStoredMessage).filter(Boolean) as UIMessage[];
+      setMessages(mapped);
+      await ChatSessionManager.setStreaming(uuid, false);
+      setStreamingBanner(null);
+    } catch (e) {
+      console.error('Failed to refresh messages:', e);
+      setStreamingBanner('ready');
+    }
+  }, [uuid]);
+
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const isLoading = status === 'submitted' || status === 'streaming';
+  const lastAssistantIndex = useMemo(() => {
+    if (!isLoading) return -1;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role !== 'user') return i;
+    }
+    return -1;
+  }, [messages, isLoading]);
+
+  const currentModelRef = useRef<string | null>(null);
+  currentModelRef.current = currentModel;
+
+  return {
+    uuid,
+    isMobile,
+    panelWidth,
+    panelRef,
+    startResize,
+    handleTouchStart,
+    handleDividerKeyDown,
+    PANEL_MIN_WIDTH,
+    PANEL_MAX_WIDTH,
+    isThinkingEnabled,
+    isWebSearchEnabled,
+    modelSupportsThinking,
+    currentModel,
+    currentMode,
+    toggleThinking,
+    toggleWebSearch,
+    handleModeChange,
+    files,
+    activeFileId,
+    isPanelOpen,
+    closePanel,
+    messages,
+    isLoading,
+    lastAssistantIndex,
+    completionDurations,
+    handleNewThread,
+    handleCopyMessage,
+    handleSend,
+    stop,
+    handleOpenFile,
+    pendingConfirm,
+    pendingQuestion,
+    setPendingQuestion,
+    handleQuestionAnswer,
+    handleConfirmApprove,
+    handleConfirmDeny,
+    streamError,
+    streamingBanner,
+    refreshMessages,
+  };
+}

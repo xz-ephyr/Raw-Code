@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Copy01Icon, Tick01Icon } from '@hugeicons/core-free-icons';
+import { Copy, Check } from 'lucide-react';
 
 export const CopyButton = ({
   content,
@@ -15,6 +14,8 @@ export const CopyButton = ({
     navigator.clipboard.writeText(content).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      console.warn('Failed to copy to clipboard');
     });
   };
 
@@ -30,17 +31,12 @@ export const CopyButton = ({
        * while maintaining hover effect on larger viewports.
        */
       className={`${alwaysVisible ? '' : 'md:opacity-0 md:group-hover:opacity-100'} p-1 mt-1 text-foreground/70 hover:text-foreground transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm`}
+      style={{ userSelect: 'none' }}
     >
       {copied ? (
-        <HugeiconsIcon
-          icon={Tick01Icon}
-          size={18}
-          color="currentColor"
-          strokeWidth={1.5}
-          className="text-green-600"
-        />
-      ) : (
-        <HugeiconsIcon icon={Copy01Icon} size={18} color="currentColor" strokeWidth={1.5} />
+          <Check size={14} className="text-green-600" />
+        ) : (
+          <Copy size={14} className="text-muted-foreground/60" />
       )}
     </button>
   );

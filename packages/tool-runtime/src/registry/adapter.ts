@@ -29,17 +29,35 @@ function jsonSchemaToZod(schema: any): z.ZodTypeAny {
           shape[key] = jsonSchemaToZod(propSchema);
         }
       }
-      return z.object(shape);
+      const obj = z.object(shape);
+      const required = schema.required;
+      if (Array.isArray(required) && required.length > 0) {
+        const requiredSet = new Set(required);
+        for (const key of Object.keys(shape)) {
+          if (!requiredSet.has(key)) {
+            shape[key] = shape[key].optional();
+          }
+        }
+        return z.object(shape);
+      }
+      return obj.partial();
     }
     default:
       return z.any();
   }
 }
 
+export type AISDKSessionContext = {
+  sessionID: string;
+  agentID: string;
+  assistantMessageID: string;
+  resolveModel?: (name: string) => unknown;
+};
+
 export function toAISDKTools(
   materialization: Materialization,
   permissions?: PermissionRuleset,
-  sessionContext?: { sessionID: string; agentID: string; assistantMessageID: string },
+  sessionContext?: AISDKSessionContext,
 ): Record<string, any> {
   const result: Record<string, any> = {};
 
@@ -51,7 +69,8 @@ export function toAISDKTools(
     let zodInput: z.ZodTypeAny;
     try {
       zodInput = jsonSchemaToZod(def.inputSchema);
-    } catch {
+    } catch (e) {
+      console.warn(`[adapter] Failed to convert schema for tool "${def.name}":`, e);
       zodInput = z.object({});
     }
 
@@ -69,6 +88,7 @@ export function toAISDKTools(
           agentID: sessionContext?.agentID ?? '',
           assistantMessageID: sessionContext?.assistantMessageID ?? '',
           toolCallID: call.id,
+          resolveModel: sessionContext?.resolveModel,
         };
 
         const settleResult = await def.settle(call, context);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { CheckmarkCircle02Icon, Cancel01Icon } from '@hugeicons/core-free-icons';
+import { API_BASE_URL } from '@/lib/api';
 
 export function TelegramTab() {
   const [connected, setConnected] = useState(false);
@@ -10,18 +11,18 @@ export function TelegramTab() {
 
   const checkStatus = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:3001/connector/telegram/status', { method: 'POST' });
+      const res = await fetch(`${API_BASE_URL}/connector/telegram/status`, { method: 'POST' });
       const data = await res.json();
       setConnected(data.connected);
       setIdentity(data.identity);
-    } catch { /* ignore */ }
+    } catch (e) { console.warn('Telegram status check failed:', e); }
   }, []);
 
   const handleConnect = async () => {
     if (!token.trim()) return;
     setIsConnecting(true);
     try {
-      const res = await fetch('http://localhost:3001/connector/telegram/set-token', {
+      const res = await fetch(`${API_BASE_URL}/connector/telegram/set-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: token.trim() }),
@@ -40,7 +41,7 @@ export function TelegramTab() {
   };
 
   const handleDisconnect = async () => {
-    await fetch('http://localhost:3001/connector/telegram/disconnect', { method: 'POST' });
+    await fetch(`${API_BASE_URL}/connector/telegram/disconnect`, { method: 'POST' });
     setConnected(false);
     setIdentity(null);
     setToken('');

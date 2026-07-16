@@ -17,7 +17,7 @@ interface ConnectorCardProps {
 export const ConnectorCard = ({ label, description, icon, imageSrc, imageSrcDark, type = 'connector', stars, connected, onAction, onClick }: ConnectorCardProps) => (
   <button
     onClick={onClick}
-    className="h-[80px] border border-border rounded-lg p-3 flex flex-col text-left hover:bg-muted transition-colors cursor-pointer relative"
+    className="h-[80px] border border-border rounded-lg p-3 flex flex-col text-left bg-sidebar hover:bg-muted transition-colors cursor-pointer relative"
   >
     <div className="flex items-start justify-between gap-2">
       <div className="flex items-center gap-2 min-w-0">
@@ -25,11 +25,11 @@ export const ConnectorCard = ({ label, description, icon, imageSrc, imageSrcDark
           <>
             {imageSrcDark ? (
               <>
-                <img src={imageSrc} alt={label} className="w-5 h-5 shrink-0 dark:hidden" />
-                <img src={imageSrcDark} alt={label} className="w-5 h-5 shrink-0 hidden dark:block" />
+                <img src={imageSrc} alt={label} loading="lazy" className="w-5 h-5 shrink-0 dark:hidden" />
+                <img src={imageSrcDark} alt={label} loading="lazy" className="w-5 h-5 shrink-0 hidden dark:block" />
               </>
             ) : (
-              <img src={imageSrc} alt={label} className="w-5 h-5 shrink-0" />
+              <img src={imageSrc} alt={label} loading="lazy" className="w-5 h-5 shrink-0" />
             )}
           </>
         ) : icon ? (

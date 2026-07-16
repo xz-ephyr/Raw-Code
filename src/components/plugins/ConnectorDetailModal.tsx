@@ -18,19 +18,6 @@ interface ConnectorDetailModalProps {
   onSetCredentials?: (clientId: string, clientSecret: string) => Promise<void>;
 }
 
-const BRAND_ACCENTS: Record<string, { from: string; to: string; ring: string }> = {
-  Gmail: { from: 'from-red-500', to: 'to-red-600', ring: 'ring-red-500/30' },
-  GitHub: { from: 'from-gray-600', to: 'to-gray-800', ring: 'ring-gray-500/30' },
-  YouTube: { from: 'from-red-600', to: 'to-red-700', ring: 'ring-red-600/30' },
-  Telegram: { from: 'from-blue-500', to: 'to-blue-600', ring: 'ring-blue-500/30' },
-  Reddit: { from: 'from-orange-500', to: 'to-orange-600', ring: 'ring-orange-500/30' },
-  Twitter: { from: 'from-sky-500', to: 'to-sky-600', ring: 'ring-sky-500/30' },
-};
-
-function getAccent(label: string) {
-  return BRAND_ACCENTS[label] || { from: 'from-primary', to: 'to-primary/80', ring: 'ring-primary/30' };
-}
-
 export const ConnectorDetailModal = ({
   label, description, icon, imageSrc, type = 'connector',
   isOpen, connected, authType,
@@ -51,8 +38,6 @@ export const ConnectorDetailModal = ({
   }, [isOpen, connected]);
 
   if (!isOpen) return null;
-
-  const accent = getAccent(label);
 
   const handleConnect = async () => {
     if (authType === 'token') {
@@ -91,50 +76,42 @@ export const ConnectorDetailModal = ({
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={handleOverlayClick}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" />
+      <div className="absolute inset-0 bg-black/50" />
 
-      {/* Modal */}
       <div className="relative w-full max-w-md animate-in zoom-in-95 fade-in duration-200 ease-out">
-        <div className="bg-card border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-sidebar border border-border/50 rounded-xl shadow-2xl overflow-hidden">
 
-          {/* Header gradient */}
-          <div className={`h-2 bg-gradient-to-r ${accent.from} ${accent.to}`} />
-
-          {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-muted/80 hover:bg-muted transition-colors z-10"
+            className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors z-10"
           >
-            <HugeiconsIcon icon={Cancel01Icon} size={14} className="text-muted-foreground" />
+            <HugeiconsIcon icon={Cancel01Icon} size={13} className="text-muted-foreground" />
           </button>
 
-          <div className="px-7 pt-7 pb-6 space-y-6">
-            {/* Icon + Label */}
-            <div className="flex items-center gap-4">
-              <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${accent.from} ${accent.to} flex items-center justify-center shadow-lg shrink-0 ${accent.ring} ring-2`}>
+          <div className="px-6 pt-6 pb-5 space-y-5">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-lg bg-muted flex items-center justify-center shrink-0">
                 {imageSrc ? (
-                  <img src={imageSrc} alt={label} className="w-7 h-7 brightness-0 invert" />
+                  <img src={imageSrc} alt={label} loading="lazy" className="w-6 h-6" />
                 ) : icon ? (
-                  <HugeiconsIcon icon={icon} size={24} className="text-white" />
+                  <HugeiconsIcon icon={icon} size={20} className="text-foreground" />
                 ) : null}
               </div>
-              <div>
-                <h2 className="text-lg font-bold text-foreground">{label}</h2>
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold text-foreground">{label}</h2>
+                <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
                   {type === 'connector' ? 'Connector' : type === 'mcp' ? 'MCP Server' : 'Skill'}
                 </span>
               </div>
             </div>
 
-            {/* States */}
             {view === 'info' && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
                 <button
                   onClick={handleConnect}
                   disabled={connected}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 text-sm font-semibold rounded-xl bg-foreground text-background hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-semibold rounded-lg bg-foreground text-background hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50"
                 >
                   {type === 'connector' ? 'Connect' : 'Install'}
                   <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
@@ -144,7 +121,7 @@ export const ConnectorDetailModal = ({
 
             {view === 'credentials' && authType === 'oauth2' && (
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">Enter your OAuth credentials to connect. These are saved locally and used only for this connection.</p>
+                <p className="text-sm text-muted-foreground">Enter your OAuth credentials to connect.</p>
                 <div className="space-y-3">
                   <div>
                     <label className="block text-xs font-medium text-foreground mb-1.5">Client ID</label>
@@ -152,7 +129,7 @@ export const ConnectorDetailModal = ({
                       value={clientId}
                       onChange={e => setClientId(e.target.value)}
                       placeholder="Paste your Client ID"
-                      className="w-full px-3.5 py-2.5 text-sm bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                      className="w-full px-3.5 py-2.5 text-sm bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                     />
                   </div>
                   <div>
@@ -162,14 +139,14 @@ export const ConnectorDetailModal = ({
                       value={clientSecret}
                       onChange={e => setClientSecret(e.target.value)}
                       placeholder="Paste your Client Secret"
-                      className="w-full px-3.5 py-2.5 text-sm bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                      className="w-full px-3.5 py-2.5 text-sm bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                     />
                   </div>
                 </div>
                 <button
                   onClick={handleConnect}
                   disabled={!clientId || !clientSecret}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 text-sm font-semibold rounded-xl bg-foreground text-background hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-40"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-semibold rounded-lg bg-foreground text-background hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-40"
                 >
                   Save & Connect
                   <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
@@ -187,13 +164,13 @@ export const ConnectorDetailModal = ({
                     value={token}
                     onChange={e => setToken(e.target.value)}
                     placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
-                    className="w-full px-3.5 py-2.5 text-sm bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all font-mono"
+                    className="w-full px-3.5 py-2.5 text-sm bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all font-mono"
                   />
                 </div>
                 <button
                   onClick={handleConnect}
                   disabled={!token.trim()}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 text-sm font-semibold rounded-xl bg-foreground text-background hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-40"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-semibold rounded-lg bg-foreground text-background hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-40"
                 >
                   Save & Connect
                   <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
@@ -202,27 +179,26 @@ export const ConnectorDetailModal = ({
             )}
 
             {view === 'connecting' && (
-              <div className="flex flex-col items-center gap-4 py-6">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                  <HugeiconsIcon icon={Loading03Icon} size={24} className="text-foreground animate-spin" />
+              <div className="flex flex-col items-center gap-3 py-5">
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                  <HugeiconsIcon icon={Loading03Icon} size={20} className="text-foreground animate-spin" />
                 </div>
                 <p className="text-sm font-medium text-foreground">Connecting {label}...</p>
-                <p className="text-xs text-muted-foreground">Completing authentication in the popup window</p>
               </div>
             )}
 
             {view === 'connected' && (
-              <div className="flex flex-col items-center gap-4 py-6">
-                <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${accent.from} ${accent.to} flex items-center justify-center shadow-lg`}>
-                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={28} className="text-white" />
+              <div className="flex flex-col items-center gap-4 py-5">
+                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={26} className="text-foreground" />
                 </div>
                 <div className="text-center">
-                  <p className="text-base font-bold text-foreground">{label} Connected</p>
+                  <p className="text-base font-semibold text-foreground">{label} Connected</p>
                   <p className="text-sm text-muted-foreground mt-0.5">Your AI can now interact with {label}</p>
                 </div>
                 <button
                   onClick={onClose}
-                  className="mt-2 px-6 py-2.5 text-sm font-semibold rounded-xl bg-muted text-foreground hover:bg-muted/80 transition-all active:scale-[0.98]"
+                  className="mt-1 px-6 py-2.5 text-sm font-semibold rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-all active:scale-[0.98]"
                 >
                   Done
                 </button>

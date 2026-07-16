@@ -1,27 +1,26 @@
 import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { TeamWorkIcon, HandsClappingIcon, QuillWrite02Icon, Bug02Icon } from '@hugeicons/core-free-icons';
+import { QuillWrite02Icon, Search01Icon, Video01Icon, AiChat01Icon } from '@hugeicons/core-free-icons';
 import { Dropdown } from '../ui/Dropdown';
-import { AGENTS as MODES } from '@core/agents';
+import { PERSONAS } from '@core/persona';
 
 const ICON_MAP: Record<string, any> = {
-  Bug02Icon,
-  TeamWorkIcon,
-  HandsClappingIcon,
   QuillWrite02Icon,
+  Search01Icon,
+  Video01Icon,
+  AiChat01Icon,
 };
 
 const MODE_COLORS: Record<string, string> = {
-  'blue-700': '#1d4ed8',
-  'orange-700': '#c2410c',
-  'purple-700': '#7e22ce',
-  'amber-500': '#f59e0b',
+  'green-500': '#22c55e',
+  'blue-500': '#3b82f6',
+  'purple-500': '#a855f7',
+  'orange-500': '#f97316',
 };
 
-const NTABS = MODES.map((m) => ({
-  icon: ICON_MAP[m.icon] || HandsClappingIcon,
+const NTABS = PERSONAS.map((m) => ({
+  icon: ICON_MAP[m.icon] || QuillWrite02Icon,
   label: m.label,
-  desc: m.description,
   color: m.color,
   colorHex: MODE_COLORS[m.color] || '#888',
 }));
@@ -33,7 +32,7 @@ interface NTabDropdownProps {
 }
 
 export default function NTabDropdown({ isIdle, currentMode, onModeChange }: NTabDropdownProps) {
-  const currentIndex = currentMode ? MODES.findIndex((m) => m.id === currentMode) : -1;
+  const currentIndex = currentMode ? PERSONAS.findIndex((m) => m.id === currentMode) : -1;
   const [currentTab, setCurrentTab] = useState(currentIndex);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -60,7 +59,7 @@ export default function NTabDropdown({ isIdle, currentMode, onModeChange }: NTab
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         position={isIdle ? 'bottom' : 'top'}
-        width="220px"
+        width="180px"
       >
         {NTABS.map((t, i) => {
           const isActive = i === currentTab;
@@ -74,7 +73,7 @@ export default function NTabDropdown({ isIdle, currentMode, onModeChange }: NTab
                   onModeChange?.(undefined);
                 } else {
                   setCurrentTab(i);
-                  onModeChange?.(MODES[i].id);
+                  onModeChange?.(PERSONAS[i].id);
                 }
                 setIsOpen(false);
               }}
@@ -85,10 +84,7 @@ export default function NTabDropdown({ isIdle, currentMode, onModeChange }: NTab
               }`}
             >
               <HugeiconsIcon icon={t.icon} size={18} style={{ color: isActive ? t.colorHex : undefined }} className={isActive ? '' : 'text-foreground'} />
-              <div className="flex flex-col">
-                <span style={{ color: isActive ? t.colorHex : undefined }} className={isActive ? '' : 'text-foreground'}>{t.label}</span>
-                <span className="text-[10px] text-muted-foreground">{t.desc}</span>
-              </div>
+              <span style={{ color: isActive ? t.colorHex : undefined }} className={isActive ? '' : 'text-foreground'}>{t.label}</span>
             </button>
           );
         })}

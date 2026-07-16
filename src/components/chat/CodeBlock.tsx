@@ -1,14 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Copy01Icon, Tick01Icon } from '@hugeicons/core-free-icons';
 import CodeMirror from '@uiw/react-codemirror';
-import { javascript } from '@codemirror/lang-javascript';
-import { html } from '@codemirror/lang-html';
-import { markdown } from '@codemirror/lang-markdown';
-import { python } from '@codemirror/lang-python';
-import { css } from '@codemirror/lang-css';
-import { json } from '@codemirror/lang-json';
-import { rust } from '@codemirror/lang-rust';
 import { EditorView } from '@codemirror/view';
 
 interface CodeBlockProps {
@@ -85,39 +78,30 @@ const DIFF_THEME = EditorView.theme({
 });
 const DIFF_EXTENSIONS = [DIFF_THEME];
 
-function normalizeContent(raw: string): string {
-  return raw.replace(/\t/g, '  ');
+const langLoaders: Record<string, () => Promise<any[]>> = {
+  javascript: () => import('@codemirror/lang-javascript').then(m => [m.javascript({ jsx: true, typescript: false })]),
+  typescript: () => import('@codemirror/lang-javascript').then(m => [m.javascript({ jsx: true, typescript: true })]),
+  html: () => import('@codemirror/lang-html').then(m => [m.html()]),
+  css: () => import('@codemirror/lang-css').then(m => [m.css()]),
+  json: () => import('@codemirror/lang-json').then(m => [m.json()]),
+  python: () => import('@codemirror/lang-python').then(m => [m.python()]),
+  rust: () => import('@codemirror/lang-rust').then(m => [m.rust()]),
+  markdown: () => import('@codemirror/lang-markdown').then(m => [m.markdown()]),
+};
+
+const loadedExtensions = new Map<string, any[]>();
+
+async function loadExtensions(lang: string): Promise<any[]> {
+  if (loadedExtensions.has(lang)) return loadedExtensions.get(lang)!;
+  const loader = langLoaders[lang];
+  if (!loader) return [];
+  const exts = await loader();
+  loadedExtensions.set(lang, exts);
+  return exts;
 }
 
-function getExtension(lang: string) {
-  const canonical = LANG_ALIASES[lang] || lang;
-
-  if (canonical === 'diff' || canonical === 'patch') {
-    return DIFF_EXTENSIONS;
-  }
-
-  switch (canonical) {
-    case 'javascript':
-    case 'typescript':
-      return [javascript({ jsx: true, typescript: canonical === 'typescript' })];
-    case 'html':
-      return [html()];
-    case 'css':
-    case 'scss':
-    case 'less':
-    case 'sass':
-      return [css()];
-    case 'json':
-      return [json()];
-    case 'python':
-      return [python()];
-    case 'rust':
-      return [rust()];
-    case 'markdown':
-      return [markdown()];
-    default:
-      return [];
-  }
+function normalizeContent(raw: string): string {
+  return raw.replace(/\t/g, '  ');
 }
 
 const codeBlockTheme = EditorView.theme({
@@ -129,11 +113,18 @@ const codeBlockTheme = EditorView.theme({
 
 export const CodeBlock = React.memo(function CodeBlock({ content, language }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
+  const [extensions, setExtensions] = useState<any[]>([codeBlockTheme]);
   const normalized = useMemo(() => normalizeContent(content), [content]);
 
-  const extensions = useMemo(() => {
-    const exts = getExtension(language || '');
-    return [...exts, codeBlockTheme];
+  useEffect(() => {
+    const canonical = LANG_ALIASES[language || ''] || language || '';
+    if (canonical === 'diff' || canonical === 'patch') {
+      setExtensions([...DIFF_EXTENSIONS, codeBlockTheme]);
+      return;
+    }
+    loadExtensions(canonical).then(exts => {
+      setExtensions([...exts, codeBlockTheme]);
+    });
   }, [language]);
 
   const handleCopy = () => {

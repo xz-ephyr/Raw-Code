@@ -1,11 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
-import mermaid from 'mermaid';
 
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'default',
-  securityLevel: 'loose',
-});
+let mermaidModule: any = null;
+let initPromise: Promise<void> | null = null;
+
+async function getMermaid() {
+  if (!initPromise) {
+    initPromise = (async () => {
+      const mod = await import('mermaid');
+      mod.default.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        securityLevel: 'loose',
+      });
+      mermaidModule = mod;
+    })();
+  }
+  await initPromise;
+  return mermaidModule!;
+}
 
 interface MermaidBlockProps {
   content: string;
@@ -23,7 +35,8 @@ export function MermaidBlock({ content }: MermaidBlockProps) {
       try {
         setError(null);
         const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
-        const { svg: result } = await mermaid.render(id, content);
+        const m = await getMermaid();
+        const { svg: result } = await m.default.render(id, content);
         if (!cancelled) setSvg(result);
       } catch (e) {
         if (!cancelled) {

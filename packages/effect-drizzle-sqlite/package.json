@@ -1,0 +1,12 @@
+{
+  "name": "@doktor/effect-drizzle-sqlite",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "effect": "catalog:",
+    "drizzle-orm": "catalog:"
+  }
+}

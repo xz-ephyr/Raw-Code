@@ -1,6 +1,6 @@
 import { query, getAppConfig } from '../db.js';
 import { encrypt, decrypt } from '../crypto.js';
-import type { AuthType, ConnectorStatus, TokenRow, AuthUrlOptions } from './types.js';
+import type { AuthType, ConnectorStatus, TokenRow, AuthUrlOptions, OAuthConfig } from './types.js';
 
 export abstract class ConnectorService {
   abstract get provider(): string;
@@ -182,6 +182,22 @@ export abstract class ConnectorService {
     await query('DELETE FROM oauth_tokens WHERE provider = $1', [this.provider]);
   }
 
+  protected async getTokenMetadata(): Promise<Record<string, unknown> | null> {
+    const result = await query<{ metadata: string | null }>(
+      'SELECT metadata FROM oauth_tokens WHERE provider = $1',
+      [this.provider]
+    );
+    if (!result.rows.length || !result.rows[0].metadata) return null;
+    try { return JSON.parse(result.rows[0].metadata); } catch { return {}; }
+  }
+
+  protected async updateTokenMetadata(metadata: Record<string, unknown>): Promise<void> {
+    await query(
+      'UPDATE oauth_tokens SET metadata = $1, updated_at = $2 WHERE provider = $3',
+      [JSON.stringify(metadata), Date.now(), this.provider]
+    );
+  }
+
   // --- Abstract lifecycle methods ---
 
   abstract getAuthUrl(options?: AuthUrlOptions): Promise<string>;
@@ -199,7 +215,7 @@ export abstract class ConnectorService {
           codeChallenge: params.codeChallenge,
           codeChallengeMethod: params.codeChallengeMethod,
           state: params.state,
-        }),
+        }).then(url => ({ url })),
       exchange: (params: any) => this.exchangeCode(params.code, params.codeVerifier ?? null),
       status: () => this.getStatus(),
       disconnect: () => this.disconnect(),

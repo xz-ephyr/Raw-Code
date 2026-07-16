@@ -1,14 +1,28 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "outDir": "dist",
-    "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@doktor/llm-providers": ["../packages/llm-providers/src"],
+      "@doktor/llm-providers/*": ["../packages/llm-providers/src/*"],
+      "@doktor/tool-runtime": ["../packages/tool-runtime/src"],
+      "@doktor/tool-runtime/*": ["../packages/tool-runtime/src/*"],
+      "@doktor/subagent": ["../packages/subagent/src"],
+      "@doktor/subagent/*": ["../packages/subagent/src/*"],
+      "@doktor/schema": ["../packages/schema/src"],
+      "@doktor/schema/*": ["../packages/schema/src/*"],
+      "@doktor/effect-drizzle-sqlite": ["../packages/effect-drizzle-sqlite/src"],
+      "@doktor/effect-drizzle-sqlite/*": ["../packages/effect-drizzle-sqlite/src/*"],
+      "@doktor/effect-sqlite-node": ["../packages/effect-sqlite-node/src"],
+      "@doktor/effect-sqlite-node/*": ["../packages/effect-sqlite-node/src/*"]
+    }
   },
   "include": ["src"]
 }

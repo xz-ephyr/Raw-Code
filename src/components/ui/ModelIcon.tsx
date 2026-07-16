@@ -19,15 +19,26 @@ const MODEL_PATTERN_ICONS: [RegExp, string][] = [
   [/qwen/i, '/qwen-color.svg'],
   [/phi/i, '/microsoft-color.svg'],
   [/command|^c4ai/i, '/commanda-color.svg'],
+  [/together/i, '/together-color.svg'],
+  [/claude|anthropic/i, '/claude-color.svg'],
+  [/openrouter/i, '/openrouter.svg'],
 ];
 
 const PROVIDER_ICONS: Record<string, string> = {
-  cerebras: '/assets/images/providers/cerebras.svg',
+  anthropic: '/claude-color.svg',
+  openai: '/openai.svg',
+  google: '/google-color.svg',
+  deepseek: '/deepseek-color.svg',
+  mistral: '/mistral-color.svg',
+  cohere: '/commanda-color.svg',
   groq: '/assets/images/providers/groq.svg',
+  together: '/together-color.svg',
+  openrouter: '/openrouter.svg',
+  nvidia: '/nvidia-color.svg',
+  cerebras: '/assets/images/providers/cerebras.svg',
   sambanova: '/assets/images/providers/cerebras.svg',
   huggingface: '/assets/images/providers/mistral.svg',
   cloudflare: '/assets/images/providers/cerebras.svg',
-  nvidia: '/assets/images/providers/cerebras.svg',
 };
 
 export function ModelIcon({ modelId, size = 14, className = '' }: ModelIconProps) {

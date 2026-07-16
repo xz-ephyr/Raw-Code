@@ -11,14 +11,14 @@ export function useWriteArtifactStream(
   const [intentionLen, setIntentionLen] = useState(0);
   const prevIntentionRef = useRef('');
 
-  // Idle → done (skip animation when tool result already available, e.g. loaded history)
+  // Idle → done (skip animation when tool result already available and no intention to stream, e.g. loaded history)
   useEffect(() => {
-    if (phase === 'idle' && hasWriteArtifact && isToolDone) {
+    if (phase === 'idle' && hasWriteArtifact && isToolDone && !contentBeforeTool) {
       startTransition(() => setPhase('done'));
     }
-  }, [hasWriteArtifact, isToolDone, phase]);
+  }, [hasWriteArtifact, isToolDone, contentBeforeTool, phase]);
 
-  // Idle → intention (always, because intention streams independently)
+  // Idle → intention (streams independently)
   useEffect(() => {
     if (!hasWriteArtifact || !contentBeforeTool) return;
     if (phase === 'idle') {

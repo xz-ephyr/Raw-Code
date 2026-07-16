@@ -5,7 +5,7 @@ const router = Router();
 
 router.post('/get_messages', async (req, res) => {
   const { sessionId, limit, offset } = req.body;
-  let sql = 'SELECT id, session_id, role, content, reasoning, tool_invocations, created_at FROM messages WHERE session_id = $1 ORDER BY created_at ASC';
+  let sql = 'SELECT id, session_id, role, content, reasoning, tool_invocations, model, created_at, content_before_tool, content_after_tool FROM messages WHERE session_id = $1 ORDER BY created_at ASC';
   const params: any[] = [sessionId];
   if (limit != null) {
     sql += ' LIMIT $2';
@@ -21,6 +21,7 @@ router.post('/get_messages', async (req, res) => {
     sessionId: r.session_id,
     createdAt: Number(r.created_at),
     toolInvocations: r.tool_invocations,
+    model: r.model || null,
   })));
 });
 
@@ -38,18 +39,21 @@ router.post('/save_messages', async (req, res) => {
   let idx = 1;
 
   for (const m of messages) {
-    placeholders.push(`($${idx}, $${idx + 1}, $${idx + 2}, $${idx + 3}, $${idx + 4}, $${idx + 5}, $${idx + 6})`);
-    params.push(m.id, sessionId, m.role, m.content || '', m.reasoning, m.toolInvocations || null, m.createdAt);
-    idx += 7;
+    placeholders.push(`($${idx}, $${idx + 1}, $${idx + 2}, $${idx + 3}, $${idx + 4}, $${idx + 5}, $${idx + 6}, $${idx + 7}, $${idx + 8}, $${idx + 9})`);
+    params.push(m.id, sessionId, m.role, m.content || '', m.reasoning, m.toolInvocations || null, m.model || null, m.createdAt, m.contentBeforeTool || null, m.contentAfterTool || null);
+    idx += 10;
   }
 
   await query(
-    `INSERT INTO messages (id, session_id, role, content, reasoning, tool_invocations, created_at)
+    `INSERT INTO messages (id, session_id, role, content, reasoning, tool_invocations, model, created_at, content_before_tool, content_after_tool)
      VALUES ${placeholders.join(', ')}
      ON CONFLICT (id) DO UPDATE SET
        content = EXCLUDED.content,
        reasoning = EXCLUDED.reasoning,
-       tool_invocations = EXCLUDED.tool_invocations`,
+       tool_invocations = EXCLUDED.tool_invocations,
+       model = EXCLUDED.model,
+       content_before_tool = EXCLUDED.content_before_tool,
+       content_after_tool = EXCLUDED.content_after_tool`,
     params
   );
 

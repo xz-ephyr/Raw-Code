@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { CheckmarkCircle02Icon, Cancel01Icon } from '@hugeicons/core-free-icons';
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { useSettingsConfig } from '@/hooks/useSettingsConfig';
+import { API_BASE_URL } from '@/lib/api';
 
 interface OAuthConnectorTabProps {
   provider: string;
@@ -19,19 +20,27 @@ export function OAuthConnectorTab({ provider, label, description, envHint }: OAu
   const [connected, setConnected] = useState(false);
   const [identity, setIdentity] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const checkStatus = useCallback(async () => {
     try {
-      const res = await fetch(`http://localhost:3001/connector/${provider}/status`, { method: 'POST' });
+      const res = await fetch(`${API_BASE_URL}/connector/${provider}/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
       const data = await res.json();
       setConnected(data.connected);
       setIdentity(data.identity);
-    } catch { /* ignore */ }
+    } catch (e) { console.warn(`${provider} status check failed:`, e); }
   }, [provider]);
 
   const handleConnect = async () => {
     if (!config[idKey]) return;
     setIsAuthenticating(true);
+
+    // Open popup synchronously to avoid popup blockers
+    const popup = window.open('', `${provider}-oauth`, 'width=500,height=600');
+    if (!popup) {
+      setIsAuthenticating(false);
+      return;
+    }
 
     try {
       await Promise.all(
@@ -40,37 +49,46 @@ export function OAuthConnectorTab({ provider, label, description, envHint }: OAu
         )
       );
 
-      const res = await fetch(`http://localhost:3001/connector/${provider}/auth-url`, {
+      const res = await fetch(`${API_BASE_URL}/connector/${provider}/auth-url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId: config[idKey] }),
       });
       const { url } = await res.json();
-      const popup = window.open(url, `${provider}-oauth`, 'width=500,height=600');
+      popup.location.href = url;
 
       const poll = setInterval(async () => {
         try {
-          if (popup?.closed) {
+          if (popup.closed) {
             clearInterval(poll);
+            pollRef.current = null;
             setIsAuthenticating(false);
             await checkStatus();
           }
-        } catch { /* ignore */ }
+        } catch (e) { console.error(`${label} auth poll error:`, e); }
       }, 1000);
+      pollRef.current = poll;
     } catch (err) {
+      try { popup.close(); } catch { /* popup may already be closed */ }
       console.error(`${label} auth error:`, err);
       setIsAuthenticating(false);
     }
   };
 
   const handleDisconnect = async () => {
-    await fetch(`http://localhost:3001/connector/${provider}/disconnect`, { method: 'POST' });
+    await fetch(`${API_BASE_URL}/connector/${provider}/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
     setConnected(false);
     setIdentity(null);
   };
 
   useEffect(() => {
     if (loaded) checkStatus();
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
   }, [loaded, checkStatus]);
 
   if (!loaded) {

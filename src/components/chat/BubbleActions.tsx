@@ -1,12 +1,5 @@
-import { useState } from 'react';
-import { HugeiconRenderer } from '../ui/HugeiconRenderer';
-import {
-  ThumbsUpIcon,
-  ThumbsDownIcon,
-  ArrowTurnBackwardIcon,
-  Copy01Icon,
-  Tick01Icon,
-} from '@hugeicons/core-free-icons';
+import React, { useState } from 'react';
+import { Copy, Check } from 'lucide-react';
 
 interface TimelineSource {
   url: string;
@@ -58,12 +51,9 @@ interface BubbleActionsProps {
   allSources: TimelineSource[];
   version?: number;
   onCopy: () => void;
-  onThumbsUp: () => void;
-  onThumbsDown: () => void;
-  onRegenerate: () => void;
 }
 
-export function BubbleActions({ allSources, version, onCopy, onThumbsUp, onThumbsDown, onRegenerate }: BubbleActionsProps) {
+export const BubbleActions = React.memo(function BubbleActions({ allSources, version, onCopy }: BubbleActionsProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -73,46 +63,19 @@ export function BubbleActions({ allSources, version, onCopy, onThumbsUp, onThumb
   };
 
   return (
-    <div className="flex items-center gap-3 text-foreground px-4">
+    <div className="flex items-center gap-3 text-foreground px-4" style={{ userSelect: 'none' }}>
       <button
         type="button"
         onClick={handleCopy}
-        className="hover:text-foreground transition-colors"
+        className="hover:text-foreground transition-colors flex items-center"
         title={copied ? 'Copied!' : 'Copy response'}
         aria-label={copied ? 'Copied!' : 'Copy response'}
       >
-        <HugeiconRenderer
-          icon={copied ? Tick01Icon : Copy01Icon}
-          size={18}
-          className={copied ? 'text-green-600' : ''}
-        />
-      </button>
-      <button
-        type="button"
-        onClick={onThumbsUp}
-        className="hover:text-foreground transition-colors"
-        title="Good response"
-        aria-label="Good response"
-      >
-        <HugeiconRenderer icon={ThumbsUpIcon} size={18} />
-      </button>
-      <button
-        type="button"
-        onClick={onThumbsDown}
-        className="hover:text-foreground transition-colors"
-        title="Bad response"
-        aria-label="Bad response"
-      >
-        <HugeiconRenderer icon={ThumbsDownIcon} size={18} />
-      </button>
-      <button
-        type="button"
-        onClick={onRegenerate}
-        className="hover:text-foreground transition-colors"
-        title="Regenerate response"
-        aria-label="Regenerate response"
-      >
-        <HugeiconRenderer icon={ArrowTurnBackwardIcon} size={18} />
+        {copied ? (
+          <Check size={14} className="text-green-600" />
+        ) : (
+          <Copy size={14} className="text-muted-foreground/60" />
+        )}
       </button>
 
       {version !== undefined && version > 1 && (
@@ -127,4 +90,4 @@ export function BubbleActions({ allSources, version, onCopy, onThumbsUp, onThumb
       )}
     </div>
   );
-}
+});

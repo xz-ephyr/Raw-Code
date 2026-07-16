@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useDeferredValue } from 'react';
 import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { ChatListItem } from '../components/chat/ChatListItem';
 import { ChatSearchBar } from '../components/chat/ChatSearchBar';
@@ -21,6 +21,7 @@ export const ChatsPage = () => {
   const chats = useChatsStore((s) => s.chats);
   const refreshChats = useChatsStore((s) => s.refresh);
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredQuery = useDeferredValue(searchQuery);
   const [filter, setFilter] = useState<FilterOption>('active');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkMode, setIsBulkMode] = useState(false);
@@ -34,11 +35,12 @@ export const ChatsPage = () => {
   const archivedCount = useMemo(() => chats.filter((c) => c.archived).length, [chats]);
 
   const filteredChats = useMemo(() => {
+    const query = deferredQuery;
     let result = chats
       .filter((chat) => {
         const matchesSearch =
-          chat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          chat.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase());
+          chat.title.toLowerCase().includes(query.toLowerCase()) ||
+          chat.lastMessage?.toLowerCase().includes(query.toLowerCase());
 
         if (filter === 'archived') return chat.archived && matchesSearch;
         return !chat.archived && matchesSearch;

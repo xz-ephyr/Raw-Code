@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { migrate } from './db.js';
 import { auth } from './middleware/auth.js';
+import { registerContentTools } from '@doktor/tool-runtime';
 import proxyRoutes from './routes/proxy.js';
 import projectRoutes from './routes/projects.js';
 import fileRoutes from './routes/files.js';
@@ -12,12 +13,16 @@ import memoryRoutes from './routes/memory.js';
 import gmailRoutes from './routes/gmail.js';
 import websearchRoutes from './routes/websearch.js';
 import connectorRoutes from './routes/connector.js';
+import llmStreamRoutes from './routes/llm-stream.js';
+import webhookRoutes from './routes/webhooks.js';
+import crawlCacheRoutes from './routes/crawl-cache.js';
 import { GmailConnectorService } from './connectors/gmail.js';
 import { GitHubConnectorService } from './connectors/github.js';
 import { YouTubeConnectorService } from './connectors/youtube.js';
 import { TelegramConnectorService } from './connectors/telegram.js';
 import { RedditConnectorService } from './connectors/reddit.js';
 import { TwitterConnectorService } from './connectors/twitter.js';
+import { GoogleDriveConnectorService } from './connectors/drive.js';
 import { registry } from './connectors/registry.js';
 
 const app = express();
@@ -87,6 +92,10 @@ app.get('/auth/gmail/callback', async (req, res) => {
   `);
 });
 
+// Webhook routes — must be before auth middleware (webhooks don't send API key)
+app.use(webhookRoutes);
+app.use(crawlCacheRoutes);
+
 function jsEscape(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\//g, '\\/');
 }
@@ -103,11 +112,13 @@ app.use(memoryRoutes);
 app.use(gmailRoutes);
 app.use(websearchRoutes);
 app.use(connectorRoutes);
+app.use('/llm', llmStreamRoutes);
 
 const PORT = process.env.PORT || 3001;
 
 async function start() {
   await migrate();
+  registerContentTools('content');
 
   // Register connectors
   registry.register(new GmailConnectorService());
@@ -116,6 +127,7 @@ async function start() {
   registry.register(new TelegramConnectorService());
   registry.register(new RedditConnectorService());
   registry.register(new TwitterConnectorService());
+  registry.register(new GoogleDriveConnectorService());
 
   app.listen(PORT, () => {
     console.log(`DokTor server running on http://localhost:${PORT}`);

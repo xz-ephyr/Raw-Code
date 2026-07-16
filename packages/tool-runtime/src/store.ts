@@ -7,10 +7,20 @@ export interface ToolOutputEntry {
   readonly timestamp: number;
 }
 
+const MAX_STORE_SIZE = 10_000;
 const store = new Map<string, ToolOutputEntry>();
 
 function makeKey(sessionID: string, toolCallID: string): string {
   return `${sessionID}:${toolCallID}`;
+}
+
+function evictIfNeeded(): void {
+  if (store.size >= MAX_STORE_SIZE) {
+    const entries = [...store.entries()];
+    entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+    const toDelete = entries.slice(0, Math.floor(MAX_STORE_SIZE * 0.2));
+    for (const [k] of toDelete) store.delete(k);
+  }
 }
 
 export function putToolOutput(
@@ -20,6 +30,7 @@ export function putToolOutput(
   input: unknown,
   output: unknown,
 ): void {
+  evictIfNeeded();
   store.set(makeKey(sessionID, toolCallID), {
     sessionID,
     toolName,

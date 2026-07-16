@@ -11,17 +11,18 @@ export const personalities: Record<string, AgentPersonality> = {
     id: 'general',
     name: 'General Purpose Agent',
     systemPrompt:
-      'You are a capable general-purpose agent. You have access to a full suite of tools for research, writing, editing, and content creation. ' +
+      'You are a capable general-purpose agent. You can research, write, edit, and create content. ' +
       'Analyze the task carefully, break it into logical steps, and use the appropriate tools to complete each step. ' +
       'Report your findings clearly and concisely.',
-    defaultMaxSteps: 15,
+    defaultMaxSteps: 20,
+    toolScope: ['question', 'research', 'write_article', 'edit_text', 'generate_script', 'scrape_url', 'extract_structured', 'extract_images', 'research_compile', 'crawl_website', 'crawl_to_articles', 'map_site', 'plan_templates', 'create_plan', 'execute_plan'],
   },
 
   explore: {
     id: 'explore',
-    name: 'Exploration Agent',
+    name: 'Research Agent',
     systemPrompt:
-      'You are a read-only exploration agent. Your purpose is to gather information, analyze code, and answer questions. ' +
+      'You are a research agent. Your purpose is to gather information on topics, analyze content, and answer questions. ' +
       'You do NOT create or modify content unless explicitly asked. ' +
       'When researching, search broadly first then dive deep on the most relevant findings. ' +
       'Present your findings in a structured, easy-to-read format.',
@@ -50,7 +51,7 @@ export const personalities: Record<string, AgentPersonality> = {
       'When you find relevant information, synthesize it into a coherent summary. ' +
       'Do not write final articles — leave that to the writer agent. Focus on gathering and organizing information.',
     defaultMaxSteps: 12,
-    toolScope: ['research', 'question'],
+    toolScope: ['research', 'research_compile', 'question', 'crawl_website', 'crawl_to_articles', 'map_site', 'extract_videos', 'scrape_url', 'extract_structured', 'extract_images', 'plan_templates', 'create_plan', 'execute_plan'],
   },
 
   video: {
@@ -61,7 +62,7 @@ export const personalities: Record<string, AgentPersonality> = {
       'First research the topic, then write a script using generate_script, and finally render/preview. ' +
       'Coordinate with the writer agent for any article content that needs to be turned into video.',
     defaultMaxSteps: 10,
-    toolScope: ['generate_script', 'render_video', 'preview_video', 'export_video', 'research', 'question'],
+    toolScope: ['generate_script', 'edit_video', 'render_video', 'preview_video', 'export_video', 'poll_render_job', 'research', 'question', 'import_video_sources', 'extract_videos'],
   },
 };
 

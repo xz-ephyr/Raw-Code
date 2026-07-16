@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { streamText, stepCountIs } from 'ai';
+import { streamText, stepCountIs, type LanguageModel } from 'ai';
 import type { SubAgentRequest, SubAgentResult } from './types';
 import type { Materialization } from '@doktor/tool-runtime';
 import { toAISDKTools, emit } from '@doktor/tool-runtime';
@@ -53,8 +53,13 @@ export function runSubAgent(
     let stepCount = 0;
     let toolCallCount = 0;
 
+    if (typeof request.model !== 'object' || request.model === null) {
+      throw new Error(`[subagent] No valid model provided for agent "${agentID}"`);
+    }
+    const resolvedModel = request.model as LanguageModel;
+
     const result = await streamText({
-      model: request.model ?? 'default',
+      model: resolvedModel,
       system: buildSystemPrompt(request),
       messages: [
         ...(request.context ? [{ role: 'system' as const, content: request.context }] : []),

@@ -4,12 +4,13 @@ import Layout from '@/components/layout/Layout';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { isTauri } from '@/lib/tauri';
 import UpdateModal from '@/components/ui/UpdateModal';
+import { SettingsModal } from '@/components/settings/SettingsModal';
 
 const ChatPage = lazy(() => import('@/pages/ChatPage').then(m => ({ default: m.ChatPage })));
 const ChatsPage = lazy(() => import('@/pages/ChatsPage').then(m => ({ default: m.ChatsPage })));
 const PluginsPage = lazy(() => import('@/pages/PluginsPage').then(m => ({ default: m.PluginsPage })));
 const WorkflowPage = lazy(() => import('@/pages/WorkflowPage').then(m => ({ default: m.WorkflowPage })));
-const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const WorkflowCreatePage = lazy(() => import('@/pages/WorkflowCreatePage').then(m => ({ default: m.WorkflowCreatePage })));
 
 export default function App() {
   const [updateInfo, setUpdateInfo] = useState<{
@@ -68,10 +69,12 @@ export default function App() {
           <Route path="/chats" element={<Suspense fallback={null}><ChatsPage /></Suspense>} />
           <Route path="/plugins" element={<Suspense fallback={null}><PluginsPage /></Suspense>} />
           <Route path="/workflow" element={<Suspense fallback={null}><WorkflowPage /></Suspense>} />
+          <Route path="/workflow/create" element={<Suspense fallback={null}><WorkflowCreatePage /></Suspense>} />
           <Route path="/chat/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
         </Route>
-        <Route path="/settings" element={<Suspense fallback={null}><SettingsPage /></Suspense>} />
       </Routes>
+
+      <SettingsModal />
 
       {updateInfo && (
         <UpdateModal

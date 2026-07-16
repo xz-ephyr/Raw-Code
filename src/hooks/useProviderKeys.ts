@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { getAllProviders } from '@core/providers/providerRegistry'
 import { DatabaseService } from '@core/utils/DatabaseService'
 
@@ -20,7 +20,7 @@ interface ExtraConfig {
 }
 
 export function useProviderKeys(extraConfigs?: ExtraConfig[]) {
-  const providers = getAllProviders()
+  const providers = useMemo(() => getAllProviders(), [])
 
   const [keys, setKeys] = useState<Record<string, string>>(
     Object.fromEntries(providers.map(p => [p.id, '']))
@@ -62,7 +62,7 @@ export function useProviderKeys(extraConfigs?: ExtraConfig[]) {
 
       if (extraConfigs) {
         for (const ec of extraConfigs) {
-          await DatabaseService.setConfig(ec.key, extras[ec.key] || '').catch(() => {})
+          await DatabaseService.setConfig(ec.key, extras[ec.key] || '').catch((e) => console.error('Failed to save extra config:', e))
           if (ec.storageKey) {
             localStorage.setItem(ec.storageKey, extras[ec.key] || '')
           }

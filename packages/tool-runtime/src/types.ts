@@ -3,6 +3,7 @@ export interface ToolExecuteContext {
   readonly agentID: string;
   readonly assistantMessageID: string;
   readonly toolCallID: string;
+  readonly resolveModel?: (name: string) => unknown;
 }
 
 export type Content =

@@ -10,11 +10,17 @@ export interface SessionRegistryEntry {
 const sessionTools = new Map<string, SessionRegistryEntry>();
 
 export function registerSession(name: string, tool: AnyTool): void {
+  if (sessionTools.has(name)) {
+    console.warn(`[tool-runtime] Duplicate session tool registration: "${name}". Existing entry will be overwritten.`);
+  }
   sessionTools.set(name, { tool, source: 'session' });
 }
 
 export function registerSessionBatch(tools: Record<string, AnyTool>): void {
   for (const [name, tool] of Object.entries(tools)) {
+    if (sessionTools.has(name)) {
+      console.warn(`[tool-runtime] Duplicate session tool registration: "${name}". Existing entry will be overwritten.`);
+    }
     sessionTools.set(name, { tool, source: 'session' });
   }
 }

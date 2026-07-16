@@ -1,80 +1,90 @@
-import { forwardRef, useImperativeHandle } from 'react';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
+import { useState, useCallback } from 'react';
+import { Plus } from 'lucide-react';
 import { refreshProviders } from '@core/models/aiService';
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { useProviderKeys } from '@/hooks/useProviderKeys';
-import { PasswordInput } from '@/components/ui/PasswordInput';
+import { ProviderKeyModal } from '@/components/settings/ProviderKeyModal';
+import type { KeyProvider } from '@core/providers/providerRegistry';
 
-export interface KeysTabHandle {
-  save: () => Promise<void>;
-}
-
-export const KeysTab = forwardRef<KeysTabHandle>((_, ref) => {
+export function KeysTab() {
   const { providers, keys, setKeys, extras, setExtraValue } = useProviderKeys([
     { key: 'cloudflare-account-id', storageKey: 'cloudflare-account-id' },
   ]);
 
-  const filteredProviders = providers.filter(p => p.id !== 'omniroute');
+  const [selectedProvider, setSelectedProvider] = useState<KeyProvider | null>(null);
+  const filteredProviders = providers;
 
-  useImperativeHandle(ref, () => ({
-    save: async () => {
-      await Promise.allSettled(filteredProviders.map((p) =>
-        DatabaseService.setConfig(p.configKey, keys[p.id])
-      ));
-      filteredProviders.forEach((p) => {
-        localStorage.setItem(p.configKey, keys[p.id]);
-      });
+  const handleSaveProviderKey = useCallback(async (providerId: string, key: string, providerExtras?: Record<string, string>) => {
+    const p = providers.find(pr => pr.id === providerId);
+    if (!p) return;
 
-      const cfAccountId = extras['cloudflare-account-id'];
-      if (cfAccountId) {
-        await DatabaseService.setConfig('cloudflare-account-id', cfAccountId).catch(() => {});
-        localStorage.setItem('cloudflare-account-id', cfAccountId);
+    setKeys(prev => ({ ...prev, [providerId]: key }));
 
-        const cfBaseURL = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/v1`;
-        await DatabaseService.setConfig('cloudflare-base-url', cfBaseURL).catch(() => {});
-        localStorage.setItem('cloudflare-base-url', cfBaseURL);
-      }
+    await DatabaseService.setConfig(p.configKey, key).catch((e) => console.error('Failed to save provider key:', e));
+    localStorage.setItem(p.configKey, key);
 
-      refreshProviders();
-    },
-  }));
+    const cfAccountId = providerExtras?.['cloudflare-account-id'];
+    if (cfAccountId) {
+      setExtraValue('cloudflare-account-id', cfAccountId);
+      await DatabaseService.setConfig('cloudflare-account-id', cfAccountId).catch((e) => console.error('Failed to save CF account ID:', e));
+      localStorage.setItem('cloudflare-account-id', cfAccountId);
+
+      const cfBaseURL = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/v1`;
+      await DatabaseService.setConfig('cloudflare-base-url', cfBaseURL).catch((e) => console.error('Failed to save CF base URL:', e));
+      localStorage.setItem('cloudflare-base-url', cfBaseURL);
+    }
+
+    await refreshProviders();
+  }, [providers, setKeys, setExtraValue]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-      {filteredProviders.map((p) => (
-        <div key={p.id} className="p-3 space-y-2.5">
-          <div className="flex items-center gap-2.5">
-            <img src={p.icon} alt={p.label} className="shrink-0" style={{ width: 22, height: 22 }} />
-            <span className="text-sm font-semibold text-foreground">{p.label}</span>
-            {keys[p.id]?.trim() && (
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={13} className="text-green-500" />
-            )}
-          </div>
-          <PasswordInput
-            value={keys[p.id] || ''}
-            onChange={(v) => setKeys({ ...keys, [p.id]: v })}
-            placeholder={`Enter ${p.label} API Key`}
-            showKeyIcon
-          />
-
-          {p.id === 'cloudflare' && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Account ID (required for Cloudflare)</label>
-              <input
-                type="text"
-                value={extras['cloudflare-account-id'] || ''}
-                onChange={(e) => setExtraValue('cloudflare-account-id', e.target.value)}
-                placeholder="Enter your Cloudflare Account ID"
-                className="h-9 bg-muted rounded-lg px-3 outline-none text-sm w-full border border-border focus:border-ring transition-colors"
-              />
-              <p className="text-xs text-muted-foreground">Find this in your Cloudflare dashboard URL or in My Profile → API Tokens.</p>
+    <>
+      <div className="space-y-2">
+        {filteredProviders.map((p) => {
+          const hasKey = !!keys[p.id]?.trim();
+          return (
+            <div
+              key={p.id}
+              className="flex items-center justify-between px-4 py-3 rounded-md border border-border hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <img
+                  src={p.icon}
+                  alt={p.label}
+                  className="shrink-0"
+                  style={{ width: 22, height: 22 }}
+                />
+                <span className="text-sm font-medium text-foreground truncate">{p.label}</span>
+              </div>
+              <button
+                onClick={() => setSelectedProvider(p)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all active:scale-[0.97] shrink-0 ${
+                  hasKey
+                    ? 'bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-500/25'
+                    : 'bg-accent text-accent-foreground hover:opacity-80'
+                }`}
+              >
+                {hasKey ? 'Connected' : 'Connect'}
+                {!hasKey && <Plus size={13} />}
+              </button>
             </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-});
+          );
+        })}
+      </div>
 
-KeysTab.displayName = 'KeysTab';
+      {selectedProvider && (
+        <ProviderKeyModal
+          provider={selectedProvider}
+          currentKey={keys[selectedProvider.id] || ''}
+          currentExtras={selectedProvider.id === 'cloudflare' ? { 'cloudflare-account-id': extras['cloudflare-account-id'] || '' } : undefined}
+          isOpen={!!selectedProvider}
+          onClose={() => setSelectedProvider(null)}
+          onSave={async (key, providerExtras) => {
+            await handleSaveProviderKey(selectedProvider.id, key, providerExtras);
+            setSelectedProvider(null);
+          }}
+        />
+      )}
+    </>
+  );
+}

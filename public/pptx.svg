@@ -1,0 +1,8 @@
+<svg width="800px" height="800px" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="2" width="28" height="28" rx="5" fill="white"/>
+  <rect x="5" y="18" width="22" height="10" rx="1.5" fill="#EA580C"/>
+  <text x="16" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" font-weight="bold" fill="white">PPT</text>
+  <rect x="6" y="5" width="14" height="2.5" rx="1.25" fill="#E5E7EB"/>
+  <rect x="6" y="9.5" width="20" height="2.5" rx="1.25" fill="#E5E7EB"/>
+  <rect x="6" y="14" width="11" height="2.5" rx="1.25" fill="#E5E7EB"/>
+</svg>

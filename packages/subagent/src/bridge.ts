@@ -3,6 +3,7 @@ import { make, materialize } from '@doktor/tool-runtime';
 import type { ToolExecuteContext } from '@doktor/tool-runtime';
 import { runSubAgent } from './subagent';
 import { runParallel } from './scheduler';
+import { compose } from './composer';
 import { synthesize } from './synthesizer';
 import type { SubAgentRequest } from './types';
 
@@ -10,6 +11,12 @@ let toolFilter: readonly string[] | undefined;
 
 export function setToolFilter(scope: readonly string[] | undefined): void {
   toolFilter = scope;
+}
+
+function resolveModelFromContext(context: ToolExecuteContext, name?: string): unknown {
+  if (!name) return undefined;
+  if (context.resolveModel) return context.resolveModel(name);
+  return name;
 }
 
 const inputSchema = Schema.Struct({
@@ -58,7 +65,7 @@ Two modes:
         const requests: readonly SubAgentRequest[] = input.tasks.map((t: string) => ({
           task: t,
           context: input.context,
-          model: input.model,
+          model: resolveModelFromContext(context, input.model),
           maxSteps: input.maxSteps,
           toolScope: input.toolScope,
           agentType: input.agentType,
@@ -77,7 +84,7 @@ Two modes:
       const request: SubAgentRequest = {
         task: input.task,
         context: input.context,
-        model: input.model,
+        model: resolveModelFromContext(context, input.model),
         maxSteps: input.maxSteps,
         toolScope: input.toolScope,
         agentType: input.agentType,
@@ -86,5 +93,74 @@ Two modes:
 
       const result = yield* runSubAgent(request, mat);
       return { result: result.output, steps: result.steps, mode: 'single' };
+    }),
+});
+
+const composeInputSchema = Schema.Struct({
+  steps: Schema.Array(
+    Schema.Struct({
+      name: Schema.String,
+      agentType: Schema.String,
+      taskTemplate: Schema.String,
+      toolScope: Schema.optional(Schema.Array(Schema.String)),
+      maxSteps: Schema.optional(Schema.Number),
+    }),
+  ),
+  initialContext: Schema.optional(Schema.String),
+  model: Schema.optional(Schema.String),
+});
+
+const composeOutputSchema = Schema.Struct({
+  outputs: Schema.Array(Schema.String),
+  stepCount: Schema.Number,
+});
+
+export const composeRunTool = make({
+  description: `Define and execute a multi-step agent pipeline. Each step runs a sub-agent with its own personality and tool scope.
+Output from each step is available as {{stepName}} in subsequent step task templates.
+
+Example:
+  steps: [
+    { name: "research", agentType: "researcher", taskTemplate: "Research {{__initial__}}" },
+    { name: "write", agentType: "writer", taskTemplate: "Write an article based on: {{research}}" }
+  ]`,
+  input: composeInputSchema,
+  output: composeOutputSchema,
+  inputJsonSchema: {
+    type: 'object',
+    properties: {
+      steps: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', description: 'Unique step name for output interpolation' },
+            agentType: { type: 'string', description: 'Agent personality (general, explore, writer, researcher, video)' },
+            taskTemplate: { type: 'string', description: 'Task description with {{name}} placeholders for previous step outputs' },
+            toolScope: { type: 'array', items: { type: 'string' }, description: 'Restrict to specific tools' },
+            maxSteps: { type: 'number', description: 'Max steps for this sub-agent' },
+          },
+          required: ['name', 'agentType', 'taskTemplate'],
+        },
+      },
+      initialContext: { type: 'string', description: 'Initial context available as {{__initial__}}' },
+      model: { type: 'string', description: 'Model override for all steps' },
+    },
+    required: ['steps'],
+  },
+  execute: (input, context: ToolExecuteContext) =>
+    Effect.gen(function* () {
+      const mat = materialize({ filterByScope: undefined });
+      const pipeline = {
+        steps: input.steps.map((s: any) => ({
+          ...s,
+          systemPromptOverride: undefined,
+        })),
+        initialContext: input.initialContext,
+        model: resolveModelFromContext(context, input.model),
+      };
+
+      const result = yield* compose(pipeline, mat);
+      return { outputs: [...result.outputs], stepCount: result.stepResults.length };
     }),
 });

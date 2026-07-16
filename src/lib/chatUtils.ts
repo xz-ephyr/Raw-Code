@@ -1,5 +1,5 @@
-import type { Artifact } from '../types/artifact';
-import { parseArtifacts } from './artifactParser';
+import type { FileItem } from '../types/file-panel';
+import { parseFiles } from './fileParser';
 
 export function sanitizeMarkdownContent(content: string): string {
   let result = content;
@@ -39,7 +39,7 @@ export interface LegacyMessage {
   toolInvocations?: any[];
   contentBeforeTool?: string;
   contentAfterTool?: string;
-  artifacts?: Artifact[];
+  files?: FileItem[];
   hasPartialArtifact?: boolean;
   [key: string]: any;
 }
@@ -169,6 +169,60 @@ function buildContentBeforeAfter(parts: any[] | undefined, contentBeforeTool?: s
   };
 }
 
+function extractWriteArtifactFiles(toolInvocations: any[]): any[] {
+  return (toolInvocations || [])
+    .filter((ti: any) => ti.toolName === 'write_artifact' && ti.args?.identifier && ti.args?.content)
+    .map((call: any) => ({
+      identifier: call.args.identifier,
+      type: call.args.type || 'code',
+      title: call.args.title || call.args.identifier,
+      language: call.args.language,
+      content: call.args.content,
+      version: 0,
+      createdAt: Date.now(),
+    }));
+}
+
+function extractContentToolFiles(toolInvocations: any[]): any[] {
+  const contentToolCalls = (toolInvocations || [])
+    .filter((ti: any) => ti.state === 'result' && (
+      ti.toolName === 'write_article'
+      || ti.toolName === 'edit_text'
+      || ti.toolName === 'research'
+      || ti.toolName === 'generate_script'
+    ));
+
+  return contentToolCalls.map((call: any) => {
+    const result = call.result;
+    if (!result) return null;
+    if (call.toolName === 'write_article' && result.content) {
+      return { identifier: result.articleId || call.toolCallId, type: 'doc' as const, title: result.title || result.articleId, content: result.content, version: 0, createdAt: Date.now() };
+    }
+    if (call.toolName === 'edit_text' && result.text) {
+      return { identifier: call.toolCallId, type: 'doc' as const, title: 'Edited Text', content: result.text, version: 0, createdAt: Date.now() };
+    }
+    if (call.toolName === 'research' && result.summary) {
+      const srcText = (result.sources || []).map((s: any) => `- ${s.title}\n  ${s.snippet}`).join('\n');
+      const content = result.summary + (srcText ? `\n\n---\n\n${srcText}` : '');
+      const title = result.summary.trim().split('\n')[0].slice(0, 50);
+      return { identifier: call.toolCallId, type: 'pdf' as const, title, content, version: 0, createdAt: Date.now() };
+    }
+    if (call.toolName === 'generate_script' && result.scenes) {
+      const content = result.scenes.map((s: any) =>
+        `Scene ${s.sceneNumber} (${s.duration}s)\n${s.narration}\n${s.visualDescription}`
+      ).join('\n\n---\n\n');
+      return { identifier: result.scriptId || call.toolCallId, type: 'doc' as const, title: 'Video Script', content, version: 0, createdAt: Date.now() };
+    }
+    return null;
+  }).filter(Boolean);
+}
+
+function extractFilesFromToolInvocations(toolInvocations: any[]): any[] {
+  const writeArtifactFiles = extractWriteArtifactFiles(toolInvocations);
+  const contentToolFiles = extractContentToolFiles(toolInvocations);
+  return [...writeArtifactFiles, ...contentToolFiles];
+}
+
 export const mapUIMessageToLegacyMessage = (m: UIMessage | null | undefined): LegacyMessage | null | undefined => {
   if (!m) return m;
 
@@ -191,29 +245,20 @@ export const mapUIMessageToLegacyMessage = (m: UIMessage | null | undefined): Le
     toolInvocations = extractToolInvocations(m.parts);
   }
 
-  const writeArtifactCalls = (toolInvocations || [])
-    .filter((ti: any) => ti.toolName === 'write_artifact' && ti.args?.identifier && ti.args?.content);
+  let toolFiles = extractFilesFromToolInvocations(toolInvocations || []);
 
-  let parsedArtifacts: Artifact[] = [];
-  let toolArtifacts: any[] = [];
-
-  if (writeArtifactCalls.length > 0) {
-    toolArtifacts = writeArtifactCalls.map((call: any) => ({
-      identifier: call.args.identifier,
-      type: call.args.type || 'code',
-      title: call.args.title || call.args.identifier,
-      language: call.args.language,
-      content: call.args.content,
-      version: 0,
-      createdAt: Date.now(),
-    }));
-  } else {
-    const parsed = parseArtifacts(dedupedContent);
-    parsedArtifacts = parsed.artifacts;
+  let parsedFiles: FileItem[] = [];
+  let cleanContentStr = dedupedContent;
+  if (toolFiles.length === 0) {
+    const parsed = parseFiles(dedupedContent);
+    parsedFiles = parsed.files;
+    if (parsed.files.length > 0) {
+      cleanContentStr = parsed.cleanText;
+    }
   }
 
-  const allArtifacts = [...parsedArtifacts, ...toolArtifacts];
-  const finalContent = sanitizeMarkdownContent(dedupedContent);
+  const allFiles = [...parsedFiles, ...toolFiles];
+  const finalContent = sanitizeMarkdownContent(cleanContentStr);
 
   const { contentBeforeTool, contentAfterTool } = buildContentBeforeAfter(m.parts);
 
@@ -224,7 +269,36 @@ export const mapUIMessageToLegacyMessage = (m: UIMessage | null | undefined): Le
     toolInvocations,
     contentBeforeTool: contentBeforeTool ?? m.contentBeforeTool,
     contentAfterTool: contentAfterTool ?? m.contentAfterTool,
-    artifacts: allArtifacts,
+    files: allFiles,
     hasPartialArtifact: hasPartialArtifact(dedupedContent),
+  };
+};
+
+export const hydrateStoredMessage = (m: Record<string, any> | null | undefined): LegacyMessage | null | undefined => {
+  if (!m) return m as LegacyMessage | null | undefined;
+
+  const content = m.content || '';
+  const { cleanContent, thinking } = extractThinkTags(content);
+
+  const finalReasoning = thinking
+    ? (m.reasoning ? `${m.reasoning}\n${thinking}` : thinking)
+    : (m.reasoning || '');
+
+  let files: any[] = m.files;
+  if (!files || files.length === 0) {
+    files = extractFilesFromToolInvocations(m.toolInvocations || []);
+  }
+
+  const { files: parsedFiles, cleanText } = parseFiles(cleanContent);
+  if (parsedFiles.length > 0) {
+    files = [...files, ...parsedFiles];
+  }
+
+  return {
+    ...m,
+    content: sanitizeMarkdownContent(parsedFiles.length > 0 ? cleanText : cleanContent),
+    reasoning: finalReasoning,
+    files,
+    hasPartialArtifact: hasPartialArtifact(cleanContent),
   };
 };

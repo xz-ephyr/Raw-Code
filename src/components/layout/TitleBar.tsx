@@ -16,14 +16,11 @@ export default function TitleBar({ onNewThread }: TitleBarProps) {
   const [editValue, setEditValue] = useState(sessionTitle);
   const { uuid } = useParams();
 
-  const isFirstRender = useRef(true);
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
+    if (!isEditing) {
+      setEditValue(sessionTitle);
     }
-    setEditValue(sessionTitle);
-  }, [sessionTitle]);
+  }, [sessionTitle, isEditing]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -44,7 +41,7 @@ export default function TitleBar({ onNewThread }: TitleBarProps) {
     setIsEditing(false);
     if (newTitle !== sessionTitle && uuid) {
       setTitle(newTitle);
-      await ChatSessionManager.rename(uuid, newTitle).catch(() => {});
+      await ChatSessionManager.rename(uuid, newTitle).catch((e) => console.error('Failed to rename session:', e));
     }
   }, [editValue, sessionTitle, uuid, setTitle]);
 

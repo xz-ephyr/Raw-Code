@@ -3,9 +3,14 @@
   "version": "0.15.0",
   "type": "module",
   "private": true,
+  "bin": {
+    "doktor": "./bin/doktor.js"
+  },
   "scripts": {
     "dev": "vite",
     "server": "npm run dev --prefix server",
+    "crawler": "cd crawler && go run ./cmd/server",
+    "dev:all": "concurrently -n crawler,server,vite -c yellow,green,cyan \"npm run crawler\" \"npm run server\" \"npm run dev\"",
     "build": "vite build",
     "desktop:prebuild": "npm run build",
     "preview": "vite preview",
@@ -18,8 +23,6 @@
     "analyze": "fallow"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.73",
-    "@ai-sdk/react": "^3.0.199",
     "@babel/standalone": "^8.0.2",
     "@codemirror/lang-angular": "^0.1.4",
     "@codemirror/lang-cpp": "^6.0.3",
@@ -50,12 +53,14 @@
     "@uiw/react-codemirror": "^4.25.10",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
-    "ai": "^6.0.197",
     "clsx": "^2.1.1",
     "effect": "^3.21.4",
     "express": "^5.2.1",
     "http-proxy-middleware": "^4.2.0",
+    "lucide-react": "^1.24.0",
     "mermaid": "^11.15.0",
+    "pdf-lib": "^1.17.1",
+    "pptxgenjs": "^4.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
@@ -69,6 +74,7 @@
     "tailwind-merge": "^3.6.0",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.1.0",
+    "xlsx": "^0.18.5",
     "zod": "^3.24.1",
     "zustand": "^5.0.14"
   },
@@ -85,6 +91,8 @@
     "@typescript-eslint/parser": "^8.24.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "cac": "^7.0.0",
+    "concurrently": "^10.0.3",
     "eslint": "^9.20.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "fallow": "^2.89.0",

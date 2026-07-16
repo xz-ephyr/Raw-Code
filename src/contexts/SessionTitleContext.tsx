@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
 
 interface SessionTitleContextValue {
   sessionTitle: string;
@@ -24,8 +24,10 @@ export function SessionTitleProvider({ children }: { children: ReactNode }) {
     setSessionIdState(id);
   }, []);
 
+  const value = useMemo(() => ({ sessionTitle, setTitle, sessionId, setSessionId, isTitleGenerating, setIsTitleGenerating }), [sessionTitle, setTitle, sessionId, setSessionId, isTitleGenerating, setIsTitleGenerating]);
+
   return (
-    <SessionTitleContext.Provider value={{ sessionTitle, setTitle, sessionId, setSessionId, isTitleGenerating, setIsTitleGenerating }}>
+    <SessionTitleContext.Provider value={value}>
       {children}
     </SessionTitleContext.Provider>
   );

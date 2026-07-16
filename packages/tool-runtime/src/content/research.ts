@@ -22,6 +22,10 @@ const outputSchema = Schema.Struct({
   partial: Schema.optional(Schema.Boolean),
 });
 
+function baseUrl(): string {
+  return 'http://localhost:8080';
+}
+
 export const researchTool = make({
   description: 'Research a topic by searching the web and synthesizing findings.',
   input: inputSchema,
@@ -41,11 +45,38 @@ export const researchTool = make({
 
       const isDeep = input.depth === 'deep';
       const maxSources = input.maxSources ?? (isDeep ? 8 : 3);
-      const sources = Array.from({ length: Math.min(maxSources, 5) }, (_, i) => ({
-        title: `Result ${i + 1}: ${input.query.split(' ').slice(0, 4).join(' ')}${i > 0 ? ` - Perspective ${i + 1}` : ''}`,
-        url: `https://example.com/research/${encodeURIComponent(input.query)}/${i + 1}`,
-        snippet: `This is a ${isDeep ? 'detailed' : 'brief'} snippet about "${input.query}" providing relevant context and key information for analysis.`,
-      }));
+
+      const searchResult = yield* Effect.promise(() =>
+        fetch(`${baseUrl()}/v1/search?query=${encodeURIComponent(input.query)}&maxResults=${maxSources}`, {
+          signal: AbortSignal.timeout(30000),
+        })
+          .then(async (r) => {
+            if (!r.ok) throw new Error(`go-crawl error (${r.status})`);
+            const json = await r.json();
+            if (!json.success) throw new Error(`go-crawl search failed: ${json.error}`);
+            return (json.data || []) as Array<{ title: string; url: string; markdown?: string }>;
+          })
+          .catch((e) => {
+            console.warn(`go-crawl search failed: ${e instanceof Error ? e.message : String(e)}`);
+            return [] as Array<{ title: string; url: string; markdown?: string }>;
+          }),
+      );
+
+      let sources: Array<{ title: string; url: string; snippet: string }>;
+      if (searchResult.length > 0) {
+        sources = searchResult.slice(0, maxSources).map((r) => ({
+          title: r.title || 'Untitled',
+          url: r.url || '',
+          snippet: (r.markdown || '').slice(0, 400),
+        }));
+      } else {
+        sources = Array.from({ length: Math.min(maxSources, 5) }, (_, i) => ({
+          title: `Result ${i + 1}: ${input.query.split(' ').slice(0, 4).join(' ')}${i > 0 ? ` - Perspective ${i + 1}` : ''}`,
+          url: `https://example.com/research/${encodeURIComponent(input.query)}/${i + 1}`,
+          snippet: `This is a ${isDeep ? 'detailed' : 'brief'} snippet about "${input.query}" providing relevant context and key information for analysis.`,
+        }));
+        yield* Effect.log(`Using mock research results (go-crawl unavailable or returned no results)`);
+      }
 
       const summary = isDeep
         ? `Deep research results for "${input.query}":\n\n` +

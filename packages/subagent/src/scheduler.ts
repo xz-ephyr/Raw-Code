@@ -21,7 +21,8 @@ export function runParallel(
     ),
   );
 
-  return Effect.all(effects, { concurrency: tasks.length });
+  const MAX_CONCURRENCY = 5;
+  return Effect.all(effects, { concurrency: Math.min(tasks.length, MAX_CONCURRENCY) });
 }
 
 export function runSequential(

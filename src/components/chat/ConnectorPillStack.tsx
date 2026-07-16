@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
-import { CONNECTOR_BRAND_COLORS, CONNECTOR_ICONS, type ConnectorName } from './connectorMentions';
+import { CONNECTOR_ICONS, type ConnectorName } from './connectorMentions';
 
 interface ConnectorPillStackProps {
   connectors: ConnectorName[];
@@ -18,18 +18,19 @@ export function ConnectorPillStack({ connectors, connected, onRemove }: Connecto
   return (
     <div className="flex items-center gap-0.5">
       {installed.map((name) => {
-        const colors = CONNECTOR_BRAND_COLORS[name];
         const iconSrc = CONNECTOR_ICONS[name];
         return (
           <button
             key={name}
             type="button"
             onClick={() => navigate('/plugins')}
-            className="group relative inline-flex items-center gap-1 px-2 py-1 rounded-[8px] text-[10px] font-medium transition-all cursor-pointer hover:pr-6"
-            style={{ backgroundColor: colors.bg, color: colors.color }}
+            className="group relative inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium transition-all cursor-pointer hover:pr-6"
+            style={{ color: '#3B82F6' }}
             title={name}
           >
-            <img src={iconSrc} alt="" className="w-3.5 h-3.5 shrink-0" />
+            <span className="inline-flex items-center justify-center w-4 h-4 bg-white rounded-[6px]">
+              <img src={iconSrc} alt="" loading="lazy" className="w-3 h-3 shrink-0" />
+            </span>
             <span className="max-w-[50px] truncate">{name}</span>
             <span
               onClick={(e) => { e.stopPropagation(); onRemove(name); }}

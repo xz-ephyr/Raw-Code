@@ -1,32 +1,24 @@
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Settings02Icon, Cancel01Icon } from '@hugeicons/core-free-icons';
 import { SettingsTabLayout } from './SettingsTabLayout';
+import { useProjectStore } from '@/stores/projectStore';
 
-interface SettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+export function SettingsModal() {
+  const isOpen = useProjectStore((s) => s.isSettingsOpen);
+  const setSettingsOpen = useProjectStore((s) => s.setSettingsOpen);
 
-export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[4px] z-50">
-      <div className="bg-card rounded-2xl w-[min(1100px,95vw)] h-[85vh] min-h-[500px] shadow-2xl shadow-black/30 border border-border flex flex-col overflow-hidden">
-        <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <HugeiconsIcon icon={Settings02Icon} size={20} className="text-muted-foreground" />
-            Settings
-          </h2>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <HugeiconsIcon icon={Cancel01Icon} size={18} />
-          </button>
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-[100] p-4 sm:p-6"
+      onClick={() => setSettingsOpen(false)}
+    >
+      <div
+        className="relative bg-card rounded-2xl w-full max-w-[1300px] h-[90vh] min-h-[500px] shadow-2xl shadow-black/50 border border-border flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex-1 min-h-0">
+          <SettingsTabLayout />
         </div>
-
-        <SettingsTabLayout />
       </div>
     </div>
   );

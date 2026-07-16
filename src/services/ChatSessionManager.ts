@@ -40,4 +40,26 @@ export const ChatSessionManager = {
     await DatabaseService.touchSession(id);
   },
 
+  pin: async (id: string) => {
+    await DatabaseService.setSessionPinned(id, true);
+  },
+
+  unpin: async (id: string) => {
+    await DatabaseService.setSessionPinned(id, false);
+  },
+
+  markAsRead: async (id: string) => {
+    await DatabaseService.updateSession(id, { unread: false });
+    window.dispatchEvent(new CustomEvent('unread-changed'));
+  },
+
+  markAsUnread: async (id: string) => {
+    await DatabaseService.updateSession(id, { unread: true });
+    window.dispatchEvent(new CustomEvent('unread-changed'));
+  },
+
+  setStreaming: async (id: string, streaming: boolean) => {
+    await DatabaseService.updateSession(id, { streaming });
+  },
+
 };

@@ -1,7 +1,7 @@
 export interface SubAgentRequest {
   readonly task: string;
   readonly context?: string;
-  readonly model?: string;
+  readonly model?: unknown;
   readonly maxSteps?: number;
   readonly toolScope?: readonly string[];
   readonly agentType?: string;

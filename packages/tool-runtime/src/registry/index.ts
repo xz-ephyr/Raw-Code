@@ -5,3 +5,4 @@ export type { SessionRegistryEntry } from './session';
 export { materialize, clearAllRegistrations } from './materialize';
 export type { Materialization } from './materialize';
 export { toAISDKTools } from './adapter';
+export type { AISDKSessionContext } from './adapter';

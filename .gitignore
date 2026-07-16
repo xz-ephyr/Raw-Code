@@ -61,10 +61,6 @@ PLAN.md
 # Migration analysis (dok-tor → raw-code mapping)
 migration/
 
-# AI-generated images
-ChatGPT_Image_Jul_8__2026__02_00_50_PM-removebg-preview.png
-ChatGPT_Image_Jul_8__2026__02_00_59_PM-removebg-preview.png
-
 # Staging area
 staging/
 
@@ -81,3 +77,6 @@ fallow/
 
 # Docs with live API keys (never commit)
 docs/FREEProviders.md
+
+# Root assets (logos, orphaned images)
+assets/

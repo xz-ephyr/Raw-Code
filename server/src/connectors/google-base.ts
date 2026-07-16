@@ -14,6 +14,7 @@ export abstract class GoogleConnectorService extends ConnectorService {
     return {
       tokenEndpoint: 'https://oauth2.googleapis.com/token',
       authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+      apiBaseUrl: 'https://oauth2.googleapis.com/',
       revokeEndpoint: 'https://oauth2.googleapis.com/revoke',
       scopes: this.googleScopes,
     };

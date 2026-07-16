@@ -1,6 +1,13 @@
 import { Deferred, Effect } from 'effect';
 
-const pending = new Map<string, Deferred.Deferred<any, Error>>();
+const DEFERRED_TTL_MS = 5 * 60 * 1000;
+
+interface DeferredEntry {
+  deferred: Deferred.Deferred<any, Error>;
+  timeout: ReturnType<typeof setTimeout>;
+}
+
+const pending = new Map<string, DeferredEntry>();
 
 function makeKey(sessionID: string, toolCallID: string): string {
   return `${sessionID}:${toolCallID}`;
@@ -10,24 +17,35 @@ export function registerDeferred(
   sessionID: string,
   toolCallID: string,
   deferred: Deferred.Deferred<any, Error>,
+  ttlMs: number = DEFERRED_TTL_MS,
 ): void {
-  pending.set(makeKey(sessionID, toolCallID), deferred);
+  const key = makeKey(sessionID, toolCallID);
+  const timeout = setTimeout(() => {
+    const entry = pending.get(key);
+    if (entry) {
+      Effect.runFork(Deferred.fail(entry.deferred, new Error(`Deferred timed out after ${ttlMs}ms`)));
+      pending.delete(key);
+    }
+  }, ttlMs);
+  pending.set(key, { deferred, timeout });
 }
 
 export function resolveDeferred(sessionID: string, toolCallID: string, answer: unknown): void {
   const k = makeKey(sessionID, toolCallID);
-  const deferred = pending.get(k);
-  if (deferred) {
-    Effect.runFork(Deferred.succeed(deferred, answer));
+  const entry = pending.get(k);
+  if (entry) {
+    clearTimeout(entry.timeout);
+    Effect.runFork(Deferred.succeed(entry.deferred, answer));
     pending.delete(k);
   }
 }
 
 export function rejectDeferred(sessionID: string, toolCallID: string, error: Error): void {
   const k = makeKey(sessionID, toolCallID);
-  const deferred = pending.get(k);
-  if (deferred) {
-    Effect.runFork(Deferred.fail(deferred, error));
+  const entry = pending.get(k);
+  if (entry) {
+    clearTimeout(entry.timeout);
+    Effect.runFork(Deferred.fail(entry.deferred, error));
     pending.delete(k);
   }
 }
@@ -42,4 +60,15 @@ export function listPendingSessionDeferreds(sessionID: string): string[] {
     if (k.startsWith(`${sessionID}:`)) results.push(k.split(':')[1]);
   }
   return results;
+}
+
+export function clearSessionDeferreds(sessionID: string): void {
+  const prefix = `${sessionID}:`;
+  for (const [k, entry] of pending) {
+    if (k.startsWith(prefix)) {
+      clearTimeout(entry.timeout);
+      Effect.runFork(Deferred.fail(entry.deferred, new Error('Session ended')));
+      pending.delete(k);
+    }
+  }
 }

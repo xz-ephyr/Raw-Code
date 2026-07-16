@@ -1,9 +1,12 @@
 const API_BASE = () => import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_KEY = import.meta.env.VITE_API_KEY || '';
 
 async function request<T>(command: string, payload: any): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (API_KEY) headers['x-api-key'] = API_KEY;
   const res = await fetch(`${API_BASE()}/${command}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -26,6 +29,9 @@ interface SessionRow {
   lastMessage: string | null;
   projectId: string | null;
   archived: boolean;
+  pinned: boolean;
+  unread: boolean;
+  streaming: boolean;
   createdAt: number;
   updatedAt: number | null;
 }
@@ -37,7 +43,10 @@ interface MessageRow {
   content: string;
   reasoning: string | null;
   toolInvocations: string | null;
+  model: string | null;
   createdAt: number;
+  content_before_tool: string | null;
+  content_after_tool: string | null;
 }
 
 export const DatabaseService = {
@@ -99,18 +108,25 @@ export const DatabaseService = {
 
   async updateSession(
     id: string,
-    updates: { title?: string; lastMessage?: string; archived?: boolean }
+    updates: { title?: string; lastMessage?: string; archived?: boolean; pinned?: boolean; unread?: boolean; streaming?: boolean }
   ) {
     await request('update_session', {
       id,
       title: updates.title ?? null,
       lastMessage: updates.lastMessage ?? null,
       archived: updates.archived ?? null,
+      pinned: updates.pinned ?? null,
+      unread: updates.unread ?? null,
+      streaming: updates.streaming ?? null,
     });
   },
 
   async touchSession(id: string) {
     await request('update_session', { id, title: null, lastMessage: null, archived: null });
+  },
+
+  async setSessionPinned(id: string, pinned: boolean) {
+    await request('pin_session', { id, pinned });
   },
 
   async deleteSession(id: string) {
@@ -124,11 +140,13 @@ export const DatabaseService = {
       limit: opts?.limit ?? null,
       offset: opts?.offset ?? null,
     });
-    return rows.map(({ sessionId: sid, toolInvocations, createdAt, ...rest }) => ({
+    return rows.map(({ sessionId: sid, toolInvocations, createdAt, content_before_tool, content_after_tool, ...rest }) => ({
       ...rest,
       sessionId: sid,
       createdAt: Number(createdAt),
       toolInvocations: toolInvocations ? JSON.parse(toolInvocations) : undefined,
+      contentBeforeTool: content_before_tool || undefined,
+      contentAfterTool: content_after_tool || undefined,
     }));
   },
 
@@ -140,7 +158,10 @@ export const DatabaseService = {
       content: m.content,
       reasoning: m.reasoning || null,
       toolInvocations: m.toolInvocations ? JSON.stringify(m.toolInvocations) : null,
+      model: m.model || null,
       createdAt: m.createdAt || Date.now(),
+      contentBeforeTool: m.contentBeforeTool || null,
+      contentAfterTool: m.contentAfterTool || null,
     }));
     await request('save_messages', { sessionId, messages: messagesToSave });
   },

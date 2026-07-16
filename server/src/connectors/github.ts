@@ -1,4 +1,18 @@
+import { query } from '../db.js';
 import { ConnectorService } from './base.js';
+import { ensurePipelineRepo } from './github/repos.js';
+import {
+  listRepos,
+  listIssues,
+  listPRs,
+  searchCode,
+  createRepoFromTemplate,
+  dispatchWorkflow,
+  listWorkflowRuns,
+  fetchRunLogs,
+  commitFile,
+  setupWebhook,
+} from './github/api.js';
 
 export class GitHubConnectorService extends ConnectorService {
   readonly provider = 'github';
@@ -31,7 +45,6 @@ export class GitHubConnectorService extends ConnectorService {
     };
 
     if (options?.state) params.state = options.state;
-    // GitHub doesn't support PKCE for OAuth2 apps (uses client_secret instead)
 
     return `${this.oauthConfig.authEndpoint}?${new URLSearchParams(params).toString()}`;
   }
@@ -73,22 +86,43 @@ export class GitHubConnectorService extends ConnectorService {
       identity = user.login;
     }
 
+    const metadata: Record<string, unknown> = {};
+    if (identity) {
+      metadata.username = identity;
+      try {
+        const userData = await userRes.json();
+        metadata.avatar_url = userData.avatar_url;
+      } catch { /* skip */ }
+    }
+
     await this.saveToken({
       accessToken: data.access_token,
-      refreshToken: null, // GitHub access tokens don't expire by default
+      refreshToken: null,
       expiresAt: null,
       scope: this.oauthConfig.scopes.join(' '),
       identity,
-      metadata: identity ? { username: identity, avatar_url: userRes.ok ? (await userRes.json().catch(() => ({}))).avatar_url : undefined } : undefined,
+      metadata: Object.keys(metadata).length ? metadata : undefined,
     });
 
+    // Auto-create pipeline repo on connect
+    try {
+      const pipelineRepo = await this.ensurePipelineRepo();
+      metadata.pipelineRepo = pipelineRepo.fullName;
+    } catch (err) {
+      console.warn(`Pipeline repo auto-creation failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+
     return { identity };
+  }
+
+  async ensurePipelineRepo(): Promise<{ owner: string; repo: string; fullName: string }> {
+    return ensurePipelineRepo.call(this);
   }
 
   async getStatus(): Promise<{ connected: boolean; identity: string | null }> {
     const result = await query<{ identity: string; connected: number }>(
       'SELECT identity, connected FROM oauth_tokens WHERE provider = $1',
-      ['github']
+      [this.provider]
     );
     if (result.rows.length === 0) return { connected: false, identity: null };
     return { connected: result.rows[0].connected === 1, identity: result.rows[0].identity || null };
@@ -108,28 +142,68 @@ export class GitHubConnectorService extends ConnectorService {
   // --- API actions ---
 
   async listRepos(owner?: string) {
-    const endpoint = owner ? `/users/${owner}/repos` : '/user/repos';
-    return this.apiFetch(`${endpoint}?sort=updated&per_page=50`, {
-      headers: { Accept: 'application/vnd.github.v3+json' },
-    });
+    return listRepos.call(this, owner);
   }
 
   async listIssues(owner: string, repo: string) {
-    return this.apiFetch(`/repos/${owner}/${repo}/issues?state=open&per_page=20`, {
-      headers: { Accept: 'application/vnd.github.v3+json' },
-    });
+    return listIssues.call(this, owner, repo);
   }
 
   async listPRs(owner: string, repo: string) {
-    return this.apiFetch(`/repos/${owner}/${repo}/pulls?state=open&per_page=20`, {
-      headers: { Accept: 'application/vnd.github.v3+json' },
-    });
+    return listPRs.call(this, owner, repo);
   }
 
   async searchCode(query: string) {
-    return this.apiFetch(`/search/code?q=${encodeURIComponent(query)}&per_page=20`, {
-      headers: { Accept: 'application/vnd.github.v3+json' },
-    });
+    return searchCode.call(this, query);
+  }
+
+  async createRepoFromTemplate(params: {
+    templateOwner: string;
+    templateRepo: string;
+    newRepoName: string;
+    description?: string;
+    private?: boolean;
+  }): Promise<{ id: number; name: string; fullName: string; htmlUrl: string }> {
+    return createRepoFromTemplate.call(this, params);
+  }
+
+  async dispatchWorkflow(params: {
+    owner: string;
+    repo: string;
+    workflowFileName: string;
+    ref: string;
+    inputs: Record<string, string>;
+  }): Promise<void> {
+    return dispatchWorkflow.call(this, params);
+  }
+
+  async listWorkflowRuns(owner: string, repo: string, opts?: { perPage?: number; event?: string }): Promise<{ id: number; status: string; conclusion: string | null; createdAt: string; htmlUrl: string }[]> {
+    return listWorkflowRuns.call(this, owner, repo, opts);
+  }
+
+  async fetchRunLogs(owner: string, repo: string, runId: number): Promise<string> {
+    return fetchRunLogs.call(this, owner, repo, runId);
+  }
+
+  async commitFile(params: {
+    owner: string;
+    repo: string;
+    path: string;
+    content: string;
+    message: string;
+    branch?: string;
+  }): Promise<{ sha: string; content: { htmlUrl: string } }> {
+    return commitFile.call(this, params);
+  }
+
+  async setupWebhook(params: {
+    owner: string;
+    repo: string;
+    url: string;
+    secret?: string;
+    events?: string[];
+  }): Promise<{ id: number }> {
+    return setupWebhook.call(this, params);
   }
 
   getActionHandlers(): Record<string, (params: any) => Promise<any>> {
@@ -139,6 +213,13 @@ export class GitHubConnectorService extends ConnectorService {
       issues: (params: any) => this.listIssues(params.owner, params.repo),
       prs: (params: any) => this.listPRs(params.owner, params.repo),
       search: (params: any) => this.searchCode(params.query),
+      ensurePipelineRepo: () => this.ensurePipelineRepo(),
+      listWorkflowRuns: (params: any) => this.listWorkflowRuns(params.owner, params.repo, { perPage: params.perPage, event: params.event }),
+      fetchRunLogs: (params: any) => this.fetchRunLogs(params.owner, params.repo, params.runId),
+      commitFile: (params: any) => this.commitFile(params),
+      setupWebhook: (params: any) => this.setupWebhook(params),
+      createRepoFromTemplate: (params: any) => this.createRepoFromTemplate(params),
+      dispatchWorkflow: (params: any) => this.dispatchWorkflow(params),
     };
   }
 }

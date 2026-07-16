@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useChatsStore } from '@/stores/chatsStore';
 
-export default function ChatsList({ collapsed }: { collapsed: boolean }) {
+const ChatsList = React.memo(function ChatsList({ collapsed }: { collapsed: boolean }) {
   const chats = useChatsStore((s) => s.chats);
   const refresh = useChatsStore((s) => s.refresh);
 
@@ -25,4 +25,6 @@ export default function ChatsList({ collapsed }: { collapsed: boolean }) {
       ))}
     </div>
   );
-}
+});
+
+export default ChatsList;

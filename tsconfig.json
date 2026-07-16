@@ -4,30 +4,33 @@
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "module": "ESNext",
     "skipLibCheck": true,
-
-    /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-
-    /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-
     "paths": {
       "@/*": ["./src/*"],
       "@core/*": ["./core/*"],
       "@doktor/tool-runtime": ["./packages/tool-runtime/src"],
       "@doktor/tool-runtime/*": ["./packages/tool-runtime/src/*"],
       "@doktor/subagent": ["./packages/subagent/src"],
-      "@doktor/subagent/*": ["./packages/subagent/src/*"]
+      "@doktor/subagent/*": ["./packages/subagent/src/*"],
+      "@doktor/schema": ["./packages/schema/src"],
+      "@doktor/schema/*": ["./packages/schema/src/*"],
+      "@doktor/llm-providers": ["./packages/llm-providers/src"],
+      "@doktor/llm-providers/*": ["./packages/llm-providers/src/*"],
+      "@doktor/effect-drizzle-sqlite": ["./packages/effect-drizzle-sqlite/src"],
+      "@doktor/effect-drizzle-sqlite/*": ["./packages/effect-drizzle-sqlite/src/*"],
+      "@doktor/effect-sqlite-node": ["./packages/effect-sqlite-node/src"],
+      "@doktor/effect-sqlite-node/*": ["./packages/effect-sqlite-node/src/*"]
     }
   },
-  "include": ["src", "core", "packages/tool-runtime", "packages/subagent"],
+  "include": ["src", "core", "packages/tool-runtime", "packages/subagent", "packages/schema", "packages/llm-providers"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

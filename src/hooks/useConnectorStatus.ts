@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
+import { API_BASE_URL, apiHeaders } from '@/lib/api';
 
-const API_BASE = 'http://localhost:3001';
+const headers = apiHeaders();
 
 interface ConnectorState {
   connected: boolean;
@@ -13,7 +14,7 @@ export function useConnectorStatus(provider: string) {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/connector/${provider}/status`, { method: 'POST' });
+      const res = await fetch(`${API_BASE_URL}/connector/${provider}/status`, { method: 'POST', headers });
       const data = await res.json();
       setState({ connected: data.connected, identity: data.identity, loading: false });
     } catch {
@@ -26,7 +27,7 @@ export function useConnectorStatus(provider: string) {
   return { ...state, refresh };
 }
 
-const ALL_PROVIDERS = ['gmail', 'github', 'telegram', 'youtube', 'reddit', 'twitter'];
+const ALL_PROVIDERS = ['gmail', 'github', 'telegram', 'youtube', 'reddit', 'twitter', 'google-drive'];
 
 export function useAllConnectorsStatus() {
   const [statuses, setStatuses] = useState<Record<string, boolean>>({});
@@ -35,7 +36,7 @@ export function useAllConnectorsStatus() {
   const refresh = useCallback(async () => {
     const results = await Promise.allSettled(
       ALL_PROVIDERS.map(p =>
-        fetch(`${API_BASE}/connector/${p}/status`, { method: 'POST' })
+        fetch(`${API_BASE_URL}/connector/${p}/status`, { method: 'POST', headers })
           .then(r => r.json())
           .then(d => [p, d.connected] as const)
       )

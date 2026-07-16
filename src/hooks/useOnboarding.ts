@@ -49,7 +49,12 @@ export function useOnboarding() {
           return;
         }
 
-        const statuses: Record<StepId, StepStatus> = { ...stepStatuses };
+        const statuses: Record<StepId, StepStatus> = {
+          welcome: 'pending',
+          model: 'pending',
+          preferences: 'pending',
+          ready: 'pending',
+        };
         for (const step of STEPS) {
           const val = await DatabaseService.getConfig(configKey(step.id));
           if (val === 'done') statuses[step.id] = 'done';
@@ -66,7 +71,6 @@ export function useOnboarding() {
       }
     };
     load();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const goToStep = useCallback((stepId: StepId) => {

@@ -129,6 +129,30 @@ export function getProviderApiKeys(): Record<string, string> {
 
 const PROVIDERS: KeyProvider[] = [
   {
+    id: 'anthropic',
+    label: 'Anthropic',
+    icon: '/claude-color.svg',
+    configKey: 'anthropic-api-key',
+    envVar: 'ANTHROPIC_API_KEY',
+    baseURL: 'https://api.anthropic.com/v1',
+    defaultModel: 'claude-sonnet-4',
+    modelIdPrefixes: ['claude'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.anthropic.com/v1' }).chat,
+  },
+  {
+    id: 'openai',
+    label: 'OpenAI',
+    icon: '/openai.svg',
+    configKey: 'openai-api-key',
+    envVar: 'OPENAI_API_KEY',
+    baseURL: 'https://api.openai.com/v1',
+    defaultModel: 'gpt-4o',
+    modelIdPrefixes: ['gpt', 'o3', 'o4'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.openai.com/v1' }).chat,
+  },
+  {
     id: 'google',
     label: 'Google AI Studio',
     icon: '/google-color.svg',
@@ -143,6 +167,42 @@ const PROVIDERS: KeyProvider[] = [
     },
   },
   {
+    id: 'deepseek',
+    label: 'DeepSeek',
+    icon: '/deepseek-color.svg',
+    configKey: 'deepseek-api-key',
+    envVar: 'DEEPSEEK_API_KEY',
+    baseURL: 'https://api.deepseek.com/v1',
+    defaultModel: 'deepseek-chat',
+    modelIdPrefixes: ['deepseek'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.deepseek.com/v1' }).chat,
+  },
+  {
+    id: 'mistral',
+    label: 'Mistral AI',
+    icon: '/mistral-color.svg',
+    configKey: 'mistral-api-key',
+    envVar: 'MISTRAL_API_KEY',
+    baseURL: 'https://api.mistral.ai/v1',
+    defaultModel: 'mistral-small-latest',
+    modelIdPrefixes: ['mistral', 'codestral', 'pixtral'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.mistral.ai/v1' }).chat,
+  },
+  {
+    id: 'cohere',
+    label: 'Cohere',
+    icon: '/commanda-color.svg',
+    configKey: 'cohere-api-key',
+    envVar: 'COHERE_API_KEY',
+    baseURL: 'https://api.cohere.com/compatibility/v1',
+    defaultModel: 'command-a-03-2026',
+    modelIdPrefixes: ['command', 'c4ai'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.cohere.com/compatibility/v1' }).chat,
+  },
+  {
     id: 'groq',
     label: 'Groq',
     icon: '/groq-color.svg',
@@ -153,6 +213,42 @@ const PROVIDERS: KeyProvider[] = [
     modelIdPrefixes: ['llama', 'qwen', 'deepseek', 'gpt-oss', 'meta-llama', 'openai'],
     createClient: (apiKey: string, baseURL?: string) =>
       createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.groq.com/openai/v1' }).chat,
+  },
+  {
+    id: 'together',
+    label: 'Together AI',
+    icon: '/together-color.svg',
+    configKey: 'together-api-key',
+    envVar: 'TOGETHER_API_KEY',
+    baseURL: 'https://api.together.xyz/v1',
+    defaultModel: 'together/auto',
+    modelIdPrefixes: ['together'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.together.xyz/v1' }).chat,
+  },
+  {
+    id: 'openrouter',
+    label: 'OpenRouter',
+    icon: '/openrouter.svg',
+    configKey: 'openrouter-api-key',
+    envVar: 'OPENROUTER_API_KEY',
+    baseURL: 'https://openrouter.ai/api/v1',
+    defaultModel: 'openrouter/auto',
+    modelIdPrefixes: ['openrouter'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://openrouter.ai/api/v1' }).chat,
+  },
+  {
+    id: 'nvidia',
+    label: 'NVIDIA NIM',
+    icon: '/nvidia-color.svg',
+    configKey: 'nvidia-api-key',
+    envVar: 'NVIDIA_API_KEY',
+    baseURL: 'https://integrate.api.nvidia.com/v1',
+    defaultModel: 'nvidia/llama-3.3-nemotron-super-49b-v1',
+    modelIdPrefixes: ['nvidia', 'meta', 'mistralai', 'google'],
+    createClient: (apiKey: string, baseURL?: string) =>
+      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://integrate.api.nvidia.com/v1' }).chat,
   },
   {
     id: 'cerebras',
@@ -169,18 +265,6 @@ const PROVIDERS: KeyProvider[] = [
     },
   },
   {
-    id: 'mistral',
-    label: 'Mistral AI',
-    icon: '/mistral-color.svg',
-    configKey: 'mistral-api-key',
-    envVar: 'MISTRAL_API_KEY',
-    baseURL: 'https://api.mistral.ai/v1',
-    defaultModel: 'mistral-small-latest',
-    modelIdPrefixes: ['mistral', 'codestral', 'pixtral'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.mistral.ai/v1' }).chat,
-  },
-  {
     id: 'sambanova',
     label: 'SambaNova',
     icon: '/sambanova-color.svg',
@@ -193,18 +277,6 @@ const PROVIDERS: KeyProvider[] = [
       const chat = createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.sambanova.ai/v1' }).chat;
       return (modelId: string) => chat(modelId.replace(/^sambanova\//, ''));
     },
-  },
-  {
-    id: 'cohere',
-    label: 'Cohere',
-    icon: '/commanda-color.svg',
-    configKey: 'cohere-api-key',
-    envVar: 'COHERE_API_KEY',
-    baseURL: 'https://api.cohere.com/compatibility/v1',
-    defaultModel: 'command-a-03-2026',
-    modelIdPrefixes: ['command', 'c4ai'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.cohere.com/compatibility/v1' }).chat,
   },
   {
     id: 'huggingface',
@@ -230,34 +302,10 @@ const PROVIDERS: KeyProvider[] = [
     createClient: (apiKey: string, baseURL?: string) => {
       let accountId = baseURL?.match(/accounts\/([^/]+)/)?.[1] || '';
       if (accountId === '{accountId}') {
-        accountId = (typeof process !== 'undefined' && (process as any).env?.CLOUDFLARE_ACCOUNT_ID) || '';
+        accountId = '';
       }
       return createCloudflare(apiKey, accountId);
     },
-  },
-  {
-    id: 'deepseek',
-    label: 'DeepSeek',
-    icon: '/deepseek-color.svg',
-    configKey: 'deepseek-api-key',
-    envVar: 'DEEPSEEK_API_KEY',
-    baseURL: 'https://api.deepseek.com/v1',
-    defaultModel: 'deepseek-chat',
-    modelIdPrefixes: ['deepseek'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.deepseek.com/v1' }).chat,
-  },
-  {
-    id: 'nvidia',
-    label: 'NVIDIA NIM',
-    icon: '/nvidia-color.svg',
-    configKey: 'nvidia-api-key',
-    envVar: 'NVIDIA_API_KEY',
-    baseURL: 'https://integrate.api.nvidia.com/v1',
-    defaultModel: 'nvidia/llama-3.3-nemotron-super-49b-v1',
-    modelIdPrefixes: ['nvidia', 'meta', 'mistralai', 'google'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://integrate.api.nvidia.com/v1' }).chat,
   },
 ];
 

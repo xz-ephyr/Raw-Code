@@ -104,7 +104,8 @@ export async function migrate() {
       project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
       archived INTEGER NOT NULL DEFAULT 0,
       created_at INTEGER NOT NULL,
-      updated_at INTEGER
+      updated_at INTEGER,
+      streaming INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE INDEX IF NOT EXISTS idx_chat_sessions_project_id ON chat_sessions(project_id, created_at DESC);
@@ -116,6 +117,7 @@ export async function migrate() {
       content TEXT NOT NULL,
       reasoning TEXT,
       tool_invocations TEXT,
+      model TEXT,
       created_at INTEGER NOT NULL
     );
 
@@ -176,6 +178,29 @@ export async function migrate() {
   // OAuth tokens schema migration: email → identity + metadata
   try { db.exec('ALTER TABLE oauth_tokens RENAME COLUMN email TO identity'); } catch { /* column may already be renamed or doesn't exist */ }
   try { db.exec("ALTER TABLE oauth_tokens ADD COLUMN metadata TEXT DEFAULT '{}'"); } catch { /* column may already exist */ }
+
+  // Schema migration: add model column to messages
+  try { db.exec('ALTER TABLE messages ADD COLUMN model TEXT'); } catch { /* column may already exist */ }
+
+  // Schema migration: add content_before_tool and content_after_tool columns
+  try { db.exec('ALTER TABLE messages ADD COLUMN content_before_tool TEXT'); } catch { /* column may already exist */ }
+  try { db.exec('ALTER TABLE messages ADD COLUMN content_after_tool TEXT'); } catch { /* column may already exist */ }
+
+  // Schema migration: add pinned and unread columns to chat_sessions
+  try { db.exec('ALTER TABLE chat_sessions ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0'); } catch { /* column may already exist */ }
+  try { db.exec('ALTER TABLE chat_sessions ADD COLUMN unread INTEGER NOT NULL DEFAULT 0'); } catch { /* column may already exist */ }
+  try { db.exec('ALTER TABLE chat_sessions ADD COLUMN streaming INTEGER NOT NULL DEFAULT 0'); } catch { /* column may already exist */ }
+
+  // Crawl cache table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS crawl_cache (
+      cache_key TEXT PRIMARY KEY,
+      provider TEXT NOT NULL DEFAULT 'go-crawl',
+      content TEXT NOT NULL,
+      cached_at INTEGER NOT NULL,
+      ttl_seconds INTEGER NOT NULL DEFAULT 3600
+    );
+  `);
 
   console.log('Migration complete');
 }

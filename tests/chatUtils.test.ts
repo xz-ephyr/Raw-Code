@@ -205,48 +205,48 @@ describe('mapUIMessageToLegacyMessage', () => {
   it('extracts artifacts from writeArtifact tool calls', () => {
     const msg = {
       toolInvocations: [{
-        toolName: 'writeArtifact',
+        toolName: 'write_artifact',
         args: { identifier: 'id-1', type: 'code', content: 'const x = 1;', title: 'test' },
       }],
     };
     const result = mapUIMessageToLegacyMessage(msg);
-    expect(result.artifacts).toHaveLength(1);
-    expect(result.artifacts[0].identifier).toBe('id-1');
-    expect(result.artifacts[0].content).toBe('const x = 1;');
+    expect(result.files).toHaveLength(1);
+    expect(result.files[0].identifier).toBe('id-1');
+    expect(result.files[0].content).toBe('const x = 1;');
   });
 
   it('extracts all writeArtifact calls, not just the first', () => {
     const msg = {
       toolInvocations: [
         {
-          toolName: 'writeArtifact',
+          toolName: 'write_artifact',
           args: { identifier: 'file-a', type: 'code', content: 'const a = 1;', title: 'File A' },
         },
         {
-          toolName: 'writeArtifact',
+          toolName: 'write_artifact',
           args: { identifier: 'file-b', type: 'code', content: 'const b = 2;', title: 'File B' },
         },
       ],
     };
     const result = mapUIMessageToLegacyMessage(msg);
-    expect(result.artifacts).toHaveLength(2);
-    expect(result.artifacts[0].identifier).toBe('file-a');
-    expect(result.artifacts[1].identifier).toBe('file-b');
+    expect(result.files).toHaveLength(2);
+    expect(result.files[0].identifier).toBe('file-a');
+    expect(result.files[1].identifier).toBe('file-b');
   });
 
   it('parses antArtifact tags when no writeArtifact tool', () => {
     const msg = { content: 'some text\n<antArtifact identifier="a1" type="code" title="Test">code here</antArtifact>' };
     const result = mapUIMessageToLegacyMessage(msg);
-    expect(result.artifacts).toHaveLength(1);
-    expect(result.artifacts[0].identifier).toBe('a1');
+    expect(result.files).toHaveLength(1);
+    expect(result.files[0].identifier).toBe('a1');
   });
 
   it('splits content around writeArtifact tool call', () => {
     const msg = {
-      toolInvocations: [{ toolName: 'writeArtifact', args: { identifier: 'i1', content: 'x' } }],
+      toolInvocations: [{ toolName: 'write_artifact', args: { identifier: 'i1', content: 'x' } }],
       parts: [
         { type: 'text', text: 'before ' },
-        { type: 'dynamic-tool', toolName: 'writeArtifact', toolCallId: 'c1' },
+        { type: 'dynamic-tool', toolName: 'write_artifact', toolCallId: 'c1' },
         { type: 'text', text: 'after' },
       ],
     };

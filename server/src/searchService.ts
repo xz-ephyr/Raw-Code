@@ -1,259 +1,10 @@
-import crypto from 'crypto';
-import { query } from './db.js';
-
-function redactSensitiveUrl(text: string): string {
-  return text
-    .replace(/([?&]key)=[^&\s"]+/gi, '$1=REDACTED')
-    .replace(/([?&]api_key)=[^&\s"]+/gi, '$1=REDACTED')
-    .replace(/([?&]api-key)=[^&\s"]+/gi, '$1=REDACTED');
-}
-
-const TAVILY_URL = 'https://api.tavily.com';
-const FIRECRAWL_URL = 'https://api.firecrawl.dev';
-const GOOGLE_URL = 'https://www.googleapis.com/customsearch/v1';
-const EXA_URL = 'https://api.exa.ai';
-
-const TTL: Record<string, number> = {
-  webSearch: 5 * 60 * 1000,
-  imageSearch: 10 * 60 * 1000,
-  newsSearch: 2 * 60 * 1000,
-  fetchPage: 30 * 60 * 1000,
-};
-
-function cacheKey(tool: string, params: any): string {
-  return crypto.createHash('sha256').update(`${tool}:${JSON.stringify(params)}`).digest('hex');
-}
-
-async function getCache(tool: string, params: any): Promise<any | null> {
-  const key = cacheKey(tool, params);
-  const result = await query('SELECT results, created_at FROM search_cache WHERE cache_key = $1', [key]);
-  if (result.rows.length > 0) {
-    const row = result.rows[0] as any;
-    const age = Date.now() - Number(row.created_at);
-    if (age < (TTL[tool] || 300000)) {
-      return JSON.parse(row.results);
-    }
-  }
-  return null;
-}
-
-async function setCache(tool: string, params: any, provider: string, results: any): Promise<void> {
-  const key = cacheKey(tool, params);
-  await query(
-    `INSERT INTO search_cache (cache_key, provider, tool, results, created_at)
-     VALUES ($1, $2, $3, $4, $5)
-     ON CONFLICT (cache_key) DO UPDATE SET results = EXCLUDED.results, created_at = EXCLUDED.created_at`,
-    [key, provider, tool, JSON.stringify(results), Date.now()]
-  );
-}
-
-async function getConfig(key: string): Promise<string | null> {
-  const result = await query('SELECT value FROM app_config WHERE key = $1', [key]);
-  return result.rows.length > 0 ? (result.rows[0] as any).value : null;
-}
-
-async function requireConfig(key: string, label: string): Promise<string> {
-  const val = await getConfig(key);
-  if (!val) throw new Error(`${label} API key not configured`);
-  return val;
-}
-
-interface SearchResultItem {
-  title: string;
-  url: string;
-  snippet: string;
-  content: string;
-  publishedDate: string;
-  source: string;
-}
-
-function normalizeResults(items: any[], source: string, mapper: (item: any) => Omit<SearchResultItem, 'source'>): { results: SearchResultItem[]; totalResults: number; answer: string } {
-  return {
-    results: (items || []).map((r) => ({ ...mapper(r), source })),
-    totalResults: items?.length || 0,
-    answer: '',
-  };
-}
-
-async function tavilySearch(query: string, maxResults: number, searchDepth = 'basic', topic?: string) {
-  const apiKey = await requireConfig('search-api-key', 'Tavily');
-
-  const res = await fetch(`${TAVILY_URL}/search`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    signal: AbortSignal.timeout(8000),
-    body: JSON.stringify({
-      api_key: apiKey,
-      query,
-      search_depth: searchDepth,
-      max_results: Math.min(maxResults, 10),
-      include_answer: true,
-      include_raw_content: false,
-      ...(topic ? { topic } : {}),
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Tavily API error (${res.status}): ${err}`);
-  }
-
-  const data = await res.json();
-  const results = normalizeResults(data.results, 'tavily', (r: any) => ({
-    title: r.title || '',
-    url: r.url || '',
-    snippet: (r.content || '').slice(0, 500),
-    content: r.content || '',
-    publishedDate: r.published_date || '',
-  }));
-  results.answer = data.answer || '';
-  return results;
-}
-
-async function firecrawlSearch(query: string, maxResults: number) {
-  const apiKey = await requireConfig('search-firecrawl-api-key', 'Firecrawl');
-
-  const res = await fetch(`${FIRECRAWL_URL}/v1/search`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    signal: AbortSignal.timeout(8000),
-    body: JSON.stringify({
-      query,
-      limit: Math.min(maxResults, 10),
-      scrapeOptions: { formats: ['markdown'] },
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Firecrawl API error (${res.status}): ${err}`);
-  }
-
-  const data = await res.json();
-  return normalizeResults(data.data, 'firecrawl', (r: any) => ({
-    title: r.metadata?.title || '',
-    url: r.url || r.metadata?.sourceURL || '',
-    snippet: r.metadata?.description || '',
-    content: r.markdown || '',
-    publishedDate: '',
-  }));
-}
-
-async function firecrawlScrape(url: string, formats: string[]) {
-  const apiKey = await getConfig('search-firecrawl-api-key');
-  if (!apiKey) throw new Error('Firecrawl API key not configured');
-
-  const res = await fetch(`${FIRECRAWL_URL}/v1/scrape`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    signal: AbortSignal.timeout(15000),
-    body: JSON.stringify({ url, formats }),
-  });
-
-  if (!res.ok) throw new Error(`Firecrawl scrape error (${res.status})`);
-  const data = await res.json();
-  return data.data || null;
-}
-
-
-
-async function googleSearch(query: string, maxResults: number) {
-  const apiKey = await getConfig('search-google-api-key');
-  const cx = await getConfig('search-google-cx');
-  if (!apiKey || !cx) throw new Error('Google Custom Search not configured');
-
-  const res = await fetch(
-    `${GOOGLE_URL}?key=${encodeURIComponent(apiKey)}&cx=${encodeURIComponent(cx)}&q=${encodeURIComponent(query)}&num=${Math.min(maxResults, 10)}`,
-    { signal: AbortSignal.timeout(8000) }
-  );
-
-  if (!res.ok) throw new Error(`Google API error (${res.status})`);
-  const data = await res.json();
-
-  return {
-    ...normalizeResults(data.items, 'google', (r: any) => ({
-      title: r.title || '',
-      url: r.link || '',
-      snippet: r.snippet || '',
-      content: '',
-      publishedDate: '',
-    })),
-    totalResults: Number(data.searchInformation?.totalResults) || 0,
-  };
-}
-
-async function exaSearch(query: string, maxResults: number) {
-  const apiKey = await requireConfig('search-exa-api-key', 'Exa');
-
-  const res = await fetch(`${EXA_URL}/search`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-    },
-    signal: AbortSignal.timeout(8000),
-    body: JSON.stringify({
-      query,
-      numResults: Math.min(maxResults, 10),
-      type: 'auto',
-      contents: { text: true, highlights: true },
-    }),
-  });
-
-  if (!res.ok) throw new Error(`Exa API error (${res.status})`);
-  const data = await res.json();
-
-  return normalizeResults(data.results, 'exa', (r: any) => ({
-    title: r.title || '',
-    url: r.url || '',
-    snippet: (r.highlights || []).join(' ') || (r.text || '').slice(0, 500),
-    content: r.text || '',
-    publishedDate: r.publishedDate || '',
-  }));
-}
-
-async function exaNewsSearch(query: string, maxResults: number, freshness: string) {
-  const apiKey = await requireConfig('search-exa-api-key', 'Exa');
-
-  const now = new Date();
-  const hoursMap: Record<string, number> = { hour: 1, day: 24, week: 168, month: 720 };
-  const hours = hoursMap[freshness] || 168;
-  const startDate = new Date(now.getTime() - hours * 60 * 60 * 1000).toISOString();
-
-  const res = await fetch(`${EXA_URL}/search`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-    },
-    signal: AbortSignal.timeout(8000),
-    body: JSON.stringify({
-      query,
-      numResults: Math.min(maxResults, 10),
-      type: 'auto',
-      category: 'news',
-      startPublishedDate: startDate,
-      contents: { highlights: true },
-    }),
-  });
-
-  if (!res.ok) throw new Error(`Exa News API error (${res.status})`);
-  const data = await res.json();
-
-  return normalizeResults(data.results, 'exa-news', (r: any) => ({
-    title: r.title || '',
-    url: r.url || '',
-    snippet: (r.highlights || []).join(' '),
-    content: '',
-    publishedDate: r.publishedDate || '',
-  }));
-}
+import { getCache, setCache } from './search/cache';
+import { redactSensitiveUrl, getConfig, requireConfig } from './search/utils';
+import { gocrawlSearch, gocrawlScrape } from './search/providers/gocrawl';
+import { tavilySearch, tavilyNewsSearch } from './search/providers/tavily';
+import { firecrawlSearch, firecrawlScrape } from './search/providers/firecrawl';
+import { googleSearch, googleImageSearch } from './search/providers/google';
+import { exaSearch, exaNewsSearch } from './search/providers/exa';
 
 export async function webSearch(params: { query: string; maxResults: number; site?: string }) {
   const cached = await getCache('webSearch', params);
@@ -261,7 +12,18 @@ export async function webSearch(params: { query: string; maxResults: number; sit
 
   const query = params.site ? `site:${params.site} ${params.query}` : params.query;
 
-  // Gather all configured providers
+  // Tier 1: try self-hosted go-crawl first (free, zero marginal cost)
+  if (process.env.GO_CRAWL_URL) {
+    try {
+      const result = await gocrawlSearch(query, params.maxResults);
+      await setCache('webSearch', params, 'gocrawl', result);
+      return result;
+    } catch (e) {
+      console.warn(`go-crawl search failed, falling back to paid providers: ${(e as any).message}`);
+    }
+  }
+
+  // Tier 2: paid providers with rotation
   const providerConfigs: Array<{ name: string; key: string; extra?: string }> = [];
   const tavilyKey = await getConfig('search-api-key');
   if (tavilyKey) providerConfigs.push({ name: 'tavily', key: tavilyKey });
@@ -273,7 +35,6 @@ export async function webSearch(params: { query: string; maxResults: number; sit
   const googleCx = await getConfig('search-google-cx');
   if (googleKey && googleCx) providerConfigs.push({ name: 'google', key: googleKey, extra: googleCx });
 
-  // Shuffle for rotation
   for (let i = providerConfigs.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [providerConfigs[i], providerConfigs[j]] = [providerConfigs[j], providerConfigs[i]];
@@ -315,6 +76,25 @@ export async function fetchPage(params: { url: string; extractAs: string }) {
 
   let result;
 
+  // Tier 1: try go-crawl (free, self-hosted)
+  if (process.env.GO_CRAWL_URL) {
+    try {
+      const data = await gocrawlScrape(params.url, [params.extractAs === 'text' ? 'text' : 'markdown']);
+      if (data) {
+        result = {
+          content: data.markdown || data.html || '',
+          title: data.metadata?.title || '',
+          url: params.url,
+        };
+        await setCache('fetchPage', params, 'gocrawl', result);
+        return result;
+      }
+    } catch {
+      /* fall through to paid providers */
+    }
+  }
+
+  // Tier 2: Firecrawl (paid)
   try {
     const firecrawlKey = await getConfig('search-firecrawl-api-key');
     if (firecrawlKey) {
@@ -367,75 +147,6 @@ export async function fetchPage(params: { url: string; extractAs: string }) {
   return result;
 }
 
-async function googleImageSearch(query: string, maxResults: number, safeSearch: boolean) {
-  const apiKey = await getConfig('search-google-api-key');
-  const cx = await getConfig('search-google-cx');
-  if (!apiKey || !cx) throw new Error('Google Custom Search not configured');
-
-  const safe = safeSearch ? '&safe=active' : '';
-  const res = await fetch(
-    `${GOOGLE_URL}?key=${encodeURIComponent(apiKey)}&cx=${encodeURIComponent(cx)}&q=${encodeURIComponent(query)}&num=${Math.min(maxResults, 10)}&searchType=image${safe}`,
-    { signal: AbortSignal.timeout(8000) }
-  );
-
-  if (!res.ok) throw new Error(`Google Image API error (${res.status})`);
-  const data = await res.json();
-
-  return {
-    results: (data.items || []).map((r: any) => ({
-      title: r.title || '',
-      imageUrl: r.link || '',
-      sourceUrl: r.image?.contextLink || '',
-      width: r.image?.width || 0,
-      height: r.image?.height || 0,
-    })),
-    totalResults: Number(data.searchInformation?.totalResults) || 0,
-  };
-}
-
-async function tavilyNewsSearch(query: string, maxResults: number, freshness: string) {
-  const apiKey = await requireConfig('search-api-key', 'Tavily');
-
-  const freshnessMap: Record<string, string> = {
-    hour: '1h',
-    day: '1d',
-    week: '1w',
-    month: '1m',
-  };
-
-  const res = await fetch(`${TAVILY_URL}/search`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    signal: AbortSignal.timeout(8000),
-    body: JSON.stringify({
-      api_key: apiKey,
-      query,
-      search_depth: 'advanced',
-      max_results: Math.min(maxResults, 10),
-      include_answer: true,
-      include_raw_content: false,
-      topic: 'news',
-      days: freshnessMap[freshness] || '1w',
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Tavily API error (${res.status}): ${err}`);
-  }
-
-  const data = await res.json();
-  const results = normalizeResults(data.results, 'tavily-news', (r: any) => ({
-    title: r.title || '',
-    url: r.url || '',
-    snippet: (r.content || '').slice(0, 500),
-    content: r.content || '',
-    publishedDate: r.published_date || '',
-  }));
-  results.answer = data.answer || '';
-  return results;
-}
-
 export async function imageSearch(params: { query: string; maxResults: number; safeSearch: boolean }) {
   const cached = await getCache('imageSearch', params);
   if (cached) return cached;
@@ -470,5 +181,3 @@ export async function newsSearch(params: { query: string; maxResults: number; fr
   await setCache('newsSearch', params, provider, result);
   return result;
 }
-
-

@@ -6,22 +6,15 @@ import remarkMath from 'remark-math';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import rehypeKatex from 'rehype-katex';
-import { visit } from 'unist-util-visit';
-import type { Root, Text } from 'mdast';
 import type { PluggableList } from 'unified';
 import { CodeBlock } from './CodeBlock';
 import { InlineSourcePill } from './InlineSourcePill';
 import { MermaidBlock } from './MermaidBlock';
 import { MarkdownErrorBoundary } from './MarkdownErrorBoundary';
 import { createBaseComponents } from '@/components/markdown/sharedComponents';
-
-const citationRegex = /【([^】]+)】/g;
-
-interface SourceInfo {
-  url: string;
-  title: string;
-  snippet?: string;
-}
+import { buildSourceIndex, lookupCitation, type SourceInfo } from '@/utils/citations';
+import { prepareStreamingContent } from '@/utils/streamingContent';
+import { remarkCitations } from '@/components/markdown/remarkCitations';
 
 const ALLOWED_PROTOCOLS = ['http:', 'https:', 'mailto:'];
 
@@ -40,153 +33,6 @@ function slugify(text: string): string {
     .toLowerCase()
     .replace(/\s+/g, '-')
     .replace(/[^\w-]/g, '');
-}
-
-function buildSourceIndex(sources: SourceInfo[]): {
-  byUrl: Map<string, SourceInfo>;
-  byIndex: Map<number, SourceInfo>;
-  byTitleLower: Map<string, SourceInfo[]>;
-} {
-  const byUrl = new Map<string, SourceInfo>();
-  const byIndex = new Map<number, SourceInfo>();
-  const byTitleLower = new Map<string, SourceInfo[]>();
-
-  for (let i = 0; i < sources.length; i++) {
-    const s = sources[i];
-    if (s.url) byUrl.set(s.url, s);
-    byIndex.set(i + 1, s);
-    const lower = s.title.toLowerCase();
-    if (!byTitleLower.has(lower)) byTitleLower.set(lower, []);
-    byTitleLower.get(lower)!.push(s);
-  }
-
-  return { byUrl, byIndex, byTitleLower };
-}
-
-function lookupCitation(text: string, index: SourceIndex): SourceInfo | undefined {
-  const trimmed = text.trim();
-  if (!trimmed) return undefined;
-
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return index.byUrl.get(trimmed);
-  }
-
-  const num = parseInt(trimmed, 10);
-  if (!isNaN(num) && num >= 1) {
-    return index.byIndex.get(num);
-  }
-
-  const lower = trimmed.toLowerCase();
-  const matches = index.byTitleLower.get(lower);
-  if (matches) return matches[0];
-
-  for (const [, sources] of index.byTitleLower) {
-    for (const s of sources) {
-      if (s.title.toLowerCase().includes(lower)) return s;
-    }
-  }
-
-  return undefined;
-}
-
-type SourceIndex = ReturnType<typeof buildSourceIndex>;
-
-function needsClosingFence(content: string): boolean {
-  const lines = content.split('\n');
-  let inFence = false;
-  for (const line of lines) {
-    if (/^ {0,3}```/.test(line)) {
-      inFence = !inFence;
-    }
-  }
-  return inFence;
-}
-
-function prepareStreamingContent(content: string): string {
-  const trimmed = content;
-  if (!trimmed) return trimmed;
-
-  if (needsClosingFence(trimmed)) {
-    return trimmed + '\n```';
-  }
-
-  const incompleteCitation = /【[^】]*$/m;
-  if (incompleteCitation.test(trimmed)) {
-    return trimmed.replace(incompleteCitation, '');
-  }
-
-  return trimmed;
-}
-
-function remarkCitations() {
-  return (tree: Root) => {
-    visit(tree, 'text', (node: Text, index, parent) => {
-      if (!parent || typeof index !== 'number') return;
-
-      const parts = node.value.split(citationRegex);
-      if (parts.length <= 1) return;
-
-      const newNodes: any[] = [];
-      for (let i = 0; i < parts.length; i++) {
-        if (i % 2 === 0) {
-          if (parts[i]) {
-            newNodes.push({ type: 'text', value: parts[i] });
-          }
-        } else {
-          newNodes.push({
-            type: 'citation',
-            data: {
-              hName: 'citation',
-              hProperties: { citation: parts[i] },
-            },
-          });
-        }
-      }
-
-      parent.children.splice(index, 1, ...newNodes);
-      return index + newNodes.length - 1;
-    });
-
-    function groupCitationsInNode(node: any) {
-      if (!node.children || !Array.isArray(node.children)) return;
-
-      const newChildren: any[] = [];
-      let pendingCitations: string[] = [];
-
-      for (const child of node.children) {
-        if (child.type === 'citation') {
-          pendingCitations.push(child.data.hProperties.citation);
-        } else {
-          if (pendingCitations.length > 0) {
-            newChildren.push({
-              type: 'citation-group',
-              data: {
-                hName: 'citation-group',
-                hProperties: { citations: [...new Set(pendingCitations)] },
-              },
-            });
-            pendingCitations = [];
-          }
-          newChildren.push(child);
-          groupCitationsInNode(child);
-        }
-      }
-
-      if (pendingCitations.length > 0) {
-        newChildren.push({
-          type: 'citation-group',
-          data: {
-            hName: 'citation-group',
-            hProperties: { citations: [...new Set(pendingCitations)] },
-          },
-        });
-      }
-
-      node.children = newChildren;
-    }
-
-    groupCitationsInNode(tree);
-  };
 }
 
 const REMARK_PLUGINS = [remarkGfm, remarkBreaks, remarkMath, remarkCitations];

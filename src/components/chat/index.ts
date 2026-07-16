@@ -1,4 +1,4 @@
-export { ArtifactsPreviewCard } from './ArtifactsPreviewCard';
+export { FilePreviewCard } from './FilePreviewCard';
 export { AssistantBubble } from './AssistantBubble';
 export { BubbleActions } from './BubbleActions';
 export { default as ChatInput } from './ChatInput';

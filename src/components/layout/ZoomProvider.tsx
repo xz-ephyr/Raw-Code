@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useCallback, useMemo, type ReactNode } from 'react';
 import { useZoom } from '@/hooks/useZoom';
 import { isTauri } from '@/lib/tauri';
 
@@ -44,11 +44,11 @@ export function ZoomProvider({ children }: { children: ReactNode }) {
           const { getCurrentWebview } = await import('@tauri-apps/api/webview');
           await getCurrentWebview().setZoom(zoom);
         } catch {
-          document.documentElement.style.zoom = String(zoom);
+          document.body.style.zoom = String(zoom);
         }
       })();
     } else {
-      document.documentElement.style.zoom = String(zoom);
+      document.body.style.zoom = String(zoom);
     }
   }, [zoom]);
 
@@ -92,8 +92,10 @@ export function ZoomProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const value = useMemo(() => ({ zoom, zoomIn, zoomOut, resetZoom, setZoomLevel }), [zoom, zoomIn, zoomOut, resetZoom, setZoomLevel]);
+
   return (
-    <ZoomContext.Provider value={{ zoom, zoomIn, zoomOut, resetZoom, setZoomLevel }}>
+    <ZoomContext.Provider value={value}>
       {children}
     </ZoomContext.Provider>
   );

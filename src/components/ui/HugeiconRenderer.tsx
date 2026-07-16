@@ -22,13 +22,16 @@ export const HugeiconRenderer = React.memo(
     className = '',
     color = 'currentColor',
     strokeWidth = 1.5,
-  }: HugeiconRendererProps) => (
-    <HugeiconsIcon
-      icon={Icon}
-      size={size}
-      color={color}
-      strokeWidth={strokeWidth}
-      className={className}
-    />
-  )
+  }: HugeiconRendererProps) => {
+    if (!Array.isArray(Icon)) return null;
+    return (
+      <HugeiconsIcon
+        icon={Icon}
+        size={size}
+        color={color}
+        strokeWidth={strokeWidth}
+        className={className}
+      />
+    );
+  }
 );

@@ -1,0 +1,12 @@
+{
+  "name": "@doktor/schema",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./llm": "./src/llm.ts"
+  },
+  "dependencies": {
+    "effect": "catalog:"
+  }
+}

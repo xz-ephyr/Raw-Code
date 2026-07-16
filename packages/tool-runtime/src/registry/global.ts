@@ -8,6 +8,9 @@ export interface GlobalRegistryEntry {
 const globalTools = new Map<string, GlobalRegistryEntry>();
 
 export function registerGlobal(name: string, tool: AnyTool, source: GlobalRegistryEntry['source'] = 'builtin'): void {
+  if (globalTools.has(name)) {
+    console.warn(`[tool-runtime] Duplicate global tool registration: "${name}" (source: ${source}). Existing entry will be overwritten.`);
+  }
   globalTools.set(name, { tool, source });
 }
 
@@ -16,6 +19,9 @@ export function registerGlobalBatch(
   source: GlobalRegistryEntry['source'] = 'builtin',
 ): void {
   for (const [name, tool] of Object.entries(tools)) {
+    if (globalTools.has(name)) {
+      console.warn(`[tool-runtime] Duplicate global tool registration: "${name}" (source: ${source}). Existing entry will be overwritten.`);
+    }
     globalTools.set(name, { tool, source });
   }
 }

@@ -1,0 +1,83 @@
+name: Video Edit Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      sourceFileId:
+        description: 'Google Drive file ID of source video'
+        required: true
+        type: string
+      accessToken:
+        description: 'OAuth access token for Google Drive'
+        required: true
+        type: string
+      manifest:
+        description: 'JSON edit manifest'
+        required: true
+        type: string
+      callbackUrl:
+        description: 'URL to notify on completion'
+        required: false
+        type: string
+
+jobs:
+  process-video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        id: setup-ffmpeg
+
+      - name: Verify FFmpeg
+        run: ffmpeg -version
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download source from Google Drive
+        run: |
+          echo "Downloading source video from Google Drive..."
+          curl -sS -H "Authorization: Bearer ${{ github.event.inputs.accessToken }}" \
+            "https://www.googleapis.com/drive/v3/files/${{ github.event.inputs.sourceFileId }}?alt=media" \
+            -o source.mp4
+          ls -lh source.mp4
+
+      - name: Write manifest
+        run: |
+          echo '${{ github.event.inputs.manifest }}' > manifest.json
+          echo "Manifest written:"
+          cat manifest.json | head -50
+
+      - name: Run FFmpeg pipeline
+        run: |
+          chmod +x process.sh
+          bash process.sh manifest.json
+
+      - name: Upload result to Google Drive
+        run: |
+          OUTPUT_FILE=$(cat manifest.json | python3 -c "import sys,json; print(json.load(sys.stdin).get('output',{}).get('filename','output.mp4'))")
+          if [ -f "$OUTPUT_FILE" ]; then
+            echo "Uploading $OUTPUT_FILE to Google Drive..."
+            curl -sS -X POST \
+              -H "Authorization: Bearer ${{ github.event.inputs.accessToken }}" \
+              -F "metadata={\"name\":\"$OUTPUT_FILE\",\"parents\":[\"appDataFolder\"]};type=application/json" \
+              -F "media=@$OUTPUT_FILE;type=video/mp4" \
+              "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart"
+          else
+            echo "Output file $OUTPUT_FILE not found — checking for alternatives..."
+            ls -lh *.mp4 *.webm *.mov *.gif 2>/dev/null || echo "No output files found"
+          fi
+
+      - name: Notify callback
+        if: ${{ github.event.inputs.callbackUrl != '' }}
+        run: |
+          curl -sS -X POST "${{ github.event.inputs.callbackUrl }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"status\":\"completed\",\"sourceFileId\":\"${{ github.event.inputs.sourceFileId }}\",\"runId\":\"${{ github.run_id }}\"}"

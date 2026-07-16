@@ -6,86 +6,68 @@ interface ChatMessageRowProps {
   role: string;
   content: string;
   createdAt?: number;
-  artifacts?: any[];
+  model?: string;
+  files?: any[];
   toolInvocations?: any[];
   reasoning?: string;
   parts?: any[];
   contentBeforeTool?: string;
   contentAfterTool?: string;
   isStreaming: boolean;
-  messageIndex: number;
   version: number;
-  prevUserContent?: string;
-  onOpenArtifact: (artifact: any) => void;
+  completionDuration?: number;
+  onOpenFile: (file: any) => void;
   onCopy: (content: string) => void;
-  onThumbsUp: () => void;
-  onThumbsDown: () => void;
-  onRegenerate: (index: number) => void;
 }
 
 export const ChatMessageRow = memo(function ChatMessageRow({
   role,
   content,
   createdAt,
-  artifacts,
+  model,
+  files,
   toolInvocations,
   reasoning,
   parts,
   contentBeforeTool,
   contentAfterTool,
   isStreaming,
-  messageIndex,
   version,
-  prevUserContent,
-  onOpenArtifact,
+  completionDuration,
+  onOpenFile,
   onCopy,
-  onThumbsUp,
-  onThumbsDown,
-  onRegenerate,
 }: ChatMessageRowProps) {
   const handleMsgCopy = useCallback(() => onCopy(content), [content, onCopy]);
-  const handleThumbsUp = useCallback(() => onThumbsUp(), [onThumbsUp]);
-  const handleThumbsDown = useCallback(() => onThumbsDown(), [onThumbsDown]);
-  const handleMsgRegenerate = useCallback(() => {
-    if (prevUserContent) {
-      onRegenerate(messageIndex);
-    }
-  }, [prevUserContent, messageIndex, onRegenerate]);
 
-  const handleUserRetry = useCallback(() => {
-    onRegenerate(messageIndex + 1);
-  }, [messageIndex, onRegenerate]);
-
-  const handleOpenMsgArtifact = useCallback(() => {
-    if (artifacts && artifacts.length > 0) {
-      onOpenArtifact(artifacts[0]);
+  const handleOpenMsgFile = useCallback(() => {
+    if (files && files.length > 0) {
+      onOpenFile(files[0]);
     }
-  }, [artifacts, onOpenArtifact]);
+  }, [files, onOpenFile]);
 
   return (
-    <>
+    <div className={role === 'user' ? 'self-end max-w-[85%]' : 'self-start'}>
       {role === 'user' ? (
-        <UserBubble content={content} createdAt={createdAt} onRegenerate={handleUserRetry} />
+        <UserBubble content={content} createdAt={createdAt} model={model} />
       ) : (
         <AssistantBubble
           content={content}
+          model={model}
           version={version}
           isStreaming={isStreaming}
+          completionDuration={completionDuration}
           toolInvocations={toolInvocations}
           reasoning={reasoning}
           parts={parts}
-          artifacts={artifacts}
+          files={files}
           contentBeforeTool={contentBeforeTool}
           contentAfterTool={contentAfterTool}
-          onOpenArtifact={
-            artifacts && artifacts.length > 0 ? handleOpenMsgArtifact : undefined
+          onOpenFile={
+            files && files.length > 0 ? handleOpenMsgFile : undefined
           }
           onCopy={handleMsgCopy}
-          onThumbsUp={handleThumbsUp}
-          onThumbsDown={handleThumbsDown}
-          onRegenerate={handleMsgRegenerate}
         />
       )}
-    </>
+    </div>
   );
 });

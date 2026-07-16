@@ -1,98 +1,13 @@
 import { useState, useMemo } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ResourcesAddIcon, GlobeIcon, HandBag01Icon } from '@hugeicons/core-free-icons';
 import { ConnectorCard } from './ConnectorCard';
 import { ConnectorDetailModal } from './ConnectorDetailModal';
 import { useToast } from '../ui/Toast';
 import { useAllConnectorsStatus } from '@/hooks/useConnectorStatus';
 import { DatabaseService } from '@core/utils/DatabaseService';
-
-const TABS = [
-  { id: 'connectors', label: 'Connectors', icon: ResourcesAddIcon },
-  { id: 'mcp', label: 'MCP', icon: GlobeIcon },
-  { id: 'skills', label: 'Skills', icon: HandBag01Icon },
-];
-
-interface ConnectorItem {
-  name: string;
-  description: string;
-  imageSrc?: string;
-  imageSrcDark?: string;
-  icon?: any;
-  stars?: number;
-  details?: string[];
-  connectorId?: string;
-  authType?: 'oauth2' | 'token';
-}
-
-const CONNECTOR_AUTH_TYPES: Record<string, 'oauth2' | 'token'> = {
-  gmail: 'oauth2',
-  github: 'oauth2',
-  youtube: 'oauth2',
-  reddit: 'oauth2',
-  twitter: 'oauth2',
-  telegram: 'token',
-};
-
-const CONNECTOR_CATEGORIES: Record<string, { label: string; items: ConnectorItem[] }> = {
-  integrations: {
-    label: 'Integrations',
-    items: [
-      { name: 'Gmail', description: 'Read, send, and manage your emails with AI assistance.', imageSrc: '/gmail.svg', details: ['Read inbox messages', 'Search emails by query', 'Send emails on your behalf', 'Manage labels and folders', 'Thread conversation support', 'Attachment handling'], connectorId: 'gmail' },
-      { name: 'GitHub', description: 'Access repositories, issues, and pull requests.', imageSrc: '/github.svg', imageSrcDark: '/github-dark.svg', details: ['Repository access', 'Issue management', 'PR reviews', 'Code search'], connectorId: 'github' },
-      { name: 'Notion', description: 'Read and write Notion documents and databases.', imageSrc: '/notion.svg', details: ['Page editing', 'Database queries', 'Block manipulation', 'Search'] },
-      { name: 'Jira', description: 'Manage tickets, sprints, and project boards.', imageSrc: '/jira.svg', details: ['Ticket CRUD', 'Sprint planning', 'Board views', 'Custom fields'] },
-    ],
-  },
-  social: {
-    label: 'Social',
-    items: [
-      { name: 'Slack', description: 'Send and receive messages in Slack channels.', imageSrc: '/slack.svg', details: ['Real-time message sync', 'Channel management', 'Thread support', 'File sharing'] },
-      { name: 'Twitter', description: 'Post tweets and read timelines with AI.', imageSrc: '/twitter.svg', details: ['Post tweets', 'Read timelines', 'Search tweets', 'Manage threads'], connectorId: 'twitter' },
-      { name: 'Telegram', description: 'Send messages and manage Telegram chats.', imageSrc: '/telegram.svg', details: ['Send messages', 'Channel posting', 'Bot integration', 'Media sharing'], connectorId: 'telegram' },
-      { name: 'Reddit', description: 'Read and post to Reddit communities.', imageSrc: '/reddit.svg', details: ['Read subreddits', 'Post content', 'Comment management', 'Search posts'], connectorId: 'reddit' },
-      { name: 'YouTube', description: 'Search videos and manage playlists.', imageSrc: '/youtube.svg', details: ['Video search', 'Playlist management', 'Comment handling', 'Channel analytics'], connectorId: 'youtube' },
-    ],
-  },
-};
-
-const TAB_CONTENT: Record<string, { title: string; description: string; items: ConnectorItem[] }> = {
-  connectors: {
-    title: 'Connectors',
-    description: '',
-    items: [
-      { name: 'Gmail', description: 'Read, send, and manage your emails with AI assistance.', imageSrc: '/gmail.svg', details: ['Read inbox messages', 'Search emails by query', 'Send emails on your behalf', 'Manage labels and folders', 'Thread conversation support', 'Attachment handling'], connectorId: 'gmail' },
-      { name: 'GitHub', description: 'Access repositories, issues, and pull requests.', imageSrc: '/github.svg', imageSrcDark: '/github-dark.svg', details: ['Repository access', 'Issue management', 'PR reviews', 'Code search'], connectorId: 'github' },
-      { name: 'Notion', description: 'Read and write Notion documents and databases.', imageSrc: '/notion.svg', details: ['Page editing', 'Database queries', 'Block manipulation', 'Search'] },
-      { name: 'Jira', description: 'Manage tickets, sprints, and project boards.', imageSrc: '/jira.svg', details: ['Ticket CRUD', 'Sprint planning', 'Board views', 'Custom fields'] },
-      { name: 'Slack', description: 'Send and receive messages in Slack channels.', imageSrc: '/slack.svg', details: ['Real-time message sync', 'Channel management', 'Thread support', 'File sharing'] },
-      { name: 'Twitter', description: 'Post tweets and read timelines with AI.', imageSrc: '/twitter.svg', details: ['Post tweets', 'Read timelines', 'Search tweets', 'Manage threads'], connectorId: 'twitter' },
-      { name: 'YouTube', description: 'Search videos and manage playlists.', imageSrc: '/youtube.svg', details: ['Video search', 'Playlist management', 'Comment handling', 'Channel analytics'], connectorId: 'youtube' },
-      { name: 'Telegram', description: 'Send messages and manage Telegram chats.', imageSrc: '/telegram.svg', details: ['Send messages', 'Channel posting', 'Bot integration', 'Media sharing'], connectorId: 'telegram' },
-      { name: 'Reddit', description: 'Read and post to Reddit communities.', imageSrc: '/reddit.svg', details: ['Read subreddits', 'Post content', 'Comment management', 'Search posts'], connectorId: 'reddit' },
-    ],
-  },
-  mcp: {
-    title: 'Model Context Protocol',
-    description: 'MCP servers provide tools, resources, and context to the AI model.',
-    items: [
-      { name: 'Filesystem MCP', description: 'Read and write local files securely.', icon: GlobeIcon, stars: 5, details: ['File read/write', 'Directory listing', 'Path validation', 'Sandboxed access'] },
-      { name: 'Database MCP', description: 'Query SQL databases with natural language.', icon: GlobeIcon, stars: 4, details: ['SQL execution', 'Schema inspection', 'Query optimization', 'Multiple engines'] },
-      { name: 'Web Fetch MCP', description: 'Retrieve and parse web content.', icon: GlobeIcon, stars: 4, details: ['URL fetching', 'HTML parsing', 'Content extraction', 'Caching'] },
-      { name: 'Custom MCP', description: 'Build your own MCP server.', icon: GlobeIcon, stars: 3, details: ['JSON-RPC protocol', 'Tool definition', 'Resource exposure', 'Stdio/SSE transport'] },
-    ],
-  },
-  skills: {
-    title: 'Skills',
-    description: 'Installable skills that add specialized capabilities to your AI.',
-    items: [
-      { name: 'Web Search', description: 'Real-time information retrieval from the web.', icon: HandBag01Icon, stars: 5, details: ['Google/Bing search', 'News aggregation', 'Result ranking', 'Snippet extraction'] },
-      { name: 'Code Analysis', description: 'Review, debug, and suggest improvements to code.', icon: HandBag01Icon, stars: 4, details: ['Bug detection', 'Style checking', 'Complexity analysis', 'Refactoring hints'] },
-      { name: 'Image Generation', description: 'Create visuals from text prompts.', icon: HandBag01Icon, stars: 4, details: ['DALL-E integration', 'Style control', 'Resolution options', 'Batch generation'] },
-      { name: 'Data Analysis', description: 'Process and visualize datasets.', icon: HandBag01Icon, stars: 3, details: ['CSV/JSON parsing', 'Chart generation', 'Statistical summary', 'Export formats'] },
-    ],
-  },
-};
+import { TABS, TAB_CONTENT, CONNECTOR_AUTH_TYPES, CONNECTOR_CATEGORIES } from '@/data/connectors';
+import { API_BASE_URL, apiFetch } from '@/lib/api';
+import type { ConnectorItem } from './types';
 
 export const PluginTabs = () => {
   const [activeTab, setActiveTab] = useState('connectors');
@@ -103,24 +18,23 @@ export const PluginTabs = () => {
   const tabType = activeTab === 'connectors' ? 'connector' : activeTab === 'mcp' ? 'mcp' : 'skill';
   const { addToast } = useToast();
 
-  const startOAuth = async (provider: string, clientId: string) => {
-    try {
-      const array = new Uint8Array(32);
-      crypto.getRandomValues(array);
-      const codeVerifier = btoa(String.fromCharCode(...array))
-        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const startOAuth = async (provider: string, clientId: string, popup: Window): Promise<void> => {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    const codeVerifier = btoa(String.fromCharCode(...array))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-      const encoder = new TextEncoder();
-      const hash = await crypto.subtle.digest('SHA-256', encoder.encode(codeVerifier));
-      const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(hash)))
-        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const encoder = new TextEncoder();
+    const hash = await crypto.subtle.digest('SHA-256', encoder.encode(codeVerifier));
+    const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(hash)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-      const state = crypto.randomUUID();
+    const state = crypto.randomUUID();
 
-      localStorage.setItem(`${provider}_oauth_verifier`, codeVerifier);
-      localStorage.setItem(`${provider}_oauth_state`, state);
+    localStorage.setItem(`${provider}_oauth_verifier`, codeVerifier);
+    localStorage.setItem(`${provider}_oauth_state`, state);
 
-      const res = await fetch(`http://localhost:3001/connector/${provider}/auth-url`, {
+    const res = await apiFetch(`${API_BASE_URL}/connector/${provider}/auth-url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -129,18 +43,20 @@ export const PluginTabs = () => {
           codeChallengeMethod: 'S256',
           state,
         }),
-      });
+    });
 
-      if (!res.ok) {
-        const err = await res.json();
-        console.error('Failed to get auth URL:', err);
-        return;
-      }
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to get auth URL');
+    }
 
-      const { url } = await res.json();
-      const popup = window.open(url, `${provider}-oauth`, 'width=500,height=700');
+    const { url } = await res.json();
+    popup.location.href = url;
 
-      const callbackType = `${provider}-oauth-callback`;
+    const callbackType = `${provider}-oauth-callback`;
+
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
 
       const handleMessage = (event: MessageEvent) => {
         if (event.data?.type === callbackType) {
@@ -148,7 +64,7 @@ export const PluginTabs = () => {
 
           const savedState = localStorage.getItem(`${provider}_oauth_state`);
           if (event.data.state !== savedState) {
-            console.error('CSRF state mismatch — OAuth callback ignored');
+            reject(new Error('CSRF state mismatch — OAuth callback ignored'));
             return;
           }
 
@@ -156,38 +72,44 @@ export const PluginTabs = () => {
           localStorage.removeItem(`${provider}_oauth_verifier`);
           localStorage.removeItem(`${provider}_oauth_state`);
 
-          fetch(`http://localhost:3001/connector/${provider}/exchange`, {
+          apiFetch(`${API_BASE_URL}/connector/${provider}/exchange`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               code: event.data.code,
               codeVerifier: savedVerifier,
             }),
-          }).then(() => {
+          }).then(async (res) => {
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({ error: 'Exchange failed' }));
+              throw new Error(err.error || 'Exchange failed');
+            }
+            settled = true;
+            clearInterval(poll);
             refreshStatuses();
-            addToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} connected successfully!`, 'info', 3000);
+            resolve();
           }).catch((err) => {
-            console.error('Token exchange failed:', err);
-            addToast(`${provider} connection failed: ${err.message || 'unknown error'}`, 'error', 5000);
+            settled = true;
+            clearInterval(poll);
+            reject(err);
           });
         }
       };
       window.addEventListener('message', handleMessage);
 
       const poll = setInterval(() => {
-        if (popup?.closed) {
+        if (popup.closed) {
           clearInterval(poll);
-          setTimeout(() => refreshStatuses(), 500);
+          window.removeEventListener('message', handleMessage);
+          if (!settled) reject(new Error('Authorization popup was closed'));
         }
       }, 1000);
-    } catch (err) {
-      console.error(`${provider} connect error:`, err);
-    }
+    });
   };
 
   const setTelegramToken = async (token: string) => {
     try {
-      const res = await fetch('http://localhost:3001/connector/telegram/set-token', {
+      const res = await apiFetch(`${API_BASE_URL}/connector/telegram/set-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -212,11 +134,23 @@ export const PluginTabs = () => {
   };
 
   const handleSetCredentials = async (provider: string, clientId: string, clientSecret: string) => {
-    // Save credentials to config
+    // Open popup synchronously before any await (must be within user gesture)
+    const popup = window.open('', `${provider}-oauth`, 'width=500,height=700');
+    if (!popup) {
+      addToast('Popup blocked. Please allow popups for this site.', 'error', 5000);
+      throw new Error('Popup blocked');
+    }
+
     await DatabaseService.setConfig(`${provider}-client-id`, clientId);
     await DatabaseService.setConfig(`${provider}-client-secret`, clientSecret);
-    // Start OAuth with the provided credentials
-    startOAuth(provider, clientId);
+    try {
+      await startOAuth(provider, clientId, popup);
+      addToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} connected successfully!`, 'info', 3000);
+    } catch (err: any) {
+      try { popup.close(); } catch { /* popup may already be closed */ }
+      addToast(`${provider} connection failed: ${err.message || 'unknown error'}`, 'error', 5000);
+      throw err;
+    }
   };
 
   const filteredCategories = useMemo(() => {
@@ -260,13 +194,13 @@ export const PluginTabs = () => {
             );
           })}
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex-1 max-w-[460px]">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search plugins..."
-            className="w-[260px] h-9 px-3 text-sm bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full h-9 px-3 text-sm bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
       </div>
@@ -274,17 +208,7 @@ export const PluginTabs = () => {
       {/* Section header */}
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-foreground">{content.title}</h3>
-        {activeTab === 'connectors' && (
-          <p className="text-sm text-muted-foreground mt-1">
-            Connect your AI to external services and data sources.
-          </p>
-        )}
-        {activeTab === 'mcp' && (
-          <p className="text-sm text-muted-foreground mt-1">{content.description}</p>
-        )}
-        {activeTab === 'skills' && (
-          <p className="text-sm text-muted-foreground mt-1">{content.description}</p>
-        )}
+
       </div>
 
       {/* Connectors with categories */}

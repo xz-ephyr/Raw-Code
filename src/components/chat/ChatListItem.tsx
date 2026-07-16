@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArchiveIcon,
@@ -6,6 +6,7 @@ import {
   PencilEdit02Icon,
   MoreVerticalIcon,
   CheckIcon,
+  MailOpenIcon,
 } from '@hugeicons/core-free-icons';
 import { ChatSession } from '@/types/chat';
 import { cn, formatRelativeTime } from '@/lib/utils';
@@ -22,7 +23,7 @@ interface ChatListItemProps {
   isBulkMode?: boolean;
 }
 
-export function ChatListItem({
+export const ChatListItem = memo(function ChatListItem({
   chat,
   onDelete,
   onArchive,
@@ -156,7 +157,12 @@ export function ChatListItem({
           ) : (
             <div className="flex flex-col">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-foreground line-clamp-2">{chat.title}</span>
+                <span className="text-sm font-medium text-foreground line-clamp-2 flex items-center gap-1.5">
+                  {chat.title}
+                  {chat.unread && (
+                    <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-0.5" />
+                  )}
+                </span>
                 <span className="text-xs text-muted-foreground shrink-0">{formatRelativeTime(chat.updatedAt ?? chat.createdAt, time)}</span>
               </div>
               {chat.lastMessage && (
@@ -205,6 +211,21 @@ export function ChatListItem({
                 </button>
                 <div className="h-px bg-border my-1.5" />
                 <button
+                  onClick={() => {
+                    import('@/services/ChatSessionManager').then(m => 
+                      chat.unread 
+                        ? m.ChatSessionManager.markAsRead(chat.id)
+                        : m.ChatSessionManager.markAsUnread(chat.id)
+                    );
+                    closeMenu();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  <HugeiconRenderer icon={MailOpenIcon} size={16} className="text-muted-foreground" />
+                  <span>{chat.unread ? 'Mark read' : 'Mark unread'}</span>
+                </button>
+                <div className="h-px bg-border my-1.5" />
+                <button
                   onClick={handleDelete}
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-900/30 transition-colors"
                 >
@@ -218,4 +239,4 @@ export function ChatListItem({
       </div>
     </div>
   );
-}
+});

@@ -85,13 +85,13 @@ export default function ConnectorMentionDropdown({
         type="button"
         data-active={isActive}
         onClick={() => { onClick(); onClose(); }}
-        className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors ${
+        className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors rounded-[6px] ${
           isActive ? 'bg-muted' : 'hover:bg-muted'
         }`}
       >
-        <HugeiconsIcon icon={s.icon} size={16} className="text-muted-foreground" />
+        <HugeiconsIcon icon={s.icon} size={16} className="text-muted-foreground shrink-0" />
         <span className="font-medium text-foreground">{s.label}</span>
-        <span className="ml-auto text-[10px] text-muted-foreground">{s.description}</span>
+        <span className="text-[10px] text-muted-foreground leading-snug">{s.description}</span>
       </button>
     );
   }
@@ -107,18 +107,18 @@ export default function ConnectorMentionDropdown({
         type="button"
         data-active={isActive}
         onClick={() => onSelect(name)}
-        className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors ${
+        className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors rounded-[6px] ${
           isActive ? 'bg-muted' : 'hover:bg-muted'
         }`}
       >
-        <div className="relative">
-          <img src={iconSrc} alt="" className="w-4 h-4" />
+        <div className="relative shrink-0">
+          <img src={iconSrc} alt="" loading="lazy" className="w-4 h-4" />
           {isConnected && (
             <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-card" />
           )}
         </div>
         <span className="font-medium text-foreground">{name}</span>
-        <span className="ml-auto text-[10px] text-muted-foreground">{CONNECTOR_DESCRIPTIONS[name]}</span>
+        <span className="text-[10px] text-muted-foreground leading-snug">{CONNECTOR_DESCRIPTIONS[name]}</span>
       </button>
     );
   }
@@ -126,17 +126,19 @@ export default function ConnectorMentionDropdown({
   return (
     <div
       ref={ref}
-      className={`absolute left-0 right-0 bg-card border border-border rounded-xl shadow-[0_0_0.5px_0_rgba(0,0,0,0.08)] z-[9999] overflow-hidden py-1 max-h-[320px] overflow-y-auto transition-all duration-150 ease-out ${
+      className={`absolute left-0 right-0 bg-card border border-border rounded-xl shadow-[0_0_0.5px_0_rgba(0,0,0,0.08)] z-[9999] overflow-hidden max-h-[320px] overflow-y-auto transition-all duration-150 ease-out ${
         isIdle ? 'top-full mt-1' : 'bottom-full mb-1'
       }`}
     >
-      {SHORTCUTS.map((s) => renderShortcut(s))}
-      {filteredConnectors.length > 0 && (
-        <div className="px-3 py-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-          Connectors
-        </div>
-      )}
-      {filteredConnectors.map((name) => renderConnectorButton(name))}
+      <div className="p-1.5">
+        {SHORTCUTS.map((s) => renderShortcut(s))}
+        {filteredConnectors.length > 0 && (
+          <div className="px-3 py-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+            Connectors
+          </div>
+        )}
+        {filteredConnectors.map((name) => renderConnectorButton(name))}
+      </div>
     </div>
   );
 }

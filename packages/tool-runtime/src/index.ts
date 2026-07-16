@@ -3,6 +3,7 @@ export * from './tool/index';
 export * from './registry/index';
 export * from './content/index';
 export * from './video/index';
+export * from './plan/index';
 export * from './store';
 export * from './deferred';
 export * from './events';
