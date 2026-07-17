@@ -51,7 +51,7 @@ export const reasoningStartId = (index: number) => `reasoning:${index}`
 export const reasoningDeltaEvent = (id: string, text: string): LLMEvent => ({ type: "reasoning-delta", id, text } as any)
 export const toolInputStartEvent = (id: string, name: string): LLMEvent => ({ type: "tool-input-start", id, name } as any)
 export const toolInputStartId = (index: number, tcIndex: number) => `tool:${index}:${tcIndex}`
-export const toolInputDeltaEvent = (id: string, name: string, text: string): LLMEvent => ({ type: "tool-input-delta", id, name, text } as any)
+export const toolInputDeltaEvent = (id: string, text: string): LLMEvent => ({ type: "tool-input-delta", id, text } as any)
 export const toolInputEndEvent = (id: string, name: string): LLMEvent => ({ type: "tool-input-end", id, name } as any)
 export const toolCallEvent = (id: string, name: string, input: unknown): LLMEvent => ({ type: "tool-call", id, name, input } as any)
 export const stepStartEvent = (index: number): LLMEvent => ({ type: "step-start", index } as any)

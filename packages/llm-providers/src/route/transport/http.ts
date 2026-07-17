@@ -27,24 +27,56 @@ export const httpJson = <Body, Frame>(input: { readonly framing: Framing<Frame> 
   with: (patch) => httpJson({ ...input, ...patch }),
   prepare: (prepareInput) =>
     Effect.gen(function* () {
-      const url = renderEndpoint(prepareInput.endpoint, {
-        request: prepareInput.request,
-        body: prepareInput.body,
-      }).toString()
-      const bodyText = prepareInput.encodeBody(prepareInput.body)
+    const url = renderEndpoint(prepareInput.endpoint, {
+      request: prepareInput.request,
+      body: prepareInput.body,
+    }).toString()
+
+    const providerId = prepareInput.request.model.provider
+    const bodyText = prepareInput.encodeBody(prepareInput.body)
+    if (providerId === "mistral" || providerId === "google") {
+      console.log(`[body:${providerId}]`, JSON.stringify(JSON.parse(bodyText), null, 2))
+    }
       const headers = yield* Auth.toEffect(prepareInput.auth)({
         request: prepareInput.request,
         method: "POST",
         url,
         body: bodyText,
-        headers: { ...(prepareInput.headers?.({ request: prepareInput.request }) ?? {}), ...prepareInput.request.http?.headers },
+        headers: { ...(prepareInput.request.headers as Record<string, string> ?? {}), ...(prepareInput.headers?.({ request: prepareInput.request }) ?? {}), ...prepareInput.request.http?.headers },
       })
       return { url, bodyText, headers, framing: input.framing }
     }),
-  frames: (prepared, _request, runtime) => {
+  frames: (prepared, request, runtime) => {
     const stream = Stream.unwrap(
       Effect.gen(function* () {
+        // Defensive check: ensure framing exists on prepared. If missing, throw a clear error
+        if (!prepared || !prepared.framing || typeof (prepared as any).framing.frame !== "function") {
+          const routeId = request?.model?.route ?? (request?.model?.route?.id ?? "unknown")
+          const modelId = request?.model?.id ?? "unknown"
+          throw new Error(
+            `[HttpTransport.frames] missing framing for prepared request. url=${prepared?.url} route=${routeId} model=${modelId}`,
+          )
+        }
+
         const res = yield* runtime.http.execute(prepared.url, prepared.bodyText, prepared.headers)
+        if (res.status < 200 || res.status >= 300) {
+          const responseText = yield* res.text
+          const urlPreview = prepared.url.length > 120 ? prepared.url.slice(0, 120) + "..." : prepared.url
+          const bodyPreview = prepared.bodyText.length > 500 ? prepared.bodyText.slice(0, 500) + "..." : prepared.bodyText
+          console.error(`[provider] HTTP ${res.status} ${urlPreview}
+  response: ${responseText.slice(0, 1000)}
+  body: ${bodyPreview}`)
+          return Stream.fail({
+            _tag: "LLM.Error",
+            module: "Transport",
+            method: "frames",
+            reason: {
+              _tag: "ProviderInternal",
+              status: res.status,
+              message: `HTTP ${res.status}: ${responseText.slice(0, 200)}`,
+            },
+          } as any)
+        }
         if (res.stream) {
           const bytes = Stream.fromReadableStream({
             evaluate: () => res.stream as ReadableStream<Uint8Array>,
@@ -59,4 +91,5 @@ export const httpJson = <Body, Frame>(input: { readonly framing: Framing<Frame> 
       Stream.catchAll((error) => Stream.fail(toLLMError(error))),
     ) as any
   },
+
 })

@@ -1,5 +1,5 @@
 import { Effect } from "effect"
-import { Service as LLMClient, LLMRequest, SystemPart, userMessage, makeGenerationOptions, layer } from "@doktor/llm-providers"
+import { Service as LLMClient, LLMRequest, HttpOptions, SystemPart, userMessage, makeGenerationOptions, layer } from "@doktor/llm-providers"
 import { getProviders } from './providerCache'
 import { getModelDefinition, getStoredSelectedModel } from "@core/config/models"
 import { providerRouteMap, proxyGpt4oMini } from "@core/tools/nativeRoutes"
@@ -119,7 +119,7 @@ ${sanitized}`
     tools: [],
     toolChoice: undefined,
     generation: makeGenerationOptions({ maxTokens: 100, temperature: 0.3 }),
-    http: apiKey ? { headers: { authorization: `Bearer ${apiKey}` } } : undefined,
+    http: apiKey ? new HttpOptions({ headers: { authorization: `Bearer ${apiKey}` } }) : undefined,
   })
 
   const clientLayer = layer([route])

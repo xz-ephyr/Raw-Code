@@ -25,7 +25,7 @@ export function SettingsTabLayout() {
 
   return (
     <div className="flex h-full">
-      <nav className="w-64 border-r border-border p-3 space-y-1 shrink-0 overflow-y-auto thin-scrollbar flex flex-col bg-sidebar">
+      <nav className="w-48 border-r border-border p-3 space-y-1 shrink-0 overflow-y-auto thin-scrollbar flex flex-col bg-background">
         <h2 className="text-sm font-bold text-foreground px-3 pt-1 pb-3">Settings</h2>
         {tabs.map((tab) => {
             const isActive = tab.id === activeTab;
@@ -33,7 +33,7 @@ export function SettingsTabLayout() {
               <button
                 key={tab.id}
                 onClick={() => startTransition(() => setActiveTab(tab.id))}
-                className={`flex items-center px-3 py-1.5 rounded-lg cursor-pointer active:scale-[0.99] transition-transform w-full gap-3 ${
+                className={`flex items-center px-3 py-1.5 rounded-[6px] cursor-pointer active:scale-[0.99] transition-transform w-full gap-3 ${
                   isActive ? 'bg-muted' : 'hover:bg-muted'
                 }`}
               >
@@ -45,10 +45,10 @@ export function SettingsTabLayout() {
             );
           })}
       </nav>
-      <div className="flex-1 p-6 overflow-y-auto thin-scrollbar bg-background relative">
+      <div className="flex-1 p-6 overflow-y-auto thin-scrollbar bg-sidebar relative">
         <button
           onClick={() => setSettingsOpen(false)}
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg bg-muted/80 hover:bg-muted text-foreground transition-colors shadow-sm border border-border"
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-[6px] bg-muted/80 hover:bg-muted text-foreground transition-colors shadow-sm"
         >
           <HugeiconsIcon icon={Cancel01Icon} size={18} />
         </button>

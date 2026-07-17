@@ -85,7 +85,7 @@ export default function ConnectorMentionDropdown({
         type="button"
         data-active={isActive}
         onClick={() => { onClick(); onClose(); }}
-        className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors rounded-[6px] ${
+        className={`w-full text-left px-2.5 py-1.5 text-xs flex items-center gap-2 transition-colors rounded-[6px] ${
           isActive ? 'bg-muted' : 'hover:bg-muted'
         }`}
       >
@@ -98,7 +98,6 @@ export default function ConnectorMentionDropdown({
 
   function renderConnectorButton(name: string) {
     const iconSrc = CONNECTOR_ICONS[name];
-    const isConnected = connectedConnectors.has(name);
     const isActive = flatIndex === selectedIndex;
     flatIndex++;
     return (
@@ -107,18 +106,13 @@ export default function ConnectorMentionDropdown({
         type="button"
         data-active={isActive}
         onClick={() => onSelect(name)}
-        className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors rounded-[6px] ${
+        className={`w-full text-left px-2.5 py-1.5 text-xs flex items-center gap-2 transition-colors rounded-[6px] ${
           isActive ? 'bg-muted' : 'hover:bg-muted'
         }`}
       >
-        <div className="relative shrink-0">
-          <img src={iconSrc} alt="" loading="lazy" className="w-4 h-4" />
-          {isConnected && (
-            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-card" />
-          )}
-        </div>
+        <img src={iconSrc} alt="" loading="lazy" className="w-4 h-4 shrink-0" />
         <span className="font-medium text-foreground">{name}</span>
-        <span className="text-[10px] text-muted-foreground leading-snug">{CONNECTOR_DESCRIPTIONS[name]}</span>
+        <span className="text-xs text-muted-foreground leading-snug">{CONNECTOR_DESCRIPTIONS[name]}</span>
       </button>
     );
   }
@@ -130,13 +124,8 @@ export default function ConnectorMentionDropdown({
         isIdle ? 'top-full mt-1' : 'bottom-full mb-1'
       }`}
     >
-      <div className="p-1.5">
+      <div className="p-1.5 space-y-0.5">
         {SHORTCUTS.map((s) => renderShortcut(s))}
-        {filteredConnectors.length > 0 && (
-          <div className="px-3 py-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-            Connectors
-          </div>
-        )}
         {filteredConnectors.map((name) => renderConnectorButton(name))}
       </div>
     </div>

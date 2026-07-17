@@ -155,7 +155,7 @@ function toLLMEvent(event: AISDKEvent, state: AdapterState): Effect.Effect<reado
     case "tool-input-delta": {
       const e = event as Extract<AISDKEvent, { type: "tool-input-delta" }>
       return Effect.succeed([
-        { type: "tool-input-delta", id: e.id, name: state.toolNames[e.id] ?? "unknown", text: e.delta },
+        { type: "tool-input-delta", id: e.id, text: e.delta },
       ] as unknown as LLMEvent[])
     }
 

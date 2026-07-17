@@ -34,7 +34,7 @@ export async function getProviders(projectId?: string) {
 
   const keyPromises = allProviders.map(async (p) => {
     const key = await DatabaseService.getConfig(p.configKey)
-      .then(r => r || localStorage.getItem(p.configKey) || '');
+      .then(r => r || localStorage.getItem(`rc_config_${p.configKey}`) || '');
     return { id: p.id, key };
   });
 
@@ -42,7 +42,7 @@ export async function getProviders(projectId?: string) {
     .map(async (p) => {
       const baseURLKey = `${p.id}-base-url`;
       const baseURL = await DatabaseService.getConfig(baseURLKey)
-        .then(r => r || localStorage.getItem(baseURLKey) || p.baseURL);
+        .then(r => r || localStorage.getItem(`rc_config_${baseURLKey}`) || p.baseURL);
       return { id: p.id, baseURL };
     });
 

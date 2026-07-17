@@ -187,7 +187,8 @@ const reduceToolInputStart = (state: ResponseState, event: ToolInputStart): Resp
 })
 
 const reduceToolInputDelta = (state: ResponseState, event: ToolInputDelta): ResponseState => {
-  const current = state.toolInputs[event.id] ?? { name: event.name, text: "" }
+  const current = state.toolInputs[event.id]
+  if (!current) return state
   return {
     ...state,
     toolInputs: { ...state.toolInputs, [event.id]: { ...current, text: current.text + event.text } },

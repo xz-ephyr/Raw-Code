@@ -33,7 +33,22 @@ const renderPart = <Body>(part: EndpointPart<Body>, input: EndpointInput<Body>) 
 
 export const render = <Body>(endpoint: Endpoint<Body>, input: EndpointInput<Body>) => {
   const base = (endpoint.baseURL ?? "").replace(/\/+$/, "")
-  const url = new URL(`${base}${renderPart(endpoint.path, input)}`)
+  const path = renderPart(endpoint.path, input)
+  console.log("[render] endpoint.path:", JSON.stringify(endpoint.path), "base:", JSON.stringify(base), "path:", JSON.stringify(path))
+
+  // Defensive check: if the path evaluator returned undefined/null, fail fast with a clear message.
+  if (path === undefined || path === null) {
+    throw new Error(
+      `[Endpoint.render] endpoint.path evaluated to ${String(path)} for endpoint=${JSON.stringify(endpoint)}; ` +
+      `ensure the endpoint.path is a string or a function that returns a string for the given request`,
+    )
+  }
+
+  if (base.startsWith("/")) {
+    return `${base}${path}`
+  }
+
+  const url = new URL(`${base}${path}`)
   for (const [key, value] of Object.entries(endpoint.query ?? {})) url.searchParams.set(key, value)
   return url
 }

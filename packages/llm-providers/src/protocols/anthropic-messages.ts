@@ -91,7 +91,7 @@ const textEndEvent = (id: string): LLMEvent => ({ type: "text-end", id } as any)
 const reasoningDeltaEvent = (id: string, text: string): LLMEvent => ({ type: "reasoning-delta", id, text } as any)
 const toolInputStartEvent = (id: string, name: string): LLMEvent => ({ type: "tool-input-start", id, name } as any)
 const toolInputStartId = (index: number) => `tool:${index}`
-const toolInputDeltaEvent = (id: string, name: string, text: string): LLMEvent => ({ type: "tool-input-delta", id, name, text } as any)
+const toolInputDeltaEvent = (id: string, text: string): LLMEvent => ({ type: "tool-input-delta", id, text } as any)
 const toolInputEndEvent = (id: string, name: string): LLMEvent => ({ type: "tool-input-end", id, name } as any)
 const toolCallEvent = (id: string, name: string, input: unknown): LLMEvent => ({ type: "tool-call", id, name, input } as any)
 const stepStartEvent = (index: number): LLMEvent => ({ type: "step-start", index } as any)
@@ -235,10 +235,17 @@ export const AnthropicProtocol = Protocol.make<AnthropicBody, string, AnthropicS
     step: (state: AnthropicState, event: AnthropicStreamEvent) =>
       Effect.gen(function* () {
         const events: Array<LLMEvent> = []
+        let next = state
 
         switch (event.type) {
           case "message_start": {
             events.push(stepStartEvent(0))
+            next = {
+              ...state,
+              inputTokens: event.message.usage.input_tokens,
+              cacheCreationTokens: event.message.usage.cache_creation_input_tokens,
+              cacheReadTokens: event.message.usage.cache_read_input_tokens,
+            }
             break
           }
 
@@ -247,9 +254,20 @@ export const AnthropicProtocol = Protocol.make<AnthropicBody, string, AnthropicS
             if (content_block.type === "text") {
               const key = textStartId(index)
               events.push(textStartEvent(key))
+              next = {
+                ...state,
+                textBlocks: { ...state.textBlocks, [key]: { index, text: "" } },
+              }
             } else if (content_block.type === "tool_use") {
               const key = toolInputStartId(index)
               events.push(toolInputStartEvent(key, content_block.name))
+              next = {
+                ...state,
+                toolInputs: {
+                  ...state.toolInputs,
+                  [key]: { name: content_block.name, json: "" },
+                },
+              }
             }
             break
           }
@@ -259,12 +277,50 @@ export const AnthropicProtocol = Protocol.make<AnthropicBody, string, AnthropicS
             if (delta.type === "text_delta") {
               const key = textStartId(index)
               events.push(textDeltaEvent(key, delta.text))
+              const existing = state.textBlocks[key]
+              if (existing) {
+                next = {
+                  ...state,
+                  textBlocks: {
+                    ...state.textBlocks,
+                    [key]: { ...existing, text: existing.text + delta.text },
+                  },
+                }
+              }
             } else if (delta.type === "input_json_delta") {
               const key = toolInputStartId(index)
-              events.push(toolInputDeltaEvent(key, "", delta.partial_json))
+              events.push(toolInputDeltaEvent(key, delta.partial_json))
+              const existing = state.toolInputs[key]
+              if (existing) {
+                next = {
+                  ...state,
+                  toolInputs: {
+                    ...state.toolInputs,
+                    [key]: { ...existing, json: existing.json + delta.partial_json },
+                  },
+                }
+              }
             } else if (delta.type === "thinking_delta") {
               const key = `thinking:${index}`
               events.push(reasoningDeltaEvent(key, delta.thinking))
+              const existing = state.thinkingBlocks[key]
+              if (existing) {
+                next = {
+                  ...state,
+                  thinkingBlocks: {
+                    ...state.thinkingBlocks,
+                    [key]: { ...existing, text: existing.text + delta.thinking },
+                  },
+                }
+              } else {
+                next = {
+                  ...state,
+                  thinkingBlocks: {
+                    ...state.thinkingBlocks,
+                    [key]: { index, text: delta.thinking },
+                  },
+                }
+              }
             }
             break
           }
@@ -303,7 +359,7 @@ export const AnthropicProtocol = Protocol.make<AnthropicBody, string, AnthropicS
             break
         }
 
-        return [state, events] as const
+        return [next, events] as const
       }),
     terminal: (event: AnthropicStreamEvent) => event.type === "message_stop",
     onHalt: () => [finishEvent("stop" as any)],

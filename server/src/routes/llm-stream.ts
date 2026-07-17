@@ -4,6 +4,7 @@ import {
   Service as LLMClientTag,
   layer as llmClientLayer,
   LLMRequest,
+  HttpOptions,
   SystemPart,
   userMessage as nativeUserMessage,
   assistantMessage as nativeAssistantMessage,
@@ -12,21 +13,16 @@ import {
 } from '@doktor/llm-providers'
 import type { LLMEvent } from '@doktor/llm-providers'
 import type { ToolExecutor } from '@doktor/llm-providers'
-import { gpt4o, gpt4oMini, o3, o4Mini } from '@doktor/llm-providers/providers/openai'
+import { allRoutes, getRouteByModelId } from '@doktor/llm-providers/providers/model-routes'
 import { createToolLoop } from '@doktor/llm-providers'
 import { materialize } from '@doktor/tool-runtime'
 
 const router = Router()
 
-const routes = [gpt4o, gpt4oMini, o3, o4Mini]
+const routes = allRoutes
 
 function selectRoute(modelName: string) {
-  switch (modelName) {
-    case 'gpt-4o-mini': return gpt4oMini
-    case 'o3': return o3
-    case 'o4-mini': return o4Mini
-    default: return gpt4o
-  }
+  return getRouteByModelId(modelName ?? 'auto') ?? allRoutes[0]
 }
 
 function convertMessages(msgs: any[]) {
@@ -86,7 +82,7 @@ router.post('/stream', (req: Request, res: Response) => {
     system: [SystemPart.make(systemPrompt ?? '')],
     messages: convertMessages(messages),
     tools: toolDefs,
-    http: { headers: { 'Content-Type': 'application/json' } },
+    http: new HttpOptions({ headers: { 'Content-Type': 'application/json' } }),
   })
 
   const loop = createToolLoop({ routes: [route] })

@@ -1,6 +1,7 @@
-import { Stream, pipe } from "effect"
+import { Stream } from "effect"
 import type { LLMError } from "../schema"
 import { isRecord } from "../utils/record"
+import { createSSEParser } from "./sse-parser"
 
 export interface Framing<Frame> {
   readonly id: string
@@ -14,16 +15,28 @@ const toLLMError = (error: unknown): LLMError => {
 
 export const sse: Framing<string> = {
   id: "sse",
-  frame: (bytes) =>
-    pipe(
-      bytes,
-      Stream.decodeText(),
-      Stream.splitLines,
-      Stream.filter((line) => line.startsWith("data: ")),
-      Stream.map((line) => line.slice(6)),
-      Stream.filter((data) => data !== "[DONE]"),
+  frame: (bytes) => {
+    const parser = createSSEParser()
+    return bytes.pipe(
+      Stream.map((chunk) => parser.push(chunk)),
+      Stream.flatMap((msgs) => {
+        const data = msgs
+          .filter((m) => m.data !== "[DONE]")
+          .map((m) => m.data)
+        return data.length > 0 ? Stream.fromIterable(data) : Stream.empty
+      }),
+      Stream.concat(
+        Stream.suspend(() => {
+          const remaining = parser.flush()
+          const data = remaining
+            .filter((m) => m.data !== "[DONE]")
+            .map((m) => m.data)
+          return data.length > 0 ? Stream.fromIterable(data) : Stream.empty
+        }),
+      ),
       Stream.catchAll((error) => Stream.fail(toLLMError(error))),
-    ),
+    )
+  },
 }
 
 export * as Framing from "./framing"

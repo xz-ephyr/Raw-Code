@@ -41,7 +41,7 @@ function AnimatedNumber({ value }: { value: number }) {
 function Sparkline({ data, color }: { data: number[]; color: string }) {
   const svg = useMemo(() => {
     if (data.length < 2) return null;
-    const w = 56, h = 22;
+    const w = 80, h = 32;
     const min = Math.min(...data);
     const max = Math.max(...data);
     const range = max - min || 1;
@@ -58,12 +58,78 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
 
     return (
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0">
-        <path d={d + ` L${pts[pts.length - 1].x},${h} L${pts[0].x},${h} Z`} fill={`${color}15`} />
+        <defs>
+          <linearGradient id={`spark-fill-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={d + ` L${pts[pts.length - 1].x},${h} L${pts[0].x},${h} Z`} fill={`url(#spark-fill-${color.replace('#', '')})`} />
         <path d={d} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="2" fill={color} />
       </svg>
     );
   }, [data, color]);
+
+  return svg;
+}
+
+function MiniDonut({ pct, color }: { pct: number; color: string }) {
+  const r = 12, cx = 18, cy = 18;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference * (1 - Math.min(pct, 100) / 100);
+  return (
+    <svg width={36} height={36} viewBox="0 0 36 36" className="shrink-0">
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#ef4444" strokeWidth="3" strokeOpacity="0.3" />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth="3" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} />
+    </svg>
+  );
+}
+
+function DualSparkline({ data }: { data: { prompt: number; completion: number }[] }) {
+  const svg = useMemo(() => {
+    if (data.length < 2) return null;
+    const w = 80, h = 32;
+    const allVals = data.flatMap(d => [d.prompt, d.completion]);
+    const min = Math.min(...allVals);
+    const max = Math.max(...allVals);
+    const range = max - min || 1;
+    const scale = (v: number) => h - ((v - min) / range) * (h - 6) - 3;
+
+    const promptPts = data.map((d, i) => ({
+      x: (i / (data.length - 1)) * w,
+      y: scale(d.prompt),
+    }));
+    const compPts = data.map((d, i) => ({
+      x: (i / (data.length - 1)) * w,
+      y: scale(d.completion),
+    }));
+
+    const curve = (pts: { x: number; y: number }[]) => {
+      let d = `M${pts[0].x},${pts[0].y}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+        d += ` C${(p1.x + (p2.x - p0.x) / 6).toFixed(1)},${(p1.y + (p2.y - p0.y) / 6).toFixed(1)} ${(p2.x - (p3.x - p1.x) / 6).toFixed(1)},${(p2.y - (p3.y - p1.y) / 6).toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+      }
+      return d;
+    };
+
+    const promptD = curve(promptPts);
+    const compD = curve(compPts);
+    const promptFill = promptD + ` L${promptPts[promptPts.length - 1].x},${h} L${promptPts[0].x},${h} Z`;
+    const compFill = compD + ` L${compPts[compPts.length - 1].x},${h} L${compPts[0].x},${h} Z`;
+
+    return (
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0">
+        <path d={promptFill} fill="#3b82f6" fillOpacity="0.12" />
+        <path d={compFill} fill="#8b5cf6" fillOpacity="0.12" />
+        <path d={promptD} fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={compD} fill="none" stroke="#8b5cf6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={promptPts[promptPts.length - 1].x} cy={promptPts[promptPts.length - 1].y} r="2" fill="#3b82f6" />
+        <circle cx={compPts[compPts.length - 1].x} cy={compPts[compPts.length - 1].y} r="2" fill="#8b5cf6" />
+      </svg>
+    );
+  }, [data]);
 
   return svg;
 }
@@ -208,6 +274,9 @@ export function OverviewTab() {
     return () => clearInterval(statsInterval);
   }, [refreshStats]);
 
+  const promptTotal = useMemo(() => log.reduce((s, r) => s + (r.promptTokens || 0), 0), [log]);
+  const completionTotal = useMemo(() => log.reduce((s, r) => s + (r.completionTokens || 0), 0), [log]);
+
   const sparklineData = useMemo(() => {
     if (log.length < 2) return null;
     const sorted = [...log].sort((a, b) => a.timestamp - b.timestamp);
@@ -223,48 +292,45 @@ export function OverviewTab() {
       latency: series.map(c => c.reduce((s, r) => s + r.latency, 0) / c.length),
       tokens: series.map(c => c.reduce((s, r) => s + (r.totalTokens || 0), 0)),
       rate: series.map(c => c.length ? (c.filter(r => r.success).length / c.length) * 100 : 0),
+      promptCompletion: series.map(c => ({
+        prompt: c.reduce((s, r) => s + (r.promptTokens || 0), 0),
+        completion: c.reduce((s, r) => s + (r.completionTokens || 0), 0),
+      })),
     };
   }, [log]);
 
-  const cardStyles = [
-    { accent: 'from-blue-500/20 to-blue-600/5', border: 'border-blue-500/20', badge: 'bg-blue-500/10 text-blue-400', dot: '#3b82f6' },
-    { accent: 'from-green-500/20 to-green-600/5', border: 'border-green-500/20', badge: 'bg-green-500/10 text-green-400', dot: '#22c55e' },
-    { accent: 'from-red-500/20 to-red-600/5', border: 'border-red-500/20', badge: 'bg-red-500/10 text-red-400', dot: '#ef4444' },
-    { accent: 'from-amber-500/20 to-amber-600/5', border: 'border-amber-500/20', badge: 'bg-amber-500/10 text-amber-400', dot: '#f59e0b' },
-    { accent: 'from-purple-500/20 to-purple-600/5', border: 'border-purple-500/20', badge: 'bg-purple-500/10 text-purple-400', dot: '#a855f7' },
-    { accent: 'from-emerald-500/20 to-emerald-600/5', border: 'border-emerald-500/20', badge: 'bg-emerald-500/10 text-emerald-400', dot: '#10b981' },
-  ];
-
   const cards = [
-    { icon: ChartBarIncreasingIcon, label: 'Total Requests', value: stats.total, sparkColor: '#3b82f6', dataKey: 'requests' as const, index: 0 },
-    { icon: CheckmarkBadge01Icon, label: 'Successful', value: stats.succeeded, sparkColor: '#22c55e', dataKey: 'success' as const, index: 1 },
-    { icon: CancelCircleIcon, label: 'Failed', value: stats.failed, sparkColor: '#ef4444', dataKey: 'failed' as const, index: 2 },
-    { icon: ClockFadingIcon, label: 'Avg Latency', value: stats.total ? `${stats.avgLatency < 1000 ? `${Math.round(stats.avgLatency)}ms` : `${(stats.avgLatency / 1000).toFixed(1)}s`}` : '-', sparkColor: '#f59e0b', dataKey: 'latency' as const, index: 3 },
-    { icon: CpuChargeIcon, label: 'Total Tokens', value: stats.totalTokens.toLocaleString(), sparkColor: '#a855f7', dataKey: 'tokens' as const, index: 4 },
-    { icon: ChartIncreaseIcon, label: 'Success Rate', value: stats.total ? `${Math.round((stats.succeeded / stats.total) * 100)}%` : '-', sparkColor: '#10b981', dataKey: 'rate' as const, index: 5 },
+    { icon: ChartBarIncreasingIcon, label: 'Token Split', value: stats.total ? `${((completionTotal / (promptTotal + completionTotal)) * 100).toFixed(0)}% output` : '-', sparkColor: '#8b5cf6', dataKey: 'promptCompletion' as const },
+    { icon: CheckmarkBadge01Icon, label: 'Successful', value: stats.succeeded, sparkColor: '#22c55e', dataKey: 'success' as const },
+    { icon: CancelCircleIcon, label: 'Failed', value: stats.failed, sparkColor: '#ef4444', dataKey: 'failed' as const },
+    { icon: ClockFadingIcon, label: 'Avg Latency', value: stats.total ? `${stats.avgLatency < 1000 ? `${Math.round(stats.avgLatency)}ms` : `${(stats.avgLatency / 1000).toFixed(1)}s`}` : '-', sparkColor: '#f59e0b', dataKey: 'latency' as const },
+    { icon: CpuChargeIcon, label: 'Total Tokens', value: stats.totalTokens.toLocaleString(), sparkColor: '#a855f7', dataKey: 'tokens' as const },
+    { icon: ChartIncreaseIcon, label: 'Success Rate', value: stats.total ? `${Math.round((stats.succeeded / stats.total) * 100)}%` : '-', sparkColor: '#10b981', dataKey: 'rate' as const },
   ];
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {cards.map((card) => {
-          const cs = cardStyles[card.index];
-          return (
-            <div key={card.label} className={`relative overflow-hidden rounded-lg border ${cs.border} bg-gradient-to-br ${cs.accent} backdrop-blur-sm p-2.5 flex flex-col gap-1 min-w-0 hover:scale-[1.02] transition-all duration-200`}>
-              <div className="flex items-center justify-between gap-1.5">
-                <div className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded-full ${cs.badge}`}>
-                  <HugeiconsIcon icon={card.icon} size={10} className="shrink-0" />
-                  <span className="text-[10px] font-semibold tracking-wide truncate">{card.label}</span>
-                </div>
-                {sparklineData && <Sparkline data={sparklineData[card.dataKey]} color={card.sparkColor} />}
+        {cards.map((card) => (
+          <div key={card.label} className="border border-border rounded-lg p-3 flex flex-col gap-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <HugeiconsIcon icon={card.icon} size={14} className="text-muted-foreground shrink-0" />
+                <span className="text-[11px] text-muted-foreground font-medium truncate">{card.label}</span>
               </div>
-              <span className="text-lg font-extrabold text-foreground tabular-nums tracking-tight leading-none pl-0.5">
-                {typeof card.value === 'number' ? <AnimatedNumber value={card.value} /> : card.value}
-              </span>
-              <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: `linear-gradient(90deg, ${cs.dot}, transparent)` }} />
+              {sparklineData && card.dataKey === 'promptCompletion' ? (
+                <DualSparkline data={sparklineData.promptCompletion} />
+              ) : sparklineData && card.label === 'Success Rate' ? (
+                <MiniDonut pct={stats.total ? (stats.succeeded / stats.total) * 100 : 0} color={card.sparkColor} />
+              ) : sparklineData ? (
+                <Sparkline data={sparklineData[card.dataKey]} color={card.sparkColor} />
+              ) : null}
             </div>
-          );
-        })}
+            <span className="text-lg font-bold text-foreground tabular-nums tracking-tight leading-none">
+              {typeof card.value === 'number' ? <AnimatedNumber value={card.value} /> : card.value}
+            </span>
+          </div>
+        ))}
       </div>
 
       <ActivityTimeline log={log} />
@@ -303,32 +369,32 @@ function ProviderSection({ provider, label, icon, models, configured }: {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-border/60 bg-gradient-to-br from-background via-muted/10 to-muted/20 backdrop-blur-sm">
+    <div className="border border-border rounded-lg overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2.5 px-2.5 py-2 text-left hover:bg-muted/30 transition-colors"
+        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-muted/30 transition-colors"
       >
         {icon ? (
-          <img src={icon} alt="" loading="lazy" className="w-4.5 h-4.5 shrink-0" />
+          <img src={icon} alt="" loading="lazy" className="w-5 h-5 shrink-0" />
         ) : (
-          <div className="w-4.5 h-4.5 rounded bg-muted flex items-center justify-center text-[9px] font-bold text-muted-foreground shrink-0">{provider[0].toUpperCase()}</div>
+          <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">{provider[0].toUpperCase()}</div>
         )}
-        <span className="text-sm font-semibold text-foreground flex-1 truncate">{label}</span>
-        <div className={`flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${configured ? 'bg-green-500/10 text-green-500' : 'bg-muted text-muted-foreground'}`}>
+        <span className="text-sm font-medium text-foreground flex-1 truncate">{label}</span>
+        <div className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${configured ? 'bg-green-500/10 text-green-500' : 'bg-muted text-muted-foreground'}`}>
           {configured ? '✓' : '—'}
         </div>
-        <span className="text-[11px] text-muted-foreground font-mono shrink-0">{models.length}m</span>
-        <HugeiconsIcon icon={expanded ? ArrowDown01Icon : ArrowRight01Icon} size={11} className="text-muted-foreground shrink-0 transition-transform duration-200" />
+        <span className="text-[11px] text-muted-foreground shrink-0">{models.length}</span>
+        <HugeiconsIcon icon={expanded ? ArrowDown01Icon : ArrowRight01Icon} size={12} className="text-muted-foreground shrink-0" />
       </button>
       {expanded && (
-        <div className="border-t border-border/60 divide-y divide-border/40">
+        <div className="border-t border-border divide-y divide-border">
           {models.map(m => (
-            <div key={m.id} className="flex items-center gap-2.5 px-2.5 py-1.5 pl-[36px] hover:bg-muted/20 transition-colors">
-              <ModelIcon modelId={m.id} size={10} />
-              <span className="text-xs font-medium text-foreground">{m.label}</span>
+            <div key={m.id} className="flex items-center gap-2.5 px-3 py-2 pl-[40px] hover:bg-muted/20">
+              <ModelIcon modelId={m.id} size={12} />
+              <span className="text-xs text-foreground">{m.label}</span>
               <span className="text-[10px] text-muted-foreground font-mono ml-auto">{m.id}</span>
               {m.supportsThinking && (
-                <span className="text-[10px] px-1 py-0.5 rounded bg-blue-500/10 text-blue-400 font-semibold">Thinking</span>
+                <span className="text-[10px] px-1 py-0.5 rounded bg-blue-500/10 text-blue-400 font-medium">Thinking</span>
               )}
             </div>
           ))}

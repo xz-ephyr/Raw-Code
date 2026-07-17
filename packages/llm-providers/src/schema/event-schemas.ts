@@ -84,7 +84,6 @@ export type ToolInputStart = Schema.Schema.Type<typeof ToolInputStart>
 export const ToolInputDelta = Schema.Struct({
   type: Schema.tag("tool-input-delta"),
   id: ToolCallID,
-  name: Schema.String,
   text: Schema.String,
 })
 export type ToolInputDelta = Schema.Schema.Type<typeof ToolInputDelta>
@@ -154,6 +153,12 @@ export const ProviderErrorEvent = Schema.Struct({
 })
 export type ProviderErrorEvent = Schema.Schema.Type<typeof ProviderErrorEvent>
 
+export const UsageEvent = Schema.Struct({
+  type: Schema.tag("usage"),
+  usage: Usage,
+})
+export type UsageEvent = Schema.Schema.Type<typeof UsageEvent>
+
 const llmEventSchemas = [
   StepStart,
   TextStart,
@@ -171,6 +176,7 @@ const llmEventSchemas = [
   StepFinish,
   Finish,
   ProviderErrorEvent,
+  UsageEvent,
 ] as const
 
 export const LLMEvent = Schema.Union(...llmEventSchemas)
@@ -195,3 +201,4 @@ export const isToolError = isEventType<ToolError>("tool-error")
 export const isStepFinish = isEventType<StepFinish>("step-finish")
 export const isFinish = isEventType<Finish>("finish")
 export const isProviderError = isEventType<ProviderErrorEvent>("provider-error")
+export const isUsageEvent = isEventType<UsageEvent>("usage")

@@ -101,17 +101,14 @@ export function useChatMentions(
     pill.contentEditable = 'false';
     pill.setAttribute('data-mention', name);
     if (action) pill.setAttribute('data-action', action);
-    pill.className = 'inline-flex items-center gap-1 px-2 py-[2px] text-[14px] font-medium cursor-default select-none align-baseline relative top-[1px]';
-    pill.style.color = '#3B82F6';
+    pill.className = 'inline-flex items-center gap-1.5 text-[14px] font-medium cursor-default select-none';
+    pill.style.color = '#60A5FA';
 
-    const iconBox = document.createElement('span');
-    iconBox.className = 'inline-flex items-center justify-center w-4 h-4 bg-white rounded-[6px]';
     const img = document.createElement('img');
     img.src = iconSrc;
     img.alt = '';
-    img.className = 'w-3 h-3';
-    iconBox.appendChild(img);
-    pill.appendChild(iconBox);
+    img.className = 'w-[18px] h-[18px]';
+    pill.appendChild(img);
 
     const labelText = action ? `${name} ${action}` : name;
     const textNode = document.createTextNode(labelText);

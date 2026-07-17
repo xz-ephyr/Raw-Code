@@ -63,12 +63,15 @@ export interface RouteDefaultsInput {
   readonly http?: ConstructorParameters<typeof HttpOptions>[0]
 }
 
+export type BodyTransform<Body> = (body: Body, request: LLMRequest) => Body
+
 export interface RoutePatch<Body, Prepared> extends RouteDefaultsInput {
   readonly id?: string
   readonly provider?: string | ProviderID
   readonly auth?: AuthDef
   readonly transport?: Transport<Body, Prepared, unknown>
   readonly endpoint?: EndpointPatch<Body>
+  readonly bodyTransform?: BodyTransform<Body>
 }
 
 type RouteMappedModelInput = RouteModelInput | RouteRoutedModelInput
@@ -103,21 +106,60 @@ function make<Body, Prepared, Frame>(
           ? { ...(input.endpoint as any), ...patch.endpoint }
           : input.endpoint,
         defaults: { ...input.defaults, ...patch } as any,
+        bodyTransform: patch.bodyTransform ?? input.bodyTransform,
       } as RouteInput<Body, Prepared, Frame>),
 
     model: (mapped) => makeRouteModel(route as any, mapped as any),
 
-    prepareTransport: (body, request) =>
-      input.transport.prepare({
-        body,
+    prepareTransport: (body, request) => {
+      const transform = input.bodyTransform ?? ((b: Body) => b)
+      const transformed = transform(body, request)
+      return input.transport.prepare({
+        body: transformed,
         request,
         endpoint: input.endpoint as Endpoint<Body>,
         auth: input.auth,
         encodeBody: (b) => JSON.stringify(b),
-      }) as Effect.Effect<Prepared, LLMError>,
+      }) as Effect.Effect<Prepared, LLMError>
+    },
 
-    streamPrepared: (prepared, request, runtime) =>
-      input.transport.frames(prepared as any, request, runtime) as any,
+    streamPrepared: (prepared, request, runtime) => {
+      const frameStream = input.transport.frames(prepared as any, request, runtime) as any
+      const ps = input.protocol.stream
+
+      let state = ps.initial(request)
+      let terminalReached = false
+
+      const processed = (frameStream as any).pipe(
+        Stream.filter(() => !terminalReached),
+        Stream.mapEffect((frame: unknown) =>
+          Effect.gen(function* () {
+            const event = yield* Schema.decodeUnknown(ps.event)(frame).pipe(
+              Effect.mapError((err) =>
+                new LLMErrorClass({
+                  module: "Route",
+                  method: "streamPrepared",
+                  reason: new InvalidRequestReason({ message: `Failed to decode frame: ${(err as any).message}` }),
+                }),
+              ),
+            )
+            const [newState, events] = yield* ps.step(state, event)
+            state = newState
+            if (ps.terminal?.(event)) terminalReached = true
+            return events
+          }),
+        ),
+        Stream.flatMap((events: ReadonlyArray<LLMEvent>) => Stream.fromIterable(events)),
+      )
+
+      return Stream.concat(
+        processed,
+        Stream.suspend(() => {
+          const haltEvents = ps.onHalt?.(state) ?? []
+          return Stream.fromIterable(haltEvents)
+        }),
+      ) as any
+    },
   }
   return route
 }
@@ -130,6 +172,7 @@ export interface RouteInput<Body, Prepared, Frame> {
   readonly auth: AuthDef
   readonly transport: Transport<Body, Prepared, Frame>
   readonly defaults?: RouteDefaultsInput
+  readonly bodyTransform?: BodyTransform<Body>
 }
 
 const Route = { make }
@@ -166,7 +209,7 @@ function streamPrepared(
     module: "LLMClient", method: "streamPrepared",
     reason: new InvalidRequestReason({ message: `No route found for ${prepared.route}` }),
   }))
-  return route.streamPrepared(prepared as any, request, runtime)
+  return route.streamPrepared(prepared.body as any, request, runtime)
 }
 
 const prepareRequest = (routes: ReadonlyArray<AnyRoute>, request: LLMRequest): Effect.Effect<[AnyRoute, PreparedRequest], LLMError> =>
@@ -205,6 +248,7 @@ export const layer = (
           execute: (url, body, headers) =>
             Effect.tryPromise({
               try: async () => {
+                console.log("[fetch] URL:", url, "routes:", routes.map(r => r.id))
                 const res = await fetch(url, { method: "POST", headers, body })
                 return {
                   status: res.status,

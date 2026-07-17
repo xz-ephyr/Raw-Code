@@ -13,7 +13,7 @@ export function SettingsModal() {
       onClick={() => setSettingsOpen(false)}
     >
       <div
-        className="relative bg-card rounded-2xl w-full max-w-[1300px] h-[90vh] min-h-[500px] shadow-2xl shadow-black/50 border border-border flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200"
+         className="relative bg-card rounded-2xl w-[1000px] max-w-[1000px] h-[700px] shadow-2xl shadow-black/50 border border-border flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex-1 min-h-0">

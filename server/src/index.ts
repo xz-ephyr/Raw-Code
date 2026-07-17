@@ -100,9 +100,9 @@ function jsEscape(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\//g, '\\/');
 }
 
-app.use(auth);
-
 app.use(proxyRoutes);
+
+app.use(auth);
 app.use(projectRoutes);
 app.use(fileRoutes);
 app.use(sessionRoutes);

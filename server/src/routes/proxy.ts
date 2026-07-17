@@ -32,6 +32,14 @@ router.all('/proxy/*', async (req, res) => {
     if (typeof value === 'string') headers[key] = value;
   }
 
+  if (actualUrl.includes('nvidia.com') || actualUrl.includes('mistral.ai') || actualUrl.includes('generativelanguage')) {
+    const hasAuth = 'authorization' in headers || 'Authorization' in headers;
+    const authVal = (headers['authorization'] || headers['Authorization'] || '').slice(0, 30);
+    console.log('[proxy:auth] method=%s provider=%s url=%s hasAuth=%s authPrefix=%s headerKeys=%j',
+      req.method, actualUrl.match(/https:\/\/([^.]+)/)?.[1] || '?', actualUrl, hasAuth, authVal, Object.keys(headers));
+    try { console.log('[proxy:body]', JSON.stringify(req.body).slice(0, 500)); } catch {}
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 120_000);
 

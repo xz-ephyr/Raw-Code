@@ -100,7 +100,6 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
           model: request.model.id,
           messages,
           stream: true,
-          stream_options: { include_usage: true },
         }
 
         if (request.tools.length > 0) {
@@ -187,21 +186,31 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
         const index = choice.index
         const delta = choice.delta
 
+        const newTextBlocks = { ...state.textBlocks }
+        const newReasoningBlocks = { ...state.reasoningBlocks }
+        const newToolCalls = { ...state.toolCalls }
+
         if (delta.content !== undefined && delta.content !== null) {
           const key = textStartId(index)
-          const existing = state.textBlocks[key]
+          const existing = newTextBlocks[key]
           if (!existing) {
+            newTextBlocks[key] = { index, text: delta.content }
             events.push(stepStartEvent(index))
             events.push(textStartEvent(key))
+          } else {
+            newTextBlocks[key] = { ...existing, text: existing.text + delta.content }
           }
           events.push(textDeltaEvent(key, delta.content))
         }
 
         if (delta.reasoning_content !== undefined && delta.reasoning_content !== null) {
           const key = reasoningStartId(index)
-          const existing = state.reasoningBlocks[key]
+          const existing = newReasoningBlocks[key]
           if (!existing) {
+            newReasoningBlocks[key] = { index, text: delta.reasoning_content }
             events.push(reasoningStartEvent(key))
+          } else {
+            newReasoningBlocks[key] = { ...existing, text: existing.text + delta.reasoning_content }
           }
           events.push(reasoningDeltaEvent(key, delta.reasoning_content))
         }
@@ -209,26 +218,41 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
         if (delta.tool_calls) {
           for (const tc of delta.tool_calls) {
             const key = toolInputStartId(index, tc.index)
-            const existing = state.toolCalls[key]
+            const existing = newToolCalls[key]
             if (!existing && tc.id && tc.function?.name) {
+              newToolCalls[key] = { name: tc.function.name, args: tc.function.arguments ?? "", index: tc.index }
               events.push(toolInputStartEvent(key, tc.function.name))
-            }
-            if (tc.function?.arguments) {
-              events.push(toolInputDeltaEvent(key, tc.function?.name ?? "", tc.function.arguments))
-            }
-            if (tc.function?.arguments && tc.id && tc.function?.name) {
-              try {
-                const parsed = JSON.parse(tc.function.arguments)
-                events.push(toolInputEndEvent(key, tc.function.name))
-                events.push(toolCallEvent(tc.id, tc.function.name, parsed))
-              } catch {
-                // partial JSON, continue accumulating
+              if (tc.function.arguments) {
+                events.push(toolInputDeltaEvent(key, tc.function.arguments))
               }
+            } else if (existing && tc.function?.arguments) {
+              newToolCalls[key] = { ...existing, args: existing.args + tc.function.arguments }
+              events.push(toolInputDeltaEvent(key, tc.function.arguments))
             }
           }
         }
 
         if (choice.finish_reason) {
+          for (const key of Object.keys(newTextBlocks)) {
+            events.push({ type: "text-end", id: key } as any)
+          }
+          for (const key of Object.keys(newReasoningBlocks)) {
+            events.push({ type: "reasoning-end", id: key } as any)
+          }
+          for (const [key, tc] of Object.entries(newToolCalls)) {
+            const entry = tc as { name: string; args: string; index: number }
+            if (entry.args) {
+              let parsed: unknown
+              try {
+                parsed = JSON.parse(entry.args)
+              } catch {
+                parsed = entry.args
+              }
+              events.push(toolInputEndEvent(key, entry.name))
+              events.push(toolCallEvent(key, entry.name, parsed))
+            }
+          }
+
           const reason = mapFinishReason(choice.finish_reason)
           if (event.usage) {
             const usage = new Usage({
@@ -245,21 +269,29 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
           }
         }
 
-        return [state, events] as const
+        return [{ textBlocks: newTextBlocks, reasoningBlocks: newReasoningBlocks, toolCalls: newToolCalls }, events] as const
       }),
     terminal: (event: OpenAIStreamEvent) => event.choices[0]?.finish_reason !== null,
     onHalt: (state: OpenAIChatState) => {
       const events: Array<LLMEvent> = []
+      for (const key of Object.keys(state.textBlocks)) {
+        events.push({ type: "text-end", id: key } as any)
+      }
+      for (const key of Object.keys(state.reasoningBlocks)) {
+        events.push({ type: "reasoning-end", id: key } as any)
+      }
       for (const [key, tc] of Object.entries(state.toolCalls)) {
         const entry = tc as { readonly name: string; readonly args: string; readonly index: number }
+        let parsed: unknown
         if (entry.args) {
           try {
-            const parsed = JSON.parse(entry.args)
-            events.push(toolCallEvent(key, entry.name, parsed))
+            parsed = JSON.parse(entry.args)
           } catch {
-            // ignore partial tool calls on halt
+            parsed = entry.args
           }
         }
+        events.push(toolInputEndEvent(key, entry.name))
+        events.push(toolCallEvent(key, entry.name, parsed ?? {}))
       }
       const finish = events.length > 0
         ? finishEvent("tool-calls" as any)

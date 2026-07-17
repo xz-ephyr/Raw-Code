@@ -3,6 +3,7 @@ import { createToolLoop } from "@doktor/llm-providers"
 import type { ToolExecutor } from "@doktor/llm-providers"
 import {
   LLMRequest,
+  HttpOptions,
   SystemPart,
   makeToolDefinition,
   makeToolChoice,
@@ -93,7 +94,7 @@ export async function nativeChatCompletion(input: NativeChatInput): Promise<Stre
     messages: convertMessages(input.messages),
     tools: toolDefs,
     toolChoice: makeToolChoice("auto"),
-    http: apiKey ? { headers: { authorization: `Bearer ${apiKey}` } } : undefined,
+    http: apiKey ? new HttpOptions({ headers: { authorization: `Bearer ${apiKey}` } }) : undefined,
   })
 
   const loop = createToolLoop({ routes: [route], abortSignal: input.abortSignal })
