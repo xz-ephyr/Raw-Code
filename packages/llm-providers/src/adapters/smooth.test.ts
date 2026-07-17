@@ -1,7 +1,7 @@
 import { describe, it } from "node:test"
 import assert from "node:assert/strict"
 import { Effect, Stream } from "effect"
-import { smoothStream, defaultSmoothConfig } from "./smooth"
+import { smoothStream } from "./smooth"
 import type { LLMEvent } from "../schema/event-schemas"
 import { LLMError, ProviderInternalReason } from "../schema"
 

@@ -1,11 +1,19 @@
-import React, { useMemo, useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { SearchIcon, CheckIcon } from 'lucide-react';
 import { MarkdownMessage } from './MarkdownMessage';
 import { FilePreviewCard } from './FilePreviewCard';
 import { useWriteArtifactStream } from '@/hooks/useWriteArtifactStream';
 import { BubbleActions } from './BubbleActions';
-import { BubbleDropdown } from './BubbleDropdown';
-import { ReasoningModal } from './ReasoningModal';
+import { Reasoning, ReasoningTrigger, ReasoningContent } from '@/components/ai/reasoning';
+import { MarkdownErrorBoundary } from './MarkdownErrorBoundary';
+import {
+  ChainOfThought,
+  ChainOfThoughtHeader,
+  ChainOfThoughtContent,
+  ChainOfThoughtStep,
+  ChainOfThoughtSearchResults,
+  ChainOfThoughtSearchResult,
+} from '@/components/ai/chain-of-thought';
 
 interface AssistantBubbleProps {
   content: string;
@@ -35,6 +43,9 @@ const ARTIFACT_TOOL_NAMES = new Set([
   'write_artifact', 'write_article', 'edit_text', 'research', 'generate_script',
 ]);
 
+const SEARCH_TOOL_NAMES = new Set(['research', 'research_compile', 'web_search', 'crawl_website']);
+const RESEARCH_TOOL_NAMES = SEARCH_TOOL_NAMES;
+
 export const AssistantBubble = React.memo(
   ({
     content,
@@ -50,8 +61,6 @@ export const AssistantBubble = React.memo(
     onOpenFile,
     onCopy,
   }: AssistantBubbleProps) => {
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [showReasoningModal, setShowReasoningModal] = useState(false);
     const hasWriteArtifact = toolInvocations?.some((ti) => ARTIFACT_TOOL_NAMES.has(ti.toolName));
     const artifactCall = hasWriteArtifact
       ? toolInvocations?.find((ti) => ti.toolName === 'write_artifact')
@@ -82,6 +91,13 @@ export const AssistantBubble = React.memo(
     const showWritingLine = hasWriteArtifact && artifactTitle && (
       phase === 'intention' || phase === 'writing'
     );
+
+    const researchCalls = useMemo(() => {
+      if (!toolInvocations) return [];
+      return toolInvocations.filter((ti) => RESEARCH_TOOL_NAMES.has(ti.toolName));
+    }, [toolInvocations]);
+
+    const hasResearchSteps = researchCalls.length > 0;
 
     return (
       <div className="mb-10 w-full group/bubble">
@@ -124,17 +140,54 @@ export const AssistantBubble = React.memo(
                 </div>
               )}
             </>
-          ) : (
+            ) : (
             content ? (
               <div className="font-normal text-foreground leading-[1.2]">
                 <MarkdownMessage content={content} sources={[]} />
               </div>
-            ) : isStreaming ? (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <span className="inline-block w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-                <span className="text-sm">Thinking...</span>
-              </div>
             ) : null
+          )}
+
+          {reasoning && (
+            <MarkdownErrorBoundary rawContent={reasoning}>
+            <Reasoning isStreaming={isStreaming} defaultOpen={isStreaming}>
+              <ReasoningTrigger />
+              <ReasoningContent>{reasoning}</ReasoningContent>
+            </Reasoning>
+            </MarkdownErrorBoundary>
+          )}
+
+          {hasResearchSteps && (
+            <ChainOfThought defaultOpen={false}>
+              <ChainOfThoughtHeader duration={completionDuration ? Math.round(completionDuration / 1000) : undefined} />
+              <ChainOfThoughtContent>
+                {researchCalls.map((tc, i) => {
+                  const isComplete = tc.state === 'result';
+                  return (
+                    <ChainOfThoughtStep
+                      key={tc.toolCallId || i}
+                      icon={isComplete ? CheckIcon : SearchIcon}
+                      label={tc.args?.url || tc.args?.query || tc.toolName}
+                      status={isComplete ? 'complete' : 'active'}
+                    >
+                      {isComplete && (tc.result?.sources?.length > 0 || tc.result?.pages?.length > 0) && (
+                        <ChainOfThoughtSearchResults>
+                          {(tc.result?.sources || tc.result?.pages || []).map((s: any, j: number) => {
+                            let domain = s.url || s.metadata?.sourceURL || '';
+                            try { domain = new URL(domain).hostname; } catch {}
+                            return (
+                              <ChainOfThoughtSearchResult key={j}>
+                                {domain}
+                              </ChainOfThoughtSearchResult>
+                            );
+                          })}
+                        </ChainOfThoughtSearchResults>
+                      )}
+                    </ChainOfThoughtStep>
+                  );
+                })}
+              </ChainOfThoughtContent>
+            </ChainOfThought>
           )}
         </div>
 
@@ -155,24 +208,6 @@ export const AssistantBubble = React.memo(
                 version={version}
                 onCopy={onCopy}
               />
-              <div className="relative">
-                <button
-                  onClick={() => setShowDropdown(!showDropdown)}
-                  className="relative p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <MoreHorizontal size={14} />
-                  <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${reasoning ? 'bg-green-500' : 'bg-gray-400'}`} />
-                </button>
-                {showDropdown && (
-                  <BubbleDropdown
-                    onShowReasoning={reasoning ? () => {
-                      setShowDropdown(false);
-                      setShowReasoningModal(true);
-                    } : undefined}
-                    onClose={() => setShowDropdown(false)}
-                  />
-                )}
-              </div>
             </>
           )}
           {model && (
@@ -184,13 +219,6 @@ export const AssistantBubble = React.memo(
             </span>
           )}
         </div>
-
-        {showReasoningModal && reasoning && (
-          <ReasoningModal
-            reasoning={reasoning}
-            onClose={() => setShowReasoningModal(false)}
-          />
-        )}
       </div>
     );
   }

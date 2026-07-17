@@ -323,7 +323,7 @@ export function OverviewTab() {
               ) : sparklineData && card.label === 'Success Rate' ? (
                 <MiniDonut pct={stats.total ? (stats.succeeded / stats.total) * 100 : 0} color={card.sparkColor} />
               ) : sparklineData ? (
-                <Sparkline data={sparklineData[card.dataKey]} color={card.sparkColor} />
+                <Sparkline data={sparklineData[card.dataKey] as number[]} color={card.sparkColor} />
               ) : null}
             </div>
             <span className="text-lg font-bold text-foreground tabular-nums tracking-tight leading-none">

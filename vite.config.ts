@@ -10,7 +10,6 @@ const CHUNK_GROUPS = [
   { name: 'babel', test: /[\\/]node_modules[\\/]@babel[\\/]/ },
   { name: 'xlsx', test: /[\\/]node_modules[\\/]xlsx[\\/]/ },
   { name: 'hugeicons', test: /[\\/]node_modules[\\/]@hugeicons[\\/]/ },
-  { name: 'ai-sdk', test: /[\\/]node_modules[\\/]@ai-sdk[\\/]/ },
 ];
 
 export default defineConfig({
@@ -25,6 +24,7 @@ export default defineConfig({
       '@doktor/schema': path.resolve(__dirname, './packages/schema/src'),
       '@doktor/effect-drizzle-sqlite': path.resolve(__dirname, './packages/effect-drizzle-sqlite/src'),
       '@doktor/effect-sqlite-node': path.resolve(__dirname, './packages/effect-sqlite-node/src'),
+      '@tests': path.resolve(__dirname, './tests'),
     },
   },
   server: {
@@ -37,11 +37,14 @@ export default defineConfig({
       },
     },
     watch: {
-      ignored: ['**/dok-tor/**'],
+      ignored: ['**/dok-tor/**', '**/src/assets/**'],
+    },
+    fs: {
+      deny: ['dok-tor', 'src/assets'],
     },
   },
   optimizeDeps: {
-    exclude: ['dok-tor'],
+    exclude: [],
   },
   build: {
     outDir: 'dist',

@@ -48,7 +48,14 @@ function currentOrNew(msg: AssistantMessage | null): AssistantMessage {
   }
 }
 
-export function reduceEvent(state: StreamState, event: LLMEvent): StreamState {
+function stripThinkingTags(text: string): string {
+  return text
+    .replace(/<(?:think|thought)>[\s\S]*?<\/(?:think|thought)>/g, '')
+    .replace(/<(?:think|thought)>[\s\S]*$/g, '')
+}
+
+export function reduceEvent(state: StreamState, event: LLMEvent, options?: { skipReasoning?: boolean }): StreamState {
+  const skipReasoning = options?.skipReasoning ?? false
   switch (event.type) {
     case "step-start": {
       return { ...state, status: "streaming" }
@@ -74,6 +81,7 @@ export function reduceEvent(state: StreamState, event: LLMEvent): StreamState {
     }
 
     case "reasoning-delta": {
+      if (skipReasoning) return state
       const msg = currentOrNew(state.currentMessage)
       return {
         ...state,
@@ -153,8 +161,13 @@ export function reduceEvent(state: StreamState, event: LLMEvent): StreamState {
 
     case "finish": {
       if (!state.currentMessage) return { ...state, status: "idle" }
+      const msg = { ...state.currentMessage, finishReason: event.reason }
+      if (skipReasoning) {
+        msg.content = stripThinkingTags(msg.content)
+        msg.reasoning = ''
+      }
       return {
-        messages: [...state.messages, { ...state.currentMessage, finishReason: event.reason }],
+        messages: [...state.messages, msg],
         currentMessage: null,
         status: "idle",
       }

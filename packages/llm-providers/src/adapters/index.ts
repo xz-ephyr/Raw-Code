@@ -1,4 +1,3 @@
-export { toLLMEvents } from "./from-ai-sdk"
 export { createAnthropicAdapter } from "./anthropic-adapter"
 export type { AnthropicAdapterConfig } from "./anthropic-adapter"
 export { createOpenAIAdapter } from "./openai-adapter"

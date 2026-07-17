@@ -248,7 +248,7 @@ export const layer = (
           execute: (url, body, headers) =>
             Effect.tryPromise({
               try: async () => {
-                console.log("[fetch] URL:", url, "routes:", routes.map(r => r.id))
+                if (process.env.LLM_DEBUG) console.log("[fetch] URL:", url, "routes:", routes.map(r => r.id))
                 const res = await fetch(url, { method: "POST", headers, body })
                 return {
                   status: res.status,

@@ -1,9 +1,26 @@
-import { Effect } from 'effect';
-import { streamText, stepCountIs, type LanguageModel } from 'ai';
+import { Effect, Stream } from 'effect';
 import type { SubAgentRequest, SubAgentResult } from './types';
 import type { Materialization } from '@doktor/tool-runtime';
-import { toAISDKTools, emit } from '@doktor/tool-runtime';
+import { emit } from '@doktor/tool-runtime';
 import { buildSystemPrompt, getToolScope, getMaxSteps } from './personalities';
+import {
+  createToolLoop,
+  LLMRequest,
+  Model,
+  SystemPart,
+  makeToolDefinition,
+  makeToolChoice,
+  systemMessage,
+  userMessage,
+  ModelRoutesProvider,
+} from '@doktor/llm-providers';
+import type { ToolExecutor, ToolCallInput, ToolResultOutput } from '@doktor/llm-providers';
+
+const { allRoutes, getRouteByModelId } = ModelRoutesProvider
+
+function getRoute(modelId: string) {
+  return getRouteByModelId(modelId) ?? allRoutes[0]
+}
 
 export function runSubAgent(
   request: SubAgentRequest,
@@ -25,11 +42,9 @@ export function runSubAgent(
       },
     });
 
-    // Determine tool scope and max steps from personality
     const scope = getToolScope(request.agentType, request.toolScope);
     const maxSteps = getMaxSteps(request.agentType, request.maxSteps);
 
-    // Filter tools based on scope
     let filteredMat = materialization;
     if (scope) {
       const filteredDefs = materialization.definitions.filter((d) => scope.includes(d.name));
@@ -41,57 +56,80 @@ export function runSubAgent(
       };
     }
 
-    // Pass the subagent's session context down to tools during settlement
-    const tools = toAISDKTools(filteredMat, undefined, {
-      sessionID: subAgentSessionID,
-      agentID,
-      assistantMessageID: `msg_${crypto.randomUUID()}`,
-    });
+    const modelId = typeof request.model === 'string' ? request.model : 'gpt-4o-mini';
+    const route = getRoute(modelId)
+    const model = Model.make({ id: modelId, provider: '', route })
 
-    let totalPromptTokens = 0;
-    let totalCompletionTokens = 0;
-    let stepCount = 0;
-    let toolCallCount = 0;
+    const toolDefs = filteredMat.definitions.map((d) =>
+      makeToolDefinition({ name: d.name, description: d.description, inputSchema: d.inputSchema }),
+    )
 
-    if (typeof request.model !== 'object' || request.model === null) {
-      throw new Error(`[subagent] No valid model provided for agent "${agentID}"`);
-    }
-    const resolvedModel = request.model as LanguageModel;
+    const system = SystemPart.make(buildSystemPrompt(request))
 
-    const result = await streamText({
-      model: resolvedModel,
-      system: buildSystemPrompt(request),
+    const llmRequest = new LLMRequest({
+      model,
+      system: [system],
       messages: [
-        ...(request.context ? [{ role: 'system' as const, content: request.context }] : []),
-        { role: 'user' as const, content: request.task },
+        ...(request.context ? [systemMessage(request.context)] : []),
+        userMessage(request.task),
       ],
-      tools,
-      stopWhen: stepCountIs(maxSteps),
-      onStepFinish: (step) => {
-        stepCount++;
-        toolCallCount += step.toolCalls.length;
-        if (step.usage) {
-          totalPromptTokens += step.usage.inputTokens ?? 0;
-          totalCompletionTokens += step.usage.outputTokens ?? 0;
+      tools: toolDefs,
+      toolChoice: makeToolChoice('auto'),
+    })
+
+    const loop = createToolLoop({ routes: [route], maxSteps, abortSignal })
+
+    const executor: ToolExecutor = (call: ToolCallInput) =>
+      Effect.tryPromise({
+        try: () =>
+          filteredMat.settle(
+            { id: call.id, name: call.name, input: call.input },
+            {
+              sessionID: subAgentSessionID,
+              agentID,
+              assistantMessageID: `msg_${crypto.randomUUID()}`,
+              toolCallID: call.id,
+            },
+          ),
+        catch: (err) => new Error(String(err)),
+      }).pipe(
+        Effect.flatMap((result: any) => {
+          if (result.type === 'error') return Effect.fail(new Error(result.message))
+          return Effect.succeed({ id: call.id, name: call.name, result: result.value } as ToolResultOutput)
+        }),
+      )
+
+    const stream = loop(llmRequest, executor)
+
+    let text = ''
+    let toolCallCount = 0
+    let stepCount = 0
+    let totalInputTokens = 0
+    let totalOutputTokens = 0
+
+    await Stream.runForEach(stream, (event) =>
+      Effect.sync(() => {
+        if (event.type === 'text-delta') text += event.text ?? ''
+        if (event.type === 'tool-call') toolCallCount++
+        if (event.type === 'step-finish') {
+          stepCount++
+          emit({
+            type: 'subagent_step',
+            sessionID: subAgentSessionID,
+            agentID,
+            timestamp: Date.now(),
+            payload: { steps: stepCount, toolCalls: toolCallCount },
+          })
         }
-
-        emit({
-          type: 'subagent_step',
-          sessionID: subAgentSessionID,
-          agentID,
-          timestamp: Date.now(),
-          payload: {
-            stepNumber: step.stepNumber,
-            text: step.text,
-            toolCalls: step.toolCalls.map((tc) => ({ name: tc.toolName, id: tc.toolCallId })),
-            usage: step.usage,
-          },
-        });
-      },
-      abortSignal,
-    });
-
-    const text = await result.text;
+        if (event.type === 'finish') {
+          totalInputTokens += (event as any).usage?.inputTokens ?? 0
+          totalOutputTokens += (event as any).usage?.outputTokens ?? 0
+        }
+      }),
+    ).pipe(
+      Effect.catchAll(() => Effect.void),
+      Effect.runPromise,
+    )
 
     emit({
       type: 'subagent_end',
@@ -103,8 +141,8 @@ export function runSubAgent(
         steps: stepCount,
         toolCalls: toolCallCount,
         usage: {
-          inputTokens: totalPromptTokens,
-          outputTokens: totalCompletionTokens,
+          inputTokens: totalInputTokens,
+          outputTokens: totalOutputTokens,
         },
       },
     });
@@ -114,9 +152,9 @@ export function runSubAgent(
       toolCalls: toolCallCount,
       steps: stepCount,
       usage: {
-        inputTokens: totalPromptTokens,
-        outputTokens: totalCompletionTokens,
+        inputTokens: totalInputTokens,
+        outputTokens: totalOutputTokens,
       },
-    };
+    } as SubAgentResult;
   });
 }

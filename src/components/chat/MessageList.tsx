@@ -1,10 +1,10 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 import { ArrowDown02Icon } from '@hugeicons/core-free-icons';
+
 import { ChatMessageRow } from './ChatMessageRow';
 import ChatInput from './ChatInput';
 import { IdleState } from './IdleState';
-import { ThinkingAnimation } from '../ui/ThinkingAnimation';
 
 const SCROLL_THRESHOLD = 150;
 
@@ -16,7 +16,6 @@ interface MessageListProps {
   completionDurations: Record<string, number>;
   isThinkingEnabled: boolean;
   onToggleThinking: () => void;
-  modelSupportsThinking?: boolean;
   isWebSearchEnabled: boolean;
   onToggleWebSearch: () => void;
   onOpenFile: (file: any) => void;
@@ -36,7 +35,6 @@ export function MessageList({
   completionDurations,
   isThinkingEnabled,
   onToggleThinking,
-  modelSupportsThinking,
   isWebSearchEnabled,
   onToggleWebSearch,
   onOpenFile,
@@ -95,12 +93,6 @@ export function MessageList({
   }, [messages.length]);
 
   const hasMessages = messages.length > 0;
-
-  const lastMsg = messages[messages.length - 1];
-  const showThinking = isLoading && hasMessages && (
-    lastMsg?.role === 'user' ||
-    (lastMsg?.role !== 'user' && !lastMsg?.content)
-  );
 
   useEffect(() => {
     const el = scrollContainerRef.current;
@@ -164,12 +156,6 @@ export function MessageList({
               />
             );
           })}
-
-          {showThinking && (
-            <div className="pl-3.5 pt-1 pb-2">
-              <ThinkingAnimation supportsThinking={modelSupportsThinking} />
-            </div>
-          )}
 
           {!hasMessages && (
             <IdleState

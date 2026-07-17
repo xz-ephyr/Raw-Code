@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, X } from 'lucide-react';
+import { ArrowLeft, Save, X, Plus, Zap, Bot, Plug, Film, Brain, Package, Server, ChevronRight } from 'lucide-react';
 import { useRunStore } from '@/stores/runStore';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { ConnectorSelector, type ConnectorOption } from '@/components/workflow/ConnectorSelector';
@@ -16,17 +16,83 @@ const CONNECTOR_OPTIONS: ConnectorOption[] = CONNECTOR_KEYS.map((key) => ({
   color: CONNECTOR_BRAND_COLORS[key]?.color ?? '#888',
 }));
 
-const STEP_META: Record<StepType, { label: string; description: string; color: string }> = {
-  tool_call: { label: 'Tool Call', description: 'Invoke a registered tool', color: 'bg-blue-500/10 text-blue-400' },
-  sub_agent: { label: 'Sub-agent', description: 'Spawn an autonomous agent', color: 'bg-purple-500/10 text-purple-400' },
-  connector: { label: 'Connector', description: 'Use an external service', color: 'bg-green-500/10 text-green-400' },
-  video_edit: { label: 'Video Edit', description: 'Run FFmpeg pipeline', color: 'bg-pink-500/10 text-pink-400' },
-  llm: { label: 'LLM', description: 'Configure a model call', color: 'bg-amber-500/10 text-amber-400' },
-  skill: { label: 'Skill', description: 'Enable a capability pack', color: 'bg-orange-500/10 text-orange-400' },
-  mcp: { label: 'MCP', description: 'Connect to an MCP server', color: 'bg-teal-500/10 text-teal-400' },
+type StepMeta = {
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  gradient: string;
+  badge: string;
+};
+
+const STEP_META: Record<StepType, StepMeta> = {
+  tool_call: {
+    label: 'Tool Call',
+    description: 'Invoke a registered tool',
+    icon: <Zap size={14} />,
+    gradient: 'from-blue-500/20 to-blue-600/10',
+    badge: 'bg-blue-500/15 text-blue-400 border border-blue-500/20',
+  },
+  sub_agent: {
+    label: 'Sub-agent',
+    description: 'Spawn an autonomous agent',
+    icon: <Bot size={14} />,
+    gradient: 'from-purple-500/20 to-purple-600/10',
+    badge: 'bg-purple-500/15 text-purple-400 border border-purple-500/20',
+  },
+  connector: {
+    label: 'Connector',
+    description: 'Use an external service',
+    icon: <Plug size={14} />,
+    gradient: 'from-emerald-500/20 to-emerald-600/10',
+    badge: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20',
+  },
+  video_edit: {
+    label: 'Video Edit',
+    description: 'Run FFmpeg pipeline',
+    icon: <Film size={14} />,
+    gradient: 'from-pink-500/20 to-pink-600/10',
+    badge: 'bg-pink-500/15 text-pink-400 border border-pink-500/20',
+  },
+  llm: {
+    label: 'LLM',
+    description: 'Configure a model call',
+    icon: <Brain size={14} />,
+    gradient: 'from-amber-500/20 to-amber-600/10',
+    badge: 'bg-amber-500/15 text-amber-400 border border-amber-500/20',
+  },
+  skill: {
+    label: 'Skill',
+    description: 'Enable a capability pack',
+    icon: <Package size={14} />,
+    gradient: 'from-orange-500/20 to-orange-600/10',
+    badge: 'bg-orange-500/15 text-orange-400 border border-orange-500/20',
+  },
+  mcp: {
+    label: 'MCP',
+    description: 'Connect to an MCP server',
+    icon: <Server size={14} />,
+    gradient: 'from-teal-500/20 to-teal-600/10',
+    badge: 'bg-teal-500/15 text-teal-400 border border-teal-500/20',
+  },
 };
 
 const STEP_ORDER: StepType[] = ['tool_call', 'sub_agent', 'connector', 'llm', 'skill', 'mcp', 'video_edit'];
+
+function SectionCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`rounded-xl border border-white/[0.06] bg-white/[0.03] p-5 backdrop-blur-sm ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2">
+      {children}
+    </label>
+  );
+}
 
 export function WorkflowCreatePage() {
   const navigate = useNavigate();
@@ -60,61 +126,98 @@ export function WorkflowCreatePage() {
 
   return (
     <div className="flex-1 bg-background overflow-y-auto thin-scrollbar">
-      <div className="mx-auto pt-8 pb-12" style={{ maxWidth: '800px' }}>
-        <div className="relative mb-8">
-          <button
-            onClick={() => navigate('/workflow')}
-            className="absolute flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-            style={{ right: 'calc(100% + 24px)', top: '4px' }}
-          >
-            <ArrowLeft size={16} />
-            Back
-          </button>
+      {/* Subtle ambient gradient */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 60% 40% at 70% 10%, oklch(0.45 0.18 280 / 0.08) 0%, transparent 70%)',
+        }}
+      />
 
-          <h1 className="text-xl font-semibold text-foreground mb-1">Create New Run</h1>
-          <p className="text-sm text-muted-foreground">
-            Configure your automation run and save it for execution.
+      <div className="relative z-10 mx-auto px-6 pt-10 pb-16" style={{ maxWidth: '720px' }}>
+
+        {/* Back button */}
+        <button
+          onClick={() => navigate('/workflow')}
+          className="group mb-8 flex items-center gap-1.5 text-xs font-medium text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+        >
+          <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-0.5" />
+          Back to workflows
+        </button>
+
+        {/* Page header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-1.5">
+            Create workflow
+          </h1>
+          <p className="text-sm text-muted-foreground/70">
+            Configure an automation run — define steps, connect services, and set a schedule.
           </p>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Title</label>
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleSave(); }}
+          className="space-y-3"
+        >
+          {/* Title */}
+          <SectionCard>
+            <FieldLabel>Title</FieldLabel>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Morning Briefing"
-              className="w-full px-4 py-3 rounded-[6px] border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-purple-500/40 transition-shadow"
+              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/30 focus:outline-none"
+              style={{ caretColor: 'oklch(0.65 0.2 280)' }}
+              autoFocus
             />
-          </div>
+            {/* Animated underline */}
+            <div className="mt-2 h-px w-full rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  background: name
+                    ? 'linear-gradient(90deg, oklch(0.55 0.22 280), oklch(0.6 0.2 260))'
+                    : 'oklch(1 0 0 / 0.07)',
+                  width: name ? '100%' : '100%',
+                }}
+              />
+            </div>
+          </SectionCard>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">System Prompt</label>
+          {/* System Prompt */}
+          <SectionCard>
+            <FieldLabel>System Prompt</FieldLabel>
             <textarea
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
-              placeholder="Describe what this run should do..."
+              placeholder="Describe what this workflow should do…"
               rows={4}
-              className="w-full px-4 py-3 rounded-[6px] border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-purple-500/40 transition-shadow resize-none"
+              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/30 focus:outline-none resize-none leading-relaxed"
+              style={{ caretColor: 'oklch(0.65 0.2 280)' }}
             />
-          </div>
+            <div className="mt-2 h-px w-full rounded-full bg-white/[0.07]" />
+          </SectionCard>
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-medium text-foreground">Steps</label>
+          {/* Steps */}
+          <SectionCard>
+            <div className="flex items-center justify-between mb-3">
+              <FieldLabel>Steps</FieldLabel>
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setShowStepPicker(!showStepPicker)}
-                  className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-[6px] border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide rounded-lg border border-dashed border-white/10 text-muted-foreground hover:text-foreground hover:border-white/20 transition-colors"
                 >
-                  + Add Step
+                  <Plus size={11} />
+                  Add Step
                 </button>
+
                 {showStepPicker && (
-                  <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-[6px] shadow-xl shadow-black/20 z-50 py-1">
+                  <div className="absolute right-0 top-full mt-1.5 w-60 rounded-xl border border-white/[0.08] bg-[oklch(0.18_0.004_49)] shadow-2xl shadow-black/40 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
                     {availableStepTypes.length === 0 ? (
-                      <div className="px-3 py-2 text-xs text-muted-foreground">All step types added</div>
+                      <div className="px-4 py-3 text-xs text-muted-foreground">All step types added</div>
                     ) : (
                       availableStepTypes.map((type) => {
                         const meta = STEP_META[type];
@@ -123,15 +226,15 @@ export function WorkflowCreatePage() {
                             key={type}
                             type="button"
                             onClick={() => { setSteps((prev) => [...prev, type]); setShowStepPicker(false); }}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-muted"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04]"
                           >
-                            <div className={`w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0 text-xs font-bold uppercase ${meta.color}`}>
-                              {meta.label[0]}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-xs font-medium text-foreground">{meta.label}</div>
-                              <div className="text-xs text-muted-foreground truncate">{meta.description}</div>
-                            </div>
+                            <span className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${meta.badge}`}>
+                              {meta.icon}
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block text-xs font-medium text-foreground">{meta.label}</span>
+                              <span className="block text-[11px] text-muted-foreground/60 truncate">{meta.description}</span>
+                            </span>
                           </button>
                         );
                       })
@@ -140,58 +243,89 @@ export function WorkflowCreatePage() {
                 )}
               </div>
             </div>
+
             {steps.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-4 text-center border border-dashed border-border rounded-[6px] bg-card">
-                No steps yet — add one to define what this run does
-              </p>
+              <button
+                type="button"
+                onClick={() => setShowStepPicker(true)}
+                className="group w-full flex flex-col items-center justify-center gap-2 py-8 rounded-lg border border-dashed border-white/[0.07] text-muted-foreground/40 hover:text-muted-foreground/70 hover:border-white/[0.12] transition-all"
+              >
+                <Plus size={18} className="transition-transform group-hover:scale-110" />
+                <span className="text-xs">Add your first step</span>
+              </button>
             ) : (
-              <div className="rounded-[6px] border border-border bg-card divide-y divide-border overflow-hidden">
+              <div className="space-y-1.5">
                 {steps.map((type, i) => {
                   const meta = STEP_META[type];
                   return (
                     <div
                       key={`${type}-${i}`}
-                      className="flex items-center gap-3 px-4 py-3"
+                      className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gradient-to-r ${meta.gradient} border border-white/[0.05] transition-all`}
+                      style={{ animationDelay: `${i * 40}ms` }}
                     >
-                      <div className={`w-7 h-7 rounded-[6px] flex items-center justify-center shrink-0 text-xs font-bold uppercase ${meta.color}`}>
-                        {meta.label[0]}
-                      </div>
+                      {/* Step number */}
+                      <span className="text-[10px] font-bold text-muted-foreground/40 w-4 shrink-0 text-center select-none">
+                        {i + 1}
+                      </span>
+                      {/* Icon badge */}
+                      <span className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 shadow-sm ${meta.badge}`}>
+                        {meta.icon}
+                      </span>
+                      {/* Info */}
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-foreground">{meta.label}</div>
-                        <div className="text-xs text-muted-foreground truncate">{meta.description}</div>
+                        <div className="text-xs font-semibold text-foreground">{meta.label}</div>
+                        <div className="text-[11px] text-muted-foreground/50 truncate">{meta.description}</div>
                       </div>
+                      {/* Drag handle hint + remove */}
                       <button
                         type="button"
                         onClick={() => setSteps((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="p-1 rounded-[4px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-white/[0.06] transition-all"
                       >
-                        <X size={14} />
+                        <X size={13} />
                       </button>
                     </div>
                   );
                 })}
               </div>
             )}
-          </div>
+          </SectionCard>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Connectors</label>
+          {/* Connectors */}
+          <SectionCard>
+            <FieldLabel>Connectors</FieldLabel>
             <ConnectorSelector options={CONNECTOR_OPTIONS} selected={connectors} onChange={setConnectors} />
-          </div>
+          </SectionCard>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Schedule</label>
+          {/* Schedule */}
+          <SectionCard>
+            <FieldLabel>Schedule</FieldLabel>
             <DateTimePicker value={scheduledAt} onChange={setScheduledAt} />
-          </div>
+          </SectionCard>
 
-          <button
-            type="submit"
-            disabled={!name.trim()}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-[6px] bg-purple-600 text-white text-sm font-medium hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <Save size={16} />
-            Save &amp; Continue
-          </button>
+          {/* Submit */}
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={!name.trim()}
+              className="group relative w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl text-sm font-semibold text-white overflow-hidden transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{
+                background: 'linear-gradient(135deg, oklch(0.52 0.22 280), oklch(0.48 0.22 260))',
+                boxShadow: name.trim()
+                  ? '0 0 0 1px oklch(0.55 0.22 280 / 0.4), 0 8px 24px oklch(0.45 0.2 280 / 0.35)'
+                  : 'none',
+              }}
+            >
+              {/* Shine overlay */}
+              <span
+                className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{ background: 'linear-gradient(135deg, white/10 0%, transparent 60%)' }}
+              />
+              <Save size={15} />
+              Save & Continue
+              <ChevronRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
         </form>
       </div>
     </div>

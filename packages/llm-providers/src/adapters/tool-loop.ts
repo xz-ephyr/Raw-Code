@@ -1,5 +1,6 @@
 import { Stream, Effect } from "effect"
 import { Service as LLMClient, layer as llmClientLayer } from "../route/client"
+import { withRetry } from "./with-retry"
 import type { AnyRoute, Interface as LLMClientInterface } from "../route/client"
 import { LLMEvent } from "../schema/event-schemas"
 import type { ToolCall_, ToolResult_ } from "../schema/event-schemas"
@@ -51,6 +52,10 @@ export function createToolLoop(
   const maxSteps = config.maxSteps ?? 10
   const layer = llmClientLayer(config.routes)
   const signal = config.abortSignal
+  // Retry transient/rate-limit failures (e.g. HTTP 429) so a teamwork run is
+  // resilient to provider rate-limit storms. withRetry only retries before the
+  // first event is seen and only when the LLMError is marked retryable.
+  const RETRY_CONFIG = { maxRetries: 5, baseDelayMs: 800, maxDelayMs: 20000 }
 
   const loop = (
     request: LLMRequest,
@@ -63,10 +68,11 @@ export function createToolLoop(
 
     return Effect.gen(function* () {
       const client = yield* LLMClient
+      const streamFor = (req: LLMRequest) => withRetry(client, RETRY_CONFIG).stream(req)
 
       const rawStream = signal
-        ? client.stream(request).pipe(Stream.interruptWhen(makeAbortEffect(signal)))
-        : client.stream(request)
+        ? streamFor(request).pipe(Stream.interruptWhen(makeAbortEffect(signal)))
+        : streamFor(request)
 
       const chunk = yield* Stream.runCollect(
         rawStream.pipe(

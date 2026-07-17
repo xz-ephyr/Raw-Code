@@ -1,14 +1,12 @@
 import type { Persona } from './types';
-import { writerPersona } from './writer';
-import { researcherPersona } from './researcher';
-import { videoPersona } from './video';
-import { martianPersona } from './martian';
+import { defaultPersona } from './default';
+import { teamworkPersona } from './teamwork';
+import { antigravityPersona } from './antigravity';
 
 export const PERSONAS: Persona[] = [
-  writerPersona,
-  researcherPersona,
-  videoPersona,
-  martianPersona,
+  defaultPersona,
+  teamworkPersona,
+  antigravityPersona,
 ];
 
 export type { Persona } from './types';

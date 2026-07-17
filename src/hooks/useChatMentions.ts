@@ -6,14 +6,15 @@ import {
 } from '../components/chat/connectorMentions';
 
 export function useChatMentions(
-  editorRef: React.RefObject<HTMLDivElement | null>,
+  getValue: () => string,
+  setValue: (next: string, caret: number) => void,
+  getCaret: () => number,
   onToggleThinking: () => void,
   onToggleWebSearch: () => void,
-  adjustHeight: () => void,
-  updateIsEmpty: () => void,
 ) {
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionStart, setMentionStart] = useState(0);
   const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
   const [connectedConnectors, setConnectedConnectors] = useState<Set<string>>(new Set());
 
@@ -33,56 +34,36 @@ export function useChatMentions(
     checkConnections();
   }, []);
 
-  const insertMention = useCallback((name: string, action?: string) => {
-    const editor = editorRef.current;
-    if (!editor) return;
-
-    const sel = window.getSelection();
-    if (!sel) return;
-
-    const range = sel.getRangeAt(0);
-
-    const tempRange = document.createRange();
-    tempRange.setStart(editor, 0);
-    tempRange.setEnd(range.startContainer, range.startOffset);
-    const fullText = tempRange.toString();
-    const slashIndex = fullText.lastIndexOf('/');
-
-    if (slashIndex >= 0) {
-      let charCount = 0;
-      let targetNode: Node | null = null;
-      let targetOffset = 0;
-
-      const walkNodes = (node: Node) => {
-        if (targetNode) return;
-        if (node.nodeType === Node.TEXT_NODE) {
-          const textLen = node.textContent?.length || 0;
-          if (charCount + textLen > slashIndex) {
-            targetNode = node;
-            targetOffset = slashIndex - charCount;
-          }
-          charCount += textLen;
-        } else {
-          node.childNodes.forEach(walkNodes);
-        }
-      };
-      walkNodes(editor);
-
-      if (targetNode) {
-        const deleteRange = document.createRange();
-        deleteRange.setStart(targetNode, targetOffset);
-        deleteRange.setEnd(range.startContainer, range.startOffset);
-        deleteRange.deleteContents();
-      }
+  const detectMention = useCallback((value: string, caret: number): boolean => {
+    const textBeforeCursor = value.slice(0, caret);
+    const slashIndex = textBeforeCursor.lastIndexOf('/');
+    if (slashIndex < 0) {
+      setShowMentionDropdown(false);
+      return false;
     }
+    const prevChar = slashIndex === 0 ? ' ' : textBeforeCursor[slashIndex - 1];
+    if (prevChar !== ' ' && prevChar !== '\n' && prevChar !== '\t') {
+      setShowMentionDropdown(false);
+      return false;
+    }
+    const query = textBeforeCursor.slice(slashIndex + 1);
+    if (query.includes(' ') && query.length >= 20) {
+      setShowMentionDropdown(false);
+      return false;
+    }
+    setMentionStart(slashIndex);
+    setMentionQuery(query);
+    setMentionSelectedIndex(0);
+    setShowMentionDropdown(true);
+    return true;
+  }, []);
 
+  const insertMention = useCallback((name: string, action?: string) => {
     if (name === 'reasoning') {
       onToggleThinking();
       setShowMentionDropdown(false);
       setMentionQuery('');
       setMentionSelectedIndex(0);
-      adjustHeight();
-      updateIsEmpty();
       return;
     }
     if (name === 'web-search') {
@@ -90,49 +71,20 @@ export function useChatMentions(
       setShowMentionDropdown(false);
       setMentionQuery('');
       setMentionSelectedIndex(0);
-      adjustHeight();
-      updateIsEmpty();
       return;
     }
 
-    const iconSrc = CONNECTOR_ICONS[name];
-
-    const pill = document.createElement('span');
-    pill.contentEditable = 'false';
-    pill.setAttribute('data-mention', name);
-    if (action) pill.setAttribute('data-action', action);
-    pill.className = 'inline-flex items-center gap-1.5 text-[14px] font-medium cursor-default select-none';
-    pill.style.color = '#60A5FA';
-
-    const img = document.createElement('img');
-    img.src = iconSrc;
-    img.alt = '';
-    img.className = 'w-[18px] h-[18px]';
-    pill.appendChild(img);
-
-    const labelText = action ? `${name} ${action}` : name;
-    const textNode = document.createTextNode(labelText);
-    pill.appendChild(textNode);
-
-    const spaceAfter = document.createTextNode('\u00A0');
-
-    range.insertNode(spaceAfter);
-    range.insertNode(pill);
-
-    range.setStartAfter(spaceAfter);
-    range.setEndAfter(spaceAfter);
-    sel.removeAllRanges();
-    sel.addRange(range);
-
-    const trailing = document.createTextNode('');
-    spaceAfter.parentNode?.insertBefore(trailing, spaceAfter.nextSibling);
-
+    const value = getValue();
+    const caret = getCaret();
+    const token = action ? `/${name} ${action}` : `/${name}`;
+    const before = value.slice(0, mentionStart);
+    const after = value.slice(caret);
+    const next = `${before}${token} ${after}`;
+    setValue(next, before.length + token.length + 1);
     setShowMentionDropdown(false);
     setMentionQuery('');
     setMentionSelectedIndex(0);
-    adjustHeight();
-    updateIsEmpty();
-  }, [adjustHeight, onToggleThinking, onToggleWebSearch, updateIsEmpty, editorRef]);
+  }, [getValue, getCaret, setValue, mentionStart, onToggleThinking, onToggleWebSearch]);
 
   const getSelectedConnectorName = useCallback(() => {
     const query = mentionQuery.toLowerCase();
@@ -147,80 +99,24 @@ export function useChatMentions(
   }, [mentionQuery, mentionSelectedIndex]);
 
   const handleBackspace = useCallback(() => {
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return false;
+    if (showMentionDropdown) return false;
+    const value = getValue();
+    const caret = getCaret();
+    if (caret === 0) return false;
+    const before = value.slice(0, caret);
+    const match = before.match(/\/(\w+(?:\s+\w+)?)\s*$/);
+    if (!match) return false;
+    const start = caret - match[0].length;
+    const next = value.slice(0, start) + value.slice(caret);
+    setValue(next, start);
+    return true;
+  }, [showMentionDropdown, getValue, getCaret, setValue]);
 
-    const range = sel.getRangeAt(0);
-    if (!range.collapsed) return false;
+  const handleInput = useCallback((value: string, caret: number) => {
+    detectMention(value, caret);
+  }, [detectMention]);
 
-    const node = range.startContainer;
-    const offset = range.startOffset;
-
-    if (node.nodeType === Node.TEXT_NODE && offset > 0) {
-      const text = node.textContent || '';
-      if (text[offset - 1] === '\u00A0' && offset >= 2) {
-        const prevNode = node.previousSibling;
-        if (prevNode instanceof HTMLElement && prevNode.hasAttribute('data-mention')) {
-          const spaceNode = node;
-          const spaceOffset = offset - 1;
-          range.setStartBefore(prevNode);
-          range.setEnd(spaceNode, spaceOffset);
-          range.deleteContents();
-          adjustHeight();
-          updateIsEmpty();
-          return true;
-        }
-      }
-    }
-
-    if (node instanceof HTMLElement && node.hasAttribute('data-mention')) {
-      const prevNode = node.previousSibling;
-      if (prevNode) {
-        range.setStartBefore(node);
-        range.setEndAfter(node);
-        range.deleteContents();
-        adjustHeight();
-        updateIsEmpty();
-        return true;
-      }
-    }
-
-    return false;
-  }, [adjustHeight, updateIsEmpty]);
-
-  const handleInput = useCallback(() => {
-    adjustHeight();
-    updateIsEmpty();
-
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return;
-
-    const range = sel.getRangeAt(0);
-    const textNode = range.startContainer;
-    if (textNode.nodeType !== Node.TEXT_NODE) {
-      setShowMentionDropdown(false);
-      return;
-    }
-
-    const text = textNode.textContent || '';
-    const cursorPos = range.startOffset;
-    const textBeforeCursor = text.substring(0, cursorPos);
-    const slashIndex = textBeforeCursor.lastIndexOf('/');
-
-    if (slashIndex >= 0 && (slashIndex === 0 || text[slashIndex - 1] === ' ' || text[slashIndex - 1] === '\u00A0')) {
-      const query = textBeforeCursor.substring(slashIndex + 1);
-      if (!query.includes(' ') || query.length < 20) {
-        setMentionQuery(query);
-        setMentionSelectedIndex(0);
-        setShowMentionDropdown(true);
-        return;
-      }
-    }
-
-    setShowMentionDropdown(false);
-  }, [adjustHeight, updateIsEmpty]);
-
-  const handleMentionKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleMentionKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>): boolean => {
     if (showMentionDropdown) {
       const query = mentionQuery.toLowerCase();
       const shortcutCount = SHORTCUT_NAMES.length;
@@ -270,11 +166,13 @@ export function useChatMentions(
   return {
     showMentionDropdown,
     mentionQuery,
+    mentionStart,
     mentionSelectedIndex,
     connectedConnectors,
     setShowMentionDropdown,
     insertMention,
     handleInput,
     handleMentionKeyDown,
+    CONNECTOR_ICONS,
   };
 }

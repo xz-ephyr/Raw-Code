@@ -228,7 +228,7 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, sources 
   }, [hasCitations, sourceIndex]);
 
   return (
-    <MarkdownErrorBoundary>
+    <MarkdownErrorBoundary rawContent={prepared}>
       <div className="text-[15px] leading-relaxed break-words text-foreground [&>p]:my-0">
         <ReactMarkdown
           remarkPlugins={REMARK_PLUGINS}

@@ -3,6 +3,7 @@ import { writeArticleTool } from './content/write-article';
 import { editTextTool } from './content/edit-text';
 import { questionTool } from './content/question';
 import { researchTool } from './content/research';
+import { webSearchTool } from './content/web-search';
 import { generateScriptTool } from './content/generate-script';
 import { crawlWebsiteTool } from './content/crawl-website';
 import { mapSiteTool } from './content/map-site';
@@ -28,6 +29,7 @@ export function registerContentTools(source: GlobalRegistryEntry['source'] = 'co
     edit_text: editTextTool,
     question: questionTool,
     research: researchTool,
+    web_search: webSearchTool,
     generate_script: generateScriptTool,
     crawl_website: crawlWebsiteTool,
     map_site: mapSiteTool,

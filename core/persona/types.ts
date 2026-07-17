@@ -3,6 +3,7 @@ export interface Persona {
   label: string;
   icon: string;
   systemPrompt: string;
-  color: string;
+  color?: string;
+  description: string;
   modeId: string;
 }

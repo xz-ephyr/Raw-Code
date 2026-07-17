@@ -174,7 +174,7 @@ describe("withRetry", () => {
       },
     }
 
-    const result = await Effect.runPromise(
+    await Effect.runPromise(
       Effect.flip(
         collectEvents(
           withRetry(adapter, { maxRetries: 3, baseDelayMs: 5 }).stream(

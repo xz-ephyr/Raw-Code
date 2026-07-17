@@ -1,0 +1,41 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.16.0
+2 info using node@v24.18.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\zephy\Documents\Raw-Code\.npmrc
+5 silly config load:file:C:\Users\zephy\.npmrc
+6 silly config load:file:C:\Users\zephy\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm exec packages/llm-providers/src/adapters/with-retry.test.ts
+8 verbose argv "exec" "--cache" "tsx" "--test" "packages/llm-providers/src/adapters/with-retry.test.ts"
+9 verbose logfile logs-max:10 dir:C:\Users\zephy\Documents\Raw-Code\tsx\_logs\2026-07-17T03_19_39_903Z-
+10 verbose logfile C:\Users\zephy\Documents\Raw-Code\tsx\_logs\2026-07-17T03_19_39_903Z-debug-0.log
+11 warn "packages/llm-providers/src/adapters/with-retry.test.ts" is being parsed as a normal command line argument.
+12 warn Unknown cli config "--test". This will stop working in the next major version of npm.
+13 silly logfile done cleaning log files
+14 silly packumentCache heap:2255749120 maxSize:563937280 maxEntrySize:281968640
+15 verbose shrinkwrap failed to load node_modules/.package-lock.json out of date, updated: node_modules
+16 verbose stack Error: Could not read package.json: Error: ENOENT: no such file or directory, open 'C:\Users\zephy\Documents\Raw-Code\packages\llm-providers\src\adapters\with-retry.test.ts\package.json'
+16 verbose stack     at async open (node:internal/fs/promises:640:25)
+16 verbose stack     at async readFile (node:internal/fs/promises:1290:14)
+16 verbose stack     at async read (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\package-json\lib\read-package.js:9:18)
+16 verbose stack     at async PackageJson.load (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\package-json\lib\index.js:131:31)
+16 verbose stack     at async PackageJson.normalize (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\package-json\lib\index.js:117:5)
+16 verbose stack     at async getManifest (C:\Program Files\nodejs\node_modules\npm\node_modules\libnpmexec\lib\index.js:29:22)
+16 verbose stack     at async missingFromTree (C:\Program Files\nodejs\node_modules\npm\node_modules\libnpmexec\lib\index.js:74:22)
+16 verbose stack     at async C:\Program Files\nodejs\node_modules\npm\node_modules\libnpmexec\lib\index.js:195:32
+16 verbose stack     at async Promise.all (index 0)
+16 verbose stack     at async exec (C:\Program Files\nodejs\node_modules\npm\node_modules\libnpmexec\lib\index.js:193:3)
+17 error code ENOENT
+18 error syscall open
+19 error path C:\Users\zephy\Documents\Raw-Code\packages\llm-providers\src\adapters\with-retry.test.ts\package.json
+20 error errno -4058
+21 error enoent Could not read package.json: Error: ENOENT: no such file or directory, open 'C:\Users\zephy\Documents\Raw-Code\packages\llm-providers\src\adapters\with-retry.test.ts\package.json'
+22 error enoent This is related to npm not being able to find a file.
+22 error enoent
+23 verbose cwd C:\Users\zephy\Documents\Raw-Code
+24 verbose os Windows_NT 10.0.18363
+25 verbose node v24.18.0
+26 verbose npm  v11.16.0
+27 verbose exit -4058
+28 verbose code -4058
+29 error A complete log of this run can be found in: C:\Users\zephy\Documents\Raw-Code\tsx\_logs\2026-07-17T03_19_39_903Z-debug-0.log

@@ -8,3 +8,7 @@ export { ThinScrollbar } from './ThinScrollbar';
 export { useToast, ToastProvider } from './Toast';
 export { ToggleSwitch } from './ToggleSwitch';
 export { default as UpdateModal } from './UpdateModal';
+export { ModelSelectorDropdown, ModelSelector, ModelSelectorTrigger, ModelSelectorContent, ModelSelectorInput, ModelSelectorList, ModelSelectorEmpty, ModelSelectorGroup, ModelSelectorItem, ModelSelectorLogo, ModelSelectorLogoGroup, ModelSelectorName, ModelSelectorChef } from './ModelSelector';
+export { Button, buttonVariants } from './button';
+export { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger } from './dialog';
+export { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from './command';

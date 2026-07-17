@@ -3,6 +3,7 @@ import { Component, type ReactNode, type ErrorInfo } from 'react';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  rawContent?: string;
 }
 
 interface State {
@@ -26,7 +27,15 @@ export class MarkdownErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback ?? (
+      if (this.props.fallback) return this.props.fallback;
+      if (this.props.rawContent) {
+        return (
+          <pre className="text-sm text-muted-foreground whitespace-pre-wrap break-words py-2 font-sans">
+            {this.props.rawContent}
+          </pre>
+        );
+      }
+      return (
         <div className="text-sm text-muted-foreground italic py-2">
           This content could not be rendered.
         </div>

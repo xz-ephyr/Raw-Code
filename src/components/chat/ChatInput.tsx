@@ -1,5 +1,4 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
-import { ThinScrollbar } from '../ui/ThinScrollbar';
 import ModelList from './ModelList';
 import NTabDropdown from './NTabDropdown';
 import ToolbarDropdown from './ToolbarDropdown';
@@ -22,53 +21,51 @@ interface ChatInputProps {
   onModeChange?: (modeId: string | undefined) => void;
 }
 
+export default function ChatInput({
+  onSend,
+  onStop,
+  isLoading,
+  isIdle,
+  isThinkingEnabled,
+  onToggleThinking,
+  isWebSearchEnabled,
+  onToggleWebSearch,
+  currentModel,
+  currentMode,
+  onModeChange,
+}: ChatInputProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [value, setValueState] = useState('');
+  const isEmpty = value.trim().length === 0;
 
+  const getValue = useCallback(() => value, [value]);
+  const getCaret = useCallback(() => textareaRef.current?.selectionStart ?? value.length, [value.length]);
 
-export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkingEnabled, onToggleThinking, isWebSearchEnabled, onToggleWebSearch, currentModel, currentMode, onModeChange }: ChatInputProps) {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const [isEmpty, setIsEmpty] = useState(true);
-
-  function collectText(node: Node): string {
-    let text = '';
-    for (const child of Array.from(node.childNodes)) {
-      if (child.nodeType === Node.TEXT_NODE) {
-        text += child.textContent;
-      } else if (child instanceof HTMLElement && child.hasAttribute('data-mention')) {
-        const name = child.getAttribute('data-mention');
-        const action = child.getAttribute('data-action');
-        text += action ? `/${name} ${action}` : `/${name}`;
-      } else {
-        text += collectText(child);
+  const setValue = useCallback((next: string, caret: number) => {
+    setValueState(next);
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (el) {
+        el.selectionStart = el.selectionEnd = Math.min(caret, next.length);
+        el.focus();
       }
-    }
-    return text;
-  }
-
-  const getTextContent = useCallback(() => {
-    if (!editorRef.current) return '';
-    return collectText(editorRef.current);
+    });
   }, []);
 
   const adjustHeight = useCallback(() => {
-    const editor = editorRef.current;
-    if (editor) {
-      editor.style.height = 'auto';
-      requestAnimationFrame(() => {
-        if (editor) {
-          editor.style.height = `${Math.min(editor.scrollHeight, 400)}px`;
-        }
-      });
-    }
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = `${Math.max(80, Math.min(textareaRef.current.scrollHeight, 300))}px`;
+      }
+    });
   }, []);
-
-  const updateIsEmpty = useCallback(() => {
-    const text = getTextContent();
-    setIsEmpty(text.trim().length === 0);
-  }, [getTextContent]);
 
   useEffect(() => {
     adjustHeight();
-  }, [adjustHeight]);
+  }, [value, adjustHeight]);
 
   const {
     showMentionDropdown,
@@ -78,21 +75,23 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
     insertMention,
     handleInput,
     handleMentionKeyDown,
-  } = useChatMentions(editorRef, onToggleThinking, onToggleWebSearch, adjustHeight, updateIsEmpty);
+  } = useChatMentions(getValue, setValue, getCaret, onToggleThinking, onToggleWebSearch);
 
   const handleSend = useCallback(() => {
-    const text = getTextContent();
-    if (text.trim() && !isLoading) {
-      onSend(text);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = '';
-      }
-      setIsEmpty(true);
-      adjustHeight();
+    if (value.trim() && !isLoading) {
+      onSend(value);
+      setValueState('');
+      requestAnimationFrame(adjustHeight);
     }
-  }, [getTextContent, isLoading, onSend, adjustHeight]);
+  }, [value, isLoading, onSend, adjustHeight]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const next = e.target.value;
+    setValueState(next);
+    handleInput(next, e.target.selectionStart);
+  }, [handleInput]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (handleMentionKeyDown(e)) return;
     if (e.key === 'Enter') {
       const enterToSend = localStorage.getItem('enter_to_send') !== 'false';
@@ -110,59 +109,56 @@ export default function ChatInput({ onSend, onStop, isLoading, isIdle, isThinkin
     }
   }, [handleSend, handleMentionKeyDown]);
 
-  const handlePaste = useCallback((e: React.ClipboardEvent) => {
-    e.preventDefault();
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const text = e.clipboardData.getData('text/plain');
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount) {
-      sel.deleteFromDocument();
-      sel.getRangeAt(0).insertNode(document.createTextNode(text));
-      sel.collapseToEnd();
-    }
-  }, []);
+    if (!text.includes('\n')) return;
+    e.preventDefault();
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const next = value.slice(0, start) + text + value.slice(end);
+    setValue(next, start + text.length);
+  }, [value, setValue]);
 
   return (
-    <div className="shrink-0 mx-auto w-full pb-1.5 mb-3 bg-sidebar rounded-[12px] border border-gray-500/10 dark:border-white/10" style={{ maxWidth: 'min(820px, 100%)' }}>
-      <div className="relative px-2">
-        {showMentionDropdown && (
-          <ConnectorMentionDropdown
-            query={mentionQuery}
-            selectedIndex={mentionSelectedIndex}
-            onSelect={insertMention}
-            onClose={() => showMentionDropdown && insertMention('')}
+    <div className="relative w-full mx-auto rounded-[14px] border border-border/40 dark:border-white/15 bg-sidebar bg-gradient-to-b from-transparent to-muted/[0.04] dark:to-white/[0.02]" style={{ maxWidth: 'min(820px, 100%)', padding: '6px 8px 8px 8px' }}>
+      {showMentionDropdown && (
+        <ConnectorMentionDropdown
+          query={mentionQuery}
+          selectedIndex={mentionSelectedIndex}
+          onSelect={insertMention}
+          onClose={() => showMentionDropdown && insertMention('')}
+          onToggleThinking={onToggleThinking}
+          onToggleWebSearch={onToggleWebSearch}
+          isIdle={isIdle}
+          connectedConnectors={connectedConnectors}
+        />
+      )}
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
+        disabled={isLoading}
+        placeholder={isLoading ? 'Generating...' : 'Ask anything...'}
+        className="w-full resize-none outline-none text-[15px] leading-relaxed bg-transparent px-2 py-1.5 box-border min-h-[80px] max-h-[300px] placeholder:text-muted-foreground disabled:opacity-60"
+      />
+      <div className="mt-2 flex items-center justify-between px-1">
+        <div className="flex items-center gap-0.5">
+          <ToolbarDropdown
+            isThinkingEnabled={isThinkingEnabled}
             onToggleThinking={onToggleThinking}
             onToggleWebSearch={onToggleWebSearch}
             isIdle={isIdle}
-            connectedConnectors={connectedConnectors}
           />
-        )}
-        <div className="relative z-10">
-          <ThinScrollbar className="max-h-[400px]">
-            <div
-              ref={editorRef}
-              contentEditable={!isLoading}
-              onInput={handleInput}
-              onKeyDown={handleKeyDown}
-              onPaste={handlePaste}
-              data-placeholder={isLoading ? 'Generating...' : 'Ask anything...'}
-              className="w-full py-2.5 px-2 resize-none outline-none text-[15px] min-h-[68px] bg-sidebar overflow-hidden transition-[height] duration-200 ease-out empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none"
-              suppressContentEditableWarning
-            />
-          </ThinScrollbar>
-
-          <div className="flex flex-col px-1 pb-0.5 bg-transparent gap-1">
-              <div className="flex items-center justify-between">
-              <div className="flex items-center gap-0.5">
-                <ToolbarDropdown isThinkingEnabled={isThinkingEnabled} onToggleThinking={onToggleThinking} onToggleWebSearch={onToggleWebSearch} isIdle={isIdle} />
-                <NTabDropdown isIdle={isIdle} currentMode={currentMode} onModeChange={onModeChange} />
-                {isWebSearchEnabled && <WebSearchPill onToggleWebSearch={onToggleWebSearch} size="small" />}
-              </div>
-              <div className="flex items-center gap-1">
-                {currentModel && <ModelList currentModel={currentModel} showThinkingOnly={isThinkingEnabled} isIdle={isIdle} />}
-                <SendButton isLoading={isLoading} onStop={onStop} onSend={handleSend} hasValue={!isEmpty} />
-              </div>
-            </div>
-          </div>
+          <NTabDropdown isIdle={isIdle} currentMode={currentMode} onModeChange={onModeChange} />
+          {isWebSearchEnabled && <WebSearchPill onToggleWebSearch={onToggleWebSearch} size="small" />}
+        </div>
+        <div className="flex items-center gap-1">
+          {currentModel && <ModelList currentModel={currentModel} showThinkingOnly={isThinkingEnabled} isIdle={isIdle} />}
+          <SendButton isLoading={isLoading} onStop={onStop} onSend={handleSend} hasValue={!isEmpty} />
         </div>
       </div>
     </div>

@@ -1,4 +1,3 @@
-import { tool, zodSchema } from 'ai';
 import { z } from 'zod';
 import type { Materialization } from './materialize';
 import type { PermissionRuleset } from '../tool/withPermission';
@@ -74,9 +73,9 @@ export function toAISDKTools(
       zodInput = z.object({});
     }
 
-    result[def.name] = tool({
+    result[def.name] = {
       description: def.description,
-      inputSchema: zodSchema(zodInput),
+      parameters: zodInput,
       execute: async (args: any) => {
         const call = {
           id: `call_${Date.now()}`,
@@ -98,7 +97,7 @@ export function toAISDKTools(
         }
         return settleResult.value;
       },
-    });
+    };
   }
 
   return result;

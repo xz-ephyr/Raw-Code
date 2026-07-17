@@ -28,9 +28,10 @@
       "@doktor/effect-drizzle-sqlite": ["./packages/effect-drizzle-sqlite/src"],
       "@doktor/effect-drizzle-sqlite/*": ["./packages/effect-drizzle-sqlite/src/*"],
       "@doktor/effect-sqlite-node": ["./packages/effect-sqlite-node/src"],
-      "@doktor/effect-sqlite-node/*": ["./packages/effect-sqlite-node/src/*"]
+      "@doktor/effect-sqlite-node/*": ["./packages/effect-sqlite-node/src/*"],
+      "@tests/*": ["./tests/*"]
     }
   },
-  "include": ["src", "core", "packages/tool-runtime", "packages/subagent", "packages/schema", "packages/llm-providers"],
+  "include": ["src", "core", "tests", "packages/tool-runtime", "packages/subagent", "packages/schema", "packages/llm-providers"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

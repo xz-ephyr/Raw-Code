@@ -1,8 +1,9 @@
 import { describe, it, expect, assert } from 'vitest';
-import { generateText } from 'ai';
 import { readFileSync } from 'node:fs';
-import { getAllProviders, getProviderClient } from '@core/providers/providerRegistry';
+import { getAllProviders } from '@core/providers/providerRegistry';
 import { MODELS } from '@core/config/models';
+import { ModelRoutesProvider } from '@doktor/llm-providers';
+const { allRoutes } = ModelRoutesProvider
 
 const PROVIDER_ENV_MAP: Record<string, string> = {
   google: 'GOOGLE_API_KEY',
@@ -18,18 +19,16 @@ const PROVIDER_ENV_MAP: Record<string, string> = {
 };
 
 describe('Provider registry configuration', () => {
-  it('all createOpenAI calls use .chat (not Responses API)', () => {
+  it('all createClient calls exist and return objects with apiKey', () => {
     const source = readFileSync('core/providers/providerRegistry.ts', 'utf-8');
     const errors: string[] = [];
 
     const lines = source.split('\n');
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      if (line.includes('createOpenAI(') && !line.includes('createCloudflare')) {
-        const after = lines.slice(i, i + 3).join('');
-        if (!after.includes('.chat')) {
-          errors.push(`Line ${i + 1}: ${line.trim()} missing .chat`);
-        }
+      if (line.includes('createClient:') && line.includes('apiKey')) continue;
+      if (line.includes('createClient:') && !line.includes('createCloudflare')) {
+        errors.push(`Line ${i + 1}: ${line.trim()} missing apiKey`);
       }
     }
 
@@ -47,44 +46,44 @@ async function testModel(providerId: string, modelId: string) {
   const provider = getAllProviders().find(p => p.id === providerId);
   if (!provider) return { modelId, status: 'skipped', reason: `Provider ${providerId} not found` };
 
-  if (providerId === 'cloudflare') {
-    return { modelId, status: 'skipped', reason: 'Cloudflare custom provider uses spec v1, SDK v6 requires v2' };
-  }
-
-  let modelClient;
-  try {
-    modelClient = getProviderClient(providerId, apiKey);
-  } catch (e: any) {
-    return { modelId, status: 'error', reason: `Client creation failed: ${e.message}` };
-  }
-  if (!modelClient) return { modelId, status: 'error', reason: 'Client not created' };
-
-  let model;
-  try {
-    model = modelClient(modelId);
-  } catch (e: any) {
-    return { modelId, status: 'error', reason: `Model creation failed: ${e.message}` };
-  }
+  const route = allRoutes.find(r => r.id === modelId);
+  if (!route) return { modelId, status: 'skipped', reason: `No route for ${modelId}` };
 
   try {
-    const result = await generateText({
-      model,
-      prompt: 'Say exactly: OK',
-      maxRetries: 0,
+    const response = await fetch(`${route.endpoint.baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [{ role: 'user', content: 'Say exactly: OK' }],
+        max_tokens: 10,
+        stream: false,
+      }),
     });
-    return { modelId, status: 'pass', text: result.text };
+
+    if (!response.ok) {
+      const text = await response.text();
+      const msg = text.slice(0, 200);
+      if (response.status === 401) {
+        return { modelId, status: 'error', reason: 'Auth failed (bad API key)' };
+      }
+      if (response.status === 404) {
+        return { modelId, status: 'fail', reason: msg };
+      }
+      if (response.status === 400) {
+        return { modelId, status: 'fail', reason: msg };
+      }
+      return { modelId, status: 'error', reason: msg };
+    }
+
+    const data = await response.json();
+    const text = data?.choices?.[0]?.message?.content || '';
+    return { modelId, status: 'pass', text };
   } catch (e: any) {
-    const msg = e.message || String(e);
-    if (msg.includes('401') || msg.includes('unauthorized') || msg.includes('Unauthorized') || msg.includes('auth')) {
-      return { modelId, status: 'error', reason: 'Auth failed (bad API key)' };
-    }
-    if (msg.includes('404') || msg.includes('Not Found') || msg.includes('not found') || msg.includes('decommissioned') || msg.includes('deprecated')) {
-      return { modelId, status: 'fail', reason: msg };
-    }
-    if (msg.includes('400') || msg.includes('Bad Request') || msg.includes('unsupported') || msg.includes('not supported')) {
-      return { modelId, status: 'fail', reason: msg };
-    }
-    return { modelId, status: 'error', reason: msg };
+    return { modelId, status: 'error', reason: e.message || String(e) };
   }
 }
 

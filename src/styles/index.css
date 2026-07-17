@@ -262,10 +262,10 @@ code:not(pre code) {
 .shimmer-text {
   background: linear-gradient(
     90deg,
-    #a16207 0%,
-    #eab308 30%,
-    #a16207 60%,
-    #a16207 100%
+    #6b7280 0%,
+    #9ca3af 30%,
+    #6b7280 60%,
+    #6b7280 100%
   );
   background-size: 200% 100%;
   -webkit-background-clip: text;

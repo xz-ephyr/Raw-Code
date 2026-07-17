@@ -2,6 +2,7 @@ import { useChatPage } from '../hooks/useChatPage';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { QuestionDialog } from '@/components/chat/QuestionDialog';
 import { FilePanel } from '../components/file-panel/FilePanel';
+import { AgentWorkspace } from '../components/agent-workspace/AgentWorkspace';
 import ResizeDivider from '../components/layout/ResizeDivider';
 import { MessageList } from '../components/chat/MessageList';
 import TitleBar from '../components/layout/TitleBar';
@@ -21,7 +22,6 @@ export const ChatPage = () => {
     PANEL_MAX_WIDTH,
     isThinkingEnabled,
     isWebSearchEnabled,
-    modelSupportsThinking,
     currentModel,
     currentMode,
     toggleThinking,
@@ -48,6 +48,17 @@ export const ChatPage = () => {
     handleConfirmDeny,
     streamingBanner,
     refreshMessages,
+    agentAgents,
+    activeAgent,
+    isAgentPanelOpen,
+    selectAgent,
+    closeAgentPanel,
+    agentPanelWidth,
+    startAgentResize,
+    handleAgentTouchStart,
+    handleAgentDividerKeyDown,
+    AGENT_PANEL_MIN_WIDTH,
+    AGENT_PANEL_MAX_WIDTH,
   } = useChatPage();
 
   return (
@@ -93,7 +104,6 @@ export const ChatPage = () => {
             onToggleThinking={toggleThinking}
             isWebSearchEnabled={isWebSearchEnabled}
             onToggleWebSearch={toggleWebSearch}
-            modelSupportsThinking={modelSupportsThinking}
             onOpenFile={handleOpenFile}
             onCopy={handleCopyMessage}
             onSend={handleSend}
@@ -145,6 +155,28 @@ export const ChatPage = () => {
               files={files}
               activeFileId={activeFileId}
               onClose={closePanel}
+            />
+          </div>
+        )}
+
+        {isAgentPanelOpen && agentAgents.length > 0 && (
+          <div
+            className="flex overflow-hidden min-w-0"
+            style={{ width: agentPanelWidth, flex: 'none', maxWidth: '50%' }}
+          >
+            <ResizeDivider
+              onMouseDown={startAgentResize}
+              onTouchStart={handleAgentTouchStart}
+              onKeyDown={handleAgentDividerKeyDown}
+              ariaValueNow={agentPanelWidth}
+              ariaValueMin={AGENT_PANEL_MIN_WIDTH}
+              ariaValueMax={AGENT_PANEL_MAX_WIDTH}
+            />
+            <AgentWorkspace
+              agents={agentAgents}
+              activeAgent={activeAgent}
+              onClose={closeAgentPanel}
+              onSelectAgent={selectAgent}
             />
           </div>
         )}

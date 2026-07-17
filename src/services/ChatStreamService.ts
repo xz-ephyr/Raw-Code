@@ -1,5 +1,8 @@
 import { Stream, Effect } from "effect"
+import type { LLMEvent, LLMError } from "@doktor/llm-providers"
 import { nativeChatCompletion } from "@core/models/nativeChatCompletion"
+import { getModelCapability } from "@core/reasoning/capabilities"
+import { createInlineScanner, flushInlineScanner } from "@core/reasoning/inline-scanner"
 import { DatabaseService } from "@core/utils/DatabaseService"
 import { ChatSessionManager } from "./ChatSessionManager"
 import { reduceEvent, createEmptyState } from "@/lib/llmEventReducer"
@@ -38,15 +41,50 @@ interface StreamState {
 const activeStreams = new Map<string, StreamState>()
 let streamIdCounter = 0
 
-function toUIMessage(msg: { id: string; role: "assistant"; content: string; reasoning: string; createdAt: number }): UIMessage {
+function toUIMessage(msg: { id: string; role: "assistant"; content: string; reasoning: string; createdAt: number; toolCalls?: { id: string; name: string; input: unknown; result?: unknown; error?: string; status: string }[] }): UIMessage {
+  let content = msg.content || "";
+  let reasoning = msg.reasoning || "";
+
+  // Extract inline reasoning tags (even unclosed ones during streaming)
+  const extractedReasoning: string[] = [];
+  
+  content = content.replace(/<(?:think|thought|reasoning)>([\s\S]*?)(?:<\/(?:think|thought|reasoning)>|$)/gi, (_, innerText) => {
+    extractedReasoning.push(innerText);
+    return '';
+  });
+
+  content = content.replace(/```(?:think|thinking|reasoning)\s*\n([\s\S]*?)(?:```|$)/gi, (_, innerText) => {
+    extractedReasoning.push(innerText);
+    return '';
+  });
+
+  content = content.replace(/\[(?:think|thought|reasoning)\]([\s\S]*?)(?:\[\/(?:think|thought|reasoning)\]|$)/gi, (_, innerText) => {
+    extractedReasoning.push(innerText);
+    return '';
+  });
+
+  if (extractedReasoning.length > 0) {
+    reasoning = (reasoning ? reasoning + '\n\n' : '') + extractedReasoning.join('\n\n');
+  }
+
+  const toolInvocations = msg.toolCalls?.map((tc) => ({
+    state: tc.status === "complete" ? "result" as const : tc.status === "error" ? "error" as const : "call" as const,
+    toolCallId: tc.id,
+    toolName: tc.name,
+    args: tc.input,
+    result: tc.result,
+  })) ?? undefined
+
   return {
     id: msg.id,
     role: "assistant",
-    content: msg.content,
-    reasoning: msg.reasoning || null,
+    content: content,
+    reasoning: reasoning || null,
+    toolInvocations,
     parts: [
-      ...(msg.reasoning ? [{ type: "reasoning" as const, text: msg.reasoning }] : []),
-      { type: "text" as const, text: msg.content },
+      ...(reasoning ? [{ type: "reasoning" as const, text: reasoning }] : []),
+      ...(toolInvocations ? toolInvocations.map((ti) => ({ type: "tool-invocation" as const, ...ti })) : []),
+      { type: "text" as const, text: content },
     ],
     createdAt: msg.createdAt,
   }
@@ -77,6 +115,20 @@ function getActiveSessionId() { return activeSessionId }
 async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks, controller: AbortController, attempt = 0) {
   const streamId = ++streamIdCounter
   const MAX_RETRIES = 1
+
+  const cap = getModelCapability(config.modelName)
+  const tags = cap.reasoning === 'tagged' && cap.mechanism.type === 'inline_tags'
+    ? [{ open: cap.mechanism.open, close: cap.mechanism.close }]
+    : null
+  const scanner = tags ? createInlineScanner() : null
+  let thinkingActive = false
+
+  function flushTaggedReasoning(): { events: LLMEvent[]; reasoning: string } {
+    if (!scanner || !tags) return { events: [], reasoning: "" }
+    const flushed = flushInlineScanner(scanner)
+    thinkingActive = false
+    return { events: flushed.events, reasoning: flushed.reasoning }
+  }
   
   try {
     const eventStreamPromise = nativeChatCompletion({
@@ -89,7 +141,7 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
       abortSignal: controller.signal,
     })
 
-    const eventStream = await eventStreamPromise
+    const eventStream = await eventStreamPromise as unknown as Stream.Stream<LLMEvent, LLMError>
 
     await Effect.runPromise(
       Stream.runForEach(eventStream, (event) =>
@@ -97,19 +149,49 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
           if (streamId !== streamIdCounter) return
           const state = activeStreams.get(config.sessionId)
           if (!state) return
+
+          const skipReason = !state.config.isThinkingEnabled
+          const events: LLMEvent[] = [event]
+
+          if (tags && scanner && event.type === "text-delta" && !skipReason) {
+            const { content, reasoning, events: tagEvents } = scanner.feed(event.text, tags)
+            events.length = 0
+            if (!thinkingActive && tagEvents.some(e => e.type === "reasoning-start")) {
+              thinkingActive = true
+            }
+            if (reasoning && !thinkingActive) {
+              events.push({ type: "reasoning-start", id: "tagged" } as LLMEvent)
+              thinkingActive = true
+            }
+            events.push(...tagEvents)
+            if (content) {
+              events.push({ ...event, text: content } as LLMEvent)
+            }
+          }
+
+          // Flush any pending tagged reasoning before finish
+          if ((event.type === "finish" || event.type === "provider-error") && thinkingActive) {
+            const tail = flushTaggedReasoning()
+            for (const ev of tail.events) {
+              const next = reduceEvent(state.llmState, ev, { skipReasoning: skipReason })
+              state.llmState = next
+            }
+          }
+
+          for (const ev of events) {
+            const next = reduceEvent(state.llmState, ev, { skipReasoning: skipReason })
+            state.llmState = next
+          }
           
-          const next = reduceEvent(state.llmState, event)
-          state.llmState = next
-          
-          if (next.currentMessage && next.currentMessage.content) {
-            const uiMsg = toUIMessage(next.currentMessage)
+          if (state.llmState.currentMessage && (state.llmState.currentMessage.content || state.llmState.currentMessage.reasoning)) {
+            const uiMsg = toUIMessage(state.llmState.currentMessage)
             persistMessage(config.sessionId, uiMsg, true)
             callbacks.onMessage?.(uiMsg, true)
             state.subscribers.forEach(cb => cb(uiMsg, true))
           }
           
-          if (next.status === "idle" && !next.currentMessage && next.messages.length > 0) {
-            const last = next.messages[next.messages.length - 1]
+          if (state.llmState.status === "idle" && !state.llmState.currentMessage && state.llmState.messages.length > 0) {
+            const last = state.llmState.messages[state.llmState.messages.length - 1]
             const uiMsg = toUIMessage(last)
             persistMessage(config.sessionId, uiMsg, false)
             callbacks.onFinish?.(uiMsg)

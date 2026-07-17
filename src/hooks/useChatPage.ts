@@ -3,13 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type { UIMessage } from '../lib/chatUtils';
 import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { ChatStreamService, setActiveSessionId } from '@/services/ChatStreamService';
-import { getModelForChatRequest, getModelDefinition } from '@core/config/models';
+import { getModelForChatRequest } from '@core/config/models';
 import { getAIErrorMessage, generateSessionTitle } from '@core/models/aiService';
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { useToast } from '../components/ui/Toast';
 import { useProjectStore } from '@/stores/projectStore';
 import { hydrateStoredMessage } from '../lib/chatUtils';
 import { useFilePanel } from '../hooks/useFilePanel';
+import { useAgentWorkspace } from '../hooks/useAgentWorkspace';
 import { useSessionTitle } from '../hooks/useSessionTitle';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useResizablePanel } from '../hooks/useResizablePanel';
@@ -48,6 +49,15 @@ export function useChatPage() {
     PANEL_MAX_WIDTH,
   } = useResizablePanel();
 
+  const {
+    panelWidth: agentPanelWidth,
+    startResize: startAgentResize,
+    handleTouchStart: handleAgentTouchStart,
+    handleDividerKeyDown: handleAgentDividerKeyDown,
+    PANEL_MIN_WIDTH: AGENT_PANEL_MIN_WIDTH,
+    PANEL_MAX_WIDTH: AGENT_PANEL_MAX_WIDTH,
+  } = useResizablePanel('agent-panel-width', { minWidth: 300, maxWidth: 600 });
+
   const toggleThinking = () => {
     const next = !isThinkingEnabled;
     if (next) setIsWebSearchEnabled(false);
@@ -72,6 +82,15 @@ const {
     closePanel,
     openPanel,
   } = useFilePanel();
+
+  const {
+    agents: agentAgents,
+    activeAgent,
+    isPanelOpen: isAgentPanelOpen,
+    selectAgent,
+    closePanel: closeAgentPanel,
+    openPanel: openAgentPanel,
+  } = useAgentWorkspace();
 
   const handleNewThread = useCallback(async () => {
     if (!uuid || uuid === 'new') return;
@@ -102,12 +121,9 @@ const {
     return getModelForChatRequest(uuid);
   }, [uuid, modelRevision]);
 
-  const modelSupportsThinking = useMemo(() => {
-    if (currentModel === 'auto') return undefined;
-    return getModelDefinition(currentModel)?.supportsThinking;
-  }, [currentModel]);
-
   const [messages, setMessages] = useState<UIMessage[]>([]);
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
   const [status, setStatus] = useState<'idle' | 'streaming' | 'submitted' | 'error'>('idle');
   const [streamError, setStreamError] = useState<string | undefined>();
   const [streamingBanner, setStreamingBanner] = useState<'loading' | 'ready' | null>(null);
@@ -116,6 +132,7 @@ const {
   const isThinkingEnabledRef = useRef(false);
   const isWebSearchEnabledRef = useRef(false);
   const lastUuidRef = useRef<string | undefined>(undefined);
+  const firstUserMessageRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     isThinkingEnabledRef.current = isThinkingEnabled;
@@ -126,7 +143,10 @@ const {
   }, [isWebSearchEnabled]);
 
   useEffect(() => {
-    if (!uuid || uuid === 'new') return;
+    if (!uuid || uuid === 'new') {
+      setMessages([]);
+      return;
+    }
     setActiveSessionId(uuid);
     return () => setActiveSessionId(null);
   }, [uuid]);
@@ -214,7 +234,17 @@ setSessionId(uuid);
       );
     }
 
-    setMessages(prev => [...prev, userMsg]);
+    const placeholderId = crypto.randomUUID();
+    const placeholderMsg: UIMessage = {
+      id: placeholderId,
+      role: 'assistant',
+      content: '',
+      createdAt: Date.now(),
+      parts: [],
+    };
+
+    setMessages(prev => [...prev, userMsg, placeholderMsg]);
+    const updatedMessages = [...messagesRef.current, userMsg];
     setStreamingBanner(null);
 
     if (lastUuidRef.current !== uuid) {
@@ -223,12 +253,14 @@ setSessionId(uuid);
     }
 
     if (uuid && uuid !== 'new' && !titleGeneratedRef.current) {
-      await maybeGenerateTitle(uuid, content);
+      firstUserMessageRef.current = content;
     }
+
+    setStatus('submitted');
 
     ChatStreamService.start({
       sessionId: uuid!,
-      messages,
+      messages: updatedMessages,
       modelName: currentModel,
       modeId: currentMode,
       projectContext: undefined,
@@ -244,6 +276,12 @@ setSessionId(uuid);
             updated[exists] = msg;
             return updated;
           }
+          const placeholderIdx = prev.findIndex(m => m.role === 'assistant' && !m.content);
+          if (placeholderIdx >= 0) {
+            const updated = [...prev];
+            updated[placeholderIdx] = msg;
+            return updated;
+          }
           return [...prev, msg];
         });
         if (!isPartial) {
@@ -257,6 +295,10 @@ setSessionId(uuid);
         const duration = Date.now() - (msg.createdAt || Date.now());
         if (msg.id) {
           setCompletionDurations(prev => ({ ...prev, [msg.id as string]: duration }));
+        }
+        if (uuid && uuid !== 'new' && !titleGeneratedRef.current && firstUserMessageRef.current) {
+          maybeGenerateTitle(uuid, firstUserMessageRef.current, msg.content);
+          firstUserMessageRef.current = undefined;
         }
         if (msg.files?.length > 0) {
           const autoFiles = localStorage.getItem('auto_files') !== 'false';
@@ -312,13 +354,20 @@ setSessionId(uuid);
   const maybeGenerateTitle = async (
     sessionUuid: string,
     content: string,
+    responseContent?: string,
   ) => {
     if (titleGeneratingRef.current || titleGeneratedRef.current) return;
+
+    const session = await ChatSessionManager.getSession(sessionUuid).catch(() => null);
+    if (session && session.title && session.title !== 'New conversation') {
+      titleGeneratedRef.current = true;
+      return;
+    }
 
     titleGeneratingRef.current = true;
     setIsTitleGenerating(true);
     try {
-      const generatedTitle = await generateSessionTitle(content);
+      const generatedTitle = await generateSessionTitle(content, responseContent);
       if (generatedTitle && generatedTitle !== 'New conversation') {
         await ChatSessionManager.rename(sessionUuid, generatedTitle);
         window.dispatchEvent(new CustomEvent('session-title-changed'));
@@ -382,7 +431,6 @@ setSessionId(uuid);
     PANEL_MAX_WIDTH,
     isThinkingEnabled,
     isWebSearchEnabled,
-    modelSupportsThinking,
     currentModel,
     currentMode,
     toggleThinking,
@@ -410,5 +458,17 @@ setSessionId(uuid);
     streamError,
     streamingBanner,
     refreshMessages,
+    agentAgents,
+    activeAgent,
+    isAgentPanelOpen,
+    selectAgent,
+    closeAgentPanel,
+    openAgentPanel,
+    agentPanelWidth,
+    startAgentResize,
+    handleAgentTouchStart,
+    handleAgentDividerKeyDown,
+    AGENT_PANEL_MIN_WIDTH,
+    AGENT_PANEL_MAX_WIDTH,
   };
 }

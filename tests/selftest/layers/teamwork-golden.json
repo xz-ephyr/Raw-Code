@@ -1,0 +1,38 @@
+{
+  "T2-single-math": {
+    "output": "",
+    "hash": "45h"
+  },
+  "T3-parallel": {
+    "output": "",
+    "hash": "45h"
+  },
+  "T4-parallel-conflict": {
+    "output": "",
+    "hash": "45h"
+  },
+  "T5-compose-research-write": {
+    "output": "",
+    "hash": "45h"
+  },
+  "T6-compose-explore-writer": {
+    "output": "",
+    "hash": "45h"
+  },
+  "T7-single-classification": {
+    "output": "",
+    "hash": "45h"
+  },
+  "T8-parallel-languages": {
+    "output": "",
+    "hash": "45h"
+  },
+  "T9-compose-summary": {
+    "output": "",
+    "hash": "45h"
+  },
+  "T10-single-error-recover": {
+    "output": "",
+    "hash": "45h"
+  }
+}

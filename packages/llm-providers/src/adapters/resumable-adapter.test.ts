@@ -29,7 +29,6 @@ const requestBase = new LLMRequestClass({
 
 const textEvent: LLMEvent = { type: "text-delta", id: "t1", text: "hello" } as any
 const finishEvent: LLMEvent = { type: "finish", reason: "stop" } as any
-const errorEvent: LLMEvent = { type: "provider-error", message: "fail" } as any
 
 describe("createResumableAdapter", () => {
   it("caches events on first call and replays on second call with same ID", async () => {
@@ -101,10 +100,6 @@ describe("createResumableAdapter", () => {
   })
 
   it("uses external store when provided", async () => {
-    const store: StreamEventStore = {
-      append: () => Effect.succeed(void 0),
-      get: () => Effect.succeed([]),
-    }
     let appendCalled = false
     const trackingStore: StreamEventStore = {
       append: (_id, _events) =>

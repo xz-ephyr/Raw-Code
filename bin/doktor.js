@@ -19,40 +19,35 @@ const Style = {
   GREEN: "\x1b[92m",
   YELLOW: "\x1b[93m",
   CYAN: "\x1b[96m",
-  BLUE: "\x1b[94m",
-  PURPLE: "\x1b[95m",
-  WHITE: "\x1b[97m",
-  UNDERLINE: "\x1b[4m"
 };
 
 const LOGO = `
-${Style.CYAN}${Style.BOLD}   ___        __   __             
-  / _ \\ ___  / /__/ /_ ___  ____  
- / // // _ \\/  '_/ __// _ \\/ __/  
-/____/ \\___//_/\\_\\\\__/ \\___//_/   ${Style.RESET}
-${Style.DIM}──────────────────────────────────────────${Style.RESET}
+${Style.CYAN}${Style.BOLD}doktor${Style.RESET} ${Style.DIM}dev${Style.RESET}
 `;
 
 function pollPort(port, label, timeoutMs = 20000) {
-  const spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  const frames = [' ◇', ' ◇', '◇ ', ' ◇'];
+  const dots = ['·', '·', '·'];
   let i = 0;
 
   return new Promise((resolve, reject) => {
     const t = setTimeout(() => {
       clearInterval(s);
-      clearInterval(c);
-      reject(new Error(`${label} failed to bind port ${port} within ${timeoutMs / 1000}s`));
+      reject(new Error(`${label} timed out on port ${port}`));
     }, timeoutMs);
 
+    process.stdout.write(`  ◇ ${label}`);
+
     const s = setInterval(() => {
-      process.stdout.write(`\r${Style.YELLOW}${spinner[i++ % spinner.length]} Waiting for ${label}...${Style.RESET}`);
-    }, 80);
+      const frame = `${Style.YELLOW}${frames[i++ % frames.length]}${Style.RESET}`;
+      process.stdout.write(`\r  ${frame} ${label}`);
+    }, 150);
 
     const c = setInterval(() => {
       const r = http.get(`http://localhost:${port}`, () => {
         r.destroy();
         clearInterval(c); clearInterval(s); clearTimeout(t);
-        process.stdout.write(`\r${Style.GREEN}✔ ${label} is online.${Style.RESET}\n`);
+        process.stdout.write(`\r  ${Style.GREEN}◇${Style.RESET} ${label}  ${Style.DIM}${port}${Style.RESET}\n`);
         resolve();
       });
       r.on('error', () => r.destroy());
@@ -60,12 +55,13 @@ function pollPort(port, label, timeoutMs = 20000) {
   });
 }
 
-function startProcess(cmd, args, label) {
+function startProcess(cmd, args) {
   const child = spawn('cmd.exe', ['/c', cmd, ...args], {
-    stdio: 'inherit',
+    stdio: ['ignore', 'pipe', 'inherit'],
     env: { ...process.env, NODE_NO_WARNINGS: '1', FORCE_COLOR: '1' }
   });
-  child.on('error', (e) => {});
+  child.stdout.on('data', () => {});
+  child.on('error', () => {});
   return child;
 }
 
@@ -74,13 +70,12 @@ const cli = cac('doktor');
 cli.command('serve', 'Start development environment')
   .action(async () => {
     process.stdout.write('\x1c');
-    console.log(LOGO);
-    console.log(`${Style.BOLD}${Style.WHITE}▶ Initializing DokTor...${Style.RESET}\n`);
+    process.stdout.write(LOGO);
 
     const children = [];
 
     const cleanup = () => {
-      console.log(`\n${Style.YELLOW}⚡ Stopping services...${Style.RESET}`);
+      process.stdout.write(`\n${Style.YELLOW}◇ stopping${Style.RESET}\n`);
       children.forEach(c => { try { c.kill('SIGTERM'); } catch {} });
       setTimeout(() => process.exit(0), 1000);
     };
@@ -89,37 +84,17 @@ cli.command('serve', 'Start development environment')
     process.on('SIGTERM', cleanup);
 
     try {
-      // --- Backend ---
-      console.log(`${Style.CYAN}[System]${Style.RESET} Starting Express Backend...`);
-      const server = startProcess(tsx, ['watch', '--env-file', 'server/.env', 'server/src/index.ts'], 'Express');
+      const server = startProcess(tsx, ['watch', '--env-file', 'server/.env', 'server/src/index.ts']);
       children.push(server);
-      server.on('exit', (code) => {
-        if (code !== 0 && code !== null) {
-          console.log(`\n${Style.RED}[Express] Process exited with code ${code}${Style.RESET}`);
-        }
-      });
-      await pollPort(3001, 'Express Backend');
+      await pollPort(3001, 'backend');
 
-      // --- Frontend ---
-      console.log(`${Style.CYAN}[System]${Style.RESET} Starting Vite Frontend...`);
-      const frontend = startProcess(vite, [], 'Vite');
+      const frontend = startProcess(vite, []);
       children.push(frontend);
-      frontend.on('exit', (code) => {
-        if (code !== 0 && code !== null) {
-          console.log(`\n${Style.RED}[Vite] Process exited with code ${code}${Style.RESET}`);
-        }
-      });
-      await pollPort(4028, 'Vite Frontend');
+      await pollPort(4028, 'frontend');
 
-      // --- Ready ---
-      console.log(`\n${Style.BOLD}${Style.GREEN}🚀 DOKTOR DEVELOPMENT ENVIRONMENT ONLINE${Style.RESET}`);
-      console.log(`${Style.DIM}  Frontend:  ${Style.RESET}${Style.UNDERLINE}${Style.CYAN}http://localhost:4028${Style.RESET}`);
-      console.log(`${Style.DIM}  Backend:   ${Style.RESET}${Style.UNDERLINE}${Style.CYAN}http://localhost:3001${Style.RESET}`);
-      console.log(`${Style.DIM}  Press ${Style.RESET}${Style.BOLD}${Style.RED}Ctrl+C${Style.RESET}${Style.DIM} to stop all services.${Style.RESET}\n`);
-
+      process.stdout.write(`\n  ${Style.GREEN}ready${Style.RESET}  ${Style.CYAN}http://localhost:4028${Style.RESET}  ${Style.DIM}ctrl+c to stop${Style.RESET}\n\n`);
     } catch (err) {
-      console.error(`\n${Style.RED}❌ ${err.message}${Style.RESET}`);
-      console.error(`${Style.YELLOW}💡 Try waiting a few seconds, then run:\n   Stop-Process -Name node -Force${Style.RESET}`);
+      process.stdout.write(`\n${Style.RED}◇ ${err.message}${Style.RESET}\n`);
       cleanup();
       process.exit(1);
     }

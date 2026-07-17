@@ -11,6 +11,8 @@ const ChatsPage = lazy(() => import('@/pages/ChatsPage').then(m => ({ default: m
 const PluginsPage = lazy(() => import('@/pages/PluginsPage').then(m => ({ default: m.PluginsPage })));
 const WorkflowPage = lazy(() => import('@/pages/WorkflowPage').then(m => ({ default: m.WorkflowPage })));
 const WorkflowCreatePage = lazy(() => import('@/pages/WorkflowCreatePage').then(m => ({ default: m.WorkflowCreatePage })));
+const SelftestStatusBadge = lazy(() => import('@/components/selftest/SelftestStatusBadge').then(m => ({ default: m.default })));
+const AgentTaskTestRunner = lazy(() => import('@/components/selftest/AgentTaskTestRunner').then(m => ({ default: m.AgentTaskTestRunner })));
 
 export default function App() {
   const [updateInfo, setUpdateInfo] = useState<{
@@ -72,6 +74,8 @@ export default function App() {
           <Route path="/workflow/create" element={<Suspense fallback={null}><WorkflowCreatePage /></Suspense>} />
           <Route path="/chat/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
         </Route>
+        <Route path="/__test/selftest" element={<Suspense fallback={<div data-testid="selftest-badge-loading">Loading...</div>}><SelftestStatusBadge /></Suspense>} />
+        <Route path="/__test/agent" element={<Suspense fallback={<div>Loading...</div>}><AgentTaskTestRunner /></Suspense>} />
       </Routes>
 
       <SettingsModal />

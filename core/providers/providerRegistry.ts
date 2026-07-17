@@ -1,4 +1,3 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import { createCloudflare } from './createCloudflare';
 
 function makeGoogleFetch(): typeof globalThis.fetch {
@@ -137,8 +136,7 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://api.anthropic.com/v1',
     defaultModel: 'claude-sonnet-4',
     modelIdPrefixes: ['claude'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.anthropic.com/v1' }).chat,
+    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
   },
   {
     id: 'openai',
@@ -149,8 +147,7 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://api.openai.com/v1',
     defaultModel: 'gpt-4o',
     modelIdPrefixes: ['gpt', 'o3', 'o4'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.openai.com/v1' }).chat,
+    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
   },
   {
     id: 'google',
@@ -161,10 +158,7 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
     defaultModel: 'gemini-2.5-flash',
     modelIdPrefixes: ['gemini'],
-    createClient: (apiKey: string, baseURL?: string) => {
-      const target = baseURL ?? 'https://generativelanguage.googleapis.com/v1beta/openai';
-      return createOpenAI({ apiKey, baseURL: target, fetch: makeGoogleFetch() }).chat;
-    },
+    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey, fetch: makeGoogleFetch() }),
   },
   {
     id: 'deepseek',
@@ -175,8 +169,7 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://api.deepseek.com/v1',
     defaultModel: 'deepseek-chat',
     modelIdPrefixes: ['deepseek'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.deepseek.com/v1' }).chat,
+    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
   },
   {
     id: 'mistral',
@@ -187,8 +180,7 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://api.mistral.ai/v1',
     defaultModel: 'mistral-small-latest',
     modelIdPrefixes: ['mistral', 'codestral', 'pixtral'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.mistral.ai/v1' }).chat,
+    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
   },
   {
     id: 'cohere',
@@ -199,8 +191,7 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://api.cohere.com/compatibility/v1',
     defaultModel: 'command-a-03-2026',
     modelIdPrefixes: ['command', 'c4ai'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.cohere.com/compatibility/v1' }).chat,
+    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
   },
   {
     id: 'groq',
@@ -211,8 +202,7 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://api.groq.com/openai/v1',
     defaultModel: 'llama-3.3-70b-versatile',
     modelIdPrefixes: ['llama', 'qwen', 'deepseek', 'gpt-oss', 'meta-llama', 'openai'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.groq.com/openai/v1' }).chat,
+    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
   },
   {
     id: 'together',
@@ -223,8 +213,7 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://api.together.xyz/v1',
     defaultModel: 'together/auto',
     modelIdPrefixes: ['together'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.together.xyz/v1' }).chat,
+    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
   },
   {
     id: 'openrouter',
@@ -235,8 +224,7 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://openrouter.ai/api/v1',
     defaultModel: 'openrouter/auto',
     modelIdPrefixes: ['openrouter'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://openrouter.ai/api/v1' }).chat,
+    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
   },
   {
     id: 'nvidia',
@@ -247,8 +235,7 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://integrate.api.nvidia.com/v1',
     defaultModel: 'nvidia/llama-3.3-nemotron-super-49b-v1',
     modelIdPrefixes: ['nvidia', 'meta', 'mistralai', 'google'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://integrate.api.nvidia.com/v1' }).chat,
+    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
   },
   {
     id: 'cerebras',
@@ -259,10 +246,7 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://api.cerebras.ai/v1',
     defaultModel: 'cerebras/gpt-oss-120b',
     modelIdPrefixes: ['gpt-oss', 'zai', 'gemma'],
-    createClient: (apiKey: string, baseURL?: string) => {
-      const chat = createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.cerebras.ai/v1' }).chat;
-      return (modelId: string) => chat(modelId.replace(/^cerebras\//, ''));
-    },
+    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
   },
   {
     id: 'sambanova',
@@ -273,10 +257,7 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://api.sambanova.ai/v1',
     defaultModel: 'Meta-Llama-3.3-70B-Instruct',
     modelIdPrefixes: ['Meta', 'DeepSeek', 'gpt-oss', 'gemma'],
-    createClient: (apiKey: string, baseURL?: string) => {
-      const chat = createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api.sambanova.ai/v1' }).chat;
-      return (modelId: string) => chat(modelId.replace(/^sambanova\//, ''));
-    },
+    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
   },
   {
     id: 'huggingface',
@@ -287,8 +268,7 @@ const PROVIDERS: KeyProvider[] = [
     baseURL: 'https://api-inference.huggingface.co/v1',
     defaultModel: 'meta-llama/Meta-Llama-3.1-8B-Instruct',
     modelIdPrefixes: ['meta-llama', 'Qwen', 'google'],
-    createClient: (apiKey: string, baseURL?: string) =>
-      createOpenAI({ apiKey, baseURL: baseURL ?? 'https://api-inference.huggingface.co/v1' }).chat,
+    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
   },
   {
     id: 'cloudflare',

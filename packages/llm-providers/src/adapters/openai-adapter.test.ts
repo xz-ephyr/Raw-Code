@@ -4,7 +4,7 @@ import { Effect } from "effect"
 import { OpenAIProtocol } from "../protocols/openai-chat"
 import { createSSEParser } from "../route/sse-parser"
 import { Model } from "../schema/options"
-import { LLMRequest as LLMRequestClass, userMessage } from "../schema"
+import { LLMError, LLMRequest as LLMRequestClass, userMessage } from "../schema"
 import type { OpenAIStreamEvent } from "../protocols/openai-types"
 import type { LLMEvent } from "../schema/event-schemas"
 
@@ -40,12 +40,12 @@ function chunk(overrides: Partial<OpenAIStreamEvent>): string {
   return JSON.stringify({ ...base, ...overrides, choices: overrides.choices ?? base.choices })
 }
 
-function process(raw: string): Effect.Effect<readonly LLMEvent[], never> {
+function process(raw: string): Effect.Effect<ReadonlyArray<any>, LLMError> {
   const parser = createSSEParser()
   const events: Array<LLMEvent> = []
 
   const step = OpenAIProtocol.stream.step
-  let state = OpenAIProtocol.stream.initial()
+  let state = OpenAIProtocol.stream.initial(baseRequest)
 
   const bytes = new TextEncoder().encode(raw)
   const parsed = parser.push(bytes)

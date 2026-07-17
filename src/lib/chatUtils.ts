@@ -81,13 +81,34 @@ function extractToolInvocations(parts: any[]): ToolInvocationPart[] {
 
 export function extractThinkTags(content: string): { cleanContent: string; thinking: string } {
   const thinkingParts: string[] = [];
+  let cleanContent = content;
 
-  let cleanContent = content.replace(/<(?:think|thought)>([\s\S]*?)<\/(?:think|thought)>/g, (_, inner) => {
+  // HTML-style tags: <think>, <thought>, <reasoning>
+  cleanContent = cleanContent.replace(/<(?:think|thought|reasoning)>([\s\S]*?)<\/(?:think|thought|reasoning)>/g, (_, inner) => {
+    thinkingParts.push(inner.trim());
+    return '';
+  });
+  cleanContent = cleanContent.replace(/<(?:think|thought|reasoning)>([\s\S]*)$/g, (_, inner) => {
     thinkingParts.push(inner.trim());
     return '';
   });
 
-  cleanContent = cleanContent.replace(/<(?:think|thought)>([\s\S]*)$/g, (_, inner) => {
+  // Code-fenced thinking: ```think, ```thinking, ```reasoning
+  cleanContent = cleanContent.replace(/```(?:think|thinking|reasoning)\s*\n([\s\S]*?)```/g, (_, inner) => {
+    thinkingParts.push(inner.trim());
+    return '';
+  });
+  cleanContent = cleanContent.replace(/```(?:think|thinking|reasoning)\s*\n([\s\S]*)$/g, (_, inner) => {
+    thinkingParts.push(inner.trim());
+    return '';
+  });
+
+  // Bracket-style tags: [think], [thought], [reasoning]
+  cleanContent = cleanContent.replace(/\[(?:think|thought|reasoning)\]([\s\S]*?)\[\/(?:think|thought|reasoning)\]/g, (_, inner) => {
+    thinkingParts.push(inner.trim());
+    return '';
+  });
+  cleanContent = cleanContent.replace(/\[(?:think|thought|reasoning)\]([\s\S]*)$/g, (_, inner) => {
     thinkingParts.push(inner.trim());
     return '';
   });

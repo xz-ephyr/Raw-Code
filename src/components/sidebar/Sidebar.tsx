@@ -17,7 +17,6 @@ import { ChatSessionManager } from '@/services/ChatSessionManager';
 import type { ChatSession } from '@/types/chat';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 import { useProjectStore } from '@/stores/projectStore';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useToast } from '../ui/Toast';
 import ThreadItem from './ThreadItem';
 
@@ -35,7 +34,6 @@ const Sidebar = React.memo(function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const setSettingsOpen = useProjectStore((s) => s.setSettingsOpen);
-  const { theme } = useTheme();
   const { addToast } = useToast();
   
   const loadThreads = async () => {
@@ -121,14 +119,7 @@ const Sidebar = React.memo(function Sidebar() {
       <div
         className={`bg-sidebar h-full border-r border-gray-500/10 dark:border-white/10 transition-[width] duration-300 ease-in-out flex flex-col shrink-0 ${isCollapsed ? 'w-[48px]' : 'w-[320px]'}`}
       >
-        <div className={`flex items-center shrink-0 ${isCollapsed ? 'p-2 justify-center' : 'pl-4 pr-2 py-2'}`}>
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <div className="relative w-20 h-20 rounded-xl bg-sidebar shrink-0 overflow-hidden">
-                <img src={theme === 'dark' ? '/doktor-logo-dark.svg' : '/doktor-logo-light.svg'} alt="DokTor" loading="lazy" className="w-full h-full object-cover" />
-              </div>
-            </div>
-          )}
+        <div className="flex items-center shrink-0 justify-end px-2 py-2">
           <button
             onClick={toggleCollapse}
             className="p-1 hover:bg-sidebar-accent rounded-[8px] shrink-0"
@@ -154,9 +145,7 @@ const Sidebar = React.memo(function Sidebar() {
               active={location.pathname === '/thread/new'}
               collapsed={isCollapsed}
               onClick={() => {
-                if (location.pathname === '/thread/new') {
-                  window.dispatchEvent(new CustomEvent('reset-chat'));
-                }
+                window.dispatchEvent(new CustomEvent('reset-chat'));
               }}
             />
             <SidebarTab

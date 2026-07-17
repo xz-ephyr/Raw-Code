@@ -1,8 +1,8 @@
 import { Effect } from "effect"
 import { Service as LLMClient, LLMRequest, HttpOptions, SystemPart, userMessage, makeGenerationOptions, layer } from "@doktor/llm-providers"
-import { getProviders } from './providerCache'
-import { getModelDefinition, getStoredSelectedModel } from "@core/config/models"
+import { getModelDefinition } from "@core/config/models"
 import { providerRouteMap, proxyGpt4oMini } from "@core/tools/nativeRoutes"
+import { getAllProviders } from "@core/providers"
 
 function sanitizeForTitleInput(raw: string): string {
   return raw
@@ -69,9 +69,13 @@ function tryParseTitle(raw: string): string | null {
   return null
 }
 
-async function generateTitleNative(message: string, projectId?: string): Promise<string | null> {
+async function generateTitleNative(message: string, responseContext?: string): Promise<string | null> {
   const sanitized = sanitizeForTitleInput(message)
   if (!sanitized) return null
+
+  const contextSection = responseContext
+    ? `\nFirst response from assistant:\n${sanitizeForTitleInput(responseContext).slice(0, 600)}`
+    : ''
 
   const prompt = `Generate a concise, sentence-case title (3-7 words) that captures the main topic or goal of this conversation. The title should be clear enough that the user recognizes the conversation in a list. Use sentence case: capitalize only the first word and proper nouns.
 
@@ -87,27 +91,35 @@ Bad (too vague): {"title": "Code changes"}
 Bad (too long): {"title": "Investigate and fix the issue where the login button does not respond on mobile devices"}
 Bad (wrong case): {"title": "Fix Login Button On Mobile"}
 
-Message:
-${sanitized}`
+User message:
+${sanitized}${contextSection}`
 
-  const rawModel = getStoredSelectedModel()
-  const selectedModel = rawModel === 'auto' ? 'gpt-4o-mini' : rawModel
-  const def = getModelDefinition(selectedModel)
-  const providerId = def?.provider || "openai"
-  const configKey = `${providerId}-api-key`
+  const googleKey = typeof localStorage !== "undefined" ? (localStorage.getItem("rc_config_google-api-key") || localStorage.getItem("google-api-key") || "") : ""
+  const googleEnv = typeof process !== "undefined" ? (process.env.GOOGLE_API_KEY || "") : ""
+  const titleModel = (googleKey || googleEnv) ? "gemini-3.1-flash-lite-preview" : null
+  const titleProvider = titleModel ? "google" : null
 
-  let apiKey = ""
-  try {
-    const providers = await getProviders(projectId)
-    const client = providers.get(providerId)
-    if (client && typeof (client as any).apiKey === "string") {
-      apiKey = (client as any).apiKey
+  let providerId = titleProvider || ""
+  let apiKey = titleProvider ? (googleKey || googleEnv) : ""
+  let selectedModel = titleModel || ""
+
+  if (!titleModel) {
+    for (const p of getAllProviders()) {
+      const stored = typeof localStorage !== "undefined" ? (localStorage.getItem(`rc_config_${p.configKey}`) || localStorage.getItem(p.configKey) || "") : ""
+      const env = typeof process !== "undefined" ? (process.env[p.envVar] || "") : ""
+      const found = stored || env
+      if (found && p.id !== "google") {
+        providerId = p.id
+        apiKey = found
+        selectedModel = p.defaultModel || ""
+        break
+      }
     }
-  } catch { /* fallback */ }
-  if (!apiKey && typeof localStorage !== "undefined") {
-    apiKey = localStorage.getItem(configKey) || localStorage.getItem("openai_api_key") || ""
   }
-  if (!apiKey) return null
+  if (!apiKey || !providerId || !selectedModel) return null
+
+  const def = getModelDefinition(selectedModel)
+  if (!def) return null
 
   const route = providerRouteMap[providerId] || proxyGpt4oMini
   const model = route.model({ id: selectedModel })
@@ -142,11 +154,11 @@ ${sanitized}`
   return null
 }
 
-export async function generateSessionTitle(userMessage: string): Promise<string> {
+export async function generateSessionTitle(userMessage: string, responseContext?: string): Promise<string> {
   const sanitized = sanitizeForTitleInput(userMessage)
   if (!sanitized) return 'New conversation'
 
-  const titleResult = await generateTitleNative(sanitized)
+  const titleResult = await generateTitleNative(sanitized, responseContext)
 
   if (titleResult) return titleResult
 

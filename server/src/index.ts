@@ -4,6 +4,9 @@ import { migrate } from './db.js';
 import { auth } from './middleware/auth.js';
 import { registerContentTools } from '@doktor/tool-runtime';
 import proxyRoutes from './routes/proxy.js';
+import antigravityRoutes from './routes/antigravity.js';
+import selftestRoutes from './routes/selftest.js';
+import { startBackgroundScheduler } from './scheduler.js';
 import projectRoutes from './routes/projects.js';
 import fileRoutes from './routes/files.js';
 import sessionRoutes from './routes/sessions.js';
@@ -101,6 +104,8 @@ function jsEscape(s: string): string {
 }
 
 app.use(proxyRoutes);
+app.use('/antigravity/v1', antigravityRoutes);
+app.use(selftestRoutes);
 
 app.use(auth);
 app.use(projectRoutes);
@@ -132,6 +137,8 @@ async function start() {
   app.listen(PORT, () => {
     console.log(`DokTor server running on http://localhost:${PORT}`);
   });
+
+  startBackgroundScheduler();
 }
 
 start();

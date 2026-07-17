@@ -22,9 +22,9 @@ function makeAdapter(events: ReadonlyArray<LLMEvent>): LLMAdapter {
 
 function collectEvents(
   stream: Stream.Stream<LLMEvent, LLMError>,
-): Effect.Effect<readonly LLMEvent[], LLMError> {
-  return Stream.runCollect(stream as any).pipe(
-    Effect.map((chunk) => [...chunk] as any),
+): Effect.Effect<Array<any>, LLMError> {
+  return Stream.runCollect(stream).pipe(
+    Effect.map((chunk) => [...chunk] as Array<any>),
   )
 }
 

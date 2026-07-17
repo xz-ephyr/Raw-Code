@@ -49,7 +49,7 @@ export interface AnthropicToolDefinition {
 
 export type AnthropicStreamEvent =
   | { type: "message_start"; message: { id: string; model: string; usage: { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number } } }
-  | { type: "content_block_start"; index: number; content_block: { type: "text"; text: string } | { type: "tool_use"; id: string; name: string; input: unknown } }
+  | { type: "content_block_start"; index: number; content_block: { type: "text"; text: string } | { type: "thinking"; thinking: string } | { type: "tool_use"; id: string; name: string; input: unknown } }
   | { type: "content_block_delta"; index: number; delta: { type: "text_delta"; text: string } | { type: "input_json_delta"; partial_json: string } | { type: "thinking_delta"; thinking: string } | { type: "signature_delta"; signature: string } }
   | { type: "content_block_stop"; index: number }
   | { type: "message_delta"; delta: { stop_reason: string; stop_sequence: string | null }; usage: { output_tokens: number } }
@@ -88,6 +88,8 @@ const textStartEvent = (id: string): LLMEvent => ({ type: "text-start", id } as 
 const textStartId = (index: number) => `text:${index}`
 const textDeltaEvent = (id: string, text: string): LLMEvent => ({ type: "text-delta", id, text } as any)
 const textEndEvent = (id: string): LLMEvent => ({ type: "text-end", id } as any)
+const reasoningStartEvent = (id: string): LLMEvent => ({ type: "reasoning-start", id } as any)
+const reasoningEndEvent = (id: string): LLMEvent => ({ type: "reasoning-end", id } as any)
 const reasoningDeltaEvent = (id: string, text: string): LLMEvent => ({ type: "reasoning-delta", id, text } as any)
 const toolInputStartEvent = (id: string, name: string): LLMEvent => ({ type: "tool-input-start", id, name } as any)
 const toolInputStartId = (index: number) => `tool:${index}`
@@ -258,6 +260,16 @@ export const AnthropicProtocol = Protocol.make<AnthropicBody, string, AnthropicS
                 ...state,
                 textBlocks: { ...state.textBlocks, [key]: { index, text: "" } },
               }
+            } else if (content_block.type === "thinking") {
+              const key = `thinking:${index}`
+              events.push(reasoningStartEvent(key))
+              next = {
+                ...state,
+                thinkingBlocks: {
+                  ...state.thinkingBlocks,
+                  [key]: { index, text: (content_block as any).thinking ?? "" },
+                },
+              }
             } else if (content_block.type === "tool_use") {
               const key = toolInputStartId(index)
               events.push(toolInputStartEvent(key, content_block.name))
@@ -331,6 +343,10 @@ export const AnthropicProtocol = Protocol.make<AnthropicBody, string, AnthropicS
             if (state.textBlocks[textKey]) {
               events.push(textEndEvent(textKey))
             }
+            const thinkKey = `thinking:${index}`
+            if (state.thinkingBlocks[thinkKey]) {
+              events.push(reasoningEndEvent(thinkKey))
+            }
             const toolKey = toolInputStartId(index)
             const toolInput = state.toolInputs[toolKey]
             if (toolInput) {
@@ -342,6 +358,9 @@ export const AnthropicProtocol = Protocol.make<AnthropicBody, string, AnthropicS
           }
 
           case "message_delta": {
+            for (const key of Object.keys(state.thinkingBlocks)) {
+              events.push(reasoningEndEvent(key))
+            }
             const reason = mapAnthropicStopReason(event.delta.stop_reason)
             const usage = new Usage({
               outputTokens: event.usage.output_tokens,
@@ -362,7 +381,14 @@ export const AnthropicProtocol = Protocol.make<AnthropicBody, string, AnthropicS
         return [next, events] as const
       }),
     terminal: (event: AnthropicStreamEvent) => event.type === "message_stop",
-    onHalt: () => [finishEvent("stop" as any)],
+    onHalt: (state: AnthropicState) => {
+      const events: Array<LLMEvent> = []
+      for (const key of Object.keys(state.thinkingBlocks)) {
+        events.push(reasoningEndEvent(key))
+      }
+      events.push(finishEvent("stop" as any))
+      return events
+    },
   },
 })
 
