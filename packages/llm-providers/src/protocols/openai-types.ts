@@ -87,4 +87,7 @@ export interface OpenAIChatState {
   readonly textBlocks: Readonly<Record<string, { readonly index: number; readonly text: string }>>
   readonly reasoningBlocks: Readonly<Record<string, { readonly index: number; readonly text: string }>>
   readonly toolCalls: Readonly<Record<string, { readonly name: string; readonly args: string; readonly index: number }>>
+  readonly intentEmitted: boolean
+  readonly intentText: string
+  readonly toolNames: ReadonlyArray<string>
 }

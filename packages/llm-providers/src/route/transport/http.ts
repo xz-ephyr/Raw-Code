@@ -34,7 +34,7 @@ export const httpJson = <Body, Frame>(input: { readonly framing: Framing<Frame> 
 
     const providerId = prepareInput.request.model.provider
     const bodyText = prepareInput.encodeBody(prepareInput.body)
-    if (process.env.LLM_DEBUG && (providerId === "mistral" || providerId === "google")) {
+    if (typeof process !== 'undefined' && process.env?.LLM_DEBUG && (providerId === "mistral" || providerId === "google")) {
       console.log(`[body:${providerId}]`, JSON.stringify(JSON.parse(bodyText), null, 2))
     }
       const headers = yield* Auth.toEffect(prepareInput.auth)({
@@ -61,7 +61,7 @@ export const httpJson = <Body, Frame>(input: { readonly framing: Framing<Frame> 
         const res = yield* runtime.http.execute(prepared.url, prepared.bodyText, prepared.headers)
         if (res.status < 200 || res.status >= 300) {
           const responseText = yield* res.text
-          if (process.env.LLM_DEBUG) {
+          if (typeof process !== 'undefined' && process.env?.LLM_DEBUG) {
             const urlPreview = prepared.url.length > 120 ? prepared.url.slice(0, 120) + "..." : prepared.url
             const bodyPreview = prepared.bodyText.length > 500 ? prepared.bodyText.slice(0, 500) + "..." : prepared.bodyText
             console.error(`[provider] HTTP ${res.status} ${urlPreview}

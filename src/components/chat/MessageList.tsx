@@ -148,7 +148,9 @@ export function MessageList({
                 parts={m.parts}
                 contentBeforeTool={m.contentBeforeTool}
                 contentAfterTool={m.contentAfterTool}
+                actionSummary={m.actionSummary}
                 isStreaming={i === lastAssistantIndex}
+                isThinkingEnabled={isThinkingEnabled}
                 version={1}
                 completionDuration={completionDurations[m.id]}
                 onOpenFile={onOpenFile}

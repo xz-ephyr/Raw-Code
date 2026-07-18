@@ -1,5 +1,5 @@
 import type { LLMEvent, SystemPart, ToolDefinition } from "../schema"
-import { Usage } from "../schema"
+import { Usage } from "../schema/event-schemas"
 import type { OpenAIChatContentPart, OpenAIToolDefinition } from "./openai-types"
 
 export const convertContentPart = (part: any): OpenAIChatContentPart | undefined => {
@@ -57,6 +57,13 @@ export const toolCallEvent = (id: string, name: string, input: unknown): LLMEven
 export const stepStartEvent = (index: number): LLMEvent => ({ type: "step-start", index } as any)
 export const stepFinishEvent = (index: number, reason: any, usage?: Usage): LLMEvent => ({ type: "step-finish", index, reason, ...(usage ? { usage } : {}) } as any)
 export const finishEvent = (reason: any, usage?: Usage): LLMEvent => ({ type: "finish", reason, ...(usage ? { usage } : {}) } as any)
+
+export const intentEvent = (id: string, text: string, toolNames?: ReadonlyArray<string>): LLMEvent => ({
+  type: "intent",
+  id,
+  text,
+  toolNames,
+} as any)
 
 export function mapFinishReason(reason: string): any {
   switch (reason) {

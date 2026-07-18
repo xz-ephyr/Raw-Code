@@ -6,6 +6,7 @@ export interface SubAgentRequest {
   readonly toolScope?: readonly string[];
   readonly agentType?: string;
   readonly parentSessionID: string;
+  readonly resolveCredential?: (provider: string) => string | undefined;
 }
 
 export interface SubAgentResult {
@@ -16,4 +17,12 @@ export interface SubAgentResult {
     readonly inputTokens: number;
     readonly outputTokens: number;
   };
+  readonly toolResults: readonly ToolResult[];
+}
+
+export interface ToolResult {
+  readonly name: string;
+  readonly input: unknown;
+  readonly output: unknown;
+  readonly error?: string;
 }

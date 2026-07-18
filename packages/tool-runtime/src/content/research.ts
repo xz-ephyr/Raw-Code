@@ -46,21 +46,29 @@ export const researchTool = make({
       const isDeep = input.depth === 'deep';
       const maxSources = input.maxSources ?? (isDeep ? 8 : 3);
 
-      const searchResult = yield* Effect.promise(() =>
-        fetch(`${baseUrl()}/v1/search?query=${encodeURIComponent(input.query)}&maxResults=${maxSources}`, {
-          signal: AbortSignal.timeout(30000),
-        })
-          .then(async (r) => {
-            if (!r.ok) throw new Error(`go-crawl error (${r.status})`);
-            const json = await r.json();
-            if (!json.success) throw new Error(`go-crawl search failed: ${json.error}`);
-            return (json.data || []) as Array<{ title: string; url: string; markdown?: string }>;
-          })
-          .catch((e) => {
-            console.warn(`go-crawl search failed: ${e instanceof Error ? e.message : String(e)}`);
-            return [] as Array<{ title: string; url: string; markdown?: string }>;
-          }),
-      );
+      // Use an explicit AbortController and clear it in finally so no dangling
+      // timer/handle is left behind when the go-crawl server is unreachable.
+      const searchResult = yield* Effect.promise<Array<{ title: string; url: string; markdown?: string }>>(async () => {
+        const controller = new AbortController();
+        // Deep research can take 60s+. Allow longer timeout.
+        const timeout = setTimeout(() => controller.abort(), 120000);
+        try {
+          const res = await fetch(
+            `${baseUrl()}/v1/search?query=${encodeURIComponent(input.query)}&maxResults=${maxSources}`,
+            { signal: controller.signal },
+          );
+          if (!res.ok) throw new Error(`go-crawl error (${res.status})`);
+          const json = await res.json();
+          if (!json.success) throw new Error(`go-crawl search failed: ${json.error}`);
+          return (json.data || []) as Array<{ title: string; url: string; markdown?: string }>;
+        } catch (e) {
+          console.warn(`go-crawl search failed: ${e instanceof Error ? e.message : String(e)}`);
+          return [] as Array<{ title: string; url: string; markdown?: string }>;
+        } finally {
+          clearTimeout(timeout);
+          controller.abort();
+        }
+      });
 
       let sources: Array<{ title: string; url: string; snippet: string }>;
       if (searchResult.length > 0) {

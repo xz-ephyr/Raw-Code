@@ -34,7 +34,7 @@ const renderPart = <Body>(part: EndpointPart<Body>, input: EndpointInput<Body>) 
 export const render = <Body>(endpoint: Endpoint<Body>, input: EndpointInput<Body>) => {
   const base = (endpoint.baseURL ?? "").replace(/\/+$/, "")
   const path = renderPart(endpoint.path, input)
-  if (process.env.LLM_DEBUG) console.log("[render] endpoint.path:", JSON.stringify(endpoint.path), "base:", JSON.stringify(base), "path:", JSON.stringify(path))
+  if (typeof process !== 'undefined' && process.env?.LLM_DEBUG) console.log("[render] endpoint.path:", JSON.stringify(endpoint.path), "base:", JSON.stringify(base), "path:", JSON.stringify(path))
 
   // Defensive check: if the path evaluator returned undefined/null, fail fast with a clear message.
   if (path === undefined || path === null) {

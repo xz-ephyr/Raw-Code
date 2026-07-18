@@ -11,7 +11,9 @@ import type { LLMRequest } from "../schema"
 const baseURL = "https://generativelanguage.googleapis.com/v1beta/openai"
 
 const auth = Auth.custom((input) => {
-  const apiKey = Auth.bearer(Auth.config("GOOGLE_API_KEY"))
+  const fromHeaders = input.headers?.authorization?.replace("Bearer ", "")
+  const source = fromHeaders ? Auth.value(fromHeaders) : Auth.config("GOOGLE_API_KEY")
+  const apiKey = Auth.bearer(source)
   return Auth.toEffect(apiKey)(input).pipe(
     Effect.map((h) => {
       const { authorization, ...rest } = h

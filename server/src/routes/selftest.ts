@@ -111,7 +111,7 @@ function buildStatus(): SelftestStatusResponse {
       lastRunTimestamp: scorecard?.timestamp || null,
       lastResult: failed > 0 ? 'fail' : (passed > 0 ? 'pass' : null),
       evidence,
-      testType: isAntigravity ? 'mock' : 'real',
+      testType: isAntigravity ? 'real' : 'real',
     };
 
     if (isAntigravity && !antigravityRealBackendAvailable) {

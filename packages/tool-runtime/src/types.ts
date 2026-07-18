@@ -4,6 +4,7 @@ export interface ToolExecuteContext {
   readonly assistantMessageID: string;
   readonly toolCallID: string;
   readonly resolveModel?: (name: string) => unknown;
+  readonly resolveCredential?: (provider: string) => string | undefined;
 }
 
 export type Content =

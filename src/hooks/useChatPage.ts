@@ -126,7 +126,7 @@ const {
   messagesRef.current = messages;
   const [status, setStatus] = useState<'idle' | 'streaming' | 'submitted' | 'error'>('idle');
   const [streamError, setStreamError] = useState<string | undefined>();
-  const [streamingBanner, setStreamingBanner] = useState<'loading' | 'ready' | null>(null);
+  const [retryInfo, setRetryInfo] = useState<{ attempt: number; remainingSec: number } | null>(null);
 
   const currentModeRef = useRef<string | undefined>(undefined);
   const isThinkingEnabledRef = useRef(false);
@@ -149,6 +149,27 @@ const {
     }
     setActiveSessionId(uuid);
     return () => setActiveSessionId(null);
+  }, [uuid]);
+
+  useEffect(() => {
+    const onRetry = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { sessionId: string; attempt: number; remainingSec: number };
+      if (uuid && detail.sessionId === uuid) {
+        setRetryInfo({ attempt: detail.attempt, remainingSec: detail.remainingSec });
+      }
+    };
+    const onClear = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { sessionId: string };
+      if (uuid && detail.sessionId === uuid) {
+        setRetryInfo(null);
+      }
+    };
+    window.addEventListener('stream-retry', onRetry);
+    window.addEventListener('stream-retry-clear', onClear);
+    return () => {
+      window.removeEventListener('stream-retry', onRetry);
+      window.removeEventListener('stream-retry-clear', onClear);
+    };
   }, [uuid]);
 
   useEffect(() => {
@@ -203,10 +224,6 @@ setSessionId(uuid);
       return () => unsubscribe();
     }
 
-    // Detect abandoned stream: DB says streaming but no active stream in memory
-    if (session.streaming) {
-      setStreamingBanner('ready');
-    }
     };
     loadSession();
   }, [uuid, addFiles, setMessages, setSessionId, setSessionTitle]);
@@ -245,7 +262,6 @@ setSessionId(uuid);
 
     setMessages(prev => [...prev, userMsg, placeholderMsg]);
     const updatedMessages = [...messagesRef.current, userMsg];
-    setStreamingBanner(null);
 
     if (lastUuidRef.current !== uuid) {
       titleGeneratedRef.current = false;
@@ -257,6 +273,7 @@ setSessionId(uuid);
     }
 
     setStatus('submitted');
+    setRetryInfo(null);
 
     ChatStreamService.start({
       sessionId: uuid!,
@@ -390,21 +407,6 @@ setSessionId(uuid);
     [addFiles, selectFile, openPanel, files]
   );
 
-  const refreshMessages = useCallback(async () => {
-    if (!uuid || uuid === 'new') return;
-    setStreamingBanner('loading');
-    try {
-      const storedMessages = await DatabaseService.getMessages(uuid);
-      const mapped = storedMessages.map(hydrateStoredMessage).filter(Boolean) as UIMessage[];
-      setMessages(mapped);
-      await ChatSessionManager.setStreaming(uuid, false);
-      setStreamingBanner(null);
-    } catch (e) {
-      console.error('Failed to refresh messages:', e);
-      setStreamingBanner('ready');
-    }
-  }, [uuid]);
-
   const panelRef = useRef<HTMLDivElement>(null);
 
   const isLoading = status === 'submitted' || status === 'streaming';
@@ -456,8 +458,7 @@ setSessionId(uuid);
     handleConfirmApprove,
     handleConfirmDeny,
     streamError,
-    streamingBanner,
-    refreshMessages,
+    retryInfo,
     agentAgents,
     activeAgent,
     isAgentPanelOpen,

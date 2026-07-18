@@ -19,7 +19,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 const PORT = 3911;
 const BASE = `http://localhost:${PORT}/antigravity/v1`;
 const API_KEY = process.env['ANTIGRAVITY_API_KEY'] || 'test-key';
-const DEFAULT_MODEL = process.env['ANTIGRAVITY_DEFAULT_MODEL'] || 'gemini-2.5-flash';
+const DEFAULT_MODEL = process.env['ANTIGRAVITY_DEFAULT_MODEL'] || 'mistral-small-latest';
 
 interface Task {
   id: number;
@@ -70,9 +70,9 @@ const TASKS: Task[] = [
     id: 5,
     name: 'List extraction',
     model: DEFAULT_MODEL,
-    prompt: 'List the three primary colors. Reply as a comma-separated list.',
-    expected: 'mentions red, blue, and yellow',
-    expect: (t) => /red/i.test(t) && /blue/i.test(t) && /yellow/i.test(t),
+    prompt: 'List the three primary colors of light (additive RGB). Reply as a comma-separated list.',
+    expected: 'mentions red, green, and blue',
+    expect: (t) => /red/i.test(t) && /green/i.test(t) && /blue/i.test(t),
   },
   {
     id: 6,

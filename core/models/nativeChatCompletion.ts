@@ -99,12 +99,28 @@ export async function nativeChatCompletion(input: NativeChatInput): Promise<Stre
 
   const loop = createToolLoop({ routes: [route], abortSignal: input.abortSignal })
 
+  const resolveCredential = (provider: string): string | undefined => {
+    const defs = getModelDefinition(input.modelName)
+    const useProvider = provider || defs?.provider || "openai"
+    const configKey = `${useProvider}-api-key`
+    if (typeof localStorage !== "undefined") {
+      return localStorage.getItem(configKey) || localStorage.getItem("openai_api_key") || undefined
+    }
+    return undefined
+  }
+
   const executor: ToolExecutor = (call) =>
     Effect.tryPromise({
       try: () =>
         mat.settle(
           { id: call.id, name: call.name, input: call.input },
-          { sessionID: input.projectId ?? "", agentID: "main", assistantMessageID: "", toolCallID: call.id },
+          {
+            sessionID: input.projectId ?? "",
+            agentID: "main",
+            assistantMessageID: "",
+            toolCallID: call.id,
+            resolveCredential,
+          },
         ),
       catch: (err) => new Error(String(err)),
     }).pipe(

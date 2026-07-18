@@ -10,7 +10,7 @@ const router = Router();
  * provider whose key is stored in the DB. Falls back to whichever model routes
  * are available.
  */
-const DEFAULT_CLOUD_MODEL = process.env['ANTIGRAVITY_DEFAULT_MODEL'] || 'gemini-2.5-flash';
+const DEFAULT_CLOUD_MODEL = process.env['ANTIGRAVITY_DEFAULT_MODEL'] || 'mistral-small-latest';
 
 /** Max wall-clock lifetime of an in-memory job (matches spec: 24h expiry). */
 const JOB_TTL_MS = 24 * 60 * 60 * 1000;
@@ -82,7 +82,7 @@ function extractUserPrompt(messages: any[]): string {
   return JSON.stringify(userMsg.content);
 }
 
-function executeJob(job: Job, messages: any[], model: string, systemPrompt?: string) {
+function executeJob(job: Job, messages: any[], model: string, systemPrompt?: string, enableTools?: boolean, forceTools?: boolean, researchQuery?: string) {
   job.status = 'running';
   job.updatedAt = new Date().toISOString();
   const t0 = Date.now();
@@ -91,6 +91,9 @@ function executeJob(job: Job, messages: any[], model: string, systemPrompt?: str
     model,
     messages,
     systemPrompt,
+    enableTools,
+    forceTools,
+    researchQuery,
     onEvent: (evt) => {
       job.events.push(evt);
       if (evt.event === 'finish' || evt.event === 'error') {
@@ -143,7 +146,7 @@ router.post('/chat', requireAuth, (req, res) => {
     return res.status(429).json({ error: 'rate_limited', message: 'Too many requests. Retry after 60s.' });
   }
 
-  const { model = 'antigravity-1', messages = [], stream = true, systemPrompt } = req.body;
+  const { model = 'antigravity-1', messages = [], stream = true, systemPrompt, enableTools, forceTools, researchQuery } = req.body;
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'invalid_request', message: 'messages is required' });
@@ -153,7 +156,7 @@ router.post('/chat', requireAuth, (req, res) => {
   const prompt = extractUserPrompt(messages);
 
   if (!stream) {
-    runAgentTask({ model: realModel, messages, systemPrompt, onEvent: () => {} })
+    runAgentTask({ model: realModel, messages, systemPrompt, enableTools, forceTools, researchQuery, onEvent: () => {} })
       .then((result) => {
         res.json({
           id: `chat_${randomUUID()}`,
@@ -178,6 +181,9 @@ router.post('/chat', requireAuth, (req, res) => {
     model: realModel,
     messages,
     systemPrompt,
+    enableTools,
+    forceTools,
+    researchQuery,
     onEvent: (evt) => writeSSE(res, evt),
   })
     .catch((err: any) => {
@@ -199,7 +205,7 @@ router.post('/jobs', requireAuth, (req, res) => {
     return res.status(429).json({ error: 'rate_limited', message: 'Too many requests. Retry after 60s.' });
   }
 
-  const { model = 'antigravity-1', messages = [], systemPrompt } = req.body;
+  const { model = 'antigravity-1', messages = [], systemPrompt, enableTools, forceTools, researchQuery } = req.body;
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'invalid_request', message: 'messages is required' });
@@ -225,7 +231,7 @@ router.post('/jobs', requireAuth, (req, res) => {
 
   // Simulate brief queue delay then begin real execution
   const startTimer = setTimeout(() => {
-    executeJob(job, messages, realModel, systemPrompt);
+    executeJob(job, messages, realModel, systemPrompt, enableTools, forceTools, researchQuery);
   }, 400);
 
   jobTimers.set(`${id}:start`, startTimer);

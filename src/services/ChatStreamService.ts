@@ -26,6 +26,8 @@ interface StreamCallbacks {
   onMessage?: (message: UIMessage, isPartial: boolean) => void
   onFinish?: (message: UIMessage) => void
   onError?: (error: Error) => void
+  onRetry?: (info: { sessionId: string; attempt: number; waitMs: number; remainingSec: number }) => void
+  onRetryClear?: (sessionId: string) => void
 }
 
 interface StreamState {
@@ -41,7 +43,20 @@ interface StreamState {
 const activeStreams = new Map<string, StreamState>()
 let streamIdCounter = 0
 
-function toUIMessage(msg: { id: string; role: "assistant"; content: string; reasoning: string; createdAt: number; toolCalls?: { id: string; name: string; input: unknown; result?: unknown; error?: string; status: string }[] }): UIMessage {
+// Per-session retry countdown timers (setInterval ids) so we can cancel them
+// when a real stream arrives or the stream is stopped.
+const retryTimers = new Map<string, ReturnType<typeof setInterval>>()
+
+function clearRetryTimer(sessionId: string) {
+  const id = retryTimers.get(sessionId)
+  if (id !== undefined) {
+    clearInterval(id)
+    retryTimers.delete(sessionId)
+    window.dispatchEvent(new CustomEvent('stream-retry-clear', { detail: { sessionId } }))
+  }
+}
+
+function toUIMessage(msg: { id: string; role: "assistant"; content: string; reasoning: string; createdAt: number; toolCalls?: { id: string; name: string; input: unknown; result?: unknown; error?: string; status: string }[]; actionSummary?: { summary: string; actions: any[] } }): UIMessage {
   let content = msg.content || "";
   let reasoning = msg.reasoning || "";
 
@@ -81,6 +96,7 @@ function toUIMessage(msg: { id: string; role: "assistant"; content: string; reas
     content: content,
     reasoning: reasoning || null,
     toolInvocations,
+    actionSummary: msg.actionSummary || null,
     parts: [
       ...(reasoning ? [{ type: "reasoning" as const, text: reasoning }] : []),
       ...(toolInvocations ? toolInvocations.map((ti) => ({ type: "tool-invocation" as const, ...ti })) : []),
@@ -93,16 +109,13 @@ function toUIMessage(msg: { id: string; role: "assistant"; content: string; reas
 async function persistMessage(sessionId: string, message: UIMessage, isPartial: boolean) {
   try {
     await DatabaseService.saveMessages(sessionId, [{ ...message }])
-    if (!isPartial) {
-      const session = await ChatSessionManager.getSession(sessionId)
-      if (session && session.id !== getActiveSessionId()) {
-        await ChatSessionManager.markAsUnread(sessionId)
-        window.dispatchEvent(new CustomEvent('unread-changed'))
-        window.dispatchEvent(new CustomEvent('background-stream-completed', {
-          detail: { sessionId, title: session.title },
-        }))
+      if (!isPartial) {
+        const session = await ChatSessionManager.getSession(sessionId)
+        if (session && session.id !== getActiveSessionId()) {
+          await ChatSessionManager.markAsUnread(sessionId)
+          window.dispatchEvent(new CustomEvent('unread-changed'))
+        }
       }
-    }
   } catch (e) {
     console.error('Failed to persist message:', e)
   }
@@ -114,7 +127,6 @@ function getActiveSessionId() { return activeSessionId }
 
 async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks, controller: AbortController, attempt = 0) {
   const streamId = ++streamIdCounter
-  const MAX_RETRIES = 1
 
   const cap = getModelCapability(config.modelName)
   const tags = cap.reasoning === 'tagged' && cap.mechanism.type === 'inline_tags'
@@ -122,6 +134,7 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
     : null
   const scanner = tags ? createInlineScanner() : null
   let thinkingActive = false
+  let firstTokenHandled = false
 
   function flushTaggedReasoning(): { events: LLMEvent[]; reasoning: string } {
     if (!scanner || !tags) return { events: [], reasoning: "" }
@@ -184,6 +197,10 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
           }
           
           if (state.llmState.currentMessage && (state.llmState.currentMessage.content || state.llmState.currentMessage.reasoning)) {
+            if (!firstTokenHandled) {
+              firstTokenHandled = true
+              clearRetryTimer(config.sessionId)
+            }
             const uiMsg = toUIMessage(state.llmState.currentMessage)
             persistMessage(config.sessionId, uiMsg, true)
             callbacks.onMessage?.(uiMsg, true)
@@ -204,25 +221,65 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
     )
   } catch (err: any) {
     if (err?.name === "AbortError") return
-    
-    // Auto-retry once on failure
-    if (attempt < MAX_RETRIES) {
-      const state = activeStreams.get(config.sessionId)
-      if (state && state.status === 'streaming') {
-        console.warn(`Stream failed, retrying (attempt ${attempt + 1})...`)
-        state.llmState = createEmptyState()
-        return runNativeStream(config, callbacks, controller, attempt + 1)
-      }
-    }
-    
-    const error = err instanceof Error ? err : new Error(String(err))
+
     const state = activeStreams.get(config.sessionId)
-    if (state) {
-      state.status = 'error'
-      state.error = String(err)
-    }
-    callbacks.onError?.(error)
+    if (!state || state.status !== 'streaming') return
+
+    // Time-based wait & re-request: back off (2s, then +4s each failure) and
+    // resend the SAME request until a real token stream actually arrives.
+    scheduleRetry(config, callbacks, controller, attempt, err)
   }
+}
+
+// Backoff: first wait 2s, then +4s per failed retry. A 1s ticker emits the
+// remaining seconds so the UI can show a live countdown clock. When the timer
+// reaches 0 the same request is resent; if it fails again the wait grows.
+function scheduleRetry(
+  config: StreamConfig,
+  callbacks: StreamCallbacks,
+  controller: AbortController,
+  attempt: number,
+  lastErr: unknown,
+) {
+  const sessionId = config.sessionId
+  clearRetryTimer(sessionId)
+
+  const waitMs = attempt === 0 ? 2000 : 2000 + attempt * 4000
+  const totalSec = Math.ceil(waitMs / 1000)
+  let remaining = totalSec
+
+  const emit = (sec: number) => {
+    const info = { sessionId, attempt: attempt + 1, waitMs, remainingSec: sec }
+    callbacks.onRetry?.(info)
+    window.dispatchEvent(new CustomEvent('stream-retry', { detail: info }))
+  }
+  emit(remaining)
+
+  console.warn(
+    `Stream error (${describeErr(lastErr)}). Retrying in ${remaining}s (attempt ${attempt + 1})...`,
+  )
+
+  const timer = setInterval(() => {
+    remaining -= 1
+    if (remaining <= 0) {
+      clearRetryTimer(sessionId)
+      const state = activeStreams.get(sessionId)
+      if (!state || state.status !== 'streaming') return
+      // Resend the same request
+      state.llmState = createEmptyState()
+      runNativeStream(config, callbacks, controller, attempt + 1)
+      return
+    }
+    emit(remaining)
+  }, 1000)
+
+  retryTimers.set(sessionId, timer)
+}
+
+function describeErr(err: unknown): string {
+  if (err instanceof Error) return err.message || err.name
+  if (typeof err === 'string') return err
+  try { return JSON.stringify(err) } catch { return String(err) }
 }
 
 function runAISDKStream(config: StreamConfig, callbacks: StreamCallbacks, controller: AbortController) {
@@ -258,13 +315,17 @@ export const ChatStreamService = {
     runStream(config, {
       onMessage: (msg, partial) => callbacks.onMessage?.(msg, partial),
       onFinish: (msg) => {
+        clearRetryTimer(config.sessionId)
         callbacks.onFinish?.(msg)
         this._clearStreaming(config.sessionId)
       },
       onError: (err) => {
+        clearRetryTimer(config.sessionId)
         callbacks.onError?.(err)
         this._clearStreaming(config.sessionId)
       },
+      onRetry: (info) => callbacks.onRetry?.(info),
+      onRetryClear: (sid) => callbacks.onRetryClear?.(sid),
     }, controller)
   },
 
@@ -279,6 +340,7 @@ export const ChatStreamService = {
   async stop(sessionId: string) {
     const state = activeStreams.get(sessionId)
     if (state) {
+      clearRetryTimer(sessionId)
       state.controller.abort()
       state.status = 'idle'
       state.subscribers.clear()

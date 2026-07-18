@@ -1,5 +1,5 @@
 import { Effect, Stream } from 'effect';
-import type { SubAgentRequest, SubAgentResult } from './types';
+import type { SubAgentRequest, SubAgentResult, ToolResult } from './types';
 import type { Materialization } from '@doktor/tool-runtime';
 import { emit } from '@doktor/tool-runtime';
 import { buildSystemPrompt, getToolScope, getMaxSteps } from './personalities';
@@ -8,6 +8,7 @@ import {
   LLMRequest,
   Model,
   SystemPart,
+  HttpOptions,
   makeToolDefinition,
   makeToolChoice,
   systemMessage,
@@ -58,13 +59,19 @@ export function runSubAgent(
 
     const modelId = typeof request.model === 'string' ? request.model : 'gpt-4o-mini';
     const route = getRoute(modelId)
-    const model = Model.make({ id: modelId, provider: '', route })
+    const provider = route.provider as string
+    const model = Model.make({ id: modelId, provider, route })
 
     const toolDefs = filteredMat.definitions.map((d) =>
       makeToolDefinition({ name: d.name, description: d.description, inputSchema: d.inputSchema }),
     )
 
     const system = SystemPart.make(buildSystemPrompt(request))
+
+    let apiKey: string | undefined
+    if (request.resolveCredential) {
+      apiKey = request.resolveCredential(provider)
+    }
 
     const llmRequest = new LLMRequest({
       model,
@@ -75,6 +82,7 @@ export function runSubAgent(
       ],
       tools: toolDefs,
       toolChoice: makeToolChoice('auto'),
+      http: apiKey ? new HttpOptions({ headers: { authorization: `Bearer ${apiKey}` } }) : undefined,
     })
 
     const loop = createToolLoop({ routes: [route], maxSteps, abortSignal })
@@ -89,6 +97,7 @@ export function runSubAgent(
               agentID,
               assistantMessageID: `msg_${crypto.randomUUID()}`,
               toolCallID: call.id,
+              resolveCredential: request.resolveCredential,
             },
           ),
         catch: (err) => new Error(String(err)),
@@ -106,11 +115,21 @@ export function runSubAgent(
     let stepCount = 0
     let totalInputTokens = 0
     let totalOutputTokens = 0
+    const toolResults: ToolResult[] = []
 
     await Stream.runForEach(stream, (event) =>
       Effect.sync(() => {
         if (event.type === 'text-delta') text += event.text ?? ''
         if (event.type === 'tool-call') toolCallCount++
+        if (event.type === 'tool-result') {
+          const result: ToolResult = {
+            name: event.name,
+            input: event.input ?? {},
+            output: event.result ?? {},
+            error: event.error,
+          }
+          toolResults.push(result)
+        }
         if (event.type === 'step-finish') {
           stepCount++
           emit({
@@ -155,6 +174,7 @@ export function runSubAgent(
         inputTokens: totalInputTokens,
         outputTokens: totalOutputTokens,
       },
+      toolResults,
     } as SubAgentResult;
   });
 }

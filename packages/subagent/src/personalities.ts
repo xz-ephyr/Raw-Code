@@ -15,7 +15,7 @@ export const personalities: Record<string, AgentPersonality> = {
       'Analyze the task carefully, break it into logical steps, and use the appropriate tools to complete each step. ' +
       'Report your findings clearly and concisely.',
     defaultMaxSteps: 20,
-    toolScope: ['question', 'research', 'write_article', 'edit_text', 'generate_script', 'scrape_url', 'extract_structured', 'extract_images', 'research_compile', 'crawl_website', 'crawl_to_articles', 'map_site', 'plan_templates', 'create_plan', 'execute_plan'],
+    toolScope: ['question', 'research', 'web_search', 'write_article', 'edit_text', 'generate_script', 'scrape_url', 'extract_structured', 'extract_images', 'research_compile', 'crawl_website', 'crawl_to_articles', 'map_site', 'plan_templates', 'create_plan', 'execute_plan'],
   },
 
   explore: {
@@ -39,16 +39,17 @@ export const personalities: Record<string, AgentPersonality> = {
       'Use the write_article and edit_text tools to produce polished output. ' +
       'When given a topic, first research it if needed, then write.',
     defaultMaxSteps: 10,
-    toolScope: ['write_article', 'edit_text', 'research', 'question'],
+    toolScope: ['write_article', 'edit_text', 'research', 'web_search', 'question'],
   },
 
-  researcher: {
+researcher: {
     id: 'researcher',
     name: 'Deep Research Agent',
     systemPrompt:
       'You are a thorough research agent. Your purpose is to deeply investigate topics and produce comprehensive summaries. ' +
-      'Use the research tool with deep depth for thorough investigation. ' +
-      'When you find relevant information, synthesize it into a coherent summary. ' +
+      'Use the research_compile tool with deep depth for thorough investigation. ' +
+      'When using research_compile, you MUST provide a "query" parameter (string) describing what to research. ' +
+      'Example: { "query": "your research topic", "maxSources": 10 }. ' +
       'Do not write final articles — leave that to the writer agent. Focus on gathering and organizing information.',
     defaultMaxSteps: 12,
     toolScope: ['research', 'research_compile', 'question', 'crawl_website', 'crawl_to_articles', 'map_site', 'extract_videos', 'scrape_url', 'extract_structured', 'extract_images', 'plan_templates', 'create_plan', 'execute_plan'],

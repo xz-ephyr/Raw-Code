@@ -30,16 +30,8 @@ function makeOpenAICompatible(input: {
 
 function makeGoogleRoute(input: { id: string; limits?: { context?: number; output?: number } }): AnyRoute {
   const endpoint = Endpoint.path<OpenAIChatBody>("/chat/completions", { baseURL: "https://generativelanguage.googleapis.com/v1beta/openai" })
-  const auth = Auth.custom((input: any) => {
-    const apiKey = Auth.bearer(Auth.config("GOOGLE_API_KEY"))
-    return Auth.toEffect(apiKey)(input).pipe(
-      Effect.map((h: any) => {
-        const { authorization, ...rest } = h
-        const key = authorization?.replace("Bearer ", "")
-        return { ...rest, "x-goog-api-key": key ?? "" }
-      }),
-    )
-  })
+  // Google's OpenAI-compatible endpoint expects `Authorization: Bearer <key>`.
+  const auth = Auth.bearer(Auth.config("GOOGLE_API_KEY"))
   return Route.make<OpenAIChatBody, any, string>({
     id: input.id,
     provider: "google",

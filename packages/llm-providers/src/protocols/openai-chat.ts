@@ -35,6 +35,7 @@ import {
   stepFinishEvent,
   finishEvent,
   mapFinishReason,
+  intentEvent,
 } from "./openai-converters"
 
 export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStreamEvent, OpenAIChatState>({
@@ -176,6 +177,9 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
       textBlocks: {},
       reasoningBlocks: {},
       toolCalls: {},
+      intentEmitted: false,
+      intentText: "",
+      toolNames: [],
     }),
     step: (state: OpenAIChatState, event: OpenAIStreamEvent) =>
       Effect.gen(function* () {
@@ -189,6 +193,18 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
         const newTextBlocks = { ...state.textBlocks }
         const newReasoningBlocks = { ...state.reasoningBlocks }
         const newToolCalls = { ...state.toolCalls }
+        let newIntentEmitted = state.intentEmitted
+        let newIntentText = state.intentText
+        const newToolNames = [...state.toolNames]
+
+        // Track tool names as they appear
+        if (delta.tool_calls) {
+          for (const tc of delta.tool_calls) {
+            if (tc.function?.name && !newToolNames.includes(tc.function.name)) {
+              newToolNames.push(tc.function.name)
+            }
+          }
+        }
 
         if (delta.content !== undefined && delta.content !== null) {
           const key = textStartId(index)
@@ -197,6 +213,14 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
             newTextBlocks[key] = { index, text: delta.content }
             events.push(stepStartEvent(index))
             events.push(textStartEvent(key))
+            
+            // Emit intent on first text chunk (before tool calls)
+            if (!state.intentEmitted && !delta.tool_calls) {
+              newIntentEmitted = true
+              newIntentText = delta.content
+              const intentId = `intent:${index}:${Date.now()}`
+              events.push(intentEvent(intentId, delta.content, newToolNames.length > 0 ? newToolNames : undefined))
+            }
           } else {
             newTextBlocks[key] = { ...existing, text: existing.text + delta.content }
           }
@@ -224,6 +248,13 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
               events.push(toolInputStartEvent(key, tc.function.name))
               if (tc.function.arguments) {
                 events.push(toolInputDeltaEvent(key, tc.function.arguments))
+              }
+              // Emit intent on first tool call if not already emitted
+              if (!state.intentEmitted) {
+                newIntentEmitted = true
+                newIntentText = `Using ${tc.function.name} tool...`
+                const intentId = `intent:${index}:${Date.now()}`
+                events.push(intentEvent(intentId, `Using ${tc.function.name} tool...`, newToolNames.length > 0 ? newToolNames : undefined))
               }
             } else if (existing && tc.function?.arguments) {
               newToolCalls[key] = { ...existing, args: existing.args + tc.function.arguments }
@@ -269,7 +300,14 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
           }
         }
 
-        return [{ textBlocks: newTextBlocks, reasoningBlocks: newReasoningBlocks, toolCalls: newToolCalls }, events] as const
+        return [{ 
+          textBlocks: newTextBlocks, 
+          reasoningBlocks: newReasoningBlocks, 
+          toolCalls: newToolCalls,
+          intentEmitted: newIntentEmitted,
+          intentText: newIntentText,
+          toolNames: newToolNames,
+        }, events] as const
       }),
     terminal: (event: OpenAIStreamEvent) => event.choices[0]?.finish_reason !== null,
     onHalt: (state: OpenAIChatState) => {

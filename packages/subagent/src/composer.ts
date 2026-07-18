@@ -63,6 +63,7 @@ export function compose(
             toolCalls: 0,
             steps: 0,
             usage: { inputTokens: 0, outputTokens: 0 },
+            toolResults: [],
           } satisfies SubAgentResult),
       );
 

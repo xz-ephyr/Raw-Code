@@ -14,10 +14,18 @@ import {
   ChainOfThoughtSearchResults,
   ChainOfThoughtSearchResult,
 } from '@/components/ai/chain-of-thought';
+import {
+  ActionSummary,
+  ActionSummaryTrigger,
+  ActionSummaryContent,
+  ActionTimeline,
+  type ActionItem,
+} from '@/components/ai/action-summary';
 
 interface AssistantBubbleProps {
   content: string;
   isStreaming: boolean;
+  isThinkingEnabled?: boolean;
   model?: string;
   completionDuration?: number;
   version?: number;
@@ -27,6 +35,7 @@ interface AssistantBubbleProps {
   files?: any[];
   contentBeforeTool?: string;
   contentAfterTool?: string;
+  actionSummary?: { summary: string; actions: ActionItem[] } | null;
   onOpenFile?: (file: any) => void;
   onCopy: () => void;
 }
@@ -50,6 +59,7 @@ export const AssistantBubble = React.memo(
   ({
     content,
     isStreaming,
+    isThinkingEnabled,
     model,
     version,
     completionDuration,
@@ -58,6 +68,7 @@ export const AssistantBubble = React.memo(
     contentBeforeTool,
     contentAfterTool,
     reasoning,
+    actionSummary,
     onOpenFile,
     onCopy,
   }: AssistantBubbleProps) => {
@@ -99,9 +110,25 @@ export const AssistantBubble = React.memo(
 
     const hasResearchSteps = researchCalls.length > 0;
 
+    const hasActionSummary = actionSummary && (actionSummary.actions.length > 0 || isStreaming);
+
     return (
       <div className="mb-10 w-full group/bubble">
         <div className="text-base px-4 break-words flex flex-col gap-1">
+          {hasActionSummary && (
+            <ActionSummary
+              summary={actionSummary.summary}
+              isStreaming={isStreaming}
+              actions={actionSummary.actions}
+              defaultOpen={false}
+            >
+              <ActionSummaryTrigger />
+              <ActionSummaryContent>
+                <ActionTimeline actions={actionSummary.actions} />
+              </ActionSummaryContent>
+            </ActionSummary>
+          )}
+
           {hasWriteArtifact ? (
             <>
               {phase === 'intention' && streamedIntention && (
@@ -148,11 +175,11 @@ export const AssistantBubble = React.memo(
             ) : null
           )}
 
-          {reasoning && (
-            <MarkdownErrorBoundary rawContent={reasoning}>
-            <Reasoning isStreaming={isStreaming} defaultOpen={isStreaming}>
+          {(reasoning || (isThinkingEnabled && isStreaming)) && (
+            <MarkdownErrorBoundary rawContent={reasoning || ''}>
+            <Reasoning isStreaming={isStreaming} defaultOpen={false}>
               <ReasoningTrigger />
-              <ReasoningContent>{reasoning}</ReasoningContent>
+              <ReasoningContent>{reasoning || ''}</ReasoningContent>
             </Reasoning>
             </MarkdownErrorBoundary>
           )}

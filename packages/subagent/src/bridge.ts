@@ -61,6 +61,8 @@ Two modes:
       const scope = input.toolScope ?? toolFilter;
       const mat = materialize({ filterByScope: scope });
 
+      const resolveCredential = context.resolveCredential;
+
       if (input.tasks && input.tasks.length > 0) {
         const requests: readonly SubAgentRequest[] = input.tasks.map((t: string) => ({
           task: t,
@@ -70,15 +72,17 @@ Two modes:
           toolScope: input.toolScope,
           agentType: input.agentType,
           parentSessionID: context.sessionID,
+          resolveCredential,
         }));
 
         const results = yield* runParallel(requests, mat);
         const summary = synthesize(results);
-        return { result: summary, steps: results.length, mode: 'parallel' };
+        const allToolResults = results.flatMap(r => r.toolResults);
+        return { result: summary, steps: results.length, mode: 'parallel', toolResults: allToolResults };
       }
 
       if (!input.task) {
-        return { result: 'No task provided', steps: 0, mode: 'single' };
+        return { result: 'No task provided', steps: 0, mode: 'single', toolResults: [] };
       }
 
       const request: SubAgentRequest = {
@@ -89,10 +93,11 @@ Two modes:
         toolScope: input.toolScope,
         agentType: input.agentType,
         parentSessionID: context.sessionID,
+        resolveCredential,
       };
 
       const result = yield* runSubAgent(request, mat);
-      return { result: result.output, steps: result.steps, mode: 'single' };
+      return { result: result.output, steps: result.steps, mode: 'single', toolResults: result.toolResults };
     }),
 });
 

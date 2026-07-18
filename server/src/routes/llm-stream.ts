@@ -87,12 +87,34 @@ router.post('/stream', (req: Request, res: Response) => {
 
   const loop = createToolLoop({ routes: [route] })
 
+  const resolveCredential = (provider: string): string | undefined => {
+    const envMap: Record<string, string> = {
+      openai: 'OPENAI_API_KEY',
+      anthropic: 'ANTHROPIC_API_KEY',
+      google: 'GOOGLE_API_KEY',
+      deepseek: 'DEEPSEEK_API_KEY',
+      mistral: 'MISTRAL_API_KEY',
+      groq: 'GROQ_API_KEY',
+      cohere: 'COHERE_API_KEY',
+      togetherai: 'TOGETHER_API_KEY',
+      openrouter: 'OPENROUTER_API_KEY',
+      nvidia: 'NVIDIA_API_KEY',
+      cerebras: 'CEREBRAS_API_KEY',
+      sambanova: 'SAMBANOVA_API_KEY',
+      huggingface: 'HUGGINGFACE_API_KEY',
+      cloudflare: 'CLOUDFLARE_API_KEY',
+    }
+    const envVar = envMap[provider]
+    if (envVar) return process.env[envVar]
+    return undefined
+  }
+
   const executor: ToolExecutor = (call) =>
     Effect.tryPromise({
       try: () =>
         mat.settle(
           { id: call.id, name: call.name, input: call.input },
-          { sessionID: '', agentID: 'server', assistantMessageID: '', toolCallID: call.id },
+          { sessionID: '', agentID: 'server', assistantMessageID: '', toolCallID: call.id, resolveCredential },
         ),
       catch: (err) => new Error(String(err)),
     }).pipe(

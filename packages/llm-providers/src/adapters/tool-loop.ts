@@ -35,6 +35,19 @@ export interface ToolLoopConfig {
   readonly abortSignal?: AbortSignal
 }
 
+function describeError(err: unknown): string {
+  if (typeof err === 'string') return err
+  if (err instanceof Error) {
+    if (err.message && err.message !== '[object Object]') return err.message
+    const anyErr = err as any
+    const rm = anyErr?.reason?.message ?? anyErr?.reason?.reason?.message
+    if (typeof rm === 'string' && rm !== '[object Object]') return rm
+  }
+  const json = JSON.stringify(err)
+  if (json && json !== '{}' && json !== '[object Object]') return json
+  return String(err)
+}
+
 function makeAbortEffect(signal: AbortSignal): Effect.Effect<never, never> {
   return Effect.async<never, never>((emit) => {
     if (signal.aborted) return emit(Effect.die(new DOMException("Aborted", "AbortError")))
@@ -79,7 +92,7 @@ export function createToolLoop(
           Stream.catchAll((err) =>
             Stream.make({
               type: "provider-error" as const,
-              message: err.message ?? String(err),
+              message: describeError(err),
             } as LLMEvent),
           ),
         ),

@@ -8,7 +8,6 @@ import {
   PinIcon,
   PinOffIcon,
   MailOpenIcon,
-  SparklesIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 import { useToast } from '../ui/Toast';
@@ -55,7 +54,6 @@ const ThreadItem = memo(function ThreadItem({
   onDelete,
   onTogglePin,
   onMarkRead,
-  isStreaming = false,
 }: {
   session: ChatSession;
   isActive: boolean;
@@ -65,7 +63,6 @@ const ThreadItem = memo(function ThreadItem({
   onDelete: (id: string) => Promise<void>;
   onTogglePin: (id: string, pinned: boolean) => Promise<void>;
   onMarkRead: (id: string) => Promise<void>;
-  isStreaming?: boolean;
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -142,11 +139,6 @@ const ThreadItem = memo(function ThreadItem({
           <div className="flex items-center gap-1.5">
             {session.unread && (
               <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-0.5" />
-            )}
-            {isStreaming && (
-              <span className="shrink-0 text-purple-500 animate-pulse" aria-label="Streaming in background">
-                <HugeiconRenderer icon={SparklesIcon} size={12} />
-              </span>
             )}
             {session.pinned && (
               <span className="shrink-0 text-muted-foreground">

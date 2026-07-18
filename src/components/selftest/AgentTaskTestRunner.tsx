@@ -33,11 +33,8 @@ function checkTask(task: AgentTask, response: string, toolCalls: string[]): { pa
     details.push(`Response too short: ${content.length} chars (expected >= ${expected.minLength})`)
   }
 
-  if (expected.delegatesSubagent && !hasSubagentCall) {
-    details.push(`Expected subagent_run call but none found`)
-  }
-  if (expected.directResponse && hasSubagentCall) {
-    details.push(`Expected direct response but subagent_run was called`)
+  if (expected.callsSubagent === false && hasSubagentCall) {
+    details.push(`Expected direct tool use but subagent_run was called`)
   }
 
   if (expected.mustContain) {

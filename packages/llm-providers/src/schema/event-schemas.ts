@@ -112,6 +112,8 @@ export const ToolResult_ = Schema.Struct({
   name: Schema.String,
   result: Schema.Unknown,
   output: Schema.optional(Schema.String),
+  input: Schema.optional(Schema.Unknown),
+  error: Schema.optional(Schema.String),
   providerExecuted: Schema.optional(Schema.Boolean),
   providerMetadata: Schema.optional(ProviderMetadata),
 })
@@ -144,6 +146,15 @@ export const Finish = Schema.Struct({
 })
 export type Finish = Schema.Schema.Type<typeof Finish>
 
+export const Intent = Schema.Struct({
+  type: Schema.tag("intent"),
+  id: ContentBlockID,
+  text: Schema.String,
+  toolNames: Schema.optional(Schema.Array(Schema.String)),
+  providerMetadata: Schema.optional(ProviderMetadata),
+})
+export type Intent = Schema.Schema.Type<typeof Intent>
+
 export const ProviderErrorEvent = Schema.Struct({
   type: Schema.tag("provider-error"),
   message: Schema.String,
@@ -161,6 +172,7 @@ export type UsageEvent = Schema.Schema.Type<typeof UsageEvent>
 
 const llmEventSchemas = [
   StepStart,
+  Intent,
   TextStart,
   TextDelta,
   TextEnd,
@@ -186,6 +198,7 @@ const isEventType = <T extends { readonly type: string }>(type: string) => (even
   event.type === type
 
 export const isStepStart = isEventType<StepStart>("step-start")
+export const isIntent = isEventType<Intent>("intent")
 export const isTextStart = isEventType<TextStart>("text-start")
 export const isTextDelta = isEventType<TextDelta>("text-delta")
 export const isTextEnd = isEventType<TextEnd>("text-end")

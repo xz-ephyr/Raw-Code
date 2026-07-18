@@ -1,6 +1,6 @@
 # Antigravity Cloud API Contract
 
-> **STATUS**: Contract specification — reference for building the real backend. The mock server at `server/src/routes/mock-antigravity.ts` implements this contract for testing. Once the real backend exists, swap the base URL; no test changes required.
+> **STATUS**: Contract specification. A REAL backend now exists at `server/src/routes/antigravity.ts` (replaces `mock-antigravity.ts`), backed by `@doktor/llm-providers` and real provider keys loaded from the SQLite `app_config` table. It implements the full contract (identity, chat SSE, jobs create/poll/events/stream with cursor reattach). Set `ANTIGRAVITY_DEFAULT_MODEL` to choose the cloud model (default `mistral-small-latest`); keys resolve from stored provider API keys.
 
 ---
 

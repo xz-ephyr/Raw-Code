@@ -1,6 +1,7 @@
 import { memo, useCallback } from 'react';
 import { UserBubble } from './UserBubble';
 import { AssistantBubble } from './AssistantBubble';
+import type { ActionItem } from '@/components/ai/action-summary';
 
 interface ChatMessageRowProps {
   role: string;
@@ -13,7 +14,9 @@ interface ChatMessageRowProps {
   parts?: any[];
   contentBeforeTool?: string;
   contentAfterTool?: string;
+  actionSummary?: { summary: string; actions: ActionItem[] } | null;
   isStreaming: boolean;
+  isThinkingEnabled?: boolean;
   version: number;
   completionDuration?: number;
   onOpenFile: (file: any) => void;
@@ -31,7 +34,9 @@ export const ChatMessageRow = memo(function ChatMessageRow({
   parts,
   contentBeforeTool,
   contentAfterTool,
+  actionSummary,
   isStreaming,
+  isThinkingEnabled,
   version,
   completionDuration,
   onOpenFile,
@@ -55,6 +60,7 @@ export const ChatMessageRow = memo(function ChatMessageRow({
           model={model}
           version={version}
           isStreaming={isStreaming}
+          isThinkingEnabled={isThinkingEnabled}
           completionDuration={completionDuration}
           toolInvocations={toolInvocations}
           reasoning={reasoning}
@@ -62,6 +68,7 @@ export const ChatMessageRow = memo(function ChatMessageRow({
           files={files}
           contentBeforeTool={contentBeforeTool}
           contentAfterTool={contentAfterTool}
+          actionSummary={actionSummary}
           onOpenFile={
             files && files.length > 0 ? handleOpenMsgFile : undefined
           }

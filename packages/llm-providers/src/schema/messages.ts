@@ -259,6 +259,7 @@ export class LLMRequest extends Schema.Class<LLMRequest>("LLM.Request")({
   responseFormat: Schema.optional(ResponseFormat),
   cache: Schema.optional(CachePolicy),
   metadata: Schema.optional(Schema.Record({ key: Schema.String, value: Schema.Unknown })),
+  intent: Schema.optional(Schema.String),
 }) {}
 
 export const llmRequestInput = (request: LLMRequest): ConstructorParameters<typeof LLMRequest>[0] => ({

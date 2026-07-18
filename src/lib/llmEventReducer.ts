@@ -1,11 +1,30 @@
 import type { LLMEvent } from "@doktor/llm-providers"
 
+export interface ActionItem {
+  id: string
+  type: "tool_call" | "search" | "fetch" | "thinking" | "custom"
+  label: string
+  description?: string
+  status: "pending" | "active" | "complete" | "error"
+  input?: unknown
+  result?: unknown
+  error?: string
+  timestamp?: number
+  duration?: number
+}
+
+export interface ActionSummary {
+  summary: string
+  actions: ActionItem[]
+}
+
 export interface AssistantMessage {
   id: string
   role: "assistant"
   content: string
   reasoning: string
   toolCalls: ToolCallState[]
+  actionSummary?: ActionSummary
   createdAt: number
   finishReason?: string
 }
@@ -54,6 +73,87 @@ function stripThinkingTags(text: string): string {
     .replace(/<(?:think|thought)>[\s\S]*$/g, '')
 }
 
+function generateSummaryFromContent(content: string): string {
+  if (!content) return "Processing your request..."
+  const cleaned = content.replace(/[#*_`~]/g, '').trim()
+  const firstSentence = cleaned.split(/[.!?\n]/)[0]?.trim()
+  if (firstSentence && firstSentence.length > 10 && firstSentence.length <= 100) {
+    return firstSentence
+  }
+  if (firstSentence && firstSentence.length > 100) {
+    return firstSentence.slice(0, 97) + "..."
+  }
+  if (cleaned.length > 0) {
+    return cleaned.length > 100 ? cleaned.slice(0, 97) + "..." : cleaned
+  }
+  return "Processing your request..."
+}
+
+function generateSummaryFromToolCalls(toolCalls: ToolCallState[]): string {
+  if (toolCalls.length === 0) return ""
+  const last = toolCalls[toolCalls.length - 1]
+  if (last.name === "research" || last.name === "web_search") {
+    const query = (last.input as any)?.query
+    return query ? `Searching for "${query}"` : "Searching the web..."
+  }
+  if (last.name === "write_artifact" || last.name === "write_article") {
+    const title = (last.input as any)?.title
+    return title ? `Writing "${title}"` : "Writing content..."
+  }
+  if (last.name === "edit_text") {
+    return "Editing text..."
+  }
+  if (last.name === "generate_script") {
+    return "Generating script..."
+  }
+  return `Running ${last.name}...`
+}
+
+function buildActionSummary(
+  content: string,
+  toolCalls: ToolCallState[],
+  isStreaming: boolean
+): ActionSummary | undefined {
+  if (toolCalls.length === 0 && !content) return undefined
+
+  const actions: ActionItem[] = toolCalls.map((tc, i) => ({
+    id: tc.id || `action_${i}`,
+    type: tc.name === "research" || tc.name === "web_search" ? "search" : "tool_call",
+    label: tc.name,
+    description: formatToolDescription(tc),
+    status: tc.status === "complete" ? "complete" : tc.status === "error" ? "error" : "active",
+    input: tc.input,
+    result: tc.result,
+    error: tc.error,
+  }))
+
+  let summary: string
+  if (isStreaming && content) {
+    summary = generateSummaryFromContent(content)
+  } else if (toolCalls.length > 0) {
+    summary = generateSummaryFromToolCalls(toolCalls)
+  } else {
+    summary = "Processing your request..."
+  }
+
+  return { summary, actions }
+}
+
+function formatToolDescription(tc: ToolCallState): string {
+  const input = tc.input as any
+  if (!input) return ""
+  if (tc.name === "research" || tc.name === "web_search") {
+    return input.query || ""
+  }
+  if (tc.name === "write_artifact" || tc.name === "write_article") {
+    return input.title || input.identifier || ""
+  }
+  if (tc.name === "edit_text") {
+    return input.instruction || ""
+  }
+  return ""
+}
+
 export function reduceEvent(state: StreamState, event: LLMEvent, options?: { skipReasoning?: boolean }): StreamState {
   const skipReasoning = options?.skipReasoning ?? false
   switch (event.type) {
@@ -67,11 +167,14 @@ export function reduceEvent(state: StreamState, event: LLMEvent, options?: { ski
 
     case "text-delta": {
       const msg = currentOrNew(state.currentMessage)
+      const newContent = msg.content + event.text
+      const actionSummary = buildActionSummary(newContent, msg.toolCalls, true)
       return {
         ...state,
         currentMessage: {
           ...msg,
-          content: msg.content + event.text,
+          content: newContent,
+          actionSummary,
         },
       }
     }
@@ -118,39 +221,48 @@ export function reduceEvent(state: StreamState, event: LLMEvent, options?: { ski
         tc.id === event.id ? { ...tc, input: event.input, status: "streaming" as const } : tc,
       )
       const hasTool = toolCalls.some((tc) => tc.id === event.id)
+      const newToolCalls = hasTool
+        ? toolCalls
+        : [...toolCalls, { id: event.id, name: event.name, input: event.input, status: "streaming" as const }]
+      const actionSummary = buildActionSummary(msg.content, newToolCalls, true)
       return {
         ...state,
         currentMessage: {
           ...msg,
-          toolCalls: hasTool
-            ? toolCalls
-            : [...toolCalls, { id: event.id, name: event.name, input: event.input, status: "streaming" as const }],
+          toolCalls: newToolCalls,
+          actionSummary,
         },
       }
     }
 
     case "tool-result": {
       const msg = currentOrNew(state.currentMessage)
+      const updatedToolCalls = msg.toolCalls.map((tc) =>
+        tc.id === event.id ? { ...tc, result: event.result, status: "complete" as const } : tc,
+      )
+      const actionSummary = buildActionSummary(msg.content, updatedToolCalls, state.status === "streaming")
       return {
         ...state,
         currentMessage: {
           ...msg,
-          toolCalls: msg.toolCalls.map((tc) =>
-            tc.id === event.id ? { ...tc, result: event.result, status: "complete" as const } : tc,
-          ),
+          toolCalls: updatedToolCalls,
+          actionSummary,
         },
       }
     }
 
     case "tool-error": {
       const msg = currentOrNew(state.currentMessage)
+      const updatedToolCalls = msg.toolCalls.map((tc) =>
+        tc.id === event.id ? { ...tc, error: event.message, status: "error" as const } : tc,
+      )
+      const actionSummary = buildActionSummary(msg.content, updatedToolCalls, state.status === "streaming")
       return {
         ...state,
         currentMessage: {
           ...msg,
-          toolCalls: msg.toolCalls.map((tc) =>
-            tc.id === event.id ? { ...tc, error: event.message, status: "error" as const } : tc,
-          ),
+          toolCalls: updatedToolCalls,
+          actionSummary,
         },
       }
     }

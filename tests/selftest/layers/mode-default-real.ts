@@ -97,20 +97,42 @@ You have \`web_search\` (lightweight) and \`research\` (deep multi-source) tools
 - Group related info into sections. One idea = one paragraph.
 - If the answer is short, keep it short.`
 
-const DEFAULT_MODE_PROMPT = `## Default Mode — Single Sub-agent Delegation
+const DEFAULT_MODE_PROMPT = `## Default Mode — Direct Tool Use
 
-You are a general-purpose assistant. For tasks you cannot confidently answer or do directly, delegate to a single subagent_run call.
+You are a general-purpose assistant with full access to all tools.
 
 ### Rules
-1. Respond directly when you know the answer or can handle the task without tools.
-2. Only call subagent_run when the task requires research, writing, tool use, or deeper processing.
-3. When delegating, call subagent_run exactly ONCE with agentType: "general" and the user's full request as the task.
-4. Return the sub-agent's output as your final response.
-5. Do NOT call tools like web_search, research, write_article, etc. yourself — let the general sub-agent handle them.`
+1. Handle simple tasks directly — search the web, write articles, research topics, generate code, answer questions. Use whatever tools you need.
+2. For complex multi-step tasks that require gathering lots of information from many sources and synthesizing into multiple deliverables, use \`subagent_run\` to delegate.
+3. You have access to all tools — \`web_search\`, \`research\`, \`write_article\`, \`edit_text\`, \`generate_script\`, \`question\`, \`scrape_url\`, etc. Use them freely.
+4. Respond directly when you know the answer without needing tools.`
 
 function buildSystemPrompt(): string {
   return `${BASE_SYSTEM_PROMPT}\n\n${DEFAULT_MODE_PROMPT}`
 }
+
+const TOOL_DEFS: { name: string; description: string; parameters: Record<string, any> }[] = [
+  {
+    name: 'web_search',
+    description: 'Search the web for current information. Lightweight single-query lookup.',
+    parameters: { type: 'object', properties: { query: { type: 'string', description: 'The search query' }, maxResults: { type: 'number', description: 'Max results (default 5)' } }, required: ['query'] },
+  },
+  {
+    name: 'research',
+    description: 'Research a topic by searching the web and synthesizing findings.',
+    parameters: { type: 'object', properties: { query: { type: 'string' }, depth: { type: 'string', enum: ['quick', 'deep'] }, maxSources: { type: 'number' } }, required: ['query'] },
+  },
+  {
+    name: 'write_article',
+    description: 'Write a full article on any topic.',
+    parameters: { type: 'object', properties: { topic: { type: 'string' }, wordCount: { type: 'number' }, format: { type: 'string', enum: ['blog', 'technical', 'general'] } }, required: ['topic'] },
+  },
+  {
+    name: 'subagent_run',
+    description: 'For complex multi-step tasks requiring lots of information from many sources and multiple deliverables.',
+    parameters: { type: 'object', properties: { agentType: { type: 'string', description: 'Always "general"' }, task: { type: 'string', description: 'The full task description' } }, required: ['agentType', 'task'] },
+  },
+]
 
 async function callLLM(
   config: ProviderConfig,
@@ -127,7 +149,7 @@ async function callLLM(
       const url = `${config.apiUrl}?key=${apiKey}`
       const body = {
         contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nUser: ${userPrompt}` }] }],
-        tools: [{ functionDeclarations: [{ name: 'subagent_run', description: 'Delegate task to subagent', parameters: { type: 'object', properties: { agentType: { type: 'string' }, task: { type: 'string' } }, required: ['agentType', 'task'] } }] }],
+        tools: [{ functionDeclarations: TOOL_DEFS.map((t) => ({ name: t.name, description: t.description, parameters: t.parameters })) }],
       }
       const res = await fetch(url, { method: 'POST', headers: config.buildHeaders(apiKey), body: JSON.stringify(body), signal: controller.signal })
       const data = await res.json()
@@ -146,7 +168,7 @@ async function callLLM(
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
         max_tokens: 4096,
-        tools: [{ name: 'subagent_run', description: 'Delegate task to subagent. Call this when the user asks for research, writing, tool use, or deeper processing that you cannot handle directly.', input_schema: { type: 'object', properties: { agentType: { type: 'string', description: 'Always "general"' }, task: { type: 'string', description: 'The full user request' } }, required: ['agentType', 'task'] } }],
+        tools: TOOL_DEFS.map((t) => ({ name: t.name, description: t.description, input_schema: t.parameters })),
       }
       const res = await fetch(config.apiUrl, { method: 'POST', headers: config.buildHeaders(apiKey), body: JSON.stringify(body), signal: controller.signal })
       const data = await res.json()
@@ -165,21 +187,7 @@ async function callLLM(
         { role: 'user', content: userPrompt },
       ],
       max_tokens: 4096,
-      tools: [{
-        type: 'function',
-        function: {
-          name: 'subagent_run',
-          description: 'Delegate task to subagent. Call this when the user asks for research, writing, tool use, or deeper processing that you cannot handle directly.',
-          parameters: {
-            type: 'object',
-            properties: {
-              agentType: { type: 'string', description: 'Always "general"' },
-              task: { type: 'string', description: 'The full user request' },
-            },
-            required: ['agentType', 'task'],
-          },
-        },
-      }],
+      tools: TOOL_DEFS.map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: t.parameters } })),
     }
     const res = await fetch(config.apiUrl, { method: 'POST', headers: config.buildHeaders(apiKey), body: JSON.stringify(body), signal: controller.signal })
     const data = await res.json()
@@ -214,12 +222,12 @@ function checkTask(task: AgentTask, response: { content: string; toolCalls: { na
     warnings.push(`Response long: ${content.length} chars (expected <= ${expected.maxLength})`)
   }
 
-  // Subagent delegation check
-  if (expected.delegatesSubagent && !hasSubagentCall) {
-    errors.push(`Expected subagent_run call but none found. Content: "${content.slice(0, 100)}..."`)
+  // Subagent delegation check — all tasks expect NO subagent for this mode
+  if (expected.callsSubagent === false && hasSubagentCall) {
+    errors.push(`Expected direct tool use but subagent_run was called`)
   }
-  if (expected.directResponse && hasSubagentCall) {
-    errors.push(`Expected direct response but subagent_run was called`)
+  if (expected.callsSubagent && !hasSubagentCall) {
+    errors.push(`Expected subagent_run call but none found`)
   }
 
   // Content checks

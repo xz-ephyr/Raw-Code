@@ -22,7 +22,7 @@ export const useProjectStore = create<ThreadState>((set) => ({
   currentSessionId: null,
   isThinkingEnabled: false,
   isWebSearchEnabled: false,
-  currentMode: 'writer',
+  currentMode: 'default',
   selectedModel: 'auto',
   modelRevision: 0,
   isSettingsOpen: false,

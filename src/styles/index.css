@@ -278,3 +278,34 @@ code:not(pre code) {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+.action-summary-panel {
+  animation: action-panel-slide-in 0.2s ease-out;
+}
+
+@keyframes action-panel-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.action-item-enter {
+  animation: action-item-fade-in 0.3s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes action-item-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

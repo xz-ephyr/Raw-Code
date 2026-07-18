@@ -9,6 +9,7 @@ import {
   assistantMessage as nativeAssistantMessage,
   toolMessage as nativeToolMessage,
   makeToolDefinition,
+  makeToolChoice,
 } from '@doktor/llm-providers';
 import type { LLMEvent } from '@doktor/llm-providers';
 import { allRoutes, getRouteByModelId } from '@doktor/llm-providers/providers/model-routes';
@@ -86,6 +87,12 @@ export interface RunAgentTaskInput {
   systemPrompt?: string;
   temperature?: number;
   maxTokens?: number;
+  enableTools?: boolean;
+  forceTools?: boolean;
+  /** When set, the backend pre-fetches web research via the `research` tool
+   *  (go-crawl) and injects the sources into the prompt before generation. This
+   *  guarantees real web grounding regardless of the model's tool-calling behavior. */
+  researchQuery?: string;
   onEvent: (evt: AntigravityEvent) => void;
 }
 
@@ -146,7 +153,14 @@ function toAntigravityEvent(evt: LLMEvent): AntigravityEvent | null {
       };
     case 'provider-error': {
       const raw = (evt as any).message;
-      const message = typeof raw === 'string' ? raw : JSON.stringify(raw);
+      let message: string;
+      if (typeof raw === 'string' && raw !== '[object Object]') {
+        message = raw;
+      } else {
+        const reason = (evt as any).reason;
+        const rm = reason?.message ?? reason?.reason?.message;
+        message = typeof rm === 'string' ? rm : JSON.stringify(raw ?? reason ?? evt);
+      }
       return { event: 'error', data: { code: 'provider_error', message } };
     }
     default:
@@ -170,19 +184,56 @@ export async function runAgentTask(input: RunAgentTaskInput): Promise<{
   const model = route.model({ id: route.id });
 
   const mat = materialize();
-  const toolDefs = mat.definitions.map((d) =>
-    makeToolDefinition({ name: d.name, description: d.description, inputSchema: d.inputSchema }),
-  );
+  const toolDefs = mat.definitions
+    .filter((d) => d.inputSchema)
+    .map((d) =>
+      makeToolDefinition({
+        name: d.name,
+        description: d.description,
+        inputSchema: d.inputSchema as any,
+      }),
+    );
 
   const systemText =
     input.systemPrompt ??
     'You are an Antigravity Agent — a cloud-powered advanced processing agent. Be concise and accurate.';
 
+  let systemWithResearch = systemText;
+
+  if (input.researchQuery) {
+    const researchId = 'research_prefetch';
+    input.onEvent({ event: 'tool_call_delta', data: { id: researchId, name: 'research', input: { query: input.researchQuery } } });
+    try {
+      const result = await mat.settle(
+        { id: researchId, name: 'research', input: { query: input.researchQuery, depth: 'deep' } },
+        { sessionID: '', agentID: 'antigravity', assistantMessageID: '', toolCallID: researchId },
+      );
+      const value = result.type === 'success' ? result.value : { summary: 'No research results.', sources: [] };
+      const sources = Array.isArray((value as any)?.sources) ? (value as any).sources : [];
+      const cited = sources
+        .map((s: any, i: number) => `${i + 1}. ${s.title || 'Untitled'} — ${s.url || ''}\n   ${(s.snippet || '').slice(0, 300)}`)
+        .join('\n\n');
+      input.onEvent({
+        event: 'tool_result_delta',
+        data: { id: researchId, name: 'research', result: { sourceCount: sources.length, summary: (value as any)?.summary ?? '' } },
+      });
+      systemWithResearch =
+        `${systemText}\n\n## Web research already gathered for you (DO NOT call any research tool — the results are below). ` +
+        `Write your report directly from these sources and cite them by URL.\n\n${cited}\n`;
+    } catch (err: any) {
+      input.onEvent({
+        event: 'tool_result_delta',
+        data: { id: researchId, name: 'research', result: { error: String(err?.message ?? err) } },
+      });
+    }
+  }
+
   const request = new LLMRequest({
     model,
-    system: [SystemPart.make(systemText)],
+    system: [SystemPart.make(systemWithResearch)],
     messages: convertMessages(input.messages),
-    tools: input.model && input.model !== 'antigravity-1' ? toolDefs : [],
+    tools: input.enableTools ? toolDefs : [],
+    toolChoice: input.forceTools && input.enableTools && toolDefs.length > 0 ? makeToolChoice('required') : undefined,
     http: new HttpOptions({ headers: { 'Content-Type': 'application/json' } }),
   });
 
@@ -195,10 +246,18 @@ export async function runAgentTask(input: RunAgentTaskInput): Promise<{
           { id: call.id, name: call.name, input: call.input },
           { sessionID: '', agentID: 'antigravity', assistantMessageID: '', toolCallID: call.id },
         ),
-      catch: (err) => new Error(String(err)),
+      catch: (err) => new Error(err instanceof Error ? err.message : JSON.stringify(err)),
     }).pipe(
       Effect.flatMap((result) => {
-        if (result.type === 'error') return Effect.fail(new Error(result.message));
+        if (result.type === 'error') {
+          const msg =
+            typeof result.message === 'string'
+              ? result.message
+              : result.message instanceof Error
+                ? result.message.message
+                : JSON.stringify(result.message);
+          return Effect.fail(new Error(msg));
+        }
         return Effect.succeed({ id: call.id, name: call.name, result: result.value });
       }),
     );
@@ -217,6 +276,9 @@ export async function runAgentTask(input: RunAgentTaskInput): Promise<{
             inputTokens: event.usage.inputTokens ?? 0,
             outputTokens: event.usage.outputTokens ?? 0,
           };
+        }
+        if (event.type === 'provider-error') {
+          console.error('[antigravity] provider-error:', (event as any).message);
         }
         const ag = toAntigravityEvent(event);
         if (ag) input.onEvent(ag);

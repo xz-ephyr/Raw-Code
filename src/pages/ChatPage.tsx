@@ -6,8 +6,6 @@ import { AgentWorkspace } from '../components/agent-workspace/AgentWorkspace';
 import ResizeDivider from '../components/layout/ResizeDivider';
 import { MessageList } from '../components/chat/MessageList';
 import TitleBar from '../components/layout/TitleBar';
-import { HugeiconRenderer } from '../components/ui/HugeiconRenderer';
-import { RefreshIcon } from '@hugeicons/core-free-icons';
 
 export const ChatPage = () => {
   const {
@@ -46,8 +44,7 @@ export const ChatPage = () => {
     handleQuestionAnswer,
     handleConfirmApprove,
     handleConfirmDeny,
-    streamingBanner,
-    refreshMessages,
+    retryInfo,
     agentAgents,
     activeAgent,
     isAgentPanelOpen,
@@ -76,22 +73,25 @@ export const ChatPage = () => {
               : 'flex-1'
           }`}
         >
-          {streamingBanner && (
-            <div className="flex items-center justify-between gap-2 px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-sm text-amber-600 dark:text-amber-400">
-              <span>
-                {streamingBanner === 'loading'
-                  ? 'Refreshing messages...'
-                  : 'This thread was streaming when you left. The result may have completed in the background.'}
-              </span>
-              {streamingBanner === 'ready' && (
-                <button
-                  onClick={refreshMessages}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 transition-colors text-xs font-medium"
+          {retryInfo && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 border-b border-blue-500/20 text-sm text-blue-600 dark:text-blue-400">
+              <span className="inline-flex items-center gap-1.5">
+                <svg
+                  className="w-3.5 h-3.5 animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
                 >
-                  <HugeiconRenderer icon={RefreshIcon} size={12} />
-                  Refresh
-                </button>
-              )}
+                  <circle cx="12" cy="12" r="9" opacity="0.25" />
+                  <path d="M21 12a9 9 0 0 0-9-9" strokeLinecap="round" />
+                </svg>
+                Retrying request
+              </span>
+              <span className="font-mono tabular-nums text-base font-semibold">
+                {retryInfo.remainingSec}s
+              </span>
+              <span className="text-xs opacity-70">· attempt {retryInfo.attempt} · auto-resending until a response arrives</span>
             </div>
           )}
           <MessageList

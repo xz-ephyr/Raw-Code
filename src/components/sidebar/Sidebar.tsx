@@ -12,12 +12,10 @@ import {
 } from '@hugeicons/core-free-icons';
 import SidebarTab from './SidebarTab';
 
-import { ChatStreamService } from '@/services/ChatStreamService';
 import { ChatSessionManager } from '@/services/ChatSessionManager';
 import type { ChatSession } from '@/types/chat';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 import { useProjectStore } from '@/stores/projectStore';
-import { useToast } from '../ui/Toast';
 import ThreadItem from './ThreadItem';
 
 const newThreadIcon = <HugeiconRenderer icon={PencilEdit02Icon} />;
@@ -34,8 +32,7 @@ const Sidebar = React.memo(function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const setSettingsOpen = useProjectStore((s) => s.setSettingsOpen);
-  const { addToast } = useToast();
-  
+
   const loadThreads = async () => {
     const all = await ChatSessionManager.getAll();
     all.sort((a, b) => {
@@ -55,20 +52,11 @@ const Sidebar = React.memo(function Sidebar() {
     window.addEventListener('thread-deleted', handleSessionChange);
     window.addEventListener('unread-changed', handleSessionChange);
 
-    const handleBackgroundCompleted = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail?.title) {
-        addToast(`Response ready in "${detail.title}"`, 'success');
-      }
-    };
-    window.addEventListener('background-stream-completed', handleBackgroundCompleted);
-
     return () => {
       window.removeEventListener('session-title-changed', handleSessionChange);
       window.removeEventListener('projects-changed', handleSessionChange);
       window.removeEventListener('thread-deleted', handleSessionChange);
       window.removeEventListener('unread-changed', handleSessionChange);
-      window.removeEventListener('background-stream-completed', handleBackgroundCompleted);
     };
   }, []);
 
@@ -184,7 +172,6 @@ const Sidebar = React.memo(function Sidebar() {
                         key={t.id}
                         session={t}
                         isActive={location.pathname === `/thread/${t.id}`}
-                        isStreaming={ChatStreamService.isStreaming(t.id)}
                         onNavigate={() => handleNavigate(t.id)}
                         onRename={handleRename}
                         onArchive={handleArchiveItem}
@@ -208,7 +195,6 @@ const Sidebar = React.memo(function Sidebar() {
                       key={t.id}
                       session={t}
                       isActive={location.pathname === `/thread/${t.id}`}
-                      isStreaming={ChatStreamService.isStreaming(t.id)}
                       onNavigate={() => handleNavigate(t.id)}
                       onRename={handleRename}
                       onArchive={handleArchiveItem}

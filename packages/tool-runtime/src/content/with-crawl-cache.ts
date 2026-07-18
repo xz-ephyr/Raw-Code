@@ -9,29 +9,44 @@ type CacheableRequest = {
 };
 
 function cacheLookup(cacheKey: string): Effect.Effect<{ hit: boolean; content?: any }> {
-  return Effect.promise(() =>
-    fetch(`${SERVER_URL}/crawl-cache/lookup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(5000),
-      body: JSON.stringify({ cacheKey }),
-    })
-      .then((r) => r.json())
-      .catch(() => ({ hit: false })),
-  );
+  return Effect.promise(async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    try {
+      const r = await fetch(`${SERVER_URL}/crawl-cache/lookup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({ cacheKey }),
+      });
+      return await r.json();
+    } catch {
+      return { hit: false };
+    } finally {
+      clearTimeout(timeout);
+      controller.abort();
+    }
+  });
 }
 
 function cacheStore(cacheKey: string, content: any, ttlSeconds: number): Effect.Effect<void> {
-  return Effect.promise(() =>
-    fetch(`${SERVER_URL}/crawl-cache/store`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(5000),
-      body: JSON.stringify({ cacheKey, content, ttlSeconds }),
-    })
-      .then(() => undefined)
-      .catch(() => undefined),
-  );
+  return Effect.promise(async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    try {
+      await fetch(`${SERVER_URL}/crawl-cache/store`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({ cacheKey, content, ttlSeconds }),
+      });
+    } catch {
+      // best-effort cache write; ignore failures when server is unreachable
+    } finally {
+      clearTimeout(timeout);
+      controller.abort();
+    }
+  });
 }
 
 export function withCrawlCache<T>(req: CacheableRequest): Effect.Effect<T> {
