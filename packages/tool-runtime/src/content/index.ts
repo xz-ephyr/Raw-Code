@@ -13,3 +13,4 @@ export { researchCompileTool } from './research-compile';
 export { crawlToArticlesTool } from './crawl-to-articles';
 export { importVideoSourcesTool } from './import-video-sources';
 export { withCrawlCache, buildCacheKey } from './with-crawl-cache';
+export { thinkTool } from './think';

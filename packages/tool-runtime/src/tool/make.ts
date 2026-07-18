@@ -26,6 +26,7 @@ export function make<I, O = I, S = O>(config: ToolConfig<I, O, S>): ToolDefiniti
   const runtime = {
     description: config.description,
     inputSchema: config.input,
+    inputJsonSchema: config.inputJsonSchema,
     outputSchema: config.output,
     execute: config.execute,
     structured: config.structured,
