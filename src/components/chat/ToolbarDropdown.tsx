@@ -1,16 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Add01Icon, Attachment01Icon, CameraAdd01Icon, Atom02Icon, HandBag01Icon, ArrowRight01Icon, InternetIcon } from '@hugeicons/core-free-icons';
+import { Add01Icon, Attachment01Icon, CameraAdd01Icon, HandBag01Icon, ArrowRight01Icon, InternetIcon } from '@hugeicons/core-free-icons';
 import { Dropdown } from '../ui/Dropdown';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface ToolbarDropdownProps {
-  isThinkingEnabled: boolean;
-  onToggleThinking: () => void;
   onToggleWebSearch: () => void;
   isIdle?: boolean;
 }
 
-export default function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, onToggleWebSearch, isIdle }: ToolbarDropdownProps) {
+export default function ToolbarDropdown({ onToggleWebSearch, isIdle }: ToolbarDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSkillsOpen, setIsSkillsOpen] = useState(false);
   const skillsRef = useRef<HTMLDivElement>(null);
@@ -32,15 +31,19 @@ export default function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, o
 
   return (
     <div className="relative">
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-muted transition-colors text-foreground"
-        aria-label="Add content"
-        title="Add content"
-      >
-        <HugeiconsIcon icon={Add01Icon} size={16} />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-muted transition-colors text-foreground"
+            aria-label="Add content"
+          >
+            <HugeiconsIcon icon={Add01Icon} size={16} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>Add content</TooltipContent>
+      </Tooltip>
       <Dropdown
         isOpen={isOpen}
         onClose={() => { setIsOpen(false); setIsSkillsOpen(false); }}
@@ -48,27 +51,19 @@ export default function ToolbarDropdown({ isThinkingEnabled, onToggleThinking, o
         width="213px"
       >
         {items.map((item, i) => (
-          <button
-            key={i}
-            type="button"
-            className="w-full text-left px-3 py-2 text-xs hover:bg-muted text-foreground flex items-center gap-2 rounded-md"
-            title={item.title}
-          >
-            <HugeiconsIcon icon={item.icon} size={16} />
-            <span>{item.label}</span>
-          </button>
+          <Tooltip key={i}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="w-full text-left px-3 py-2 text-xs hover:bg-muted text-foreground flex items-center gap-2 rounded-md"
+              >
+                <HugeiconsIcon icon={item.icon} size={16} />
+                <span>{item.label}</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{item.title}</TooltipContent>
+          </Tooltip>
         ))}
-        <div className="flex items-center gap-2 px-3 py-2 text-xs text-foreground rounded-[6px] cursor-pointer hover:bg-muted" onClick={onToggleThinking}>
-          <HugeiconsIcon icon={Atom02Icon} size={16} />
-          <span className="flex-1">Reasoning</span>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onToggleThinking(); }}
-            className={`relative w-9 h-5 rounded-full transition-colors ${isThinkingEnabled ? 'bg-blue-500' : 'bg-muted-foreground'}`}
-          >
-            <span className={`absolute top-[3px] left-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${isThinkingEnabled ? 'translate-x-4' : ''}`} />
-          </button>
-        </div>
         <div className="h-px bg-border mx-3" />
         <div className="relative" ref={skillsRef}>
           <div

@@ -1,6 +1,6 @@
 import { query, getAppConfig } from '../db.js';
 import { encrypt, decrypt } from '../crypto.js';
-import type { AuthType, ConnectorStatus, TokenRow, AuthUrlOptions, OAuthConfig } from './types.js';
+import type { AuthType, ConnectorStatus, TokenRow, AuthUrlOptions, OAuthConfig, ActionDefinition } from './types.js';
 
 export abstract class ConnectorService {
   abstract get provider(): string;
@@ -220,5 +220,9 @@ export abstract class ConnectorService {
       status: () => this.getStatus(),
       disconnect: () => this.disconnect(),
     };
+  }
+
+  getActionDefinitions(): ActionDefinition[] {
+    return [];
   }
 }

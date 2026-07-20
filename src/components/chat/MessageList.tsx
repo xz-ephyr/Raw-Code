@@ -1,6 +1,7 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import { HugeiconRenderer } from '../ui/HugeiconRenderer';
 import { ArrowDown02Icon } from '@hugeicons/core-free-icons';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 import { ChatMessageRow } from './ChatMessageRow';
 import ChatInput from './ChatInput';
@@ -49,6 +50,7 @@ export function MessageList({
   const isNearBottomRef = useRef(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const scrollFrameRef = useRef<number>(0);
+  const wasLoadingRef = useRef(false);
 
   const handleScroll = useCallback(() => {
     if (scrollFrameRef.current) cancelAnimationFrame(scrollFrameRef.current);
@@ -92,6 +94,18 @@ export function MessageList({
     return () => observer.disconnect();
   }, [messages.length]);
 
+  useEffect(() => {
+    if (isLoading && !wasLoadingRef.current) {
+      const el = scrollContainerRef.current;
+      if (el) {
+        isNearBottomRef.current = true;
+        setShowScrollButton(false);
+        el.scrollTop = el.scrollHeight;
+      }
+    }
+    wasLoadingRef.current = isLoading;
+  }, [isLoading]);
+
   const hasMessages = messages.length > 0;
 
   useEffect(() => {
@@ -132,7 +146,7 @@ export function MessageList({
         onScroll={handleScroll}
         className="thin-scrollbar outline-none overflow-y-auto flex-1 min-h-0 scroll-smooth"
       >
-        <div className="mx-auto flex flex-col px-2 pb-24" style={{ maxWidth: 'min(820px, 100%)' }}>
+        <div className="mx-auto flex flex-col px-2 pb-24" style={{ maxWidth: 'min(1020px, 100%)' }}>
           {hasMessages && <div className="h-4 w-full shrink-0" />}
           {messages.map((m: any, i: number) => {
             return (
@@ -177,20 +191,24 @@ export function MessageList({
       </div>
 
       {bottomSlot && (
-        <div className="shrink-0 mx-auto w-full px-2" style={{ maxWidth: 'min(820px, 100%)' }}>
+        <div className="shrink-0 mx-auto w-full px-2" style={{ maxWidth: 'min(1020px, 100%)' }}>
           {bottomSlot}
         </div>
       )}
 
       {showScrollButton && hasMessages && (
         <div className="shrink-0 flex justify-center bg-card relative" style={{ height: 0 }}>
-          <button
-            onClick={scrollToBottom}
-            className="absolute left-1/2 -translate-x-1/2 bottom-8 flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted text-foreground transition-all shadow-sm z-10"
-            title="Scroll to bottom"
-          >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={scrollToBottom}
+                className="absolute left-1/2 -translate-x-1/2 bottom-8 flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-muted text-foreground transition-all shadow-sm z-10"
+              >
             <HugeiconRenderer icon={ArrowDown02Icon} size={18} />
           </button>
+            </TooltipTrigger>
+            <TooltipContent>Scroll to bottom</TooltipContent>
+          </Tooltip>
         </div>
       )}
       {hasMessages && (

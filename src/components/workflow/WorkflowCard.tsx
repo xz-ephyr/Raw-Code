@@ -1,6 +1,7 @@
 import { cn, formatRelativeTime } from '@/lib/utils';
 import { Play, Trash2, Layers } from 'lucide-react';
 import type { Workflow } from '@/types/workflow';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface WorkflowCardProps {
   workflow: Workflow;
@@ -66,24 +67,32 @@ export function WorkflowCard({ workflow, isTemplate, onClick, onDelete, onRun }:
         isTemplate ? 'opacity-100' : ''
       )}>
         {onRun && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onRun(); }}
-            className="p-1.5 rounded-md bg-foreground text-background hover:opacity-90 transition-opacity focus-visible:ring-2 focus-visible:ring-ring"
-            title="Run workflow"
-            aria-label="Run workflow"
-          >
-            <Play size={14} />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={(e) => { e.stopPropagation(); onRun(); }}
+                className="p-1.5 rounded-md bg-foreground text-background hover:opacity-90 transition-opacity focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Run workflow"
+              >
+                <Play size={14} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Run workflow</TooltipContent>
+          </Tooltip>
         )}
         {!isTemplate && onDelete && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-900/20 transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-            title="Delete workflow"
-            aria-label="Delete workflow"
-          >
-            <Trash2 size={14} />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-900/20 transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Delete workflow"
+              >
+                <Trash2 size={14} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Delete workflow</TooltipContent>
+          </Tooltip>
         )}
         {isTemplate && (
           <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">

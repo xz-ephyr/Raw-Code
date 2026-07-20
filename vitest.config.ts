@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: false,
-    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
+    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx', 'packages/avatar/src/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
@@ -21,6 +21,7 @@ export default defineConfig({
       '@doktor/subagent': path.resolve(__dirname, './packages/subagent/src'),
       '@doktor/llm-providers': path.resolve(__dirname, './packages/llm-providers/src'),
       '@doktor/schema': path.resolve(__dirname, './packages/schema/src'),
+      '@doktor/avatar': path.resolve(__dirname, './packages/avatar/src'),
       '@doktor/effect-drizzle-sqlite': path.resolve(__dirname, './packages/effect-drizzle-sqlite/src'),
       '@doktor/effect-sqlite-node': path.resolve(__dirname, './packages/effect-sqlite-node/src'),
     },

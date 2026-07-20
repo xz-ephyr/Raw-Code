@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 import { HugeiconRenderer } from '@/components/ui/HugeiconRenderer';
 import { PencilEdit02Icon, QuillWrite02Icon, GlobeIcon, Search01Icon } from '@hugeicons/core-free-icons';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { Workflow } from '@/types/workflow';
 
 const TEMPLATE_ICONS: Record<string, any> = {
@@ -32,13 +33,17 @@ export function TemplateCard({ template, onClick }: TemplateCardProps) {
           </div>
           <span className="text-xs font-semibold text-foreground truncate">{template.title}</span>
         </div>
-        <span
-          onClick={(e) => { e.stopPropagation(); onClick(); }}
-          className="absolute top-1.5 right-1.5 flex items-center justify-center w-5 h-5 rounded-md bg-muted hover:bg-muted/80 transition-colors"
-          title="Use template"
-        >
-          <Plus size={11} className="text-foreground" />
-        </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              onClick={(e) => { e.stopPropagation(); onClick(); }}
+              className="absolute top-1.5 right-1.5 flex items-center justify-center w-5 h-5 rounded-md bg-muted hover:bg-muted/80 transition-colors"
+            >
+              <Plus size={11} className="text-foreground" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>Use template</TooltipContent>
+        </Tooltip>
       </div>
       <div className="flex items-center gap-2 mt-0.5">
         <span className="text-[11px] text-muted-foreground/60">{stepCount} step{stepCount !== 1 ? 's' : ''}</span>

@@ -15,6 +15,7 @@ import {
   userMessage,
   ModelRoutesProvider,
 } from '@doktor/llm-providers';
+import { PROVIDER_CONFIGS } from '@doktor/llm-providers/model-registry';
 import type { ToolExecutor, ToolCallInput, ToolResultOutput } from '@doktor/llm-providers';
 
 const { allRoutes, getRouteByModelId } = ModelRoutesProvider
@@ -57,7 +58,7 @@ export function runSubAgent(
       };
     }
 
-    const modelId = typeof request.model === 'string' ? request.model : 'gpt-4o-mini';
+    const modelId = typeof request.model === 'string' ? request.model : (PROVIDER_CONFIGS.openai?.defaultModel ?? 'gpt-4o-mini');
     const route = getRoute(modelId)
     const provider = route.provider as string
     const model = Model.make({ id: modelId, provider, route })

@@ -8,6 +8,8 @@ import { ChatSessionManager } from "./ChatSessionManager"
 import { reduceEvent, createEmptyState } from "@/lib/llmEventReducer"
 import type { UIMessage } from "@/lib/chatUtils"
 import type { ProjectContext } from "@core/memory/contextController"
+import { getModelDefinition } from "@core/config/models"
+import { recordUsage } from "@core/utils/usageTracker"
 
 const USE_NATIVE = import.meta.env.VITE_FEATURE_NATIVE_LLM !== 'false'
 
@@ -19,15 +21,13 @@ interface StreamConfig {
   projectContext?: ProjectContext
   connectedConnectors?: string[]
   isWebSearchEnabled?: boolean
-  isThinkingEnabled?: boolean
 }
 
 interface StreamCallbacks {
   onMessage?: (message: UIMessage, isPartial: boolean) => void
   onFinish?: (message: UIMessage) => void
   onError?: (error: Error) => void
-  onRetry?: (info: { sessionId: string; attempt: number; waitMs: number; remainingSec: number }) => void
-  onRetryClear?: (sessionId: string) => void
+  onUsageUpdate?: (usage: { inputTokens: number; outputTokens: number; totalTokens: number; reasoningTokens?: number; cachedInputTokens?: number }) => void
 }
 
 interface StreamState {
@@ -42,19 +42,6 @@ interface StreamState {
 
 const activeStreams = new Map<string, StreamState>()
 let streamIdCounter = 0
-
-// Per-session retry countdown timers (setInterval ids) so we can cancel them
-// when a real stream arrives or the stream is stopped.
-const retryTimers = new Map<string, ReturnType<typeof setInterval>>()
-
-function clearRetryTimer(sessionId: string) {
-  const id = retryTimers.get(sessionId)
-  if (id !== undefined) {
-    clearInterval(id)
-    retryTimers.delete(sessionId)
-    window.dispatchEvent(new CustomEvent('stream-retry-clear', { detail: { sessionId } }))
-  }
-}
 
 function toUIMessage(msg: { id: string; role: "assistant"; content: string; reasoning: string; createdAt: number; toolCalls?: { id: string; name: string; input: unknown; result?: unknown; error?: string; status: string }[]; actionSummary?: { summary: string; actions: any[] } }): UIMessage {
   let content = msg.content || "";
@@ -82,13 +69,15 @@ function toUIMessage(msg: { id: string; role: "assistant"; content: string; reas
     reasoning = (reasoning ? reasoning + '\n\n' : '') + extractedReasoning.join('\n\n');
   }
 
-  const toolInvocations = msg.toolCalls?.map((tc) => ({
-    state: tc.status === "complete" ? "result" as const : tc.status === "error" ? "error" as const : "call" as const,
-    toolCallId: tc.id,
-    toolName: tc.name,
-    args: tc.input,
-    result: tc.result,
-  })) ?? undefined
+  const toolInvocations = msg.toolCalls && msg.toolCalls.length > 0
+    ? msg.toolCalls.map((tc) => ({
+        state: tc.status === "complete" ? "result" as const : tc.status === "error" ? "error" as const : "call" as const,
+        toolCallId: tc.id,
+        toolName: tc.name,
+        args: tc.input,
+        result: tc.result,
+      }))
+    : undefined
 
   return {
     id: msg.id,
@@ -125,7 +114,7 @@ let activeSessionId: string | null = null
 export function setActiveSessionId(id: string | null) { activeSessionId = id }
 function getActiveSessionId() { return activeSessionId }
 
-async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks, controller: AbortController, attempt = 0) {
+async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks, controller: AbortController) {
   const streamId = ++streamIdCounter
 
   const cap = getModelCapability(config.modelName)
@@ -134,7 +123,15 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
     : null
   const scanner = tags ? createInlineScanner() : null
   let thinkingActive = false
-  let firstTokenHandled = false
+  const streamStartTime = Date.now()
+  let finalized = false
+
+  function flushMessage(msg: UIMessage, isPartial: boolean) {
+    if (finalized) return
+    callbacks.onMessage?.(msg, isPartial)
+    const st = activeStreams.get(config.sessionId)
+    st?.subscribers.forEach(cb => cb(msg, isPartial))
+  }
 
   function flushTaggedReasoning(): { events: LLMEvent[]; reasoning: string } {
     if (!scanner || !tags) return { events: [], reasoning: "" }
@@ -157,16 +154,17 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
     const eventStream = await eventStreamPromise as unknown as Stream.Stream<LLMEvent, LLMError>
 
     await Effect.runPromise(
-      Stream.runForEach(eventStream, (event) =>
+      Stream.runForEach(
+        eventStream.pipe(Stream.timeout("60 seconds")),
+        (event) =>
         Effect.sync(() => {
           if (streamId !== streamIdCounter) return
           const state = activeStreams.get(config.sessionId)
           if (!state) return
 
-          const skipReason = !state.config.isThinkingEnabled
           const events: LLMEvent[] = [event]
 
-          if (tags && scanner && event.type === "text-delta" && !skipReason) {
+          if (tags && scanner && event.type === "text-delta") {
             const { content, reasoning, events: tagEvents } = scanner.feed(event.text, tags)
             events.length = 0
             if (!thinkingActive && tagEvents.some(e => e.type === "reasoning-start")) {
@@ -186,112 +184,127 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
           if ((event.type === "finish" || event.type === "provider-error") && thinkingActive) {
             const tail = flushTaggedReasoning()
             for (const ev of tail.events) {
-              const next = reduceEvent(state.llmState, ev, { skipReasoning: skipReason })
+              const next = reduceEvent(state.llmState, ev)
               state.llmState = next
             }
           }
 
           for (const ev of events) {
-            const next = reduceEvent(state.llmState, ev, { skipReasoning: skipReason })
+            const next = reduceEvent(state.llmState, ev)
             state.llmState = next
           }
-          
-          if (state.llmState.currentMessage && (state.llmState.currentMessage.content || state.llmState.currentMessage.reasoning)) {
-            if (!firstTokenHandled) {
-              firstTokenHandled = true
-              clearRetryTimer(config.sessionId)
-            }
-            const uiMsg = toUIMessage(state.llmState.currentMessage)
-            persistMessage(config.sessionId, uiMsg, true)
-            callbacks.onMessage?.(uiMsg, true)
-            state.subscribers.forEach(cb => cb(uiMsg, true))
+
+          if (event.type === "finish") {
+            const provider = getModelDefinition(config.modelName)?.provider || "openai"
+            const inputTokens = (event as any).usage?.inputTokens ?? 0
+            const outputTokens = (event as any).usage?.outputTokens ?? 0
+            const totalTokens = (event as any).usage?.totalTokens ?? 0
+            recordUsage({
+              model: config.modelName,
+              provider,
+              promptTokens: inputTokens,
+              completionTokens: outputTokens,
+              totalTokens,
+              success: true,
+              latency: Date.now() - streamStartTime,
+              timestamp: Date.now(),
+            })
+            callbacks.onUsageUpdate?.({
+              inputTokens,
+              outputTokens,
+              totalTokens,
+              reasoningTokens: (event as any).usage?.reasoningTokens,
+              cachedInputTokens: (event as any).usage?.cachedInputTokens,
+            })
+          } else if (event.type === "provider-error") {
+            const provider = getModelDefinition(config.modelName)?.provider || "openai"
+            recordUsage({
+              model: config.modelName,
+              provider,
+              promptTokens: 0,
+              completionTokens: 0,
+              totalTokens: 0,
+              success: false,
+              latency: Date.now() - streamStartTime,
+              timestamp: Date.now(),
+            })
           }
           
-          if (state.llmState.status === "idle" && !state.llmState.currentMessage && state.llmState.messages.length > 0) {
+          if (state.llmState.currentMessage && (state.llmState.currentMessage.content || state.llmState.currentMessage.reasoning || state.llmState.currentMessage.actionSummary)) {
+            const uiMsg = toUIMessage(state.llmState.currentMessage)
+            persistMessage(config.sessionId, uiMsg, true)
+            flushMessage(uiMsg, true)
+          }
+          
+          if (state.status === 'streaming' && state.llmState.status === "idle" && !state.llmState.currentMessage) {
+            finalized = true
             const last = state.llmState.messages[state.llmState.messages.length - 1]
-            const uiMsg = toUIMessage(last)
-            persistMessage(config.sessionId, uiMsg, false)
-            callbacks.onFinish?.(uiMsg)
-            callbacks.onMessage?.(uiMsg, false)
-            state.subscribers.forEach(cb => cb(uiMsg, false))
+            if (last) {
+              const uiMsg = toUIMessage(last)
+              persistMessage(config.sessionId, uiMsg, false)
+              callbacks.onFinish?.(uiMsg)
+              callbacks.onMessage?.(uiMsg, false)
+              state.subscribers.forEach(cb => cb(uiMsg, false))
+            }
+            state.status = 'idle'
+          }
+          if (state.status === 'streaming' && state.llmState.status === "error" && state.llmState.error && !state.llmState.currentMessage) {
+            finalized = true
+            callbacks.onError?.(new Error(state.llmState.error))
             state.status = 'idle'
           }
         })
       ),
     )
+
+    // Safety net: if stream ended without a finish event, force completion
+    const st = activeStreams.get(config.sessionId)
+    if (st && st.status === 'streaming') {
+      finalized = true
+      const last = st.llmState.messages[st.llmState.messages.length - 1]
+      if (last) {
+        const uiMsg = toUIMessage(last)
+        persistMessage(config.sessionId, uiMsg, false)
+        callbacks.onFinish?.(uiMsg)
+        callbacks.onMessage?.(uiMsg, false)
+        st.subscribers.forEach(cb => cb(uiMsg, false))
+      }
+      st.status = 'idle'
+    }
   } catch (err: any) {
+    finalized = true
     if (err?.name === "AbortError") return
 
     const state = activeStreams.get(config.sessionId)
     if (!state || state.status !== 'streaming') return
 
-    // Time-based wait & re-request: back off (2s, then +4s each failure) and
-    // resend the SAME request until a real token stream actually arrives.
-    scheduleRetry(config, callbacks, controller, attempt, err)
+    const provider = getModelDefinition(config.modelName)?.provider || "openai"
+    recordUsage({
+      model: config.modelName,
+      provider,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      success: false,
+      latency: Date.now() - streamStartTime,
+      timestamp: Date.now(),
+    })
+
+    callbacks.onError?.(err instanceof Error ? err : new Error(String(err)))
   }
 }
 
-// Backoff: first wait 2s, then +4s per failed retry. A 1s ticker emits the
-// remaining seconds so the UI can show a live countdown clock. When the timer
-// reaches 0 the same request is resent; if it fails again the wait grows.
-function scheduleRetry(
-  config: StreamConfig,
-  callbacks: StreamCallbacks,
-  controller: AbortController,
-  attempt: number,
-  lastErr: unknown,
-) {
-  const sessionId = config.sessionId
-  clearRetryTimer(sessionId)
 
-  const waitMs = attempt === 0 ? 2000 : 2000 + attempt * 4000
-  const totalSec = Math.ceil(waitMs / 1000)
-  let remaining = totalSec
-
-  const emit = (sec: number) => {
-    const info = { sessionId, attempt: attempt + 1, waitMs, remainingSec: sec }
-    callbacks.onRetry?.(info)
-    window.dispatchEvent(new CustomEvent('stream-retry', { detail: info }))
-  }
-  emit(remaining)
-
-  console.warn(
-    `Stream error (${describeErr(lastErr)}). Retrying in ${remaining}s (attempt ${attempt + 1})...`,
-  )
-
-  const timer = setInterval(() => {
-    remaining -= 1
-    if (remaining <= 0) {
-      clearRetryTimer(sessionId)
-      const state = activeStreams.get(sessionId)
-      if (!state || state.status !== 'streaming') return
-      // Resend the same request
-      state.llmState = createEmptyState()
-      runNativeStream(config, callbacks, controller, attempt + 1)
-      return
-    }
-    emit(remaining)
-  }, 1000)
-
-  retryTimers.set(sessionId, timer)
-}
-
-function describeErr(err: unknown): string {
-  if (err instanceof Error) return err.message || err.name
-  if (typeof err === 'string') return err
-  try { return JSON.stringify(err) } catch { return String(err) }
-}
 
 function runAISDKStream(config: StreamConfig, callbacks: StreamCallbacks, controller: AbortController) {
-  runNativeStream(config, callbacks, controller)
+  return runNativeStream(config, callbacks, controller)
 }
 
 export const ChatStreamService = {
   async start(config: StreamConfig, callbacks: StreamCallbacks = {}) {
     const existing = activeStreams.get(config.sessionId)
     if (existing && existing.status === 'streaming') {
-      existing.callbacks = callbacks
-      return
+      await this.stop(config.sessionId)
     }
 
     const controller = new AbortController()
@@ -312,21 +325,24 @@ export const ChatStreamService = {
     }
 
     const runStream = USE_NATIVE ? runNativeStream : runAISDKStream
-    runStream(config, {
-      onMessage: (msg, partial) => callbacks.onMessage?.(msg, partial),
-      onFinish: (msg) => {
-        clearRetryTimer(config.sessionId)
-        callbacks.onFinish?.(msg)
-        this._clearStreaming(config.sessionId)
-      },
-      onError: (err) => {
-        clearRetryTimer(config.sessionId)
-        callbacks.onError?.(err)
-        this._clearStreaming(config.sessionId)
-      },
-      onRetry: (info) => callbacks.onRetry?.(info),
-      onRetryClear: (sid) => callbacks.onRetryClear?.(sid),
-    }, controller)
+    try {
+      await runStream(config, {
+        onMessage: (msg, partial) => callbacks.onMessage?.(msg, partial),
+        onFinish: (msg) => {
+          callbacks.onFinish?.(msg)
+          this._clearStreaming(config.sessionId)
+        },
+        onError: (err) => {
+          callbacks.onError?.(err)
+          this._clearStreaming(config.sessionId)
+        },
+        onUsageUpdate: (usage) => callbacks.onUsageUpdate?.(usage),
+      }, controller)
+    } catch (err: any) {
+      if (err?.name === "AbortError") return
+      callbacks.onError?.(err instanceof Error ? err : new Error(String(err)))
+      this._clearStreaming(config.sessionId)
+    }
   },
 
   async _clearStreaming(sessionId: string) {
@@ -340,7 +356,6 @@ export const ChatStreamService = {
   async stop(sessionId: string) {
     const state = activeStreams.get(sessionId)
     if (state) {
-      clearRetryTimer(sessionId)
       state.controller.abort()
       state.status = 'idle'
       state.subscribers.clear()

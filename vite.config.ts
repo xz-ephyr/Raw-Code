@@ -22,16 +22,90 @@ export default defineConfig({
       '@doktor/subagent': path.resolve(__dirname, './packages/subagent/src'),
       '@doktor/llm-providers': path.resolve(__dirname, './packages/llm-providers/src'),
       '@doktor/schema': path.resolve(__dirname, './packages/schema/src'),
+      '@doktor/avatar': path.resolve(__dirname, './packages/avatar/src'),
       '@doktor/effect-drizzle-sqlite': path.resolve(__dirname, './packages/effect-drizzle-sqlite/src'),
       '@doktor/effect-sqlite-node': path.resolve(__dirname, './packages/effect-sqlite-node/src'),
       '@tests': path.resolve(__dirname, './tests'),
     },
   },
+  clearScreen: false,
   server: {
     port: 4028,
     strictPort: true,
     proxy: {
       '/proxy': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/websearch': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/connectors': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/connector': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/get_session': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/get_sessions': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/sessions': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/messages': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/projects': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/config': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/memory': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/auth': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/file': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/llm': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/antigravity/v1': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/webhook': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/crawl-cache': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/selftest': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/gmail': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },

@@ -195,12 +195,12 @@ export async function migrate() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS crawl_cache (
       cache_key TEXT PRIMARY KEY,
-      provider TEXT NOT NULL DEFAULT 'go-crawl',
+      provider TEXT NOT NULL DEFAULT 'firecrawl',
       content TEXT NOT NULL,
       cached_at INTEGER NOT NULL,
       ttl_seconds INTEGER NOT NULL DEFAULT 3600
     );
   `);
 
-  console.log('Migration complete');
+  // Migration complete
 }

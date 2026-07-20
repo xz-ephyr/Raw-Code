@@ -23,6 +23,13 @@ export interface AuthUrlOptions {
   state?: string;
 }
 
+export interface ActionDefinition {
+  name: string;
+  description: string;
+  inputSchema: Record<string, any>;
+  outputSchema: Record<string, any>;
+}
+
 export interface OAuthConfig {
   tokenEndpoint: string;
   authEndpoint: string;

@@ -14,8 +14,8 @@ interface AgentCardProps {
 }
 
 const AGENT_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  general: {
-    label: 'General',
+  default: {
+    label: 'Default',
     color: 'from-blue-500/20 to-blue-500/5 border-blue-500/30',
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -23,46 +23,19 @@ const AGENT_META: Record<string, { label: string; icon: React.ReactNode; color: 
       </svg>
     ),
   },
-  explore: {
-    label: 'Explore',
-    color: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/30',
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
-      </svg>
-    ),
-  },
-  writer: {
-    label: 'Writer',
-    color: 'from-violet-500/20 to-violet-500/5 border-violet-500/30',
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-      </svg>
-    ),
-  },
-  researcher: {
-    label: 'Researcher',
+  teamwork: {
+    label: 'Teamwork',
     color: 'from-amber-500/20 to-amber-500/5 border-amber-500/30',
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-      </svg>
-    ),
-  },
-  video: {
-    label: 'Video',
-    color: 'from-rose-500/20 to-rose-500/5 border-rose-500/30',
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
       </svg>
     ),
   },
 };
 
 function getMeta(agentID: string) {
-  return AGENT_META[agentID] || { label: agentID, color: 'from-gray-500/20 to-gray-500/5 border-gray-500/30', icon: AGENT_META.general.icon };
+  return AGENT_META[agentID] || { label: agentID, color: 'from-gray-500/20 to-gray-500/5 border-gray-500/30', icon: AGENT_META.default.icon };
 }
 
 function StatusIndicator({ status }: { status: AgentStatus }) {

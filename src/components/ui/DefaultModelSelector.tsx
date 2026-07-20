@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { GlobeIcon, ArrowDown01Icon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons'
-import { MODELS } from '@core/config/models'
 import { getProviderLabel, getAllProviders } from '@core/providers'
 import { ModelIcon } from './ModelIcon'
 import { Dropdown } from './Dropdown'
+import { useModelRegistry } from '@/contexts/ModelRegistryContext'
 
 function hasProviderKey(providerId: string): boolean {
   const p = getAllProviders().find(pr => pr.id === providerId)
@@ -20,12 +20,13 @@ interface DefaultModelSelectorProps {
 
 export function DefaultModelSelector({ selectedModel, onChange, maxHeight = '190px' }: DefaultModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const { registry } = useModelRegistry()
 
   const availableModels = useMemo(() =>
-    MODELS.filter(m => hasProviderKey(m.provider)),
-  [])
+    registry.filter(m => hasProviderKey(m.provider)),
+  [registry])
 
-  const def = availableModels.find(m => m.id === selectedModel) || MODELS.find(m => m.id === selectedModel)
+  const def = availableModels.find(m => m.id === selectedModel) || registry.find(m => m.id === selectedModel)
 
   const displayModel = availableModels.length > 0 ? selectedModel : ''
 

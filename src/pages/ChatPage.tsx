@@ -44,7 +44,7 @@ export const ChatPage = () => {
     handleQuestionAnswer,
     handleConfirmApprove,
     handleConfirmDeny,
-    retryInfo,
+    sessionUsage,
     agentAgents,
     activeAgent,
     isAgentPanelOpen,
@@ -63,6 +63,8 @@ export const ChatPage = () => {
       {uuid !== 'new' && messages.length > 0 && (
         <TitleBar
           onNewThread={handleNewThread}
+          sessionUsage={sessionUsage}
+          currentModel={currentModel}
         />
       )}
       <div className="flex flex-1 min-h-0 relative z-10">
@@ -73,27 +75,6 @@ export const ChatPage = () => {
               : 'flex-1'
           }`}
         >
-          {retryInfo && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 border-b border-blue-500/20 text-sm text-blue-600 dark:text-blue-400">
-              <span className="inline-flex items-center gap-1.5">
-                <svg
-                  className="w-3.5 h-3.5 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <circle cx="12" cy="12" r="9" opacity="0.25" />
-                  <path d="M21 12a9 9 0 0 0-9-9" strokeLinecap="round" />
-                </svg>
-                Retrying request
-              </span>
-              <span className="font-mono tabular-nums text-base font-semibold">
-                {retryInfo.remainingSec}s
-              </span>
-              <span className="text-xs opacity-70">· attempt {retryInfo.attempt} · auto-resending until a response arrives</span>
-            </div>
-          )}
           <MessageList
             messages={messages}
             currentModel={currentModel}

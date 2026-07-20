@@ -21,7 +21,8 @@
       "@doktor/effect-drizzle-sqlite": ["../packages/effect-drizzle-sqlite/src"],
       "@doktor/effect-drizzle-sqlite/*": ["../packages/effect-drizzle-sqlite/src/*"],
       "@doktor/effect-sqlite-node": ["../packages/effect-sqlite-node/src"],
-      "@doktor/effect-sqlite-node/*": ["../packages/effect-sqlite-node/src/*"]
+      "@doktor/effect-sqlite-node/*": ["../packages/effect-sqlite-node/src/*"],
+      "@core/*": ["../core/*"]
     }
   },
   "include": ["src"]

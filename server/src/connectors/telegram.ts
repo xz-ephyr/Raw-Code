@@ -1,7 +1,7 @@
 import { query } from '../db.js';
 import { encrypt, decrypt } from '../crypto.js';
 import { ConnectorService } from './base.js';
-import type { AuthType } from './types.js';
+import type { AuthType, ActionDefinition } from './types.js';
 
 export class TelegramConnectorService extends ConnectorService {
   readonly provider = 'telegram';
@@ -142,5 +142,28 @@ export class TelegramConnectorService extends ConnectorService {
       'get-updates': (params: any) => this.getUpdates(params.offset),
       'get-chat': (params: any) => this.getChat(params.chatId),
     };
+  }
+
+  getActionDefinitions(): ActionDefinition[] {
+    return [
+      {
+        name: 'send-message',
+        description: 'Send a message via Telegram bot',
+        inputSchema: { type: 'object', properties: { chatId: { type: 'string', description: 'Telegram chat ID or @username' }, text: { type: 'string', description: 'Message text' } }, required: ['chatId', 'text'] },
+        outputSchema: { type: 'object' },
+      },
+      {
+        name: 'get-updates',
+        description: 'Get recent updates/messages for the Telegram bot',
+        inputSchema: { type: 'object', properties: { offset: { type: 'number', description: 'Update offset for pagination' } } },
+        outputSchema: { type: 'object' },
+      },
+      {
+        name: 'get-chat',
+        description: 'Get Telegram chat information by chat ID',
+        inputSchema: { type: 'object', properties: { chatId: { type: 'string', description: 'Telegram chat ID or @username' } }, required: ['chatId'] },
+        outputSchema: { type: 'object' },
+      },
+    ];
   }
 }

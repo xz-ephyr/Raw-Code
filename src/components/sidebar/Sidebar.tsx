@@ -142,6 +142,7 @@ const Sidebar = React.memo(function Sidebar() {
               path="/chats"
               active={location.pathname === '/chats'}
               collapsed={isCollapsed}
+              onClick={() => navigate('/chats')}
             />
             <SidebarTab
               iconElement={workflowIcon}
@@ -149,6 +150,7 @@ const Sidebar = React.memo(function Sidebar() {
               path="/workflow"
               active={location.pathname === '/workflow'}
               collapsed={isCollapsed}
+              onClick={() => navigate('/workflow')}
             />
             <SidebarTab
               iconElement={pluginsIcon}
@@ -156,6 +158,7 @@ const Sidebar = React.memo(function Sidebar() {
               path="/plugins"
               active={location.pathname === '/plugins'}
               collapsed={isCollapsed}
+              onClick={() => navigate('/plugins')}
             />
           </div>
 

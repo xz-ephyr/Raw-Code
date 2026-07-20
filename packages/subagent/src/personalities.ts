@@ -7,63 +7,37 @@ export interface AgentPersonality {
 }
 
 export const personalities: Record<string, AgentPersonality> = {
-  general: {
-    id: 'general',
-    name: 'General Purpose Agent',
+  default: {
+    id: 'default',
+    name: 'Default Agent',
     systemPrompt:
-      'You are a capable general-purpose agent. You can research, write, edit, and create content. ' +
-      'Analyze the task carefully, break it into logical steps, and use the appropriate tools to complete each step. ' +
-      'Report your findings clearly and concisely.',
+      'You are a capable agent with direct tool access. ' +
+      'Handle simple tasks directly — search the web, scrape pages, crawl sites, ask the user questions, ' +
+      'manage video production (edit_video, render_video, export_video, preview_video, poll_render_job), ' +
+      'create and execute plans (create_plan, execute_plan), and use connector tools. ' +
+      'For large-scale multi-step work that requires gathering lots of information from many sources ' +
+      'and synthesizing into multiple deliverables, use subagent_run or compose_run to delegate. ' +
+      'Respond directly when you know the answer without needing tools.',
     defaultMaxSteps: 20,
-    toolScope: ['question', 'research', 'web_search', 'write_article', 'edit_text', 'generate_script', 'scrape_url', 'extract_structured', 'extract_images', 'research_compile', 'crawl_website', 'crawl_to_articles', 'map_site', 'plan_templates', 'create_plan', 'execute_plan'],
+    toolScope: [
+      'web_search', 'scrape_url', 'crawl_website', 'question',
+      'edit_video', 'render_video', 'export_video', 'preview_video', 'poll_render_job',
+      'create_plan', 'execute_plan',
+      'subagent_run', 'compose_run',
+    ],
   },
 
-  explore: {
-    id: 'explore',
-    name: 'Research Agent',
+  teamwork: {
+    id: 'teamwork',
+    name: 'Teamwork Coordinator',
     systemPrompt:
-      'You are a research agent. Your purpose is to gather information on topics, analyze content, and answer questions. ' +
-      'You do NOT create or modify content unless explicitly asked. ' +
-      'When researching, search broadly first then dive deep on the most relevant findings. ' +
-      'Present your findings in a structured, easy-to-read format.',
-    defaultMaxSteps: 10,
-    toolScope: ['question', 'research'],
-  },
-
-  writer: {
-    id: 'writer',
-    name: 'Content Writer Agent',
-    systemPrompt:
-      'You are a professional content writer. Your job is to create high-quality written content including articles, scripts, and documentation. ' +
-      'Focus on clarity, structure, and audience-appropriate tone. ' +
-      'Use the write_article and edit_text tools to produce polished output. ' +
-      'When given a topic, first research it if needed, then write.',
-    defaultMaxSteps: 10,
-    toolScope: ['write_article', 'edit_text', 'research', 'web_search', 'question'],
-  },
-
-researcher: {
-    id: 'researcher',
-    name: 'Deep Research Agent',
-    systemPrompt:
-      'You are a thorough research agent. Your purpose is to deeply investigate topics and produce comprehensive summaries. ' +
-      'Use the research_compile tool with deep depth for thorough investigation. ' +
-      'When using research_compile, you MUST provide a "query" parameter (string) describing what to research. ' +
-      'Example: { "query": "your research topic", "maxSources": 10 }. ' +
-      'Do not write final articles — leave that to the writer agent. Focus on gathering and organizing information.',
-    defaultMaxSteps: 12,
-    toolScope: ['research', 'research_compile', 'question', 'crawl_website', 'crawl_to_articles', 'map_site', 'extract_videos', 'scrape_url', 'extract_structured', 'extract_images', 'plan_templates', 'create_plan', 'execute_plan'],
-  },
-
-  video: {
-    id: 'video',
-    name: 'Video Content Agent',
-    systemPrompt:
-      'You are a video content creation agent. You specialize in generating scripts and managing video production. ' +
-      'First research the topic, then write a script using generate_script, and finally render/preview. ' +
-      'Coordinate with the writer agent for any article content that needs to be turned into video.',
-    defaultMaxSteps: 10,
-    toolScope: ['generate_script', 'edit_video', 'render_video', 'preview_video', 'export_video', 'poll_render_job', 'research', 'question', 'import_video_sources', 'extract_videos'],
+      'You are a Teamwork Orchestrator — coordinating multiple specialized agents to solve complex problems collaboratively. ' +
+      'Break down complex tasks into smaller sub-tasks. ' +
+      'Route sub-tasks to appropriate agents using subagent_run (supports parallel execution via "tasks" array). ' +
+      'Use compose_run for multi-step pipelines where each step depends on the previous one. ' +
+      'Synthesize results from multiple agents into a coherent response.',
+    defaultMaxSteps: 15,
+    toolScope: ['subagent_run'],
   },
 };
 

@@ -19,6 +19,18 @@ import type { FileItem } from '../types/file-panel';
 
 const MOBILE_BREAKPOINT = 768;
 
+async function fetchConnectedConnectors(): Promise<string[]> {
+  try {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const res = await fetch(`${baseUrl}/connectors/status`, { credentials: 'include' });
+    if (!res.ok) return [];
+    const data = await res.json() as Record<string, { connected: boolean }>;
+    return Object.entries(data).filter(([, s]) => s.connected).map(([p]) => p);
+  } catch {
+    return [];
+  }
+}
+
 export function useChatPage() {
   const { uuid } = useParams();
   const navigate = useNavigate();
@@ -125,9 +137,8 @@ const {
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   const [status, setStatus] = useState<'idle' | 'streaming' | 'submitted' | 'error'>('idle');
+  const [sessionUsage, setSessionUsage] = useState<{ inputTokens: number; outputTokens: number; reasoningTokens?: number; cachedInputTokens?: number } | undefined>();
   const [streamError, setStreamError] = useState<string | undefined>();
-  const [retryInfo, setRetryInfo] = useState<{ attempt: number; remainingSec: number } | null>(null);
-
   const currentModeRef = useRef<string | undefined>(undefined);
   const isThinkingEnabledRef = useRef(false);
   const isWebSearchEnabledRef = useRef(false);
@@ -145,30 +156,13 @@ const {
   useEffect(() => {
     if (!uuid || uuid === 'new') {
       setMessages([]);
+      setStatus('idle');
       return;
     }
     setActiveSessionId(uuid);
-    return () => setActiveSessionId(null);
-  }, [uuid]);
-
-  useEffect(() => {
-    const onRetry = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { sessionId: string; attempt: number; remainingSec: number };
-      if (uuid && detail.sessionId === uuid) {
-        setRetryInfo({ attempt: detail.attempt, remainingSec: detail.remainingSec });
-      }
-    };
-    const onClear = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { sessionId: string };
-      if (uuid && detail.sessionId === uuid) {
-        setRetryInfo(null);
-      }
-    };
-    window.addEventListener('stream-retry', onRetry);
-    window.addEventListener('stream-retry-clear', onClear);
     return () => {
-      window.removeEventListener('stream-retry', onRetry);
-      window.removeEventListener('stream-retry-clear', onClear);
+      setActiveSessionId(null);
+      setStatus('idle');
     };
   }, [uuid]);
 
@@ -270,10 +264,12 @@ setSessionId(uuid);
 
     if (uuid && uuid !== 'new' && !titleGeneratedRef.current) {
       firstUserMessageRef.current = content;
+      maybeGenerateTitle(uuid, content);
     }
 
     setStatus('submitted');
-    setRetryInfo(null);
+
+    const connectedConnectors = await fetchConnectedConnectors();
 
     ChatStreamService.start({
       sessionId: uuid!,
@@ -281,9 +277,8 @@ setSessionId(uuid);
       modelName: currentModel,
       modeId: currentMode,
       projectContext: undefined,
-      connectedConnectors: [],
+      connectedConnectors,
       isWebSearchEnabled: isWebSearchEnabledRef.current,
-      isThinkingEnabled: isThinkingEnabledRef.current,
     }, {
       onMessage: (msg, isPartial) => {
         setMessages(prev => {
@@ -307,6 +302,7 @@ setSessionId(uuid);
           setStatus('streaming');
         }
       },
+      onUsageUpdate: (usage) => setSessionUsage(usage),
       onFinish: (msg) => {
         setStatus('idle');
         const duration = Date.now() - (msg.createdAt || Date.now());
@@ -385,7 +381,7 @@ setSessionId(uuid);
     setIsTitleGenerating(true);
     try {
       const generatedTitle = await generateSessionTitle(content, responseContent);
-      if (generatedTitle && generatedTitle !== 'New conversation') {
+      if (generatedTitle) {
         await ChatSessionManager.rename(sessionUuid, generatedTitle);
         window.dispatchEvent(new CustomEvent('session-title-changed'));
         setSessionTitle(generatedTitle);
@@ -458,7 +454,7 @@ setSessionId(uuid);
     handleConfirmApprove,
     handleConfirmDeny,
     streamError,
-    retryInfo,
+    sessionUsage,
     agentAgents,
     activeAgent,
     isAgentPanelOpen,

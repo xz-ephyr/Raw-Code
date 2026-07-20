@@ -1,6 +1,7 @@
 import React, { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface SidebarTabProps {
   iconElement: ReactNode;
@@ -36,15 +37,33 @@ const SidebarTab = React.memo(
     );
 
     if (path) {
-      return (
-        <Link to={path} onClick={onClick} title={collapsed ? label : undefined} className={className}>
+      return collapsed ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link to={path} onClick={onClick} className={className}>
+              {content}
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent>{label}</TooltipContent>
+        </Tooltip>
+      ) : (
+        <Link to={path} onClick={onClick} className={className}>
           {content}
         </Link>
       );
     }
 
-    return (
-      <button onClick={onClick} title={collapsed ? label : undefined} className={className}>
+    return collapsed ? (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button onClick={onClick} className={className}>
+            {content}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{label}</TooltipContent>
+      </Tooltip>
+    ) : (
+      <button onClick={onClick} className={className}>
         {content}
       </button>
     );

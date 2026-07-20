@@ -32,11 +32,7 @@ router.all('/proxy/*', async (req, res) => {
     if (typeof value === 'string') headers[key] = value;
   }
 
-  if (actualUrl.includes('nvidia.com') || actualUrl.includes('mistral.ai') || actualUrl.includes('generativelanguage')) {
-    const hasAuth = 'authorization' in headers || 'Authorization' in headers;
-    const authVal = (headers['authorization'] || headers['Authorization'] || '').slice(0, 30);
-    console.log('[proxy:auth] method=%s provider=%s url=%s hasAuth=%s authPrefix=%s headerKeys=%j',
-      req.method, actualUrl.match(/https:\/\/([^.]+)/)?.[1] || '?', actualUrl, hasAuth, authVal, Object.keys(headers));
+  if ((actualUrl.includes('nvidia.com') || actualUrl.includes('mistral.ai') || actualUrl.includes('generativelanguage')) && process.env['LLM_DEBUG']) {
     try { console.log('[proxy:body]', JSON.stringify(req.body).slice(0, 500)); } catch {}
   }
 
@@ -62,10 +58,17 @@ router.all('/proxy/*', async (req, res) => {
     const reader = response.body?.getReader();
     if (reader) {
       const pump = async () => {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) { res.end(); return; }
-          res.write(value);
+        let pumpTimedOut = false;
+        const pumpTimeout = setTimeout(() => { pumpTimedOut = true; reader.cancel(); }, 120_000);
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) { clearTimeout(pumpTimeout); res.end(); return; }
+            if (pumpTimedOut) { clearTimeout(pumpTimeout); res.end(); return; }
+            res.write(value);
+          }
+        } finally {
+          clearTimeout(pumpTimeout);
         }
       };
       pump().catch((e) => { console.error('Proxy stream error:', e); res.end(); });

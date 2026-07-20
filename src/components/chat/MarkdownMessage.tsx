@@ -3,7 +3,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import remarkMath from 'remark-math';
-import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import rehypeKatex from 'rehype-katex';
 import type { PluggableList } from 'unified';
@@ -37,7 +36,6 @@ function slugify(text: string): string {
 
 const REMARK_PLUGINS = [remarkGfm, remarkBreaks, remarkMath, remarkCitations];
 const REHYPE_PLUGINS: PluggableList = [
-  rehypeRaw,
   [rehypeSanitize, {
     ...defaultSchema,
     tagNames: [
@@ -71,9 +69,9 @@ export const MarkdownMessage = memo(function MarkdownMessage({ content, sources 
 
   const markdownComponents = useMemo(() => {
     const overrides: Record<string, any> = {
-      code({ node, className, children, ...props }: any) {
+      code({ node, inline, className, children, ...props }: any) {
         const hasPreParent = node?.parent?.tagName === 'pre';
-        const isInline = !hasPreParent;
+        const isInline = inline !== undefined ? inline : !hasPreParent;
         const match = /language-(\w+)/.exec(className || '');
         const language = match ? match[1] : '';
         const codeContent = String(children).replace(/\n$/, '');

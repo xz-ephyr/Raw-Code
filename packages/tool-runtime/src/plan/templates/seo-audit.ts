@@ -10,11 +10,11 @@ export function seoAuditTemplate(input: {
     expectedInput?: Record<string, unknown>;
   }> = [];
 
-  // Step 1: Map the site
+  // Step 1: Scrape the homepage
   steps.push({
-    description: `Map all discoverable URLs on ${input.url} via sitemap and link crawling`,
-    toolName: 'map_site',
-    expectedInput: { url: input.url },
+    description: `Scrape ${input.url} to extract full content and headings`,
+    toolName: 'scrape_url',
+    expectedInput: { url: input.url, onlyMainContent: false, formats: ['markdown'] },
   });
 
   // Step 2: Crawl the site
@@ -24,37 +24,22 @@ export function seoAuditTemplate(input: {
     expectedInput: { url: input.url, maxPages, maxDepth: 2 },
   });
 
-  // Step 3: Extract headings and meta from homepage
+  // Step 3: Search for current SEO best practices
   steps.push({
-    description: `Extract structured data from ${input.url}: headings, meta descriptions, links`,
-    toolName: 'extract_structured',
-    expectedInput: {
-      url: input.url,
-      selectors: {
-        headings: 'h1,h2,h3',
-        metaDescriptions: 'meta[name="description"]',
-        canonical: 'link[rel="canonical"]',
-        images: 'img[alt]',
-      },
-    },
+    description: 'Search for current SEO best practices and audit checklist',
+    toolName: 'web_search',
+    expectedInput: { query: 'SEO best practices technical audit checklist 2026', maxResults: 5 },
   });
 
-  // Step 4: Research SEO best practices
-  steps.push({
-    description: 'Research current SEO best practices for comparison',
-    toolName: 'research',
-    expectedInput: { query: 'SEO best practices technical audit checklist 2026', depth: 'quick' },
-  });
-
-  // Step 5: Write audit report
+  // Step 4: Write audit report as artifact
   steps.push({
     description: 'Write a comprehensive SEO audit report with findings and recommendations',
-    toolName: 'write_article',
+    toolName: 'write_artifact',
     expectedInput: {
-      topic: `SEO Audit Report: ${input.url}`,
-      tone: 'professional',
-      audience: 'web developers and SEO specialists',
-      wordCount: 2500,
+      identifier: 'seo-audit-report',
+      type: 'doc',
+      title: `SEO Audit Report: ${input.url}`,
+      content: '## SEO Audit Report\n\nFindings and recommendations will be compiled here.',
     },
   });
 

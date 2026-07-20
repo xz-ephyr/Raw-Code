@@ -20,41 +20,38 @@ export function competitorAnalysisTemplate(input: PlanTemplateInput) {
   for (const query of searchQueries) {
     steps.push({
       description: `Search the web for "${query}" information and recent developments`,
-      toolName: 'research_compile',
-      expectedInput: { query, maxSources: 5 },
+      toolName: 'web_search',
+      expectedInput: { query, maxResults: 5 },
     });
   }
 
-  // Step 4: Crawl competitor websites for structured data
+  // Step 4: Scrape competitor websites
   if (hasCompetitors) {
     for (const comp of competitors) {
       steps.push({
-        description: `Crawl ${comp} to extract structure: headings, pricing, features`,
-        toolName: 'extract_structured',
-        expectedInput: {
-          url: `https://${comp}`,
-          selectors: { headings: 'h1,h2', features: '.feature, .capability', pricing: '.price, .pricing' },
-        },
+        description: `Scrape ${comp} to extract content: pricing, features, headings`,
+        toolName: 'scrape_url',
+        expectedInput: { url: `https://${comp}`, onlyMainContent: true },
       });
     }
   }
 
-  // Step 5: Deep research compile on the topic
+  // Step 5: Search for market landscape
   steps.push({
-    description: `Compile comprehensive research on "${input.topic}" market landscape`,
-    toolName: 'research_compile',
-    expectedInput: { query: `${input.topic} market analysis 2026`, maxSources: 8, extractStructure: { headings: 'h2', keyPoints: '.highlight, .key-point' } },
+    description: `Search for "${input.topic}" market landscape and analysis`,
+    toolName: 'web_search',
+    expectedInput: { query: `${input.topic} market analysis 2026`, maxResults: 8 },
   });
 
-  // Step 6: Write comparison article
+  // Step 6: Write comparison article as artifact
   steps.push({
     description: `Write a comparison article analyzing the competitive landscape of "${input.topic}"`,
-    toolName: 'write_article',
+    toolName: 'write_artifact',
     expectedInput: {
-      topic: `Competitive Analysis: ${input.topic}`,
-      tone: 'professional',
-      audience: 'product managers and developers evaluating solutions',
-      wordCount: 2000,
+      identifier: 'competitive-analysis',
+      type: 'doc',
+      title: `Competitive Analysis: ${input.topic}`,
+      content: `# Competitive Analysis: ${input.topic}\n\nAnalysis will be compiled from search results and scraped pages.`,
     },
   });
 

@@ -1,4 +1,4 @@
-const API_BASE = () => (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:3001';
+const API_BASE = () => (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://127.0.0.1:3001';
 
 export const ConnectorApi = {
   async getStatus(provider: string): Promise<{ connected: boolean; identity: string | null }> {

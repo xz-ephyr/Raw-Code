@@ -18,7 +18,14 @@ export interface HttpJsonTransport<Body, Frame> extends Transport<Body, HttpPrep
 }
 
 const toLLMError = (error: unknown): LLMError => {
-  const message = isRecord(error) && typeof error.message === "string" ? error.message : String(error)
+  let message: string
+  if (isRecord(error) && typeof error.message === "string") {
+    message = error.message
+  } else if (isRecord(error) && isRecord(error.reason) && typeof error.reason.message === "string") {
+    message = error.reason.message
+  } else {
+    message = String(error)
+  }
   return { _tag: "LLM.Error", module: "Transport", method: "frames", reason: { _tag: "Transport", message } } as any
 }
 

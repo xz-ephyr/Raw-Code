@@ -4,13 +4,22 @@ import { cac } from 'cac';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { readFileSync, createWriteStream, mkdirSync, existsSync, watchFile, createReadStream } from 'fs';
 import process from 'process';
 import http from 'http';
 import net from 'net';
 
+// Suppress the noisy DEP0190 (shell:true + args) — not actionable for the user
+const _emitWarning = process.emitWarning.bind(process);
+process.emitWarning = (warning, type, code, ...rest) => {
+  if (code === 'DEP0190') return;
+  return _emitWarning(warning, type, code, ...rest);
+};
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = join(__dirname, '..');
+const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
 
 const Style = {
   RESET: '\x1b[0m',
@@ -27,104 +36,25 @@ const Style = {
   UNDERLINE: '\x1b[4m',
 };
 
-const FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 const CHECK = `${Style.GREEN}✓${Style.RESET}`;
 const CROSS = `${Style.RED}✗${Style.RESET}`;
 
-const LOG_COLORS = { backend: Style.BLUE, frontend: Style.MAGENTA, crawl: Style.GREEN };
-const LOG_PREFIX = { backend: '│ API │', frontend: '│ UI  │', crawl: '│CRAWL│' };
-const MAX_LOG_LINES = 12;
-
-const serviceLogs = { backend: [], frontend: [], crawl: [] };
-let spinnerIndex = 0;
-let spinnerInterval = null;
-let logRenderInterval = null;
-let servicesReady = { backend: false, frontend: false, crawl: false };
-let serviceUrls = { backend: '', frontend: '', crawl: '' };
-
 function printBanner() {
-  console.log(`
-${Style.MAGENTA}${Style.BOLD}
-    ╔══════════════════════════════════════════════════════════════╗
-    ║                                                              ║
-    ║   ██████╗ ██████╗ ███████╗███╗   ██╗████████╗███████╗        ║
-    ║   ██╔══██╗██╔══██╗██╔════╝████╗  ██║╚══██╔══╝██╔════╝        ║
-    ║   ██████╔╝██████╔╝█████╗  ██╔██╗ ██║   ██║   ███████╗        ║
-    ║   ██╔═══╝ ██╔══██╗██╔══╝  ██║╚██╗██║   ██║   ╚════██║        ║
-    ║   ██║     ██║  ██║███████╗██║ ╚████║   ██║   ███████║        ║
-    ║   ╚═╝     ╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝        ║
-    ║                                                              ║
-    ║         ${Style.CYAN}AI Content Creation Agent${Style.MAGENTA}                     ║
-    ║         ${Style.DIM}vite + react + effect.ts + go-crawl${Style.MAGENTA}              ║
-    ║                                                              ║
-    ╚══════════════════════════════════════════════════════════════╝
-${Style.RESET}
-`);
+  console.log(`${Style.BOLD}◇  DokTor${Style.RESET} ${Style.DIM}v${pkg.version}${Style.RESET}`);
 }
 
 function printDivider() {
   console.log(`  ${Style.GRAY}────────────────────────────────────────────────────────────${Style.RESET}`);
 }
 
-function startSpinner(label) {
-  process.stdout.write(`  ${Style.CYAN}${FRAMES[0]}${Style.RESET} ${label}...`);
-  spinnerInterval = setInterval(() => {
-    spinnerIndex = (spinnerIndex + 1) % FRAMES.length;
-    process.stdout.write(`\r  ${Style.CYAN}${FRAMES[spinnerIndex]}${Style.RESET} ${label}...`);
-  }, 80);
-}
-
-function stopSpinner(success = true, label = '') {
-  if (spinnerInterval) { clearInterval(spinnerInterval); spinnerInterval = null; }
-  const mark = success ? CHECK : CROSS;
-  process.stdout.write(`\r  ${mark} ${label}\n`);
-}
-
 function addLog(service, line) {
+  if (service !== 'crawl') return;
   const clean = line.trim().replace(/\x1b\[[0-9;]*m/g, '');
   if (!clean) return;
   const noise = ['HMR', 'connected', 'DevTools', '[webpack]', '[vite]', 'hmr:', '[HMR]', 'WebSocket', 'ws:', 'hot reload'];
   if (noise.some(n => clean.includes(n))) return;
-  serviceLogs[service].push(clean.slice(0, 120));
-  if (serviceLogs[service].length > MAX_LOG_LINES * 2) {
-    serviceLogs[service] = serviceLogs[service].slice(-MAX_LOG_LINES);
-  }
-}
-
-function renderLogPanel() {
   if (!process.stdout.isTTY) return;
-  process.stdout.write('\x1b[s');
-  process.stdout.write('\x1b[999;1H');
-  process.stdout.write('\x1b[2J');
-  
-  console.log(`\n  ${Style.BOLD}${Style.WHITE}Live Logs${Style.RESET} ${Style.DIM}(last ${MAX_LOG_LINES} lines)${Style.RESET}`);
-  printDivider();
-  
-  for (const [name, logs] of Object.entries(serviceLogs)) {
-    const color = LOG_COLORS[name];
-    const prefix = LOG_PREFIX[name];
-    const ready = servicesReady[name] ? `${Style.GREEN}●${Style.RESET}` : `${Style.YELLOW}◐${Style.RESET}`;
-    const recent = logs.slice(-MAX_LOG_LINES);
-    console.log(`  ${ready} ${Style.DIM}${prefix}${Style.RESET} ${color}${name}${Style.RESET}`);
-    if (recent.length === 0) {
-      console.log(`  ${Style.DIM}  (waiting...)${Style.RESET}`);
-    } else {
-      for (const line of recent) console.log(`  ${Style.DIM}  ${line}${Style.RESET}`);
-    }
-    console.log();
-  }
-  
-  process.stdout.write('\x1b[u');
-}
-
-function startLogRenderer() {
-  if (logRenderInterval) return;
-  renderLogPanel();
-  logRenderInterval = setInterval(renderLogPanel, 2000);
-}
-
-function stopLogRenderer() {
-  if (logRenderInterval) { clearInterval(logRenderInterval); logRenderInterval = null; }
+  console.log(`  ${clean.slice(0, 120)}`);
 }
 
 function pollPort(port, timeout = 30000) {
@@ -183,140 +113,94 @@ async function runCommand(cmd, args, options = {}) {
 
 const cli = cac('doktor');
 
-cli.command('serve', 'Start all services (frontend + backend + go-crawl)')
-  .option('--frontend-port <port>', 'Frontend port', { default: '4028' })
-  .option('--backend-port <port>', 'Backend port', { default: '3001' })
-  .option('--crawl-port <port>', 'Go-crawl port', { default: '8080' })
+cli.command('serve', 'Start all services (frontend + backend)')
+  .allowUnknownOptions()
   .action(async (options) => {
-    process.stdout.write('\x1c');
-    printBanner();
+    const frontendPort = parseInt(options.frontendPort || process.env.FRONTEND_PORT || '4028');
+    const backendPort = parseInt(options.backendPort || process.env.BACKEND_PORT || '3001');
 
-    const frontendPort = parseInt(options.frontendPort);
-    const backendPort = parseInt(options.backendPort);
-    const crawlPort = parseInt(options.crawlPort);
+    const LOG_DIR = join(ROOT, 'logs');
+    mkdirSync(LOG_DIR, { recursive: true });
 
-    serviceUrls = {
-      frontend: `http://localhost:${frontendPort}`,
-      backend: `http://localhost:${backendPort}`,
-      crawl: `http://localhost:${crawlPort}`,
-    };
-    servicesReady = { frontend: false, backend: false, crawl: false };
-    for (const k of Object.keys(serviceLogs)) serviceLogs[k] = [];
+    const svcs = [
+      { name: 'Backend',  color: Style.GREEN,  log: createWriteStream(join(LOG_DIR, 'backend.log'),  { flags: 'a' }) },
+      { name: 'Frontend', color: Style.BLUE,   log: createWriteStream(join(LOG_DIR, 'frontend.log'), { flags: 'a' }) },
+    ];
+
+    process.stdout.write(`${Style.BOLD}◇  DokTor${Style.RESET} ${Style.DIM}v${pkg.version}${Style.RESET}\n\n`);
+
+    const SPINNER = ['◐', '◓', '◑', '◒'];
+    let sFrame = 0;
+    const status = svcs.map(() => null);
+
+    function statusLine() {
+      const parts = svcs.map((s, i) => {
+        if (status[i] === true) return `${Style.GREEN}✓${Style.RESET} ${s.name}`;
+        if (status[i] === false) return `${Style.RED}✗${Style.RESET} ${s.name}`;
+        return `${s.color}${SPINNER[sFrame % SPINNER.length]}${Style.RESET} ${s.name}`;
+      });
+      const pending = status.some(s => s === null);
+      const tail = pending ? `${Style.DIM}[connecting...]${Style.RESET}` : '';
+      return `  ${parts.join('  ')}  ${tail}`;
+    }
+
+    process.stdout.write(statusLine());
+    const spinTimer = setInterval(() => {
+      sFrame++;
+      process.stdout.write(`\r${statusLine()}`);
+    }, 200);
+
+    function logStatus(index, ok) {
+      status[index] = ok;
+      process.stdout.write(`\r${statusLine()}\n`);
+    }
 
     const children = [];
-
     const cleanup = () => {
-      stopLogRenderer();
-      process.stdout.write(`\n${Style.YELLOW}◇ stopping all services${Style.RESET}\n`);
-      children.forEach(c => { try { c.kill('SIGTERM'); } catch {} });
+      console.log(`\n${Style.YELLOW}◇ stopping all services${Style.RESET}\n`);
+      children.forEach(c => { try { c.kill(); } catch {} });
       setTimeout(() => process.exit(0), 500);
     };
     process.on('SIGINT', cleanup);
     process.on('SIGTERM', cleanup);
 
-    // Start all services in parallel
-    printDivider();
-    console.log(`  ${Style.BOLD}${Style.WHITE}Starting Services${Style.RESET}`);
-    printDivider();
+    function onExit(index, code) { if (code !== 0) logStatus(index, false); }
 
-    const [backendReady, frontendReady, crawlReady] = await Promise.all([
-      // Backend
+    await Promise.all([
       (async () => {
         const tsx = join(ROOT, 'server', 'node_modules', '.bin', 'tsx');
         const backend = spawn(tsx, ['watch', '--env-file', 'server/.env', 'server/src/index.ts'], {
           cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_NO_WARNINGS: '1', FORCE_COLOR: '1', PORT: String(backendPort) },
+          env: { ...process.env, NODE_NO_WARNINGS: '1', PORT: String(backendPort) },
           shell: process.platform === 'win32',
         });
         children.push(backend);
-
-        backend.stdout?.on('data', data => {
-          for (const line of data.toString().split('\n')) addLog('backend', line);
-        });
-        backend.stderr?.on('data', data => {
-          for (const line of data.toString().split('\n')) addLog('backend', line);
-        });
-
-        try {
-          await pollHTTP(backendPort, '/api/selftest/status', 90000);
-          servicesReady.backend = true;
-          return true;
-        } catch { return false; }
+        backend.stdout?.pipe(svcs[0].log);
+        backend.stderr?.pipe(svcs[0].log);
+        backend.on('error', () => logStatus(0, false));
+        backend.on('exit', (code) => onExit(0, code));
+        try { await pollHTTP(backendPort, '/api/selftest/status', 90000); logStatus(0, true); } catch { logStatus(0, false); }
       })(),
 
-      // Frontend
       (async () => {
         const vite = join(ROOT, 'node_modules', '.bin', 'vite');
         const frontend = spawn(vite, ['--port', String(frontendPort), '--host'], {
           cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_NO_WARNINGS: '1', FORCE_COLOR: '1' },
+          env: { ...process.env, NODE_NO_WARNINGS: '1' },
           shell: process.platform === 'win32',
         });
         children.push(frontend);
-
-        frontend.stdout?.on('data', data => {
-          for (const line of data.toString().split('\n')) addLog('frontend', line);
-        });
-        frontend.stderr?.on('data', data => {
-          for (const line of data.toString().split('\n')) addLog('frontend', line);
-        });
-
-        try {
-          await pollPort(frontendPort, 90000);
-          servicesReady.frontend = true;
-          return true;
-        } catch { return false; }
-      })(),
-
-      // Go-crawl
-      (async () => {
-        const crawlExe = join(ROOT, 'crawler', 'go-crawl.exe');
-        const crawl = spawn(crawlExe, [], {
-          cwd: join(ROOT, 'crawler'),
-          stdio: ['ignore', 'pipe', 'pipe'],
-          env: { ...process.env, PORT: String(crawlPort) },
-          shell: process.platform === 'win32',
-        });
-        children.push(crawl);
-
-        crawl.stdout?.on('data', data => {
-          for (const line of data.toString().split('\n')) addLog('crawl', line);
-        });
-        crawl.stderr?.on('data', data => {
-          for (const line of data.toString().split('\n')) addLog('crawl', line);
-        });
-
-        try {
-          await pollPort(crawlPort, 15000);
-          servicesReady.crawl = true;
-          return true;
-        } catch { return false; }
+        frontend.stdout?.pipe(svcs[1].log);
+        frontend.stderr?.pipe(svcs[1].log);
+        frontend.on('error', () => logStatus(1, false));
+        frontend.on('exit', (code) => onExit(1, code));
+        try { await pollPort(frontendPort, 90000); logStatus(1, true); } catch { logStatus(1, false); }
       })(),
     ]);
 
-    // Check results
-    if (!backendReady || !frontendReady || !crawlReady) {
-      console.log(`\n  ${CROSS} ${Style.RED}Some services failed to start${Style.RESET}`);
-      cleanup();
-      process.exit(1);
-    }
+    clearInterval(spinTimer);
+    process.stdout.write(`\n  ${Style.GREEN}${Style.BOLD}→${Style.RESET} ${Style.UNDERLINE}http://localhost:${frontendPort}${Style.RESET}\n\n`);
 
-    // All ready - show final URLs
-    stopLogRenderer();
-    printDivider();
-    console.log(`
-  ${Style.GREEN}${Style.BOLD}◇ All services running${Style.RESET}
-
-  ${Style.BOLD}Frontend${Style.RESET}  ${Style.CYAN}→${Style.RESET}  ${Style.UNDERLINE}${serviceUrls.frontend}${Style.RESET}
-  ${Style.BOLD}Backend${Style.RESET}   ${Style.CYAN}→${Style.RESET}  ${Style.UNDERLINE}${serviceUrls.backend}${Style.RESET}
-  ${Style.BOLD}Go-crawl${Style.RESET}  ${Style.CYAN}→${Style.RESET}  ${Style.UNDERLINE}${serviceUrls.crawl}${Style.RESET}
-
-  ${Style.DIM}Press Ctrl+C to stop all services${Style.RESET}
-`);
-    printDivider();
-
-    // Start live log panel
-    startLogRenderer();
     await new Promise(() => {});
   });
 
@@ -370,7 +254,38 @@ cli.command('doctor', 'Run health checks on all services')
     console.log();
   });
 
+cli.command('logs <service>', 'Tail logs from a running service')
+  .action(async (service) => {
+    const valid = ['backend', 'frontend', 'crawl'];
+    if (!valid.includes(service)) {
+      console.log(`  ${Style.RED}Unknown service: ${service}${Style.RESET}`);
+      console.log(`  ${Style.DIM}Available: ${valid.join(', ')}${Style.RESET}`);
+      process.exit(1);
+    }
+    const logFile = join(ROOT, 'logs', `${service}.log`);
+    if (!existsSync(logFile)) {
+      console.log(`  ${CROSS} ${Style.RED}No logs found for ${service}${Style.RESET}`);
+      console.log(`  ${Style.DIM}Run 'doktor serve' first, then try again${Style.RESET}`);
+      process.exit(1);
+    }
+    console.log(`${Style.DIM}Tailing ${service} logs...${Style.RESET}\n`);
+
+    const data = readFileSync(logFile, 'utf-8');
+    if (data) process.stdout.write(data.replace(/\n$/, '') + '\n');
+
+    let size = data.length;
+    watchFile(logFile, { interval: 500 }, (curr) => {
+      if (curr.size > size) {
+        const stream = createReadStream(logFile, { start: size, encoding: 'utf-8' });
+        stream.on('data', (chunk) => process.stdout.write(chunk));
+        size = curr.size;
+      }
+    });
+
+    await new Promise(() => {});
+  });
+
 cli.help();
 cli.parse();
 
-if (!cli.args.length) cli.outputHelp();
+if (!cli.args.length && !cli.matchedCommand) cli.outputHelp();

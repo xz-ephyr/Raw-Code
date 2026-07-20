@@ -29,12 +29,12 @@ export function createSSEParser(): SSEParser {
 
   return {
     push(chunk: Uint8Array): ReadonlyArray<SSEMessage> {
-      buffer += decoder.decode(chunk, { stream: true })
+      buffer += decoder.decode(chunk, { stream: true }).replace(/\r\n/g, "\n")
       return processBuffer()
     },
 
     flush(): ReadonlyArray<SSEMessage> {
-      buffer += decoder.decode()
+      buffer += decoder.decode().replace(/\r\n/g, "\n")
       const remaining = processBuffer()
       buffer = ""
       return remaining

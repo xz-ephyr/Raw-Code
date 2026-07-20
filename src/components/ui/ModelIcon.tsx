@@ -7,6 +7,8 @@ interface ModelIconProps {
   className?: string;
 }
 
+const FIRST_PARTY_PROVIDERS = new Set(['openai', 'anthropic', 'google', 'grok'])
+
 const MODEL_PATTERN_ICONS: [RegExp, string][] = [
   [/zai/i, '/zai.svg'],
   [/gemma/i, '/gemma-color.svg'],
@@ -22,6 +24,7 @@ const MODEL_PATTERN_ICONS: [RegExp, string][] = [
   [/together/i, '/together-color.svg'],
   [/claude|anthropic/i, '/claude-color.svg'],
   [/openrouter/i, '/openrouter.svg'],
+  [/^grok/i, '/grok-color.svg'],
 ];
 
 const PROVIDER_ICONS: Record<string, string> = {
@@ -39,14 +42,26 @@ const PROVIDER_ICONS: Record<string, string> = {
   sambanova: '/assets/images/providers/cerebras.svg',
   huggingface: '/assets/images/providers/mistral.svg',
   cloudflare: '/assets/images/providers/cerebras.svg',
+  grok: '/grok-color.svg',
 };
 
 export function ModelIcon({ modelId, size = 14, className = '' }: ModelIconProps) {
   const def = getModelDefinition(modelId);
+  const provider = def?.provider;
 
-  const modelPattern = MODEL_PATTERN_ICONS.find(([re]) => re.test(modelId));
-  const iconSrc = modelPattern?.[1] || (def?.provider ? PROVIDER_ICONS[def.provider] : null) || '/assets/images/providers/opencodezen.svg';
-  const label = def ? getProviderLabel(def.provider) : '';
+  let iconSrc: string;
+
+  if (provider && FIRST_PARTY_PROVIDERS.has(provider)) {
+    const modelPattern = MODEL_PATTERN_ICONS.find(([re]) => re.test(modelId));
+    iconSrc = modelPattern?.[1] || PROVIDER_ICONS[provider] || '/assets/images/providers/opencodezen.svg';
+  } else if (provider) {
+    iconSrc = PROVIDER_ICONS[provider] || '/assets/images/providers/opencodezen.svg';
+  } else {
+    const modelPattern = MODEL_PATTERN_ICONS.find(([re]) => re.test(modelId));
+    iconSrc = modelPattern?.[1] || '/assets/images/providers/opencodezen.svg';
+  }
+
+  const label = provider ? getProviderLabel(provider) : '';
 
   return (
     <img

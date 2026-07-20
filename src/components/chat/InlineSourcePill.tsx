@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface InlineSourcePillProps {
   url: string;
@@ -33,20 +34,24 @@ export function InlineSourcePill({ url, title, snippet }: InlineSourcePillProps)
 
   return (
     <span ref={ref} className="inline-source-pill relative inline-flex items-center mx-0.5 align-middle">
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        onMouseEnter={show}
-        onMouseLeave={hide}
-        onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center justify-center no-underline cursor-pointer"
-        title={title || domain}
-        aria-label={`Source: ${title || domain}`}
-      >
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onMouseEnter={show}
+            onMouseLeave={hide}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center justify-center no-underline cursor-pointer"
+            aria-label={`Source: ${title || domain}`}
+          >
         <img src={faviconUrl} alt="" width={14} height={14} className="rounded-full shrink-0" loading="lazy" onError={(e) => { (e.currentTarget).style.display = 'none'; }} />
         <span className="sr-only">Opens in new tab</span>
       </a>
+        </TooltipTrigger>
+        <TooltipContent>{title || domain}</TooltipContent>
+      </Tooltip>
 
       {isOpen && (
         <span

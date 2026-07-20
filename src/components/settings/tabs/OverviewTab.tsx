@@ -164,7 +164,7 @@ function ActivityTimeline({ log }: { log: UsageRecord[] }) {
       <div className="max-h-[400px] overflow-y-auto thin-scrollbar">
         {Object.entries(groups).map(([key, records]) => (
           <div key={key}>
-            <div className="sticky top-0 px-4 py-1.5 bg-muted/50 border-b border-border">
+            <div className="sticky top-0 px-4 py-1.5 bg-muted border-b border-border">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{labels[key]}</span>
             </div>
             {records.map((r) => {
@@ -188,6 +188,28 @@ function ActivityTimeline({ log }: { log: UsageRecord[] }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function CollapsibleLog({ log }: { log: UsageRecord[] }) {
+  const [open, setOpen] = useState(false);
+  const failed = log.filter(r => !r.success).length;
+  return (
+    <div className="border border-border rounded-lg overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-muted/30 transition-colors"
+      >
+        <HugeiconsIcon icon={Activity01Icon} size={14} className="text-muted-foreground shrink-0" />
+        <span className="text-sm font-medium text-foreground flex-1 truncate">Activity Log</span>
+        <span className="text-[11px] text-muted-foreground shrink-0">{log.length} calls</span>
+        {failed > 0 && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-400 font-medium">{failed} failed</span>
+        )}
+        <HugeiconsIcon icon={open ? ArrowDown01Icon : ArrowRight01Icon} size={12} className="text-muted-foreground shrink-0" />
+      </button>
+      {open && <div className="border-t border-border">{<ActivityTimeline log={log} />}</div>}
     </div>
   );
 }
@@ -333,7 +355,7 @@ export function OverviewTab() {
         ))}
       </div>
 
-      <ActivityTimeline log={log} />
+      <CollapsibleLog log={log} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {Array.from(grouped.entries()).sort((a, b) => {

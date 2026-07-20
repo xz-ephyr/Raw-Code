@@ -1,5 +1,5 @@
 import { toMaterializedTool } from '../tool/make';
-import { listMerged, clearSession } from './session';
+import { listMerged, clearAllSessions } from './session';
 import { clearGlobal } from './global';
 import { checkPermission } from '../tool/withPermission';
 import type { PermissionRuleset } from '../tool/withPermission';
@@ -11,6 +11,7 @@ export interface MaterializationOptions {
   permissions?: PermissionRuleset;
   filterByScope?: readonly string[];
   filterBySource?: readonly FilterSource[];
+  sessionID?: string;
 }
 
 export interface Materialization {
@@ -20,7 +21,7 @@ export interface Materialization {
 }
 
 export function materialize(options?: MaterializationOptions): Materialization {
-  const merged = listMerged();
+  const merged = listMerged(options?.sessionID || '');
   const definitions: MaterializedTool[] = [];
   const definitionsMap = new Map<string, MaterializedTool>();
 
@@ -51,5 +52,5 @@ export function materialize(options?: MaterializationOptions): Materialization {
 
 export function clearAllRegistrations(): void {
   clearGlobal();
-  clearSession();
+  clearAllSessions();
 }

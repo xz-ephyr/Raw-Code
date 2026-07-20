@@ -59,7 +59,7 @@ Two modes:
   execute: (input, context: ToolExecuteContext) =>
     Effect.gen(function* () {
       const scope = input.toolScope ?? toolFilter;
-      const mat = materialize({ filterByScope: scope });
+      const mat = materialize({ filterByScope: scope, sessionID: context.sessionID });
 
       const resolveCredential = context.resolveCredential;
 
@@ -155,7 +155,7 @@ Example:
   },
   execute: (input, context: ToolExecuteContext) =>
     Effect.gen(function* () {
-      const mat = materialize({ filterByScope: undefined });
+      const mat = materialize({ filterByScope: undefined, sessionID: context.sessionID });
       const pipeline = {
         steps: input.steps.map((s: any) => ({
           ...s,

@@ -119,7 +119,7 @@ const defaultGetSummaryMessage = (
     return <span>{summary}</span>
   }
   if (isStreaming) {
-    return <span>Processing your request...</span>
+    return <span className="writing-shimmer-text">thinking</span>
   }
   if (summary) {
     return <span>{summary}</span>
@@ -151,19 +151,16 @@ export const ActionSummaryTrigger = memo(
         )}
         {...props}
       >
-        {isStreaming && (
-          <span className="shimmer-text inline-block">
-            {"{"}
+        <span className="inline-flex items-center gap-1.5 flex-1 text-left">
+          {isStreaming && (
+            <span className="inline-flex items-center justify-center size-4 text-sm leading-none">
+              <StreamingSpinner />
+            </span>
+          )}
+          <span className="truncate">
+            {children ?? getSummaryMessage(isStreaming)}
           </span>
-        )}
-        <span className="flex-1 text-left truncate">
-          {children ?? getSummaryMessage(isStreaming)}
         </span>
-        {isStreaming && (
-          <span className="shimmer-text inline-block">
-            {"}"}
-          </span>
-        )}
         <ChevronDownIcon
           className={cn(
             "size-4 shrink-0 transition-transform",
@@ -338,6 +335,15 @@ export const ActionDetailPanel = memo(
     )
   }
 )
+
+function StreamingSpinner() {
+  const [frame, setFrame] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setFrame(f => (f + 1) % 4), 200)
+    return () => clearInterval(id)
+  }, [])
+  return <>{['◐', '◓', '◑', '◒'][frame]}</>
+}
 
 ActionSummary.displayName = "ActionSummary"
 ActionSummaryTrigger.displayName = "ActionSummaryTrigger"

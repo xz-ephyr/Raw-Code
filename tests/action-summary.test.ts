@@ -42,38 +42,52 @@ function finish(reason: string = 'stop'): LLMEvent {
   return { type: 'finish', reason } as LLMEvent
 }
 
+function stepFinish(): LLMEvent {
+  return { type: 'step-finish' } as LLMEvent
+}
+
 describe('ActionSummary - Reducer Logic', () => {
-  describe('text-delta generates summary from content', () => {
-    it('creates actionSummary when content arrives', () => {
+  describe('text-start creates initial actionSummary', () => {
+    it('creates actionSummary when text streaming starts', () => {
       const state = createEmptyState()
-      const event = textDelta('Hello world')
+      const event = textStart()
 
       const next = reduceEvent(state, event)
 
       expect(next.currentMessage).not.toBeNull()
       expect(next.currentMessage?.actionSummary).toBeDefined()
-      expect(next.currentMessage?.actionSummary?.summary).toBe('Hello world')
+      expect(next.currentMessage?.actionSummary?.summary).toBe('Processing your request...')
       expect(next.currentMessage?.actionSummary?.actions).toEqual([])
     })
+  })
 
-    it('truncates long content for summary', () => {
+  describe('text-delta does not rebuild actionSummary', () => {
+    it('preserves existing actionSummary during text streaming', () => {
       const state = createEmptyState()
-      const longText = 'a'.repeat(150)
-      const event = textDelta(longText)
+      // First, start text streaming (sets initial actionSummary)
+      let next = reduceEvent(state, textStart())
 
-      const next = reduceEvent(state, event)
+      expect(next.currentMessage?.actionSummary).toBeDefined()
 
-      expect(next.currentMessage?.actionSummary?.summary).toHaveLength(100)
-      expect(next.currentMessage?.actionSummary?.summary).toContain('...')
+      // Then, text-delta should NOT change the actionSummary
+      next = reduceEvent(next, textDelta('Hello world'))
+
+      // actionSummary should still be "Processing your request..." from text-start
+      // since text-delta no longer rebuilds it
+      expect(next.currentMessage?.actionSummary?.summary).toBe('Processing your request...')
+      expect(next.currentMessage?.actionSummary?.actions).toEqual([])
     })
+  })
 
-    it('extracts first sentence as summary', () => {
+  describe('step-finish updates actionSummary', () => {
+    it('updates actionSummary with final content on step-finish', () => {
       const state = createEmptyState()
-      const event = textDelta('This is the first sentence. And this is the second.')
+      let next = reduceEvent(state, textStart())
+      next = reduceEvent(next, textDelta('Final content after research'))
+      next = reduceEvent(next, stepFinish())
 
-      const next = reduceEvent(state, event)
-
-      expect(next.currentMessage?.actionSummary?.summary).toBe('This is the first sentence')
+      expect(next.currentMessage?.actionSummary).toBeDefined()
+      expect(next.currentMessage?.actionSummary?.summary).toBe('Final content after research')
     })
   })
 
@@ -247,12 +261,12 @@ describe('ActionSummary - Reducer Logic', () => {
   })
 
   describe('content priority over tool summary', () => {
-    it('uses content summary when content exists during streaming', () => {
+    it('uses content summary in step-finish update', () => {
       const state = createEmptyState()
       state.currentMessage = {
         id: 'test',
         role: 'assistant',
-        content: '',
+        content: 'Here is what I found about the topic...',
         reasoning: '',
         toolCalls: [
           { id: 'call_1', name: 'research', input: { query: 'test' }, status: 'streaming' },
@@ -260,22 +274,46 @@ describe('ActionSummary - Reducer Logic', () => {
         createdAt: Date.now(),
       }
 
-      const event = textDelta('Here is what I found about the topic...')
+      // step-finish rebuilds actionSummary with content taking priority
+      const next = reduceEvent(state, stepFinish())
 
-      const next = reduceEvent(state, event)
-
-      // Content takes priority when streaming and content exists
+      expect(next.currentMessage?.actionSummary).toBeDefined()
       expect(next.currentMessage?.actionSummary?.summary).toBe('Here is what I found about the topic')
     })
   })
 
   describe('no actionSummary when empty', () => {
-    it('returns undefined actionSummary when no content and no tools', () => {
+    it('returns actionSummary with processing message when streaming starts', () => {
       const state = createEmptyState()
       const event = textStart()
 
       const next = reduceEvent(state, event)
 
+      // Now actionSummary is always created when streaming starts
+      expect(next.currentMessage?.actionSummary).toBeDefined()
+      expect(next.currentMessage?.actionSummary?.summary).toBe('Processing your request...')
+      expect(next.currentMessage?.actionSummary?.actions).toEqual([])
+    })
+
+    it('returns undefined actionSummary when not streaming and no content/tools', () => {
+      const state = createEmptyState()
+      // Simulate a non-streaming state with no content
+      state.currentMessage = {
+        id: 'test',
+        role: 'assistant',
+        content: '',
+        reasoning: '',
+        toolCalls: [],
+        createdAt: Date.now(),
+      }
+      state.status = 'idle'
+
+      // Create a custom event that won't trigger streaming
+      const event = { type: 'text-end' } as LLMEvent
+
+      const next = reduceEvent(state, event)
+
+      // actionSummary should remain whatever it was before
       expect(next.currentMessage?.actionSummary).toBeUndefined()
     })
   })

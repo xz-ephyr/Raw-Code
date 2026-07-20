@@ -1,5 +1,6 @@
 import { query } from '../db.js';
 import { ConnectorService } from './base.js';
+import type { ActionDefinition } from './types.js';
 import { ensurePipelineRepo } from './github/repos.js';
 import {
   listRepos,
@@ -221,5 +222,76 @@ export class GitHubConnectorService extends ConnectorService {
       createRepoFromTemplate: (params: any) => this.createRepoFromTemplate(params),
       dispatchWorkflow: (params: any) => this.dispatchWorkflow(params),
     };
+  }
+
+  getActionDefinitions(): ActionDefinition[] {
+    return [
+      {
+        name: 'repos',
+        description: 'List GitHub repositories for a user or organization',
+        inputSchema: { type: 'object', properties: { owner: { type: 'string', description: 'Optional owner (defaults to authenticated user)' } } },
+        outputSchema: { type: 'array' },
+      },
+      {
+        name: 'issues',
+        description: 'List issues for a GitHub repository',
+        inputSchema: { type: 'object', properties: { owner: { type: 'string', description: 'Repo owner' }, repo: { type: 'string', description: 'Repo name' } }, required: ['owner', 'repo'] },
+        outputSchema: { type: 'array' },
+      },
+      {
+        name: 'prs',
+        description: 'List pull requests for a GitHub repository',
+        inputSchema: { type: 'object', properties: { owner: { type: 'string', description: 'Repo owner' }, repo: { type: 'string', description: 'Repo name' } }, required: ['owner', 'repo'] },
+        outputSchema: { type: 'array' },
+      },
+      {
+        name: 'search',
+        description: 'Search GitHub code',
+        inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'GitHub search query' } }, required: ['query'] },
+        outputSchema: { type: 'object' },
+      },
+      {
+        name: 'ensurePipelineRepo',
+        description: 'Ensure the video pipeline repository exists',
+        inputSchema: { type: 'object', properties: {} },
+        outputSchema: { type: 'object', properties: { owner: { type: 'string' }, repo: { type: 'string' }, fullName: { type: 'string' } } },
+      },
+      {
+        name: 'listWorkflowRuns',
+        description: 'List GitHub Actions workflow runs',
+        inputSchema: { type: 'object', properties: { owner: { type: 'string' }, repo: { type: 'string' }, perPage: { type: 'number', description: 'Results per page' }, event: { type: 'string', description: 'Filter by event type' } }, required: ['owner', 'repo'] },
+        outputSchema: { type: 'array', items: { type: 'object' } },
+      },
+      {
+        name: 'fetchRunLogs',
+        description: 'Fetch logs from a GitHub Actions workflow run',
+        inputSchema: { type: 'object', properties: { owner: { type: 'string' }, repo: { type: 'string' }, runId: { type: 'number', description: 'Workflow run ID' } }, required: ['owner', 'repo', 'runId'] },
+        outputSchema: { type: 'string' },
+      },
+      {
+        name: 'commitFile',
+        description: 'Commit a file to a GitHub repository',
+        inputSchema: { type: 'object', properties: { owner: { type: 'string' }, repo: { type: 'string' }, path: { type: 'string', description: 'File path in repo' }, content: { type: 'string', description: 'File content' }, message: { type: 'string', description: 'Commit message' }, branch: { type: 'string', description: 'Branch (defaults to default)' } }, required: ['owner', 'repo', 'path', 'content', 'message'] },
+        outputSchema: { type: 'object', properties: { sha: { type: 'string' }, content: { type: 'object', properties: { htmlUrl: { type: 'string' } } } } },
+      },
+      {
+        name: 'setupWebhook',
+        description: 'Set up a webhook on a GitHub repository',
+        inputSchema: { type: 'object', properties: { owner: { type: 'string' }, repo: { type: 'string' }, url: { type: 'string', description: 'Webhook URL' }, secret: { type: 'string', description: 'Webhook secret' }, events: { type: 'array', items: { type: 'string' }, description: 'Events to trigger on (default: push)' } }, required: ['owner', 'repo', 'url'] },
+        outputSchema: { type: 'object', properties: { id: { type: 'number' } } },
+      },
+      {
+        name: 'createRepoFromTemplate',
+        description: 'Create a new GitHub repository from a template',
+        inputSchema: { type: 'object', properties: { templateOwner: { type: 'string' }, templateRepo: { type: 'string' }, newRepoName: { type: 'string' }, description: { type: 'string' }, private: { type: 'boolean' } }, required: ['templateOwner', 'templateRepo', 'newRepoName'] },
+        outputSchema: { type: 'object', properties: { id: { type: 'number' }, name: { type: 'string' }, fullName: { type: 'string' }, htmlUrl: { type: 'string' } } },
+      },
+      {
+        name: 'dispatchWorkflow',
+        description: 'Dispatch a GitHub Actions workflow',
+        inputSchema: { type: 'object', properties: { owner: { type: 'string' }, repo: { type: 'string' }, workflowFileName: { type: 'string', description: 'Workflow file name (e.g. deploy.yml)' }, ref: { type: 'string', description: 'Git ref (branch/tag)' }, inputs: { type: 'object', description: 'Workflow inputs' } }, required: ['owner', 'repo', 'workflowFileName', 'ref'] },
+        outputSchema: { type: 'object' },
+      },
+    ];
   }
 }

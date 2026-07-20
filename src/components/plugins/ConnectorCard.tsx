@@ -1,5 +1,6 @@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { StarIcon, Download01Icon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface ConnectorCardProps {
   label: string;
@@ -43,13 +44,17 @@ export const ConnectorCard = ({ label, description, icon, imageSrc, imageSrcDark
           Connected
         </span>
       ) : (
-        <span
-          onClick={(e) => { e.stopPropagation(); onAction?.(); onClick?.(); }}
-          className="flex items-center justify-center w-7 h-7 rounded-md bg-muted hover:bg-muted/80 transition-colors shrink-0"
-          title={type === 'connector' ? 'Connect' : 'Install'}
-        >
-          <HugeiconsIcon icon={Download01Icon} size={14} className="text-foreground" />
-        </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              onClick={(e) => { e.stopPropagation(); onAction?.(); onClick?.(); }}
+              className="flex items-center justify-center w-7 h-7 rounded-md bg-muted hover:bg-muted/80 transition-colors shrink-0"
+            >
+              <HugeiconsIcon icon={Download01Icon} size={14} className="text-foreground" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>{type === 'connector' ? 'Connect' : 'Install'}</TooltipContent>
+        </Tooltip>
       )}
     </div>
     {type !== 'connector' && stars !== undefined && (

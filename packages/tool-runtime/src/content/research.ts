@@ -2,6 +2,7 @@ import { Effect, Schema } from 'effect';
 import { make } from '../tool/make';
 import { putToolOutput } from '../store';
 import { emit } from '../events';
+import { serverWebSearch } from './search-client';
 import type { ToolExecuteContext } from '../types';
 
 const inputSchema = Schema.Struct({
@@ -21,10 +22,6 @@ const outputSchema = Schema.Struct({
   ),
   partial: Schema.optional(Schema.Boolean),
 });
-
-function baseUrl(): string {
-  return 'http://localhost:8080';
-}
 
 export const researchTool = make({
   description: 'Research a topic by searching the web and synthesizing findings.',
@@ -46,45 +43,33 @@ export const researchTool = make({
       const isDeep = input.depth === 'deep';
       const maxSources = input.maxSources ?? (isDeep ? 8 : 3);
 
-      // Use an explicit AbortController and clear it in finally so no dangling
-      // timer/handle is left behind when the go-crawl server is unreachable.
+      // Use an explicit AbortController and forward its signal to the fetch so
+      // the intended deep-research budget is actually honored (the inner fetch
+      // would otherwise use its own 30s timeout and ignore this one).
       const searchResult = yield* Effect.promise<Array<{ title: string; url: string; markdown?: string }>>(async () => {
         const controller = new AbortController();
         // Deep research can take 60s+. Allow longer timeout.
         const timeout = setTimeout(() => controller.abort(), 120000);
         try {
-          const res = await fetch(
-            `${baseUrl()}/v1/search?query=${encodeURIComponent(input.query)}&maxResults=${maxSources}`,
-            { signal: controller.signal },
-          );
-          if (!res.ok) throw new Error(`go-crawl error (${res.status})`);
-          const json = await res.json();
-          if (!json.success) throw new Error(`go-crawl search failed: ${json.error}`);
-          return (json.data || []) as Array<{ title: string; url: string; markdown?: string }>;
-        } catch (e) {
-          console.warn(`go-crawl search failed: ${e instanceof Error ? e.message : String(e)}`);
-          return [] as Array<{ title: string; url: string; markdown?: string }>;
+          const { results } = await serverWebSearch(input.query, maxSources, controller.signal);
+          return results.map((r) => ({
+            title: r.title,
+            url: r.url,
+            markdown: r.snippet || r.content || '',
+          }));
         } finally {
           clearTimeout(timeout);
           controller.abort();
         }
       });
 
-      let sources: Array<{ title: string; url: string; snippet: string }>;
-      if (searchResult.length > 0) {
-        sources = searchResult.slice(0, maxSources).map((r) => ({
-          title: r.title || 'Untitled',
-          url: r.url || '',
-          snippet: (r.markdown || '').slice(0, 400),
-        }));
-      } else {
-        sources = Array.from({ length: Math.min(maxSources, 5) }, (_, i) => ({
-          title: `Result ${i + 1}: ${input.query.split(' ').slice(0, 4).join(' ')}${i > 0 ? ` - Perspective ${i + 1}` : ''}`,
-          url: `https://example.com/research/${encodeURIComponent(input.query)}/${i + 1}`,
-          snippet: `This is a ${isDeep ? 'detailed' : 'brief'} snippet about "${input.query}" providing relevant context and key information for analysis.`,
-        }));
-        yield* Effect.log(`Using mock research results (go-crawl unavailable or returned no results)`);
-      }
+      if (searchResult.length === 0) throw new Error('No search results found');
+
+      const sources = searchResult.slice(0, maxSources).map((r) => ({
+        title: r.title || 'Untitled',
+        url: r.url || '',
+        snippet: (r.markdown || '').slice(0, 400),
+      }));
 
       const summary = isDeep
         ? `Deep research results for "${input.query}":\n\n` +

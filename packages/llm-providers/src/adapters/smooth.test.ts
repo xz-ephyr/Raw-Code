@@ -34,7 +34,7 @@ describe("smoothStream", () => {
   it("passes non-text events through immediately", async () => {
     const stream = Stream.fromIterable([toolCallEvent, finishEvent])
     const result = await Effect.runPromise(
-      collectEvents(smoothStream(stream, { tickMs: 1 })),
+      collectEvents(smoothStream(stream, { baseTickMs: 1 })),
     )
     assert.equal(result.length, 2)
     assert.equal(result[0], toolCallEvent)
@@ -49,10 +49,10 @@ describe("smoothStream", () => {
     const result = await Effect.runPromise(
       collectEvents(
         smoothStream(stream, {
-          tickMs: 1,
+          baseTickMs: 1,
+          minCharsPerTick: 2,
           maxCharsPerTick: 2,
-          forceCharsPerTick: 2,
-          forceTickMs: 1,
+          wordBoundaryAware: false,
         }),
       ),
     )
@@ -69,7 +69,7 @@ describe("smoothStream", () => {
       finishEvent,
     ])
     const result = await Effect.runPromise(
-      collectEvents(smoothStream(stream, { tickMs: 1, maxCharsPerTick: 10 })),
+      collectEvents(smoothStream(stream, { baseTickMs: 1, maxCharsPerTick: 10 })),
     )
 
     const finish = result.find((e) => e.type === "finish")
@@ -82,7 +82,7 @@ describe("smoothStream", () => {
       providerErrorEvent,
     ])
     const result = await Effect.runPromise(
-      collectEvents(smoothStream(stream, { tickMs: 1, maxCharsPerTick: 10 })),
+      collectEvents(smoothStream(stream, { baseTickMs: 1, maxCharsPerTick: 10 })),
     )
 
     const error = result.find((e) => e.type === "provider-error")
@@ -100,7 +100,7 @@ describe("smoothStream", () => {
       finishEvent,
     ])
     const result = await Effect.runPromise(
-      collectEvents(smoothStream(stream, { tickMs: 1, maxCharsPerTick: 1 })),
+      collectEvents(smoothStream(stream, { baseTickMs: 1, maxCharsPerTick: 1 })),
     )
 
     const ids = result
@@ -115,7 +115,7 @@ describe("smoothStream", () => {
       finishEvent,
     ])
     const result = await Effect.runPromise(
-      collectEvents(smoothStream(stream, { tickMs: 1 })),
+      collectEvents(smoothStream(stream, { baseTickMs: 1 })),
     )
 
     const finish = result.find((e) => e.type === "finish")
@@ -130,7 +130,7 @@ describe("smoothStream", () => {
     })
     const stream = Stream.fail(error)
     const caught = await Effect.runPromise(
-      Effect.flip(collectEvents(smoothStream(stream, { tickMs: 1 }))),
+      Effect.flip(collectEvents(smoothStream(stream, { baseTickMs: 1 }))),
     )
     assert.ok(caught instanceof LLMError)
   })
@@ -142,10 +142,10 @@ describe("smoothStream", () => {
     const result = await Effect.runPromise(
       collectEvents(
         smoothStream(stream, {
-          tickMs: 1,
+          baseTickMs: 1,
+          minCharsPerTick: 50,
           maxCharsPerTick: 200,
-          forceCharsPerTick: 200,
-          forceTickMs: 1,
+          wordBoundaryAware: false,
         }),
       ),
     )
@@ -165,11 +165,10 @@ describe("smoothStream", () => {
     const result = await Effect.runPromise(
       collectEvents(
         smoothStream(stream, {
-          tickMs: 1,
+          baseTickMs: 1,
           minCharsPerTick: 1,
           maxCharsPerTick: 1,
-          forceCharsPerTick: 1,
-          forceTickMs: 1,
+          wordBoundaryAware: false,
         }),
       ),
     )
@@ -191,10 +190,9 @@ describe("smoothStream", () => {
     const result = await Effect.runPromise(
       collectEvents(
         smoothStream(stream, {
-          tickMs: 1,
+          baseTickMs: 1,
           maxCharsPerTick: 10,
-          forceCharsPerTick: 10,
-          forceTickMs: 1,
+          wordBoundaryAware: false,
         }),
       ),
     )
@@ -216,11 +214,10 @@ describe("smoothStream", () => {
     const result = await Effect.runPromise(
       collectEvents(
         smoothStream(stream, {
-          tickMs: 1,
+          baseTickMs: 1,
           minCharsPerTick: 1,
           maxCharsPerTick: 1,
-          forceCharsPerTick: 1,
-          forceTickMs: 1,
+          wordBoundaryAware: false,
         }),
       ),
     )

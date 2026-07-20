@@ -204,44 +204,8 @@ function extractWriteArtifactFiles(toolInvocations: any[]): any[] {
     }));
 }
 
-function extractContentToolFiles(toolInvocations: any[]): any[] {
-  const contentToolCalls = (toolInvocations || [])
-    .filter((ti: any) => ti.state === 'result' && (
-      ti.toolName === 'write_article'
-      || ti.toolName === 'edit_text'
-      || ti.toolName === 'research'
-      || ti.toolName === 'generate_script'
-    ));
-
-  return contentToolCalls.map((call: any) => {
-    const result = call.result;
-    if (!result) return null;
-    if (call.toolName === 'write_article' && result.content) {
-      return { identifier: result.articleId || call.toolCallId, type: 'doc' as const, title: result.title || result.articleId, content: result.content, version: 0, createdAt: Date.now() };
-    }
-    if (call.toolName === 'edit_text' && result.text) {
-      return { identifier: call.toolCallId, type: 'doc' as const, title: 'Edited Text', content: result.text, version: 0, createdAt: Date.now() };
-    }
-    if (call.toolName === 'research' && result.summary) {
-      const srcText = (result.sources || []).map((s: any) => `- ${s.title}\n  ${s.snippet}`).join('\n');
-      const content = result.summary + (srcText ? `\n\n---\n\n${srcText}` : '');
-      const title = result.summary.trim().split('\n')[0].slice(0, 50);
-      return { identifier: call.toolCallId, type: 'pdf' as const, title, content, version: 0, createdAt: Date.now() };
-    }
-    if (call.toolName === 'generate_script' && result.scenes) {
-      const content = result.scenes.map((s: any) =>
-        `Scene ${s.sceneNumber} (${s.duration}s)\n${s.narration}\n${s.visualDescription}`
-      ).join('\n\n---\n\n');
-      return { identifier: result.scriptId || call.toolCallId, type: 'doc' as const, title: 'Video Script', content, version: 0, createdAt: Date.now() };
-    }
-    return null;
-  }).filter(Boolean);
-}
-
 function extractFilesFromToolInvocations(toolInvocations: any[]): any[] {
-  const writeArtifactFiles = extractWriteArtifactFiles(toolInvocations);
-  const contentToolFiles = extractContentToolFiles(toolInvocations);
-  return [...writeArtifactFiles, ...contentToolFiles];
+  return extractWriteArtifactFiles(toolInvocations);
 }
 
 export const mapUIMessageToLegacyMessage = (m: UIMessage | null | undefined): LegacyMessage | null | undefined => {

@@ -1,4 +1,5 @@
-import { createCloudflare } from './createCloudflare';
+import { PROVIDER_CONFIGS, getAllProviderIds } from '@doktor/llm-providers/model-registry'
+import type { ProviderId } from '@doktor/llm-providers/model-registry'
 
 function makeGoogleFetch(): typeof globalThis.fetch {
   const GOOGLE_TIMEOUT = 60_000;
@@ -19,10 +20,13 @@ function makeGoogleFetch(): typeof globalThis.fetch {
       const stream = new ReadableStream<Uint8Array>({
         async start(ctrl) {
           let buf = '';
+          let readTimedOut = false;
+          const readTimeout = setTimeout(() => { readTimedOut = true; reader.cancel(); }, 60_000);
           try {
             while (true) {
               const { done, value } = await reader.read();
-              if (done) break;
+              if (done) { clearTimeout(readTimeout); break; }
+              if (readTimedOut) { clearTimeout(readTimeout); break; }
               buf += decoder.decode(value, { stream: true });
               const lines = buf.split('\n');
               buf = lines.pop() || '';
@@ -107,8 +111,6 @@ export function getProviderClient(providerId: string, apiKey: string, baseURL?: 
   const provider = getProvider(providerId);
   if (!provider) return undefined;
   const target = baseURL ?? provider.baseURL;
-  // When in browser, route through local proxy to avoid CORS
-  // Skip for providers that construct URLs dynamically (e.g. Cloudflare with {accountId})
   const proxyPrefix = typeof window !== 'undefined' && !target.includes('{') ? '/proxy/' : '';
   return provider.createClient(apiKey, proxyPrefix + target);
 }
@@ -116,7 +118,6 @@ export function getProviderClient(providerId: string, apiKey: string, baseURL?: 
 export function getProviderLabel(id: string): string {
   return getProvider(id)?.label ?? id;
 }
-
 
 export function getProviderApiKeys(): Record<string, string> {
   const keys: Record<string, string> = {};
@@ -126,168 +127,27 @@ export function getProviderApiKeys(): Record<string, string> {
   return keys;
 }
 
-const PROVIDERS: KeyProvider[] = [
-  {
-    id: 'anthropic',
-    label: 'Anthropic',
-    icon: '/claude-color.svg',
-    configKey: 'anthropic-api-key',
-    envVar: 'ANTHROPIC_API_KEY',
-    baseURL: 'https://api.anthropic.com/v1',
-    defaultModel: 'claude-sonnet-4',
-    modelIdPrefixes: ['claude'],
-    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
-  },
-  {
-    id: 'openai',
-    label: 'OpenAI',
-    icon: '/openai.svg',
-    configKey: 'openai-api-key',
-    envVar: 'OPENAI_API_KEY',
-    baseURL: 'https://api.openai.com/v1',
-    defaultModel: 'gpt-4o',
-    modelIdPrefixes: ['gpt', 'o3', 'o4'],
-    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
-  },
-  {
-    id: 'google',
-    label: 'Google AI Studio',
-    icon: '/google-color.svg',
-    configKey: 'google-api-key',
-    envVar: 'GOOGLE_API_KEY',
-    baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
-    defaultModel: 'gemini-2.5-flash',
-    modelIdPrefixes: ['gemini'],
-    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey, fetch: makeGoogleFetch() }),
-  },
-  {
-    id: 'deepseek',
-    label: 'DeepSeek',
-    icon: '/deepseek-color.svg',
-    configKey: 'deepseek-api-key',
-    envVar: 'DEEPSEEK_API_KEY',
-    baseURL: 'https://api.deepseek.com/v1',
-    defaultModel: 'deepseek-chat',
-    modelIdPrefixes: ['deepseek'],
-    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
-  },
-  {
-    id: 'mistral',
-    label: 'Mistral AI',
-    icon: '/mistral-color.svg',
-    configKey: 'mistral-api-key',
-    envVar: 'MISTRAL_API_KEY',
-    baseURL: 'https://api.mistral.ai/v1',
-    defaultModel: 'mistral-small-latest',
-    modelIdPrefixes: ['mistral', 'codestral', 'pixtral'],
-    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
-  },
-  {
-    id: 'cohere',
-    label: 'Cohere',
-    icon: '/commanda-color.svg',
-    configKey: 'cohere-api-key',
-    envVar: 'COHERE_API_KEY',
-    baseURL: 'https://api.cohere.com/compatibility/v1',
-    defaultModel: 'command-a-03-2026',
-    modelIdPrefixes: ['command', 'c4ai'],
-    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
-  },
-  {
-    id: 'groq',
-    label: 'Groq',
-    icon: '/groq-color.svg',
-    configKey: 'groq-api-key',
-    envVar: 'GROQ_API_KEY',
-    baseURL: 'https://api.groq.com/openai/v1',
-    defaultModel: 'llama-3.3-70b-versatile',
-    modelIdPrefixes: ['llama', 'qwen', 'deepseek', 'gpt-oss', 'meta-llama', 'openai'],
-    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
-  },
-  {
-    id: 'together',
-    label: 'Together AI',
-    icon: '/together-color.svg',
-    configKey: 'together-api-key',
-    envVar: 'TOGETHER_API_KEY',
-    baseURL: 'https://api.together.xyz/v1',
-    defaultModel: 'together/auto',
-    modelIdPrefixes: ['together'],
-    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
-  },
-  {
-    id: 'openrouter',
-    label: 'OpenRouter',
-    icon: '/openrouter.svg',
-    configKey: 'openrouter-api-key',
-    envVar: 'OPENROUTER_API_KEY',
-    baseURL: 'https://openrouter.ai/api/v1',
-    defaultModel: 'openrouter/auto',
-    modelIdPrefixes: ['openrouter'],
-    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
-  },
-  {
-    id: 'nvidia',
-    label: 'NVIDIA NIM',
-    icon: '/nvidia-color.svg',
-    configKey: 'nvidia-api-key',
-    envVar: 'NVIDIA_API_KEY',
-    baseURL: 'https://integrate.api.nvidia.com/v1',
-    defaultModel: 'nvidia/llama-3.3-nemotron-super-49b-v1',
-    modelIdPrefixes: ['nvidia', 'meta', 'mistralai', 'google'],
-    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
-  },
-  {
-    id: 'cerebras',
-    label: 'Cerebras',
-    icon: '/cerebras-color.svg',
-    configKey: 'cerebras-api-key',
-    envVar: 'CEREBRAS_API_KEY',
-    baseURL: 'https://api.cerebras.ai/v1',
-    defaultModel: 'cerebras/gpt-oss-120b',
-    modelIdPrefixes: ['gpt-oss', 'zai', 'gemma'],
-    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
-  },
-  {
-    id: 'sambanova',
-    label: 'SambaNova',
-    icon: '/sambanova-color.svg',
-    configKey: 'sambanova-api-key',
-    envVar: 'SAMBANOVA_API_KEY',
-    baseURL: 'https://api.sambanova.ai/v1',
-    defaultModel: 'Meta-Llama-3.3-70B-Instruct',
-    modelIdPrefixes: ['Meta', 'DeepSeek', 'gpt-oss', 'gemma'],
-    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
-  },
-  {
-    id: 'huggingface',
-    label: 'Hugging Face',
-    icon: '/huggingface-color.svg',
-    configKey: 'huggingface-api-key',
-    envVar: 'HUGGINGFACE_API_KEY',
-    baseURL: 'https://api-inference.huggingface.co/v1',
-    defaultModel: 'meta-llama/Meta-Llama-3.1-8B-Instruct',
-    modelIdPrefixes: ['meta-llama', 'Qwen', 'google'],
-    createClient: (apiKey: string, _baseURL?: string) => ({ apiKey }),
-  },
-  {
-    id: 'cloudflare',
-    label: 'Cloudflare AI',
-    icon: '/cloudflare-color.svg',
-    configKey: 'cloudflare-api-key',
-    envVar: 'CLOUDFLARE_API_KEY',
-    baseURL: 'https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/v1',
-    defaultModel: '@cf/meta/llama-3.1-8b-instruct',
-    modelIdPrefixes: ['@cf', '@hf'],
-    createClient: (apiKey: string, baseURL?: string) => {
-      let accountId = baseURL?.match(/accounts\/([^/]+)/)?.[1] || '';
-      if (accountId === '{accountId}') {
-        accountId = '';
-      }
-      return createCloudflare(apiKey, accountId);
-    },
-  },
-];
+function makeClient(id: ProviderId): (apiKey: string, baseURL?: string) => any {
+  if (id === 'google') {
+    return (apiKey: string, _baseURL?: string) => ({ apiKey, fetch: makeGoogleFetch() })
+  }
+  return (apiKey: string, _baseURL?: string) => ({ apiKey })
+}
+
+const PROVIDERS: KeyProvider[] = getAllProviderIds().map(id => {
+  const cfg = PROVIDER_CONFIGS[id]
+  return {
+    id: cfg.id,
+    label: cfg.label,
+    icon: cfg.icon,
+    configKey: cfg.configKey,
+    envVar: cfg.envVar,
+    baseURL: cfg.baseURL,
+    defaultModel: cfg.defaultModel,
+    modelIdPrefixes: cfg.modelIdPrefixes,
+    createClient: makeClient(id),
+  }
+})
 
 for (const p of PROVIDERS) {
   registerProvider(p);

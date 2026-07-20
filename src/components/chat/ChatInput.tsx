@@ -122,7 +122,7 @@ export default function ChatInput({
   }, [value, setValue]);
 
   return (
-    <div className="relative w-full mx-auto rounded-[14px] border border-border/40 dark:border-white/15 bg-sidebar bg-gradient-to-b from-transparent to-muted/[0.04] dark:to-white/[0.02]" style={{ maxWidth: 'min(820px, 100%)', padding: '6px 8px 8px 8px' }}>
+    <div className="relative w-full mx-auto rounded-[14px] border border-border/40 dark:border-white/15 bg-sidebar bg-gradient-to-b from-transparent to-muted/[0.04] dark:to-white/[0.02]" style={{ maxWidth: 'min(1020px, 100%)', padding: '6px 8px 8px 8px' }}>
       {showMentionDropdown && (
         <ConnectorMentionDropdown
           query={mentionQuery}
@@ -148,8 +148,6 @@ export default function ChatInput({
       <div className="mt-2 flex items-center justify-between px-1">
         <div className="flex items-center gap-0.5">
           <ToolbarDropdown
-            isThinkingEnabled={isThinkingEnabled}
-            onToggleThinking={onToggleThinking}
             onToggleWebSearch={onToggleWebSearch}
             isIdle={isIdle}
           />
@@ -157,7 +155,7 @@ export default function ChatInput({
           {isWebSearchEnabled && <WebSearchPill onToggleWebSearch={onToggleWebSearch} size="small" />}
         </div>
         <div className="flex items-center gap-1">
-          {currentModel && <ModelList currentModel={currentModel} showThinkingOnly={isThinkingEnabled} isIdle={isIdle} />}
+          <ModelList currentModel={currentModel} isIdle={isIdle} />
           <SendButton isLoading={isLoading} onStop={onStop} onSend={handleSend} hasValue={!isEmpty} />
         </div>
       </div>

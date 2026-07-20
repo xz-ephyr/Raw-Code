@@ -4,6 +4,7 @@ import {
   CONNECTORS,
   SHORTCUT_NAMES,
 } from '../components/chat/connectorMentions';
+import { API_BASE_URL } from '@/lib/api';
 
 export function useChatMentions(
   getValue: () => string,
@@ -24,7 +25,7 @@ export function useChatMentions(
       const providers = ['Gmail', 'GitHub', 'Telegram', 'YouTube', 'Reddit', 'Twitter'];
       for (const name of providers) {
         try {
-          const res = await fetch(`http://localhost:3001/connector/${name.toLowerCase()}/status`, { method: 'POST' });
+          const res = await fetch(`${API_BASE_URL}/connector/${name.toLowerCase()}/status`, { method: 'POST' });
           const data = await res.json();
           if (data.connected) connected.add(name);
         } catch { /* ignore */ }

@@ -4,9 +4,11 @@ import {
   WavingHand02Icon,
   HandsClappingIcon,
 } from '@hugeicons/core-free-icons';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Dropdown } from '../ui/Dropdown';
 import { PERSONAS } from '@core/persona';
-import antigravitySvg from '/antigravity-color.svg';
+
+const antigravitySvg = '/antigravity-color.svg';
 
 const ICON_MAP: Record<string, any> = {
   WavingHand02Icon,
@@ -47,19 +49,23 @@ export default function NTabDropdown({ isIdle, currentMode, onModeChange }: NTab
 
   return (
     <div className="relative">
-      <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className={`flex items-center gap-1 px-2 py-1 rounded-[6px] transition-colors text-xs ${
-            tab.id === 'teamwork'
-              ? 'text-amber-600 dark:text-amber-400 hover:bg-amber-400/10'
-              : 'text-foreground hover:bg-muted'
-          }`}
-          title={tab.label}
-        >
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className={`flex items-center gap-1 px-2 py-1 rounded-[6px] transition-colors text-xs ${
+              tab.id === 'teamwork'
+                ? 'text-amber-600 dark:text-amber-400 hover:bg-amber-400/10'
+                : 'text-foreground hover:bg-muted'
+            }`}
+          >
           {renderIcon(tab, 16)}
           <span>{tab.label}</span>
         </button>
+        </TooltipTrigger>
+        <TooltipContent>{tab.label}</TooltipContent>
+      </Tooltip>
       <Dropdown
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}

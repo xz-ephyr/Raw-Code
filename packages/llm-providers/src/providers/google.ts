@@ -4,11 +4,10 @@ import { Auth } from "../route/auth"
 import { Endpoint } from "../route/endpoint"
 import { HttpTransport } from "../route/transport"
 import { Framing } from "../route/framing"
-import { OpenAIProtocol } from "../protocols/openai-chat"
-import type { OpenAIChatBody } from "../protocols/openai-chat"
-import type { LLMRequest } from "../schema"
+import { GeminiProtocol } from "../protocols/google-gemini"
+import type { GeminiRequestBody } from "../protocols/google-gemini"
 
-const baseURL = "https://generativelanguage.googleapis.com/v1beta/openai"
+const baseURL = "https://generativelanguage.googleapis.com"
 
 const auth = Auth.custom((input) => {
   const fromHeaders = input.headers?.authorization?.replace("Bearer ", "")
@@ -26,56 +25,18 @@ const auth = Auth.custom((input) => {
   )
 })
 
-const endpoint = Endpoint.path<OpenAIChatBody>("/chat/completions", { baseURL })
-
-const framing = Framing.sse
-
-const transport = HttpTransport.httpJson<OpenAIChatBody, string>({ framing })
-
-function sanitizeGeminiBody(body: OpenAIChatBody): OpenAIChatBody {
-  const out = { ...body } as any
-  delete out.frequency_penalty
-  delete out.presence_penalty
-  delete out.seed
-  delete out.reasoning_effort
-  delete out.user
-  delete out.metadata
-  delete out.logit_bias
-  delete out.top_logprobs
-  delete out.logprobs
-  if (out.response_format?.type === "json_schema") {
-    const { strict, ...rest } = out.response_format.json_schema
-    out.response_format.json_schema = rest
-  }
-  // Ensure model is a valid Gemini model name
-  if (out.model?.startsWith("gpt-")) {
-    out.model = "gemini-1.5-flash"
-  }
-  return out
+function makeEndpoint(modelPath: string) {
+  return Endpoint.path<GeminiRequestBody>(modelPath, { baseURL })
 }
 
-export function logGeminiBody(body: OpenAIChatBody): OpenAIChatBody {
-  console.log("[Google] Sending body:", JSON.stringify(body, null, 2))
-  return body
-}
+const sseFraming = Framing.sse
+const transport = HttpTransport.httpJson<GeminiRequestBody, string>({ framing: sseFraming })
 
-export const GoogleProtocol = {
-  ...OpenAIProtocol,
-  body: {
-    schema: OpenAIProtocol.body.schema,
-    from: (request: LLMRequest) =>
-      OpenAIProtocol.body.from(request).pipe(
-        Effect.map(sanitizeGeminiBody),
-        Effect.map(logGeminiBody),
-      ),
-  },
-}
-
-export const gemini25Flash = Route.make<OpenAIChatBody, any, string>({
+export const gemini25Flash = Route.make<GeminiRequestBody, any, string>({
   id: "gemini-2.5-flash",
   provider: "google",
-  protocol: GoogleProtocol as typeof OpenAIProtocol,
-  endpoint,
+  protocol: GeminiProtocol,
+  endpoint: makeEndpoint("/v1beta/models/gemini-2.5-flash:streamGenerateContent"),
   auth,
   transport,
   defaults: {
@@ -85,11 +46,11 @@ export const gemini25Flash = Route.make<OpenAIChatBody, any, string>({
   },
 })
 
-export const gemini25Pro = Route.make<OpenAIChatBody, any, string>({
+export const gemini25Pro = Route.make<GeminiRequestBody, any, string>({
   id: "gemini-2.5-pro",
   provider: "google",
-  protocol: GoogleProtocol as typeof OpenAIProtocol,
-  endpoint,
+  protocol: GeminiProtocol,
+  endpoint: makeEndpoint("/v1beta/models/gemini-2.5-pro:streamGenerateContent"),
   auth,
   transport,
   defaults: {
@@ -99,11 +60,11 @@ export const gemini25Pro = Route.make<OpenAIChatBody, any, string>({
   },
 })
 
-export const gemini25FlashLite = Route.make<OpenAIChatBody, any, string>({
+export const gemini25FlashLite = Route.make<GeminiRequestBody, any, string>({
   id: "gemini-2.5-flash-lite",
   provider: "google",
-  protocol: GoogleProtocol as typeof OpenAIProtocol,
-  endpoint,
+  protocol: GeminiProtocol,
+  endpoint: makeEndpoint("/v1beta/models/gemini-2.5-flash-lite:streamGenerateContent"),
   auth,
   transport,
   defaults: {
@@ -113,11 +74,25 @@ export const gemini25FlashLite = Route.make<OpenAIChatBody, any, string>({
   },
 })
 
-export const gemma431bIt = Route.make<OpenAIChatBody, any, string>({
+export const gemini31FlashLite = Route.make<GeminiRequestBody, any, string>({
+  id: "gemini-3.1-flash-lite-preview",
+  provider: "google",
+  protocol: GeminiProtocol,
+  endpoint: makeEndpoint("/v1beta/models/gemini-3.1-flash-lite-preview:streamGenerateContent"),
+  auth,
+  transport,
+  defaults: {
+    headers: { "Content-Type": "application/json" },
+    generation: { maxTokens: 8192, temperature: 0.7 },
+    limits: { context: 1048576, output: 8192 },
+  },
+})
+
+export const gemma431bIt = Route.make<GeminiRequestBody, any, string>({
   id: "gemma-4-31b-it",
   provider: "google",
-  protocol: GoogleProtocol as typeof OpenAIProtocol,
-  endpoint,
+  protocol: GeminiProtocol,
+  endpoint: makeEndpoint("/v1beta/models/gemma-4-31b-it:streamGenerateContent"),
   auth,
   transport,
   defaults: {
@@ -127,11 +102,11 @@ export const gemma431bIt = Route.make<OpenAIChatBody, any, string>({
   },
 })
 
-export const gemma426bIt = Route.make<OpenAIChatBody, any, string>({
+export const gemma426bIt = Route.make<GeminiRequestBody, any, string>({
   id: "gemma-4-26b-a4b-it",
   provider: "google",
-  protocol: GoogleProtocol as typeof OpenAIProtocol,
-  endpoint,
+  protocol: GeminiProtocol,
+  endpoint: makeEndpoint("/v1beta/models/gemma-4-26b-a4b-it:streamGenerateContent"),
   auth,
   transport,
   defaults: {
@@ -141,6 +116,6 @@ export const gemma426bIt = Route.make<OpenAIChatBody, any, string>({
   },
 })
 
-export const all: ReadonlyArray<AnyRoute> = [gemini25Flash, gemini25Pro, gemini25FlashLite, gemma431bIt, gemma426bIt]
+export const all: ReadonlyArray<AnyRoute> = [gemini25Flash, gemini25Pro, gemini25FlashLite, gemini31FlashLite, gemma431bIt, gemma426bIt]
 
 export default all

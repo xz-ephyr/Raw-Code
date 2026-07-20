@@ -4,9 +4,11 @@ import { Auth } from "../route/auth"
 import { Endpoint } from "../route/endpoint"
 import { HttpTransport } from "../route/transport"
 import { Framing } from "../route/framing"
-import type { OpenAIChatBody } from "../protocols/openai-chat"
-import { GoogleProtocol } from "./google"
+import { Framing as FramingGoogle } from "../route/framing"
+import { GeminiProtocol } from "../protocols/google-gemini"
+import type { GeminiRequestBody } from "../protocols/google-gemini"
 import { getSanitizedProtocol as getSanitizedProtocolFromConfig } from "./sanitize-config"
+import { MODEL_REGISTRY_FALLBACK } from "../model-catalog"
 
 function makeOpenAICompatible(input: {
   id: string
@@ -28,31 +30,42 @@ function makeOpenAICompatible(input: {
   } as any)
 }
 
-function makeGoogleRoute(input: { id: string; limits?: { context?: number; output?: number } }): AnyRoute {
-  const endpoint = Endpoint.path<OpenAIChatBody>("/chat/completions", { baseURL: "https://generativelanguage.googleapis.com/v1beta/openai" })
-  // Google's OpenAI-compatible endpoint expects `Authorization: Bearer <key>`.
-  const auth = Auth.bearer(Auth.config("GOOGLE_API_KEY"))
-  return Route.make<OpenAIChatBody, any, string>({
+function makeGoogleRoute(input: { id: string; baseURL?: string; limits?: { context?: number; output?: number } }): AnyRoute {
+  const baseURL = input.baseURL ?? "https://generativelanguage.googleapis.com/v1beta/openai"
+  const isNative = !baseURL.includes("/openai")
+  const modelPath = isNative ? `/v1beta/models/${input.id}:streamGenerateContent` : "/chat/completions"
+  const protocol = isNative ? GeminiProtocol : getSanitizedProtocolFromConfig("google")
+  const endpoint = Endpoint.path<GeminiRequestBody>(modelPath, { baseURL })
+  const auth = isNative
+    ? Auth.custom((input) => {
+        const fromHeaders = input.headers?.authorization?.replace("Bearer ", "")
+        const source = fromHeaders ? Auth.value(fromHeaders) : Auth.config("GOOGLE_API_KEY")
+        const apiKey = Auth.bearer(source)
+        return Auth.toEffect(apiKey)(input).pipe(
+          Effect.map((h) => {
+            const { authorization, ...rest } = h
+            const key = authorization?.replace("Bearer ", "")
+            return { ...rest, "x-goog-api-key": key ?? "" }
+          }),
+        )
+      })
+    : Auth.bearer(Auth.config("GOOGLE_API_KEY"))
+  return Route.make<string, any, string>({
     id: input.id,
     provider: "google",
-    protocol: GoogleProtocol,
+    protocol,
     endpoint,
     auth,
-    transport: HttpTransport.httpJson<OpenAIChatBody, string>({ framing: Framing.sse }),
+    transport: HttpTransport.httpJson<string, string>({ framing: FramingGoogle.google }),
     defaults: {
       headers: { "Content-Type": "application/json" },
       limits: input.limits,
     },
-  })
+  } as any)
 }
 
 function getSanitizedProtocol(provider: string) {
-  switch (provider) {
-    case "google":
-      return GoogleProtocol
-    default:
-      return getSanitizedProtocolFromConfig(provider)
-  }
+  return getSanitizedProtocolFromConfig(provider)
 }
 
 export interface ModelDef {
@@ -68,63 +81,18 @@ export const FRONTEND_MODELS: ReadonlyArray<{
   baseURL?: string
   apiKeyEnv?: string
   isAnthropic?: boolean
-}> = [
-  { id: "gpt-4o", provider: "openai", baseURL: "https://api.openai.com/v1", apiKeyEnv: "OPENAI_API_KEY" },
-  { id: "gpt-4o-mini", provider: "openai", baseURL: "https://api.openai.com/v1", apiKeyEnv: "OPENAI_API_KEY" },
-  { id: "o3", provider: "openai", baseURL: "https://api.openai.com/v1", apiKeyEnv: "OPENAI_API_KEY" },
-  { id: "o4-mini", provider: "openai", baseURL: "https://api.openai.com/v1", apiKeyEnv: "OPENAI_API_KEY" },
-  { id: "claude-sonnet-4", provider: "anthropic", isAnthropic: true },
-  { id: "claude-haiku-3", provider: "anthropic" },
-  { id: "claude-opus-4", provider: "anthropic" },
-  { id: "gemini-2.5-flash", provider: "google", baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", apiKeyEnv: "GOOGLE_API_KEY" },
-  { id: "gemini-2.5-pro", provider: "google", baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", apiKeyEnv: "GOOGLE_API_KEY" },
-  { id: "gemini-2.5-flash-lite", provider: "google", baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", apiKeyEnv: "GOOGLE_API_KEY" },
-  { id: "gemma-4-31b-it", provider: "google", baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", apiKeyEnv: "GOOGLE_API_KEY" },
-  { id: "gemma-4-26b-a4b-it", provider: "google", baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", apiKeyEnv: "GOOGLE_API_KEY" },
-  { id: "meta-llama/llama-4-scout-17b-16e-instruct", provider: "groq", baseURL: "https://api.groq.com/openai/v1", apiKeyEnv: "GROQ_API_KEY" },
-  { id: "llama-3.3-70b-versatile", provider: "groq", baseURL: "https://api.groq.com/openai/v1", apiKeyEnv: "GROQ_API_KEY" },
-  { id: "qwen/qwen3-32b", provider: "groq", baseURL: "https://api.groq.com/openai/v1", apiKeyEnv: "GROQ_API_KEY" },
-  { id: "qwen/qwen3.6-27b", provider: "groq", baseURL: "https://api.groq.com/openai/v1", apiKeyEnv: "GROQ_API_KEY" },
-  { id: "openai/gpt-oss-120b", provider: "groq", baseURL: "https://api.groq.com/openai/v1", apiKeyEnv: "GROQ_API_KEY" },
-  { id: "cerebras/gpt-oss-120b", provider: "cerebras", baseURL: "https://api.cerebras.ai/v1", apiKeyEnv: "CEREBRAS_API_KEY" },
-  { id: "zai-glm-4.7", provider: "cerebras", baseURL: "https://api.cerebras.ai/v1", apiKeyEnv: "CEREBRAS_API_KEY" },
-  { id: "gemma-4-31b", provider: "cerebras", baseURL: "https://api.cerebras.ai/v1", apiKeyEnv: "CEREBRAS_API_KEY" },
-  { id: "mistral-small-latest", provider: "mistral", baseURL: "https://api.mistral.ai/v1", apiKeyEnv: "MISTRAL_API_KEY" },
-  { id: "mistral-medium-3.5", provider: "mistral", baseURL: "https://api.mistral.ai/v1", apiKeyEnv: "MISTRAL_API_KEY" },
-  { id: "mistral-large-latest", provider: "mistral", baseURL: "https://api.mistral.ai/v1", apiKeyEnv: "MISTRAL_API_KEY" },
-  { id: "codestral-latest", provider: "mistral", baseURL: "https://api.mistral.ai/v1", apiKeyEnv: "MISTRAL_API_KEY" },
-  { id: "pixtral-12b", provider: "mistral", baseURL: "https://api.mistral.ai/v1", apiKeyEnv: "MISTRAL_API_KEY" },
-  { id: "Meta-Llama-3.3-70B-Instruct", provider: "sambanova", baseURL: "https://api.sambanova.ai/v1", apiKeyEnv: "SAMBANOVA_API_KEY" },
-  { id: "DeepSeek-V3.1", provider: "sambanova", baseURL: "https://api.sambanova.ai/v1", apiKeyEnv: "SAMBANOVA_API_KEY" },
-  { id: "sambanova/gpt-oss-120b", provider: "sambanova", baseURL: "https://api.sambanova.ai/v1", apiKeyEnv: "SAMBANOVA_API_KEY" },
-  { id: "DeepSeek-V3.2", provider: "sambanova", baseURL: "https://api.sambanova.ai/v1", apiKeyEnv: "SAMBANOVA_API_KEY" },
-  { id: "gemma-4-31B-it", provider: "sambanova", baseURL: "https://api.sambanova.ai/v1", apiKeyEnv: "SAMBANOVA_API_KEY" },
-  { id: "command-a-03-2026", provider: "cohere", baseURL: "https://api.cohere.com/compatibility/v1", apiKeyEnv: "COHERE_API_KEY" },
-  { id: "command-a-plus", provider: "cohere", baseURL: "https://api.cohere.com/compatibility/v1", apiKeyEnv: "COHERE_API_KEY" },
-  { id: "command-r-plus-08-2024", provider: "cohere", baseURL: "https://api.cohere.com/compatibility/v1", apiKeyEnv: "COHERE_API_KEY" },
-  { id: "command-r-08-2024", provider: "cohere", baseURL: "https://api.cohere.com/compatibility/v1", apiKeyEnv: "COHERE_API_KEY" },
-  { id: "command-r7b-12-2024", provider: "cohere", baseURL: "https://api.cohere.com/compatibility/v1", apiKeyEnv: "COHERE_API_KEY" },
-  { id: "c4ai-aya-expanse-32b", provider: "cohere", baseURL: "https://api.cohere.com/compatibility/v1", apiKeyEnv: "COHERE_API_KEY" },
-  { id: "meta-llama/Llama-3.2-11B-Vision-Instruct", provider: "huggingface", baseURL: "https://api-inference.huggingface.co/v1", apiKeyEnv: "HUGGINGFACE_API_KEY" },
-  { id: "meta-llama/Meta-Llama-3.1-8B-Instruct", provider: "huggingface", baseURL: "https://api-inference.huggingface.co/v1", apiKeyEnv: "HUGGINGFACE_API_KEY" },
-  { id: "Qwen/Qwen2.5-72B-Instruct", provider: "huggingface", baseURL: "https://api-inference.huggingface.co/v1", apiKeyEnv: "HUGGINGFACE_API_KEY" },
-  { id: "google/gemma-2-9b-it", provider: "huggingface", baseURL: "https://api-inference.huggingface.co/v1", apiKeyEnv: "HUGGINGFACE_API_KEY" },
-  { id: "@cf/meta/llama-3.1-8b-instruct", provider: "cloudflare", baseURL: "https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/v1", apiKeyEnv: "CLOUDFLARE_API_KEY" },
-  { id: "@cf/meta/llama-3.2-3b-instruct", provider: "cloudflare", baseURL: "https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/v1", apiKeyEnv: "CLOUDFLARE_API_KEY" },
-  { id: "@cf/qwen/qwen1.5-7b-chat-awq", provider: "cloudflare", baseURL: "https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/v1", apiKeyEnv: "CLOUDFLARE_API_KEY" },
-  { id: "@cf/microsoft/phi-2", provider: "cloudflare", baseURL: "https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/v1", apiKeyEnv: "CLOUDFLARE_API_KEY" },
-  { id: "nvidia/llama-3.3-nemotron-super-49b-v1", provider: "nvidia", baseURL: "https://integrate.api.nvidia.com/v1", apiKeyEnv: "NVIDIA_API_KEY" },
-  { id: "nvidia/nemotron-3-nano-30b-a3b", provider: "nvidia", baseURL: "https://integrate.api.nvidia.com/v1", apiKeyEnv: "NVIDIA_API_KEY" },
-  { id: "meta/llama-3.1-8b-instruct", provider: "nvidia", baseURL: "https://integrate.api.nvidia.com/v1", apiKeyEnv: "NVIDIA_API_KEY" },
-  { id: "mistralai/mistral-large-3-675b-instruct-2512", provider: "nvidia", baseURL: "https://integrate.api.nvidia.com/v1", apiKeyEnv: "NVIDIA_API_KEY" },
-  { id: "deepseek-chat", provider: "deepseek", baseURL: "https://api.deepseek.com/v1", apiKeyEnv: "DEEPSEEK_API_KEY" },
-  { id: "deepseek-reasoner", provider: "deepseek", baseURL: "https://api.deepseek.com/v1", apiKeyEnv: "DEEPSEEK_API_KEY" },
-  { id: "deepseek-coder", provider: "deepseek", baseURL: "https://api.deepseek.com/v1", apiKeyEnv: "DEEPSEEK_API_KEY" },
-]
+}> = MODEL_REGISTRY_FALLBACK.map(m => ({
+  id: m.id,
+  provider: m.provider,
+  baseURL: m.baseURL,
+  apiKeyEnv: m.apiKeyEnv,
+  isAnthropic: m.provider === 'anthropic',
+}))
 
 function buildRoute(m: { id: string; provider: string; baseURL?: string; apiKeyEnv?: string; isAnthropic?: boolean }): AnyRoute {
   if (m.isAnthropic || m.provider === "anthropic") {
-    const limits = { context: 200000, output: 8192 }
+    const entry = MODEL_REGISTRY_FALLBACK.find(r => r.id === m.id)
+    const limits = entry?.limits ?? { context: 200000, output: 8192 }
     return Route.make({
       id: m.id,
       provider: "anthropic",
@@ -141,7 +109,7 @@ function buildRoute(m: { id: string; provider: string; baseURL?: string; apiKeyE
   }
 
   if (m.provider === "google") {
-    return makeGoogleRoute({ id: m.id, limits: undefined })
+    return makeGoogleRoute({ id: m.id, baseURL: m.baseURL })
   }
 
   return makeOpenAICompatible({
@@ -157,7 +125,7 @@ const allRoutes: AnyRoute[] = FRONTEND_MODELS.map(buildRoute)
 export { allRoutes }
 
 export function getRouteByModelId(modelId: string): AnyRoute | undefined {
-  if (modelId === 'auto' || !modelId) return allRoutes[0]
+  if (modelId === 'auto' || !modelId) return allRoutes.find((r) => r.provider === 'mistral') ?? allRoutes[0]
   return allRoutes.find((r) => r.id === modelId)
 }
 

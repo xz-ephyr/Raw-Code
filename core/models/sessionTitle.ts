@@ -1,8 +1,6 @@
-import { Effect } from "effect"
-import { Service as LLMClient, LLMRequest, HttpOptions, SystemPart, userMessage, makeGenerationOptions, layer } from "@doktor/llm-providers"
 import { getModelDefinition } from "@core/config/models"
-import { providerRouteMap, proxyGpt4oMini } from "@core/tools/nativeRoutes"
 import { getAllProviders } from "@core/providers"
+import { PROVIDER_CONFIGS } from "@doktor/llm-providers/model-registry"
 
 function sanitizeForTitleInput(raw: string): string {
   return raw
@@ -15,48 +13,6 @@ function sanitizeForTitleInput(raw: string): string {
     .slice(0, 800)
 }
 
-function titleFromHeuristics(message: string): string {
-  const msg = message.trim()
-  if (!msg || msg.length < 3) return 'Quick check-in'
-
-  const lower = msg.toLowerCase()
-
-  const greetings = ['hi', 'hello', 'hey', 'yo', 'sup']
-  if (greetings.includes(lower)) return 'Quick check-in'
-
-  interface Pattern { regex: RegExp; format: (m: RegExpMatchArray) => string }
-  const patterns: Pattern[] = [
-    { regex: /^(fix|debug|solve)\s+(.+)/i, format: (m) => `Fix ${m[2].slice(0, 40)}` },
-    { regex: /^(implement|add|create|build|make)\s+(.+)/i, format: (m) => `Implement ${m[2].slice(0, 35)}` },
-    { regex: /^(refactor|improve|optimize|clean)\s+(.+)/i, format: (m) => `Refactor ${m[2].slice(0, 35)}` },
-    { regex: /^(explain|what is|how does|tell me about)\s+(.+)/i, format: (m) => `Explore ${m[2].slice(0, 40)}` },
-    { regex: /^how\s+(do i|to|can i)\s+(.+)/i, format: (m) => `How to ${m[2].slice(0, 40)}` },
-    { regex: /^why\s+(is|does|did|are)\s+(.+)/i, format: (m) => `Why ${m[2].slice(0, 40)}` },
-    { regex: /^(write|generate)\s+(.+)/i, format: (m) => `Write ${m[2].slice(0, 40)}` },
-    { regex: /^(update|change|modify)\s+(.+)/i, format: (m) => `Update ${m[2].slice(0, 40)}` },
-    { regex: /^(test|testing)\s+(.+)/i, format: (m) => `Test ${m[2].slice(0, 40)}` },
-    { regex: /^(review|check)\s+(.+)/i, format: (m) => `Review ${m[2].slice(0, 40)}` },
-    { regex: /^(setup|set up|configure)\s+(.+)/i, format: (m) => `Setup ${m[2].slice(0, 38)}` },
-  ]
-
-  for (const { regex, format } of patterns) {
-    const match = lower.match(regex)
-    if (match) {
-      const title = format(match)
-      return title.charAt(0).toUpperCase() + title.slice(1)
-    }
-  }
-
-  const filler = new Set(['the', 'a', 'an', 'this', 'my', 'please', 'can', 'you', 'i', 'want', 'to', 'need', 'is', 'it', 'for', 'of', 'in', 'on', 'with', 'do', 'does', 'we', 'me', 'help'])
-  const words = msg.split(/\s+/).filter(w => !filler.has(w.toLowerCase()))
-  if (words.length > 0) {
-    const title = words.slice(0, 5).join(' ')
-    return title.length > 50 ? title.slice(0, 47) + '...' : title.charAt(0).toUpperCase() + title.slice(1)
-  }
-
-  return 'Code assistance'
-}
-
 function tryParseTitle(raw: string): string | null {
   const trimmed = raw.trim()
   const stripped = trimmed.replace(/^```(?:json)?\s*\n?|```$/g, '').trim()
@@ -67,6 +23,118 @@ function tryParseTitle(raw: string): string | null {
   const cleaned = stripped.replace(/^["']|["']$/g, '').replace(/^title[:\s]*/i, '').trim()
   if (cleaned) return cleaned
   return null
+}
+
+function getStoredKey(providerId: string): string {
+  const p = getAllProviders().find(x => x.id === providerId)
+  if (!p) return ""
+  const stored = typeof localStorage !== "undefined"
+    ? (localStorage.getItem(`rc_config_${p.configKey}`) || localStorage.getItem(p.configKey) || "")
+    : ""
+  const env = typeof process !== "undefined" ? (process.env[p.envVar] || "") : ""
+  return stored || env
+}
+
+interface TitleProvider {
+  id: string
+  model: string
+  key: string
+}
+
+function collectTitleProviders(): TitleProvider[] {
+  const providers: TitleProvider[] = []
+
+  const googleKey = getStoredKey("google")
+  if (googleKey) {
+    providers.push({ id: "google", model: PROVIDER_CONFIGS.google.defaultModel, key: googleKey })
+  }
+
+  for (const p of getAllProviders()) {
+    if (p.id === "google") continue
+    const key = getStoredKey(p.id)
+    if (key && p.defaultModel) {
+      providers.push({ id: p.id, model: p.defaultModel, key })
+    }
+  }
+
+  return providers
+}
+
+async function callGemini(model: string, apiKey: string, prompt: string): Promise<string | null> {
+  const url = `/proxy/https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 100, temperature: 0.3 },
+      }),
+    })
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "")
+      console.warn(`Gemini title API error ${res.status}: ${body.slice(0, 200)}`)
+      return null
+    }
+
+    const data = await res.json()
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+    if (!text) return null
+
+    return tryParseTitle(text)
+  } catch (e) {
+    console.warn("Gemini title fetch failed:", e)
+    return null
+  }
+}
+
+async function callOpenAICompatible(
+  providerId: string,
+  baseURL: string,
+  model: string,
+  apiKey: string,
+  prompt: string,
+): Promise<string | null> {
+  const url = `/proxy/${baseURL.replace(/^https?:\/\//, "")}/chat/completions`
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: "You are a helpful assistant that generates concise conversation titles. Return JSON with a single \"title\" field." },
+          { role: "user", content: prompt },
+        ],
+        max_tokens: 100,
+        temperature: 0.3,
+      }),
+    })
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "")
+      console.warn(`${providerId} title API error ${res.status}: ${body.slice(0, 200)}`)
+      return null
+    }
+
+    const data = await res.json()
+    const text = data?.choices?.[0]?.message?.content
+    if (!text) return null
+
+    return tryParseTitle(text)
+  } catch (e) {
+    console.warn(`${providerId} title fetch failed:`, e)
+    return null
+  }
 }
 
 async function generateTitleNative(message: string, responseContext?: string): Promise<string | null> {
@@ -94,73 +162,34 @@ Bad (wrong case): {"title": "Fix Login Button On Mobile"}
 User message:
 ${sanitized}${contextSection}`
 
-  const googleKey = typeof localStorage !== "undefined" ? (localStorage.getItem("rc_config_google-api-key") || localStorage.getItem("google-api-key") || "") : ""
-  const googleEnv = typeof process !== "undefined" ? (process.env.GOOGLE_API_KEY || "") : ""
-  const titleModel = (googleKey || googleEnv) ? "gemini-3.1-flash-lite-preview" : null
-  const titleProvider = titleModel ? "google" : null
+  const candidates = collectTitleProviders()
+  if (candidates.length === 0) return null
 
-  let providerId = titleProvider || ""
-  let apiKey = titleProvider ? (googleKey || googleEnv) : ""
-  let selectedModel = titleModel || ""
-
-  if (!titleModel) {
-    for (const p of getAllProviders()) {
-      const stored = typeof localStorage !== "undefined" ? (localStorage.getItem(`rc_config_${p.configKey}`) || localStorage.getItem(p.configKey) || "") : ""
-      const env = typeof process !== "undefined" ? (process.env[p.envVar] || "") : ""
-      const found = stored || env
-      if (found && p.id !== "google") {
-        providerId = p.id
-        apiKey = found
-        selectedModel = p.defaultModel || ""
-        break
+  for (const candidate of candidates) {
+    if (candidate.id === "google") {
+      const title = await callGemini(candidate.model, candidate.key, prompt)
+      if (title) return title
+    } else {
+      const def = getModelDefinition(candidate.model)
+      if (!def) {
+        const genericUrl = `https://api.${candidate.id}.com/v1`
+        const title = await callOpenAICompatible(candidate.id, genericUrl, candidate.model, candidate.key, prompt)
+        if (title) return title
+      } else {
+        const p = getAllProviders().find(x => x.id === candidate.id)
+        const baseURL = p?.baseURL || `https://api.${candidate.id}.com/v1`
+        const title = await callOpenAICompatible(candidate.id, baseURL, candidate.model, candidate.key, prompt)
+        if (title) return title
       }
     }
-  }
-  if (!apiKey || !providerId || !selectedModel) return null
-
-  const def = getModelDefinition(selectedModel)
-  if (!def) return null
-
-  const route = providerRouteMap[providerId] || proxyGpt4oMini
-  const model = route.model({ id: selectedModel })
-
-  const request = new LLMRequest({
-    model,
-    system: [SystemPart.make("You are a helpful assistant that generates concise conversation titles.")],
-    messages: [userMessage(prompt)],
-    tools: [],
-    toolChoice: undefined,
-    generation: makeGenerationOptions({ maxTokens: 100, temperature: 0.3 }),
-    http: apiKey ? new HttpOptions({ headers: { authorization: `Bearer ${apiKey}` } }) : undefined,
-  })
-
-  const clientLayer = layer([route])
-
-  try {
-    const response = await Effect.runPromise(
-      Effect.gen(function* () {
-        const client = yield* LLMClient
-        return yield* client.generate(request)
-      }).pipe(Effect.provide(clientLayer))
-    )
-
-    const text = response.text
-    const title = tryParseTitle(text)
-    if (title && title.length <= 80) return title
-  } catch (e) {
-    console.warn("Native title generation failed:", e)
   }
 
   return null
 }
 
-export async function generateSessionTitle(userMessage: string, responseContext?: string): Promise<string> {
+export async function generateSessionTitle(userMessage: string, responseContext?: string): Promise<string | null> {
   const sanitized = sanitizeForTitleInput(userMessage)
-  if (!sanitized) return 'New conversation'
+  if (!sanitized) return null
 
-  const titleResult = await generateTitleNative(sanitized, responseContext)
-
-  if (titleResult) return titleResult
-
-  return titleFromHeuristics(sanitized)
+  return generateTitleNative(sanitized, responseContext)
 }

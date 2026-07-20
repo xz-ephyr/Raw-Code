@@ -1,23 +1,19 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 import { SearchIcon, CheckIcon } from 'lucide-react';
 import { MarkdownMessage } from './MarkdownMessage';
 import { FilePreviewCard } from './FilePreviewCard';
 import { useWriteArtifactStream } from '@/hooks/useWriteArtifactStream';
 import { BubbleActions } from './BubbleActions';
-import { Reasoning, ReasoningTrigger, ReasoningContent } from '@/components/ai/reasoning';
 import { MarkdownErrorBoundary } from './MarkdownErrorBoundary';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Streamdown } from 'streamdown';
 import {
-  ChainOfThought,
-  ChainOfThoughtHeader,
-  ChainOfThoughtContent,
   ChainOfThoughtStep,
   ChainOfThoughtSearchResults,
   ChainOfThoughtSearchResult,
 } from '@/components/ai/chain-of-thought';
 import {
-  ActionSummary,
-  ActionSummaryTrigger,
-  ActionSummaryContent,
   ActionTimeline,
   type ActionItem,
 } from '@/components/ai/action-summary';
@@ -49,10 +45,10 @@ function extractFileSummary(content: string): string {
 }
 
 const ARTIFACT_TOOL_NAMES = new Set([
-  'write_artifact', 'write_article', 'edit_text', 'research', 'generate_script',
+  'write_artifact',
 ]);
 
-const SEARCH_TOOL_NAMES = new Set(['research', 'research_compile', 'web_search', 'crawl_website']);
+const SEARCH_TOOL_NAMES = new Set(['web_search', 'crawl_website']);
 const RESEARCH_TOOL_NAMES = SEARCH_TOOL_NAMES;
 
 export const AssistantBubble = React.memo(
@@ -110,23 +106,80 @@ export const AssistantBubble = React.memo(
 
     const hasResearchSteps = researchCalls.length > 0;
 
-    const hasActionSummary = actionSummary && (actionSummary.actions.length > 0 || isStreaming);
+    const hasActionSummary = actionSummary != null && (actionSummary.actions.length > 0 || isStreaming);
+
+    const [spinnerFrame, setSpinnerFrame] = useState(0);
+    useEffect(() => {
+      if (!isStreaming) return;
+      const id = setInterval(() => setSpinnerFrame(f => (f + 1) % 4), 200);
+      return () => clearInterval(id);
+    }, [isStreaming]);
+    const SPINNER_CHARS = ['◐', '◓', '◑', '◒'];
+
+    const hasTools = hasActionSummary || hasResearchSteps;
+    const actionCount = actionSummary?.actions?.length ?? researchCalls.length;
+    const duration = completionDuration ? Math.round(completionDuration / 1000) : null;
+    const showUnifiedPanel = isStreaming || reasoning || hasTools;
+
+    let headerLabel = 'thought';
+    const headerParts: string[] = [];
+    if (hasTools) headerParts.push(`${actionCount} action${actionCount > 1 ? 's' : ''}`);
+    if (duration) headerParts.push(`${duration}s`);
+    if (headerParts.length > 0) headerLabel += ` · ${headerParts.join(' · ')}`;
 
     return (
       <div className="mb-10 w-full group/bubble">
         <div className="text-base px-4 break-words flex flex-col gap-1">
-          {hasActionSummary && (
-            <ActionSummary
-              summary={actionSummary.summary}
-              isStreaming={isStreaming}
-              actions={actionSummary.actions}
-              defaultOpen={false}
-            >
-              <ActionSummaryTrigger />
-              <ActionSummaryContent>
-                <ActionTimeline actions={actionSummary.actions} />
-              </ActionSummaryContent>
-            </ActionSummary>
+          {showUnifiedPanel && (
+            <Collapsible className="not-prose mb-4" defaultOpen={false}>
+              <CollapsibleTrigger className="flex w-full items-center gap-2 text-muted-foreground text-sm transition-colors cursor-pointer hover:text-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  {isStreaming && (
+                    <span className="inline-flex items-center justify-center size-4 text-sm leading-none">{SPINNER_CHARS[spinnerFrame]}</span>
+                  )}
+                  <span className={cn(isStreaming ? "writing-shimmer-text" : "")}>
+                    {isStreaming ? 'thinking' : headerLabel}
+                  </span>
+                </span>
+              </CollapsibleTrigger>
+              {(reasoning || hasResearchSteps || hasActionSummary) && (
+                <CollapsibleContent className="mt-4 text-sm space-y-4 text-muted-foreground">
+                  {reasoning && (
+                    <MarkdownErrorBoundary rawContent={reasoning}>
+                      <Streamdown>{reasoning}</Streamdown>
+                    </MarkdownErrorBoundary>
+                  )}
+                  {hasResearchSteps && (
+                    <div className="space-y-3">
+                      {researchCalls.map((tc, i) => {
+                        const isComplete = tc.state === 'result';
+                        return (
+                          <ChainOfThoughtStep
+                            key={tc.toolCallId || i}
+                            icon={isComplete ? CheckIcon : SearchIcon}
+                            label={tc.args?.url || tc.args?.query || tc.toolName}
+                            status={isComplete ? 'complete' : 'active'}
+                          >
+                            {isComplete && (tc.result?.sources?.length > 0 || tc.result?.pages?.length > 0) && (
+                              <ChainOfThoughtSearchResults>
+                                {(tc.result?.sources || tc.result?.pages || []).map((s: any, j: number) => {
+                                  let domain = s.url || s.metadata?.sourceURL || '';
+                                  try { domain = new URL(domain).hostname; } catch {}
+                                  return <ChainOfThoughtSearchResult key={j}>{domain}</ChainOfThoughtSearchResult>;
+                                })}
+                              </ChainOfThoughtSearchResults>
+                            )}
+                          </ChainOfThoughtStep>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {hasActionSummary && (
+                    <ActionTimeline actions={actionSummary!.actions} />
+                  )}
+                </CollapsibleContent>
+              )}
+            </Collapsible>
           )}
 
           {hasWriteArtifact ? (
@@ -173,48 +226,6 @@ export const AssistantBubble = React.memo(
                 <MarkdownMessage content={content} sources={[]} />
               </div>
             ) : null
-          )}
-
-          {(reasoning || (isThinkingEnabled && isStreaming)) && (
-            <MarkdownErrorBoundary rawContent={reasoning || ''}>
-            <Reasoning isStreaming={isStreaming} defaultOpen={false}>
-              <ReasoningTrigger />
-              <ReasoningContent>{reasoning || ''}</ReasoningContent>
-            </Reasoning>
-            </MarkdownErrorBoundary>
-          )}
-
-          {hasResearchSteps && (
-            <ChainOfThought defaultOpen={false}>
-              <ChainOfThoughtHeader duration={completionDuration ? Math.round(completionDuration / 1000) : undefined} />
-              <ChainOfThoughtContent>
-                {researchCalls.map((tc, i) => {
-                  const isComplete = tc.state === 'result';
-                  return (
-                    <ChainOfThoughtStep
-                      key={tc.toolCallId || i}
-                      icon={isComplete ? CheckIcon : SearchIcon}
-                      label={tc.args?.url || tc.args?.query || tc.toolName}
-                      status={isComplete ? 'complete' : 'active'}
-                    >
-                      {isComplete && (tc.result?.sources?.length > 0 || tc.result?.pages?.length > 0) && (
-                        <ChainOfThoughtSearchResults>
-                          {(tc.result?.sources || tc.result?.pages || []).map((s: any, j: number) => {
-                            let domain = s.url || s.metadata?.sourceURL || '';
-                            try { domain = new URL(domain).hostname; } catch {}
-                            return (
-                              <ChainOfThoughtSearchResult key={j}>
-                                {domain}
-                              </ChainOfThoughtSearchResult>
-                            );
-                          })}
-                        </ChainOfThoughtSearchResults>
-                      )}
-                    </ChainOfThoughtStep>
-                  );
-                })}
-              </ChainOfThoughtContent>
-            </ChainOfThought>
           )}
         </div>
 

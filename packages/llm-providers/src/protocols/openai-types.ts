@@ -90,4 +90,5 @@ export interface OpenAIChatState {
   readonly intentEmitted: boolean
   readonly intentText: string
   readonly toolNames: ReadonlyArray<string>
+  readonly toolCallsEmitted: ReadonlyArray<string>
 }

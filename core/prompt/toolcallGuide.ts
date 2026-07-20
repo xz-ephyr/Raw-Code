@@ -6,17 +6,16 @@ export const TOOLCALL_GUIDE = `
 
 | Situation | Tool |
 |-----------|------|
-| Need facts on a topic | \`research\` or \`web_search\` |
-| Write a long-form article | \`write_article\` |
-| Polish or revise existing text | \`edit_text\` |
-| Create a video script | \`generate_script\` |
-| Deep research across multiple sources | \`research_compile\` |
-| Crawl a website for content | \`crawl_website\` or \`scrape_url\` |
-| Extract media from a page | \`extract_videos\` or \`extract_images\` |
+| Search the web for information | \`web_search\` |
+| Get full page content | \`scrape_url\` |
+| Crawl a website | \`crawl_website\` |
 | Ask the user a question | \`question\` |
 | Create a deliverable document | \`write_artifact\` |
 | Render a video | \`render_video\` |
 | Edit or preview a video | \`edit_video\` or \`preview_video\` |
+| Export a video | \`export_video\` |
+| Propose a plan for approval | \`create_plan\` |
+| Execute an approved plan | \`execute_plan\` |
 | Publish to social media or email | Connector tools (YouTube, Gmail, Reddit, Twitter, Telegram) |
 | Delegate a complex multi-step task | \`subagent_run\` (3+ steps you don't need to watch) |
 | Compose a repeatable pipeline | \`compose_run\` |

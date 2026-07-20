@@ -1,4 +1,4 @@
-import { type ComponentProps, type ReactNode, useState } from "react"
+import { type ComponentProps, type ReactNode, useState, useMemo } from "react"
 import {
   Command,
   CommandDialog,
@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/command"
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { MODEL_LIST, getEntryById, getChefIndex } from "@core/config/model-list"
+import { useModelRegistry } from "@/contexts/ModelRegistryContext"
+import { PROVIDER_CONFIGS, getAllProviderIds } from "@doktor/llm-providers/model-registry"
 import { CheckIcon, ChevronDownIcon } from "lucide-react"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 export type ModelSelectorProps = ComponentProps<typeof Dialog>
 
@@ -114,10 +116,35 @@ export const ModelSelectorChef = ({ className, ...props }: ModelSelectorChefProp
 
 export function ModelSelectorDropdown({ currentModel }: { currentModel: string }) {
   const [open, setOpen] = useState(false)
-  const selectedEntry = getEntryById(currentModel)
+  const { registry } = useModelRegistry()
 
-  const chefs = Array.from(new Set(MODEL_LIST.map(m => m.chef)))
-    .sort((a, b) => getChefIndex(a) - getChefIndex(b))
+  const selectedEntry = currentModel ? registry.find(m => m.id === currentModel) : undefined
+
+  const providerOrder = useMemo(() => getAllProviderIds(), [])
+
+  const chefs = useMemo(() => {
+    const seen = new Set<string>()
+    const order: string[] = []
+    for (const providerId of providerOrder) {
+      const label = PROVIDER_CONFIGS[providerId]?.label ?? providerId
+      if (!seen.has(label)) {
+        seen.add(label)
+        order.push(label)
+      }
+    }
+    return order
+  }, [providerOrder])
+
+  const modelsByChef = useMemo(() => {
+    const map = new Map<string, typeof registry>()
+    for (const m of registry) {
+      const label = PROVIDER_CONFIGS[m.provider]?.label ?? m.provider
+      const group = map.get(label)
+      if (group) group.push(m)
+      else map.set(label, [m])
+    }
+    return map
+  }, [registry])
 
   const handleSelect = (modelId: string) => {
     try {
@@ -127,21 +154,25 @@ export function ModelSelectorDropdown({ currentModel }: { currentModel: string }
     setOpen(false)
   }
 
-  const modelToDisplay = selectedEntry || MODEL_LIST[0]
+  const modelToDisplay = selectedEntry || registry[0]
   if (!modelToDisplay) return null
 
   return (
     <ModelSelector onOpenChange={setOpen} open={open}>
       <ModelSelectorTrigger asChild>
-        <button
-          type="button"
-          className="flex items-center gap-1 px-2 py-1 rounded-[6px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-xs"
-          title="Select model"
-        >
-          <ModelSelectorLogo provider={modelToDisplay.chefSlug} />
-          <span className="max-w-[100px] truncate">{modelToDisplay.name}</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-1 px-2 py-1 rounded-[6px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-xs"
+            >
+          <ModelSelectorLogo provider={modelToDisplay.provider} />
+          <span className="max-w-[100px] truncate">{modelToDisplay.label}</span>
           <ChevronDownIcon className="size-3 opacity-50" />
         </button>
+          </TooltipTrigger>
+          <TooltipContent>Select model</TooltipContent>
+        </Tooltip>
       </ModelSelectorTrigger>
       <ModelSelectorContent>
         <ModelSelectorInput placeholder="Search models..." />
@@ -149,28 +180,24 @@ export function ModelSelectorDropdown({ currentModel }: { currentModel: string }
           <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
           {chefs.map(chef => (
             <ModelSelectorGroup heading={chef} key={chef}>
-              {MODEL_LIST
-                .filter(model => model.chef === chef)
-                .map(model => (
-                  <ModelSelectorItem
-                    key={model.id}
-                    onSelect={() => handleSelect(model.id)}
-                    value={model.id}
-                  >
-                    <ModelSelectorLogo provider={model.chefSlug} />
-                    <ModelSelectorName>{model.name}</ModelSelectorName>
-                    <ModelSelectorLogoGroup>
-                      {model.providers.map(provider => (
-                        <ModelSelectorLogo key={provider} provider={provider} />
-                      ))}
-                    </ModelSelectorLogoGroup>
-                    {selectedEntry?.id === model.id ? (
-                      <CheckIcon className="ml-auto size-4" />
-                    ) : (
-                      <div className="ml-auto size-4" />
-                    )}
-                  </ModelSelectorItem>
-                ))}
+              {(modelsByChef.get(chef) || []).map(model => (
+                <ModelSelectorItem
+                  key={model.id}
+                  onSelect={() => handleSelect(model.id)}
+                  value={model.id}
+                >
+                  <ModelSelectorLogo provider={model.provider} />
+                  <ModelSelectorName>{model.label}</ModelSelectorName>
+                  <ModelSelectorLogoGroup>
+                    <ModelSelectorLogo provider={model.provider} />
+                  </ModelSelectorLogoGroup>
+                  {selectedEntry?.id === model.id ? (
+                    <CheckIcon className="ml-auto size-4" />
+                  ) : (
+                    <div className="ml-auto size-4" />
+                  )}
+                </ModelSelectorItem>
+              ))}
             </ModelSelectorGroup>
           ))}
         </ModelSelectorList>

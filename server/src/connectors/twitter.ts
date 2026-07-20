@@ -1,5 +1,6 @@
 import { query } from '../db.js';
 import { ConnectorService } from './base.js';
+import type { ActionDefinition } from './types.js';
 
 export class TwitterConnectorService extends ConnectorService {
   readonly provider = 'twitter';
@@ -169,5 +170,34 @@ export class TwitterConnectorService extends ConnectorService {
       search: (params: any) => this.searchTweets(params.query, params.maxResults),
       user: (params: any) => this.getUser(params.username),
     };
+  }
+
+  getActionDefinitions(): ActionDefinition[] {
+    return [
+      {
+        name: 'timeline',
+        description: 'Get your Twitter timeline',
+        inputSchema: { type: 'object', properties: { maxResults: { type: 'number', description: 'Max tweets (max 100)' } } },
+        outputSchema: { type: 'object' },
+      },
+      {
+        name: 'tweet',
+        description: 'Post a tweet',
+        inputSchema: { type: 'object', properties: { text: { type: 'string', description: 'Tweet text' } }, required: ['text'] },
+        outputSchema: { type: 'object' },
+      },
+      {
+        name: 'search',
+        description: 'Search recent tweets',
+        inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Search query' }, maxResults: { type: 'number', description: 'Max results (max 100)' } }, required: ['query'] },
+        outputSchema: { type: 'object' },
+      },
+      {
+        name: 'user',
+        description: 'Look up a Twitter user by username',
+        inputSchema: { type: 'object', properties: { username: { type: 'string', description: 'Twitter username' } }, required: ['username'] },
+        outputSchema: { type: 'object' },
+      },
+    ];
   }
 }

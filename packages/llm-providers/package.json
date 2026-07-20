@@ -12,7 +12,9 @@
     "./schema": "./src/schema/index.ts",
     "./adapters": "./src/adapters/index.ts",
     "./protocols/openai-chat": "./src/protocols/openai-chat.ts",
-    "./protocols/anthropic-messages": "./src/protocols/anthropic-messages.ts"
+    "./protocols/anthropic-messages": "./src/protocols/anthropic-messages.ts",
+    "./model-registry": "./src/model-registry.ts",
+    "./model-catalog": "./src/model-catalog.ts"
   },
   "dependencies": {
     "effect": "catalog:",

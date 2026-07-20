@@ -112,8 +112,11 @@ router.post('/update_session', async (req, res) => {
 
   if (sets.length === 0) return res.json({ success: true });
 
-  sets.push(`updated_at = $${idx++}`);
-  params.push(Date.now());
+  // Only bump updated_at for content changes, not metadata (unread, streaming, pinned)
+  if (title !== undefined || lastMessage !== undefined) {
+    sets.push(`updated_at = $${idx++}`);
+    params.push(Date.now());
+  }
 
   params.push(id);
   await query(`UPDATE chat_sessions SET ${sets.join(', ')} WHERE id = $${idx}`, params);

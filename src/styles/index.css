@@ -181,12 +181,22 @@ body {
   display: inline-block;
 }
 
-code:not(pre code) {
-  border-radius: 4px;
-  padding: 0.1em 0.3em;
+.group\/bubble code:not(pre code) {
+  border-radius: 6px;
+  padding: 0.1em 0.4em;
   font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
   font-size: 0.85em;
-  color: #16a34a;
+  background: hsl(var(--muted));
+  color: inherit;
+}
+
+.group\/bubble a {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.group\/bubble a:hover {
+  color: #93c5fd;
 }
 
 .cm-editor {

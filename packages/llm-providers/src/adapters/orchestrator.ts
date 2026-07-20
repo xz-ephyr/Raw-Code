@@ -30,6 +30,7 @@ export type ToolExecutor = (
 export interface OrchestratorConfig {
   readonly adapter: LLMAdapter
   readonly maxSteps?: number
+  readonly timeoutMs?: number
 }
 
 export interface Orchestrator {
@@ -86,6 +87,7 @@ function finalizePartialEvents(
 
 export function createOrchestrator(config: OrchestratorConfig): Orchestrator {
   const maxSteps = config.maxSteps ?? 10
+  const deadline = config.timeoutMs ? Date.now() + config.timeoutMs : undefined
 
   function loop(
     request: LLMRequest,
@@ -94,6 +96,11 @@ export function createOrchestrator(config: OrchestratorConfig): Orchestrator {
     step: number,
   ): Effect.Effect<Stream.Stream<LLMEvent, LLMError>, LLMError> {
     if (step >= maxSteps) return Effect.succeed(Stream.empty)
+    if (deadline && Date.now() > deadline) {
+      return Effect.succeed(Stream.fromIterable([
+        { type: "finish", reason: "timeout" } as LLMEvent,
+      ]))
+    }
 
     return Effect.gen(function* () {
       const events: Array<LLMEvent> = []

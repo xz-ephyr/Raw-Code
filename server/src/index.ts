@@ -29,7 +29,12 @@ import { GoogleDriveConnectorService } from './connectors/drive.js';
 import { registry } from './connectors/registry.js';
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'x-api-key'],
+  exposedHeaders: ['x-api-key'],
+}));
 app.use(express.json({ limit: Infinity }));
 
 // Generic OAuth callback — must be before auth middleware (OAuth providers don't send API key)
@@ -134,9 +139,7 @@ async function start() {
   registry.register(new TwitterConnectorService());
   registry.register(new GoogleDriveConnectorService());
 
-  app.listen(PORT, () => {
-    console.log(`DokTor server running on http://localhost:${PORT}`);
-  });
+  app.listen(PORT, () => {});
 
   startBackgroundScheduler();
 }

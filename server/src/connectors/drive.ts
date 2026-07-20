@@ -1,4 +1,5 @@
 import { GoogleConnectorService } from './google-base.js';
+import type { ActionDefinition } from './types.js';
 
 export class GoogleDriveConnectorService extends GoogleConnectorService {
   readonly provider = 'google-drive';
@@ -73,5 +74,40 @@ export class GoogleDriveConnectorService extends GoogleConnectorService {
       listFiles: (params: any) => this.listFiles(params.pageSize),
       deleteOlderThan: (params: any) => this.deleteOlderThan(params.cutoffMs),
     };
+  }
+
+  getActionDefinitions(): ActionDefinition[] {
+    return [
+      {
+        name: 'upload',
+        description: 'Upload a file to Google Drive appDataFolder',
+        inputSchema: { type: 'object', properties: { name: { type: 'string', description: 'File name' }, mimeType: { type: 'string', description: 'MIME type' }, body: { type: 'string', description: 'File content as base64' } }, required: ['name', 'mimeType', 'body'] },
+        outputSchema: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' }, size: { type: 'string' }, webViewLink: { type: 'string' } } },
+      },
+      {
+        name: 'downloadUrl',
+        description: 'Get a download URL for a Google Drive file',
+        inputSchema: { type: 'object', properties: { fileId: { type: 'string', description: 'Drive file ID' } }, required: ['fileId'] },
+        outputSchema: { type: 'string' },
+      },
+      {
+        name: 'deleteFile',
+        description: 'Delete a file from Google Drive',
+        inputSchema: { type: 'object', properties: { fileId: { type: 'string', description: 'Drive file ID' } }, required: ['fileId'] },
+        outputSchema: { type: 'object' },
+      },
+      {
+        name: 'listFiles',
+        description: 'List files in Google Drive appDataFolder',
+        inputSchema: { type: 'object', properties: { pageSize: { type: 'number', description: 'Results per page (default: 20)' } } },
+        outputSchema: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' }, size: { type: 'string' }, createdTime: { type: 'string' } } } },
+      },
+      {
+        name: 'deleteOlderThan',
+        description: 'Delete Drive files older than a timestamp',
+        inputSchema: { type: 'object', properties: { cutoffMs: { type: 'number', description: 'Timestamp in ms' } }, required: ['cutoffMs'] },
+        outputSchema: { type: 'number' },
+      },
+    ];
   }
 }

@@ -20,7 +20,14 @@ router.post('/connector/:provider/:action', async (req, res) => {
   }
 });
 
-router.post('/connectors/status', async (_req, res) => {
+router.get('/connector/:provider/schema', async (req, res) => {
+  const { provider } = req.params;
+  const service = registry.get(provider);
+  if (!service) return res.status(404).json({ error: `Unknown provider: ${provider}` });
+  res.json({ provider, actions: service.getActionDefinitions() });
+});
+
+router.get('/connectors/status', async (_req, res) => {
   try {
     const providers = registry.getProviders();
     const results: Record<string, { connected: boolean; identity: string | null }> = {};

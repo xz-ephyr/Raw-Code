@@ -5,9 +5,9 @@ export function buildToolPolicy(): string {
 
 | Phase | Primary Tools |
 |-------|--------------|
-| Research | \`research\`, \`research_compile\`, \`crawl_website\`, \`scrape_url\`, \`web_search\`, \`question\` |
-| Create / Edit | \`write_article\`, \`edit_text\`, \`generate_script\`, \`write_artifact\` |
-| Video | \`render_video\`, \`preview_video\`, \`export_video\`, \`edit_video\` |
+| Research | \`web_search\`, \`crawl_website\`, \`scrape_url\`, \`question\` |
+| Create | \`write_artifact\` |
+| Video | \`render_video\`, \`preview_video\`, \`export_video\`, \`edit_video\`, \`poll_render_job\` |
 | Distribute | Connector tools (YouTube, Gmail, Reddit, Twitter, Telegram) |
 | Plan & Coordinate | \`create_plan\`, \`execute_plan\`, \`subagent_run\`, \`compose_run\` |
 

@@ -2,9 +2,7 @@ import { Effect, Layer, Option } from 'effect';
 import { EventStore } from './event-store';
 import type { ToolEvent } from './events';
 
-const BASE_URL = typeof window !== 'undefined'
-  ? `${window.location.protocol}//${window.location.hostname}:3001`
-  : 'http://localhost:3001';
+const BASE_URL = 'http://127.0.0.1:3001';
 
 export class RemoteEventStore implements EventStore {
   private latestEventCache = new Map<string, ToolEvent>();

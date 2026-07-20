@@ -1,6 +1,8 @@
 # Think Tool & Provider-Agnostic Loop
 
-## Status: What Already Exists
+## Status: DONE
+
+All 6 steps implemented. 65/65 tests pass across 7 test suites.
 
 ### LLMEvent Schema (DONE - `packages/llm-providers/src/schema/event-schemas.ts`)
 - `reasoning-start`, `reasoning-delta`, `reasoning-end` — already used for native reasoning
@@ -43,168 +45,78 @@
 
 ---
 
-## What Needs to Be Built
+## What Was Built
 
-### Step 1: Think Tool Definition
-**Where:** `packages/tool-runtime/src/content/think.ts` (new file)
+### Step 1: Think Tool Definition ✅
+**File:** `packages/tool-runtime/src/content/think.ts`
 
-```typescript
-import { Tool } from "../tool/make"
-import { Schema } from "effect"
+Think tool with `thought` input schema and `Noted.` acknowledgement output. Registered in `packages/tool-runtime/src/content/index.ts`.
 
-export const thinkTool = Tool.make({
-  name: "think",
-  description:
-    "Use to reason step-by-step before acting, especially before calling " +
-    "another tool or when re-evaluating a result. This does not perform any action.",
-  inputSchema: Schema.Struct({
-    thought: Schema.String,
-  }),
-  outputSchema: Schema.Struct({
-    acknowledged: Schema.Literal("Noted."),
-  }),
-  execute: () => Effect.succeed({ acknowledged: "Noted." }),
-})
-```
+**Test:** `packages/tool-runtime/src/content/think.test.ts` — 6 tests
 
-**Why:** Non-reasoning models (GPT-4o, Claude Haiku, etc.) won't produce reasoning
-events unless they call this tool. Native reasoning models (o3, Claude Sonnet 4)
-emit `reasoning-delta` automatically — the think tool is never injected for them.
+### Step 2: Think Tool Injection Logic ✅
+**File:** `packages/llm-providers/src/adapters/think-tool-inject.ts`
 
-### Step 2: Think Tool Injection Logic
-**Where:** `packages/llm-providers/src/adapters/think-tool-inject.ts` (new file)
+`injectThinkTool(tools, needsThinkTool)` — adds think tool to tool list for non-reasoning models. Idempotent (won't duplicate).
 
-```typescript
-import { getModelCapability } from "@reasoning/capabilities"
+**Test:** `packages/llm-providers/src/adapters/think-tool-inject.test.ts` — 8 tests
 
-export function shouldInjectThinkTool(modelId: string): boolean {
-  const cap = getModelCapability(modelId)
-  return cap.reasoning === "none"
-}
+### Step 3: Think Tool Interception ✅
+**File:** `packages/llm-providers/src/adapters/tool-loop.ts` (modified)
 
-export function injectThinkToolIfNeeded(modelId: string, tools: ToolDef[]): ToolDef[] {
-  if (!shouldInjectThinkTool(modelId)) return tools
-  if (tools.some(t => t.name === "think")) return tools
-  return [...tools, thinkToolDefinition]
-}
-```
+Intercepts `think` calls in the tool loop executor, emits `reasoning-start/delta/end` events, returns no-op result. Think calls never reach the real executor.
 
-**Why:** When the tool loop starts, check the model's capability. If it has no native
-reasoning, inject the `think` tool automatically. This lives in the adapter layer,
-not in the app.
+**Test:** `packages/llm-providers/src/adapters/think-intercept.test.ts` — 7 tests
 
-### Step 3: Think Tool Interception
-**Where:** Inside `packages/llm-providers/src/adapters/tool-loop.ts` (modify existing)
+### Step 4: Loop Safety Enhancements ✅
+**File:** `packages/llm-providers/src/adapters/tool-loop.ts` (modified)
 
-In the tool loop executor, intercept `think` calls before sending to the real executor:
+Added to `ToolLoopConfig`:
+- `maxTokens` — per-request token budget (checked against `finish.usage.totalTokens`)
+- `timeoutMs` — overall request timeout (checked against `Date.now()` deadline)
+- Repeated identical call detector — same name+input twice → break with `repeated-call` reason
 
-```typescript
-const wrappedExecutor: ToolExecutor = (call) => {
-  if (call.name === "think") {
-    // Emit the thought as a reasoning event (same as native reasoning)
-    // No-op result — don't actually execute
-    return Effect.succeed({ id: call.id, name: call.name, result: "Noted." })
-  }
-  return executor(call)
-}
-```
+New `FinishReason` values: `"timeout"`, `"token-budget"`, `"repeated-call"` (in `ids.ts`)
 
-And emit the thought content as a `reasoning-delta` event so the UI treats it
-identically to native reasoning:
+**Test:** `packages/llm-providers/src/adapters/loop-safety.test.ts` — 11 tests
 
-```typescript
-if (call.name === "think") {
-  const thought = (call.input as any)?.thought ?? ""
-  // Emit reasoning-start/delta/end to match native reasoning format
-  emit({ type: "reasoning-start", id: call.id })
-  emit({ type: "reasoning-delta", id: call.id, text: thought })
-  emit({ type: "reasoning-end", id: call.id })
-}
-```
+### Step 5: SourceAgentId Field ✅
+**File:** `packages/llm-providers/src/schema/event-schemas.ts` (modified)
 
-**Why:** The UI already knows how to render `reasoning-delta` events. By mapping
-`think` tool calls into the same event type, the thinking panel works identically
-for native and non-native reasoning.
+Added optional `sourceAgentId: Schema.optional(Schema.String)` to all 18 LLMEvent schema types. Backwards-compatible — existing code ignores the field if not set.
 
-### Step 4: Loop Safety Enhancements
-**Where:** `packages/llm-providers/src/adapters/tool-loop.ts` (modify existing)
+**Test:** `packages/llm-providers/src/schema/source-agent-id.test.ts` — 14 tests
 
-Add to `ToolLoopConfig`:
-```typescript
-export interface ToolLoopConfig {
-  readonly routes: ReadonlyArray<AnyRoute>
-  readonly maxSteps?: number           // already exists (default 10)
-  readonly maxTokens?: number          // NEW: per-request token budget
-  readonly timeoutMs?: number          // NEW: overall request timeout
-  readonly abortSignal?: AbortSignal   // already exists
-}
-```
+### Step 6: Server Route Wiring ✅
+**Files:** `server/src/routes/llm-stream.ts`, `server/src/antigravity/runtime.ts` (modified)
 
-Add repeated-identical-call detector inside the loop:
-```typescript
-const lastCall = toolCalls[toolCalls.length - 1]
-if (lastCall && lastCall.name === prevCall?.name &&
-    JSON.stringify(lastCall.input) === JSON.stringify(prevCall?.input)) {
-  // Stuck in a loop — break
-  break
-}
-```
+Both server routes now:
+1. Look up `getModelCapability(modelId)` to determine if think tool is needed
+2. Call `injectThinkTool(baseToolDefs, needsThinkTool)` before creating the request
+3. Pass `maxSteps: 15, timeoutMs: 120_000` to `createToolLoop()`
 
-Add token budget check before each provider call:
-```typescript
-if (totalTokens > config.maxTokens) {
-  // Emit warning, break loop
-}
-```
+Added `@core/*` path alias to `server/tsconfig.json`.
 
-Add overall timeout:
-```typescript
-const deadline = Date.now() + (config.timeoutMs ?? 120_000)
-// Check before each step
-if (Date.now() > deadline) break
-```
+**Test:** `server/src/routes/llm-stream-wiring.test.ts` — 10 tests
 
-### Step 5: SourceAgentId for Multi-Agent Mode
-**Where:** `packages/llm-providers/src/schema/event-schemas.ts` (modify existing)
+### Bug Fix: `inputJsonSchema` Storage
+**File:** `packages/tool-runtime/src/tool/make.ts` (modified)
 
-Add optional `sourceAgentId` field to `LLMEvent` union members:
-
-```typescript
-export const LLMEvent = Schema.Union(
-  // ... existing schemas, each gets:
-  Schema.Struct({
-    type: Schema.tag("text-delta"),
-    id: ContentBlockID,
-    text: Schema.String,
-    sourceAgentId: Schema.optional(Schema.String),  // NEW
-  }),
-  // ... same for reasoning-delta, tool-call, tool-result, etc.
-)
-```
-
-This is backwards-compatible — existing code ignores the field if not set.
-
-### Step 6: Wire Everything Together
-**Where:** `server/src/routes/llm-stream.ts` and `server/src/antigravity/runtime.ts`
-
-Both use `createToolLoop()` already. Changes needed:
-1. Import and pass `thinkTool` injection logic
-2. Add token budget and timeout to config
-3. The `sourceAgentId` gets threaded through `ToolLoopConfig` → executor context
+Fixed pre-existing bug where `make()` didn't store `inputJsonSchema` from config onto the runtime object. This affected all tools using `inputJsonSchema` (e.g., `questionTool`).
 
 ---
 
 ## Where NOT to Duplicate Code
 
-| Concern | Location | Why |
-|---------|----------|-----|
-| Event schema | `packages/llm-providers/src/schema/event-schemas.ts` | Single source of truth — all providers emit here |
-| Tool loop | `packages/llm-providers/src/adapters/tool-loop.ts` | Already used by both server routes — modify once |
-| Think tool definition | `packages/tool-runtime/src/content/think.ts` | Reusable across all entry points |
-| Think tool injection | `packages/llm-providers/src/adapters/think-tool-inject.ts` | Adapter-layer concern, not app concern |
-| Model capabilities | `core/reasoning/capabilities.ts` | Already exists — just query it |
-| SSE mapping | `server/src/antigravity/runtime.ts` | Already maps `reasoning-delta` → `thinking_delta` |
-| Frontend thinking panel | `src/components/ai/reasoning.tsx` | Already consumes `reasoning-delta` — no changes needed |
+| Concern | Location | Status |
+|---------|----------|--------|
+| Event schema | `packages/llm-providers/src/schema/event-schemas.ts` | ✅ Extended with `sourceAgentId` |
+| Tool loop | `packages/llm-providers/src/adapters/tool-loop.ts` | ✅ Extended with think interception + safety |
+| Think tool definition | `packages/tool-runtime/src/content/think.ts` | ✅ New |
+| Think tool injection | `packages/llm-providers/src/adapters/think-tool-inject.ts` | ✅ New |
+| Model capabilities | `core/reasoning/capabilities.ts` | ✅ Already existed |
+| SSE mapping | `server/src/antigravity/runtime.ts` | ✅ Already maps `reasoning-delta` → `thinking_delta` |
+| Frontend thinking panel | `src/components/ai/reasoning.tsx` | ✅ Already consumes `reasoning-delta` — no changes needed |
 
 **Key insight:** The entire "think tool + normalization" lives inside `packages/llm-providers`.
 The frontend never needs to know whether reasoning came from a native provider or the
@@ -212,17 +124,30 @@ think tool — it just sees `reasoning-delta` events either way.
 
 ---
 
-## Dependency Order
+## Test Summary
 
-```
-Step 1 (think tool def) → Step 2 (injection logic) → Step 3 (interception in loop)
-                                                        ↓
-Step 4 (loop safety) ← depends on Step 3 for repeated-call detector
-                                                        ↓
-Step 5 (sourceAgentId) ← independent, can be done anytime
-                                                        ↓
-Step 6 (wiring) ← depends on all above
-```
+| Test Suite | File | Tests | Status |
+|-----------|------|-------|--------|
+| thinkTool | `packages/tool-runtime/src/content/think.test.ts` | 6 | ✅ Pass |
+| injectThinkTool | `packages/llm-providers/src/adapters/think-tool-inject.test.ts` | 8 | ✅ Pass |
+| ToolLoop - think interception | `packages/llm-providers/src/adapters/think-intercept.test.ts` | 7 | ✅ Pass |
+| ToolLoop - safety | `packages/llm-providers/src/adapters/loop-safety.test.ts` | 11 | ✅ Pass |
+| LLMEvent - sourceAgentId | `packages/llm-providers/src/schema/source-agent-id.test.ts` | 14 | ✅ Pass |
+| Orchestrator (existing) | `packages/llm-providers/src/adapters/orchestrator.test.ts` | 9 | ✅ Pass |
+| Server wiring | `server/src/routes/llm-stream-wiring.test.ts` | 10 | ✅ Pass |
+| **Total** | | **65** | **✅ All Pass** |
 
-Steps 1-3 are the core feature. Step 4 is safety hardening. Step 5 is multi-agent
-prep. Step 6 is integration.
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `packages/tool-runtime/src/content/think.ts` | **NEW** — Think tool definition |
+| `packages/tool-runtime/src/content/index.ts` | Added `thinkTool` export |
+| `packages/tool-runtime/src/tool/make.ts` | Fixed `inputJsonSchema` not being stored |
+| `packages/llm-providers/src/adapters/think-tool-inject.ts` | **NEW** — Think tool injection logic |
+| `packages/llm-providers/src/adapters/tool-loop.ts` | Think interception + safety enhancements |
+| `packages/llm-providers/src/schema/ids.ts` | Added `timeout`, `token-budget`, `repeated-call` to `FinishReason` |
+| `packages/llm-providers/src/schema/event-schemas.ts` | Added `sourceAgentId` to all 18 event types |
+| `server/src/routes/llm-stream.ts` | Wired think tool injection + safety configs |
+| `server/src/antigravity/runtime.ts` | Wired think tool injection + safety configs |
+| `server/tsconfig.json` | Added `@core/*` path alias |

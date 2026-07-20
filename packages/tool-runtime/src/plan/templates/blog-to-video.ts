@@ -17,13 +17,12 @@ export function blogToVideoTemplate(input: {
     });
   }
 
-  // Generate script based on the topic or scraped content
+  // Render the video from the topic or scraped content
   steps.push({
-    description: `Generate a video script from the ${input.url ? 'scraped blog content' : `topic "${input.topic}"`}`,
-    toolName: 'generate_script',
+    description: `Render a video from the ${input.url ? 'scraped blog content' : `topic "${input.topic}"`}`,
+    toolName: 'render_video',
     expectedInput: {
       topic: input.topic || input.url || '',
-      format: 'video',
       duration: '3-5 minutes',
     },
   });

@@ -23,9 +23,12 @@ export class Usage extends Schema.Class<Usage>("LLM.Usage")({
 
 export type UsageInput = Usage | ConstructorParameters<typeof Usage>[0]
 
+const SourceAgentId = Schema.optional(Schema.String)
+
 export const StepStart = Schema.Struct({
   type: Schema.tag("step-start"),
   index: Schema.Number,
+  sourceAgentId: SourceAgentId,
 })
 export type StepStart = Schema.Schema.Type<typeof StepStart>
 
@@ -33,6 +36,7 @@ export const TextStart = Schema.Struct({
   type: Schema.tag("text-start"),
   id: ContentBlockID,
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type TextStart = Schema.Schema.Type<typeof TextStart>
 
@@ -41,6 +45,7 @@ export const TextDelta = Schema.Struct({
   id: ContentBlockID,
   text: Schema.String,
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type TextDelta = Schema.Schema.Type<typeof TextDelta>
 
@@ -48,6 +53,7 @@ export const TextEnd = Schema.Struct({
   type: Schema.tag("text-end"),
   id: ContentBlockID,
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type TextEnd = Schema.Schema.Type<typeof TextEnd>
 
@@ -55,6 +61,7 @@ export const ReasoningStart = Schema.Struct({
   type: Schema.tag("reasoning-start"),
   id: ContentBlockID,
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type ReasoningStart = Schema.Schema.Type<typeof ReasoningStart>
 
@@ -63,6 +70,7 @@ export const ReasoningDelta = Schema.Struct({
   id: ContentBlockID,
   text: Schema.String,
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type ReasoningDelta = Schema.Schema.Type<typeof ReasoningDelta>
 
@@ -70,6 +78,7 @@ export const ReasoningEnd = Schema.Struct({
   type: Schema.tag("reasoning-end"),
   id: ContentBlockID,
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type ReasoningEnd = Schema.Schema.Type<typeof ReasoningEnd>
 
@@ -78,6 +87,7 @@ export const ToolInputStart = Schema.Struct({
   id: ToolCallID,
   name: Schema.String,
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type ToolInputStart = Schema.Schema.Type<typeof ToolInputStart>
 
@@ -85,6 +95,7 @@ export const ToolInputDelta = Schema.Struct({
   type: Schema.tag("tool-input-delta"),
   id: ToolCallID,
   text: Schema.String,
+  sourceAgentId: SourceAgentId,
 })
 export type ToolInputDelta = Schema.Schema.Type<typeof ToolInputDelta>
 
@@ -93,6 +104,7 @@ export const ToolInputEnd = Schema.Struct({
   id: ToolCallID,
   name: Schema.String,
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type ToolInputEnd = Schema.Schema.Type<typeof ToolInputEnd>
 
@@ -103,6 +115,7 @@ export const ToolCall_ = Schema.Struct({
   input: Schema.Unknown,
   providerExecuted: Schema.optional(Schema.Boolean),
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type ToolCall_ = Schema.Schema.Type<typeof ToolCall_>
 
@@ -116,6 +129,7 @@ export const ToolResult_ = Schema.Struct({
   error: Schema.optional(Schema.String),
   providerExecuted: Schema.optional(Schema.Boolean),
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type ToolResult_ = Schema.Schema.Type<typeof ToolResult_>
 
@@ -126,6 +140,7 @@ export const ToolError = Schema.Struct({
   message: Schema.String,
   error: Schema.optional(Schema.Defect),
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type ToolError = Schema.Schema.Type<typeof ToolError>
 
@@ -135,6 +150,7 @@ export const StepFinish = Schema.Struct({
   reason: FinishReason,
   usage: Schema.optional(Usage),
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type StepFinish = Schema.Schema.Type<typeof StepFinish>
 
@@ -143,6 +159,7 @@ export const Finish = Schema.Struct({
   reason: FinishReason,
   usage: Schema.optional(Usage),
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type Finish = Schema.Schema.Type<typeof Finish>
 
@@ -152,6 +169,7 @@ export const Intent = Schema.Struct({
   text: Schema.String,
   toolNames: Schema.optional(Schema.Array(Schema.String)),
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type Intent = Schema.Schema.Type<typeof Intent>
 
@@ -161,12 +179,14 @@ export const ProviderErrorEvent = Schema.Struct({
   classification: Schema.optional(ProviderFailureClassification),
   retryable: Schema.optional(Schema.Boolean),
   providerMetadata: Schema.optional(ProviderMetadata),
+  sourceAgentId: SourceAgentId,
 })
 export type ProviderErrorEvent = Schema.Schema.Type<typeof ProviderErrorEvent>
 
 export const UsageEvent = Schema.Struct({
   type: Schema.tag("usage"),
   usage: Usage,
+  sourceAgentId: SourceAgentId,
 })
 export type UsageEvent = Schema.Schema.Type<typeof UsageEvent>
 

@@ -1,4 +1,5 @@
 import type { LLMRequest } from "@doktor/llm-providers"
+import { getAllProviderIds } from "@doktor/llm-providers/model-registry"
 
 export type BodySanitizer<Body = Record<string, unknown>> = (
   body: Body,
@@ -43,9 +44,20 @@ function ensureRoleAlternation(body: Record<string, unknown>): void {
     const prev = merged[merged.length - 1]
     const curr = messages[i]
     if (prev.role === curr.role && curr.role !== "system") {
-      const prevContent = typeof prev.content === "string" ? prev.content : safeJson(prev.content)
-      const currContent = typeof curr.content === "string" ? curr.content : safeJson(curr.content)
-      prev.content = prevContent + "\n" + currContent
+      if (curr.role === "tool") {
+        merged.push(curr)
+      } else if (prev.tool_calls || curr.tool_calls) {
+        prev.tool_calls = [...(prev.tool_calls as any[] || []), ...(curr.tool_calls as any[] || [])]
+        const prevContent = typeof prev.content === "string" ? prev.content : ""
+        const currContent = typeof curr.content === "string" ? curr.content : ""
+        const merged = prevContent + currContent
+        prev.content = merged || undefined
+        if (prev.content === undefined) delete prev.content
+      } else {
+        const prevContent = typeof prev.content === "string" ? prev.content : safeJson(prev.content)
+        const currContent = typeof curr.content === "string" ? curr.content : safeJson(curr.content)
+        prev.content = prevContent + "\n" + currContent
+      }
     } else {
       merged.push(curr)
     }
@@ -116,6 +128,7 @@ export function buildGeminiBody(body: Record<string, unknown>, _request: LLMRequ
   stripStreamOptions(body)
   stripParallelToolCalls(body)
   stripUnsupportedGenParams(body)
+  ensureRoleAlternation(body)
   ensureSimpleToolChoice(body)
   sanitizeToolDefinitions(body)
   delete body.reasoning_effort
@@ -132,32 +145,20 @@ export function buildGeminiBody(body: Record<string, unknown>, _request: LLMRequ
 
 export function buildDeepSeekBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
   stripStreamOptions(body)
+  ensureRoleAlternation(body)
   return body
 }
 
 export function buildGroqBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
   stripStreamOptions(body)
   stripParallelToolCalls(body)
-  return body
-}
-
-export function buildCohereBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
-  stripStreamOptions(body)
-  stripParallelToolCalls(body)
-  stripUnsupportedGenParams(body)
-  ensureSimpleToolChoice(body)
-  sanitizeToolDefinitions(body)
-  return body
-}
-
-export function buildTogetherBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
-  stripStreamOptions(body)
-  stripParallelToolCalls(body)
+  ensureRoleAlternation(body)
   return body
 }
 
 export function buildOpenRouterBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
   stripStreamOptions(body)
+  ensureRoleAlternation(body)
   return body
 }
 
@@ -165,6 +166,7 @@ export function buildNvidiaBody(body: Record<string, unknown>, _request: LLMRequ
   stripStreamOptions(body)
   stripParallelToolCalls(body)
   stripUnsupportedGenParams(body)
+  ensureRoleAlternation(body)
   ensureSimpleToolChoice(body)
   sanitizeToolDefinitions(body)
   return body
@@ -173,47 +175,26 @@ export function buildNvidiaBody(body: Record<string, unknown>, _request: LLMRequ
 export function buildCerebrasBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
   stripStreamOptions(body)
   stripParallelToolCalls(body)
+  ensureRoleAlternation(body)
   return body
 }
 
-export function buildSambaNovaBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
-  stripStreamOptions(body)
-  stripParallelToolCalls(body)
-  return body
-}
-
-export function buildHuggingFaceBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
-  stripStreamOptions(body)
-  stripUnsupportedGenParams(body)
-  ensureSimpleToolChoice(body)
-  sanitizeToolDefinitions(body)
-  return body
-}
-
-export function buildCloudflareBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
-  stripStreamOptions(body)
-  stripParallelToolCalls(body)
-  stripUnsupportedGenParams(body)
-  ensureSimpleToolChoice(body)
-  sanitizeToolDefinitions(body)
-  return body
-}
-
-export const providerBuilders: Record<string, BodySanitizer> = {
+const BUILTIN_SANITIZERS: Record<string, BodySanitizer> = {
   openai: buildOpenAIBody,
   anthropic: buildOpenAIBody,
   google: buildGeminiBody,
   deepseek: buildDeepSeekBody,
   mistral: buildMistralBody,
   groq: buildGroqBody,
-  cohere: buildCohereBody,
-  together: buildTogetherBody,
   openrouter: buildOpenRouterBody,
   nvidia: buildNvidiaBody,
   cerebras: buildCerebrasBody,
-  sambanova: buildSambaNovaBody,
-  huggingface: buildHuggingFaceBody,
-  cloudflare: buildCloudflareBody,
+}
+
+export const providerBuilders: Record<string, BodySanitizer> = {}
+
+for (const providerId of getAllProviderIds()) {
+  providerBuilders[providerId] = BUILTIN_SANITIZERS[providerId] ?? buildOpenAIBody
 }
 
 export function validateBody(body: Record<string, unknown>, provider: string): string | null {

@@ -1,6 +1,7 @@
 import { Effect } from "effect"
 import { OpenAIProtocol } from "../protocols/openai-chat"
 import type { OpenAIChatBody } from "../protocols/openai-chat"
+import { getAllProviderIds } from "../model-registry"
 
 export interface ProviderSanitizeConfig {
   readonly deleteFields?: readonly string[]
@@ -66,191 +67,24 @@ export function createSanitizedProtocol(
   }
 }
 
-export const PROVIDER_SANITIZE_CONFIG: Record<string, ProviderSanitizeConfig> = {
-  google: {
-    deleteFields: [
-      "frequency_penalty",
-      "presence_penalty",
-      "seed",
-      "reasoning_effort",
-      "user",
-      "metadata",
-      "logit_bias",
-      "top_logprobs",
-      "logprobs",
-    ],
-    convertJsonSchemaToJsonObject: true,
-    modelMap: {
-      "gpt-4o": "gemini-1.5-flash",
-      "gpt-4o-mini": "gemini-1.5-flash",
-      "o3": "gemini-1.5-pro",
-      "o4-mini": "gemini-1.5-flash",
-    },
-  },
+const DEFAULT_SANITIZE_CONFIG: ProviderSanitizeConfig = {
+  deleteFields: DEFAULT_UNSUPPORTED_FIELDS,
+  convertJsonSchemaToJsonObject: true,
+}
 
-  mistral: {
-    deleteFields: [
-      "frequency_penalty",
-      "presence_penalty",
-      "seed",
-      "reasoning_effort",
-      "user",
-      "metadata",
-      "logit_bias",
-      "top_logprobs",
-      "logprobs",
-    ],
-    convertJsonSchemaToJsonObject: true,
-  },
+export const PROVIDER_SANITIZE_CONFIG: Record<string, ProviderSanitizeConfig> = {}
 
-  groq: {
-    deleteFields: [
-      "frequency_penalty",
-      "presence_penalty",
-      "seed",
-      "reasoning_effort",
-      "user",
-      "metadata",
-      "logit_bias",
-      "top_logprobs",
-      "logprobs",
-    ],
-    convertJsonSchemaToJsonObject: true,
-  },
+for (const providerId of getAllProviderIds()) {
+  PROVIDER_SANITIZE_CONFIG[providerId] = { ...DEFAULT_SANITIZE_CONFIG }
+}
 
-  cerebras: {
-    deleteFields: [
-      "frequency_penalty",
-      "presence_penalty",
-      "seed",
-      "reasoning_effort",
-      "user",
-      "metadata",
-      "logit_bias",
-      "top_logprobs",
-      "logprobs",
-    ],
-    convertJsonSchemaToJsonObject: true,
-  },
-
-  sambanova: {
-    deleteFields: [
-      "frequency_penalty",
-      "presence_penalty",
-      "seed",
-      "reasoning_effort",
-      "user",
-      "metadata",
-      "logit_bias",
-      "top_logprobs",
-      "logprobs",
-    ],
-    convertJsonSchemaToJsonObject: true,
-  },
-
-  nvidia: {
-    deleteFields: [
-      "frequency_penalty",
-      "presence_penalty",
-      "seed",
-      "reasoning_effort",
-      "user",
-      "metadata",
-      "logit_bias",
-      "top_logprobs",
-      "logprobs",
-    ],
-    convertJsonSchemaToJsonObject: true,
-  },
-
-  deepseek: {
-    deleteFields: [
-      "frequency_penalty",
-      "presence_penalty",
-      "seed",
-      "reasoning_effort",
-      "user",
-      "metadata",
-      "logit_bias",
-      "top_logprobs",
-      "logprobs",
-    ],
-    convertJsonSchemaToJsonObject: true,
-  },
-
-  together: {
-    deleteFields: [
-      "frequency_penalty",
-      "presence_penalty",
-      "seed",
-      "reasoning_effort",
-      "user",
-      "metadata",
-      "logit_bias",
-      "top_logprobs",
-      "logprobs",
-    ],
-    convertJsonSchemaToJsonObject: true,
-  },
-
-  openrouter: {
-    deleteFields: [
-      "frequency_penalty",
-      "presence_penalty",
-      "seed",
-      "reasoning_effort",
-      "user",
-      "metadata",
-      "logit_bias",
-      "top_logprobs",
-      "logprobs",
-    ],
-    convertJsonSchemaToJsonObject: true,
-  },
-
-  huggingface: {
-    deleteFields: [
-      "frequency_penalty",
-      "presence_penalty",
-      "seed",
-      "reasoning_effort",
-      "user",
-      "metadata",
-      "logit_bias",
-      "top_logprobs",
-      "logprobs",
-    ],
-    convertJsonSchemaToJsonObject: true,
-  },
-
-  cloudflare: {
-    deleteFields: [
-      "frequency_penalty",
-      "presence_penalty",
-      "seed",
-      "reasoning_effort",
-      "user",
-      "metadata",
-      "logit_bias",
-      "top_logprobs",
-      "logprobs",
-    ],
-    convertJsonSchemaToJsonObject: true,
-  },
-
-  cohere: {
-    deleteFields: [
-      "frequency_penalty",
-      "presence_penalty",
-      "seed",
-      "reasoning_effort",
-      "user",
-      "metadata",
-      "logit_bias",
-      "top_logprobs",
-      "logprobs",
-    ],
-    convertJsonSchemaToJsonObject: true,
+PROVIDER_SANITIZE_CONFIG.google = {
+  ...DEFAULT_SANITIZE_CONFIG,
+  modelMap: {
+    "gpt-4o": "gemini-1.5-flash",
+    "gpt-4o-mini": "gemini-1.5-flash",
+    "o3": "gemini-1.5-pro",
+    "o4-mini": "gemini-1.5-flash",
   },
 }
 

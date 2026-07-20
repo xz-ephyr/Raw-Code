@@ -1,6 +1,7 @@
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { useWorkflowRunner } from '@/hooks/useWorkflowRunner';
 import { ArrowLeft, Play, Square, RotateCcw } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import WorkflowStepCard from './WorkflowStepCard';
 import AddStepDropdown from './AddStepDropdown';
 
@@ -70,14 +71,18 @@ export function WorkflowEditor({ workflowId }: WorkflowEditorProps) {
               Run
             </button>
           )}
-          <button
-            onClick={() => reset(workflow.id)}
-            disabled={isRunning}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Reset"
-          >
-            <RotateCcw size={14} />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => reset(workflow.id)}
+                disabled={isRunning}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <RotateCcw size={14} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Reset</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 

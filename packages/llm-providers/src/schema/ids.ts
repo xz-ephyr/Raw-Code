@@ -34,7 +34,7 @@ export type TextVerbosity = Schema.Schema.Type<typeof TextVerbosity>
 export const MessageRole = Schema.Literal("system", "user", "assistant", "tool")
 export type MessageRole = Schema.Schema.Type<typeof MessageRole>
 
-export const FinishReason = Schema.Literal("stop", "length", "tool-calls", "content-filter", "error", "unknown")
+export const FinishReason = Schema.Literal("stop", "length", "tool-calls", "content-filter", "error", "unknown", "timeout", "token-budget", "repeated-call", "max-steps")
 export type FinishReason = Schema.Schema.Type<typeof FinishReason>
 
 export const JsonSchema = Schema.Record({ key: Schema.String, value: Schema.Unknown })

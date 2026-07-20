@@ -1,6 +1,5 @@
-export const API_BASE_URL = typeof window !== 'undefined'
-  ? `${window.location.protocol}//${window.location.hostname}:3001`
-  : 'http://localhost:3001';
+export const API_BASE_URL = import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:3001');
 
 export const API_KEY = import.meta.env.VITE_API_KEY || '';
 

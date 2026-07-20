@@ -9,11 +9,14 @@ import {
   makeToolChoice,
 } from "@doktor/llm-providers"
 import type { LLMEvent } from "@doktor/llm-providers"
+import { injectThinkTool } from "@doktor/llm-providers/adapters/think-tool-inject"
+import { getModelCapability } from "@core/reasoning/capabilities"
 import { materialize } from "@doktor/tool-runtime"
-import { providerRouteMap, proxyGpt4o } from "@core/tools/nativeRoutes"
+import { initializeConnectorTools } from "@doktor/tool-runtime/connector"
+import { providerRouteMap, proxyMistral } from "@core/tools/nativeRoutes"
 import { buildNativeSystemPrompt } from "./nativeSystemPrompt"
 import type { ProjectContext } from "@core/memory/contextController"
-import { userMessage, assistantMessage, toolMessage } from "@doktor/llm-providers"
+import { userMessage, assistantMessage, toolMessage, ToolCallPart } from "@doktor/llm-providers"
 import { getProviders } from "./providerCache"
 import { getModelDefinition } from "@core/config/models"
 
@@ -22,28 +25,48 @@ function selectRoute(modelName: string) {
   if (def && providerRouteMap[def.provider]) {
     return providerRouteMap[def.provider]
   }
-  return proxyGpt4o
+  return proxyMistral
 }
 
-function convertMessages(msgs: any[]) {
-  return msgs
-    .filter((m: any) => m.role !== "system")
-    .map((m: any) => {
-      switch (m.role) {
-        case "user": {
-          const content = typeof m.content === "string" ? m.content : m.content?.[0]?.text ?? ""
-          return userMessage(content)
-        }
-        case "assistant": {
-          const content = typeof m.content === "string" ? m.content : ""
-          return assistantMessage(content)
-        }
-        case "tool":
-          return toolMessage({ id: m.toolCallId ?? "", name: m.toolName ?? "", result: m.content ?? "" })
-        default:
-          return userMessage(String(m.content ?? ""))
+function convertMessages(msgs: import("@/lib/chatUtils").UIMessage[]) {
+  const result: any[] = []
+  for (const m of msgs) {
+    if (m.role === "system") continue
+    switch (m.role) {
+      case "user": {
+        const content = typeof m.content === "string" ? m.content : ""
+        result.push(userMessage(content))
+        break
       }
-    })
+      case "assistant": {
+        const textContent = typeof m.content === "string" ? m.content : ""
+        const parts: any[] = textContent ? [{ type: "text" as const, text: textContent }] : []
+        const toolCalls = m.toolInvocations ?? m.toolCalls ?? []
+        const completedToolResults: { id: string; name: string; result: unknown }[] = []
+        for (const tc of toolCalls) {
+          parts.push(ToolCallPart.make({ id: tc.toolCallId ?? tc.id, name: tc.toolName ?? tc.name, input: tc.args ?? tc.input }))
+          const isComplete = tc.state === "result" || tc.state === "error" || tc.status === "complete"
+          if (isComplete) {
+            completedToolResults.push({ id: tc.toolCallId ?? tc.id, name: tc.toolName ?? tc.name, result: tc.result ?? (tc.state === "error" ? tc.error : "") })
+          }
+        }
+        if (parts.length > 0) {
+          result.push(assistantMessage(parts))
+          for (const tr of completedToolResults) {
+            result.push(toolMessage(tr))
+          }
+        }
+        break
+      }
+      case "tool":
+        result.push(toolMessage({ id: m.toolCallId ?? "", name: m.toolName ?? "", result: m.content ?? "" }))
+        break
+      default:
+        result.push(userMessage(String(m.content ?? "")))
+        break
+    }
+  }
+  return result
 }
 
 export interface NativeChatInput {
@@ -83,10 +106,24 @@ export async function nativeChatCompletion(input: NativeChatInput): Promise<Stre
     connectedConnectors: input.connectedConnectors,
   })
 
-  const mat = materialize()
-  const toolDefs = mat.definitions.map((d) =>
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  if (input.projectId && input.connectedConnectors?.length) {
+    for (const provider of input.connectedConnectors) {
+      await initializeConnectorTools({
+        sessionID: input.projectId,
+        provider,
+        baseUrl,
+      }).catch(err => console.warn(`[nativeChat] Failed to init connector ${provider}:`, err));
+    }
+  }
+
+  const mat = materialize({ sessionID: input.projectId })
+  const baseToolDefs = mat.definitions.map((d) =>
     makeToolDefinition({ name: d.name, description: d.description, inputSchema: d.inputSchema }),
   )
+  const capability = getModelCapability(input.modelName)
+  const needsThinkTool = capability.reasoning === 'none'
+  const toolDefs = injectThinkTool(baseToolDefs, needsThinkTool)
 
   const request = new LLMRequest({
     model,
@@ -97,7 +134,7 @@ export async function nativeChatCompletion(input: NativeChatInput): Promise<Stre
     http: apiKey ? new HttpOptions({ headers: { authorization: `Bearer ${apiKey}` } }) : undefined,
   })
 
-  const loop = createToolLoop({ routes: [route], abortSignal: input.abortSignal })
+  const loop = createToolLoop({ routes: [route], abortSignal: input.abortSignal, smooth: true })
 
   const resolveCredential = (provider: string): string | undefined => {
     const defs = getModelDefinition(input.modelName)

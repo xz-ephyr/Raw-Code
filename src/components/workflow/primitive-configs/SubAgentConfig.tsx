@@ -3,7 +3,7 @@ interface SubAgentConfigProps {
   onChange: (partial: Record<string, unknown>) => void;
 }
 
-const AGENT_TYPES = ['general', 'explore', 'writer', 'researcher', 'video'] as const;
+const AGENT_TYPES = ['default', 'teamwork'] as const;
 
 export default function SubAgentConfig({ config, onChange }: SubAgentConfigProps) {
   return (
@@ -11,7 +11,7 @@ export default function SubAgentConfig({ config, onChange }: SubAgentConfigProps
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Agent Type</label>
         <select
-          value={(config.agentType as string) ?? 'general'}
+          value={(config.agentType as string) ?? 'default'}
           onChange={(e) => onChange({ agentType: e.target.value })}
           className="w-full px-3 py-2 text-sm bg-muted border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         >

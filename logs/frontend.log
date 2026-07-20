@@ -1,0 +1,574 @@
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m1221[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.68.46:[1m4028[22m/[39m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m811[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.68.46:[1m4028[22m/[39m
+[2m6:57:32 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m6:57:32 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:00:33 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MarkdownMessage.tsx, /src/styles/index.css[22m
+[2m7:07:47 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ai/action-summary.tsx, /src/styles/index.css[22m
+[2m7:07:55 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ai/action-summary.tsx, /src/styles/index.css[22m
+[2m7:08:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ai/action-summary.tsx, /src/styles/index.css[22m
+[2m7:08:09 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m7:08:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m7:08:32 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m7:08:51 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m7:09:58 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MarkdownMessage.tsx, /src/styles/index.css[22m
+[2m7:09:58 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MarkdownMessage.tsx, /src/styles/index.css[22m
+[2m7:11:21 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m7:11:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m7:16:04 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:16:17 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:17:42 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:17:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:17:55 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:18:16 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:18:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:18:29 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:18:38 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:18:58 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:19:04 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:19:26 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:19:33 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:19:46 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:19:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/ChatPage.tsx, /src/styles/index.css[22m
+[2m7:20:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:20:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:22:24 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:22:24 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:22:32 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/ChatPage.tsx, /src/styles/index.css[22m
+[2m7:24:42 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/OnboardingPage.tsx, /src/components/settings/tabs/ProjectMemoryTab.tsx, /src/components/sidebar/Sidebar.tsx, /src/components/sidebar/ThreadItem.tsx, /src/pages/ChatPage.tsx, /src/components/layout/TitleBar.tsx, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/components/settings/tabs/WebSearchTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/plugins/PluginTabs.tsx[22m
+[2m7:24:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/components/sidebar/ThreadItem.tsx[22m Could not Fast Refresh ("formatRelativeTime" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m7:24:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/sidebar/Sidebar.tsx[22m
+[2m7:24:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/plugins/PluginTabs.tsx[22m
+[2m7:24:57 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/chat/ChatInput.tsx[22m
+[2m7:25:20 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:29:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MessageList.tsx, /src/styles/index.css[22m
+[2m7:29:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MessageList.tsx, /src/styles/index.css[22m
+[2m7:35:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:47:24 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m7:47:41 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m7:47:47 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m7:50:22 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m7:50:33 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m7:50:40 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m7:56:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:56:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:57:28 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:57:37 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:57:45 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:58:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:59:07 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:00:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:19:06 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:19:21 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:19:52 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:20:33 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:25:10 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css[22m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m1017[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.68.46:[1m4028[22m/[39m
+[2m8:26:33 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:26:33 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:27:52 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css[22m
+[2m8:29:11 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css[22m
+[2m8:29:32 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css[22m
+[2m8:31:16 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css[22m
+[2m8:32:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css[22m
+[2m8:39:42 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/chat/MarkdownMessage.tsx[22m
+[2m8:39:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/chat/MarkdownMessage.tsx[22m
+[2m8:39:58 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MarkdownMessage.tsx, /src/styles/index.css[22m
+[2m8:39:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/chat/MarkdownMessage.tsx[22m
+[2m8:40:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/chat/MarkdownMessage.tsx[22m
+[2m8:41:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/chat/MarkdownMessage.tsx[22m
+[2m8:41:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/chat/MarkdownMessage.tsx[22m
+[2m8:46:24 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/chat/MarkdownMessage.tsx[22m
+[2m8:54:08 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:54:25 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:00:37 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:04:38 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:04:58 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:23:19 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:24:03 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:33:11 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:33:20 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m9:33:35 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:37:41 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:37:52 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:40:40 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:41:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:41:35 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:41:45 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m9:41:52 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m9:42:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:42:37 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:42:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:43:27 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:43:35 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:43:43 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:43:50 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:43:52 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:44:03 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:44:24 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:48:09 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:49:29 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+^C
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m1541[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m1476[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.94.46:[1m4028[22m/[39m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m778[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.94.46:[1m4028[22m/[39m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m829[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.94.46:[1m4028[22m/[39m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m785[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.94.46:[1m4028[22m/[39m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m818[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.94.46:[1m4028[22m/[39m
+^C
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m973[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.94.46:[1m4028[22m/[39m
+[2m4:27:16 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:27:33 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:31:10 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:33:17 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/OverviewTab.tsx, /src/styles/index.css[22m
+[2m4:33:26 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/OverviewTab.tsx, /src/styles/index.css[22m
+[2m4:33:32 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/OverviewTab.tsx, /src/styles/index.css[22m
+[2m4:35:59 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/OverviewTab.tsx, /src/styles/index.css[22m
+[2m4:36:05 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/OverviewTab.tsx, /src/styles/index.css[22m
+[2m4:36:16 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/OverviewTab.tsx, /src/styles/index.css[22m
+[2m4:36:27 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/OverviewTab.tsx, /src/styles/index.css[22m
+[2m4:36:36 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/OverviewTab.tsx, /src/styles/index.css[22m
+[2m4:36:42 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/OverviewTab.tsx, /src/styles/index.css[22m
+[2m4:36:57 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/OverviewTab.tsx, /src/styles/index.css[22m
+[2m4:37:24 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:38:31 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/OverviewTab.tsx, /src/styles/index.css[22m
+[2m4:38:31 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/OverviewTab.tsx, /src/styles/index.css[22m
+[2m4:38:59 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:41:15 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:41:21 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:43:11 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:46:26 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:46:46 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:46:56 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:47:22 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:49:50 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:49:58 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:50:08 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:50:17 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m4:50:23 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m5:01:41 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m5:01:52 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m5:02:06 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m5:06:21 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m5:07:01 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m967[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.94.46:[1m4028[22m/[39m
+[2m5:25:30 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m5:25:45 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m5:25:55 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m5:27:25 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m5:27:41 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m5:30:50 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m836[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.94.46:[1m4028[22m/[39m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m4912[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.99.46:[1m4028[22m/[39m
+[2m9:13:33 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/settings/tabs/KeysTab.tsx[22m
+[2m9:13:57 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/ui/DefaultModelSelector.tsx[22m
+[2m9:15:12 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css[22m
+[2m9:15:29 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/settings/tabs/KeysTab.tsx, /src/styles/index.css[22m
+[2m9:16:55 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/settings/tabs/KeysTab.tsx[22m
+[2m9:17:11 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/ui/DefaultModelSelector.tsx[22m
+[2m9:17:23 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/ui/DefaultModelSelector.tsx[22m
+[2m9:17:29 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/ui/DefaultModelSelector.tsx[22m
+[2m9:29:06 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/services/ChatStreamService.ts[22m
+[2m9:29:06 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/services/ChatStreamService.ts[22m
+[2m9:29:37 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/services/ChatStreamService.ts[22m
+[2m9:30:50 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/services/ChatStreamService.ts[22m
+[2m9:30:50 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/services/ChatStreamService.ts[22m
+[2m9:37:08 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m9:37:27 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m9:37:42 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatInput.tsx, /src/styles/index.css[22m
+[2m9:38:44 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MessageList.tsx, /src/styles/index.css[22m
+[2m9:38:44 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MessageList.tsx, /src/styles/index.css[22m
+[2m9:39:29 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m9:40:09 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css[22m
+[2m9:40:59 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/UserBubble.tsx, /src/styles/index.css[22m
+[2m9:41:37 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/components/ui/ModelSelector.tsx[22m
+[2m9:42:09 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ui/DefaultModelSelector.tsx, /src/styles/index.css[22m
+[2m9:42:36 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/UserBubble.tsx, /src/styles/index.css[22m
+[2m9:42:58 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m9:45:56 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/contexts/ModelRegistryContext.tsx[22m
+[2m9:45:57 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:45:57 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/layout/AppProviders.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ModelList.tsx[22m
+[2m9:46:12 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/components/ui/ModelSelector.tsx[22m
+[2m9:46:26 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/components/ui/ModelSelector.tsx[22m
+[2m9:46:55 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/contexts/ModelRegistryContext.tsx[22m
+[2m9:47:11 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m9:48:46 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:49:19 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:49:32 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:49:41 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:49:47 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:50:18 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/BubbleActions.tsx, /src/styles/index.css[22m
+[2m9:50:30 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/BubbleActions.tsx, /src/styles/index.css[22m
+[2m9:50:37 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/BubbleActions.tsx, /src/styles/index.css[22m
+[2m9:50:37 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/BubbleActions.tsx, /src/styles/index.css[22m
+[2m9:50:54 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/BubbleActions.tsx, /src/styles/index.css[22m
+[2m9:51:06 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/BubbleActions.tsx, /src/styles/index.css[22m
+[2m10:00:10 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33m@radix-ui/react-tooltip[32m[39m
+[2m10:00:10 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
+node:internal/fs/watchers:321
+    const error = new UVException({
+                  ^
+
+Error: EBUSY: resource busy or locked, watch 'C:\Users\zephy\Documents\Raw-Code\public\grok-color.svg'
+    at FSWatcher.<computed> (node:internal/fs/watchers:321:19)
+    at Object.watch (node:fs:2548:36)
+    at createFsWatchInstance (file:///C:/Users/zephy/Documents/Raw-Code/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:22195:17)
+    at setFsWatchListener (file:///C:/Users/zephy/Documents/Raw-Code/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:22242:15)
+    at NodeFsHandler._watchWithNodeFs (file:///C:/Users/zephy/Documents/Raw-Code/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:22397:14)
+    at NodeFsHandler._handleFile (file:///C:/Users/zephy/Documents/Raw-Code/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:22461:23)
+    at NodeFsHandler._addToNodeFs (file:///C:/Users/zephy/Documents/Raw-Code/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:22703:21)
+Emitted 'error' event on FSWatcher instance at:
+    at FSWatcher._handleError (file:///C:/Users/zephy/Documents/Raw-Code/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:23896:10)
+    at NodeFsHandler._addToNodeFs (file:///C:/Users/zephy/Documents/Raw-Code/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:22711:18) {
+  errno: -4082,
+  syscall: 'watch',
+  code: 'EBUSY',
+  path: 'C:\\Users\\zephy\\Documents\\Raw-Code\\public\\grok-color.svg',
+  filename: 'C:\\Users\\zephy\\Documents\\Raw-Code\\public\\grok-color.svg'
+}
+
+Node.js v24.18.0
+[2m10:06:22 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because lockfile has changed
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m3244[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.99.46:[1m4028[22m/[39m
+[2m10:11:22 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/components/chat/ChatContextIndicator.tsx[22m
+[2m10:11:22 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/components/chat/ChatContextIndicator.tsx[22m
+[2m10:17:46 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33m@radix-ui/react-progress, @radix-ui/react-hover-card[32m[39m
+[2m10:17:46 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
+[2m10:24:55 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:26:56 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m10:26:56 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m10:26:57 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m10:26:57 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/layout/AppProviders.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m10:27:09 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m10:27:09 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m10:27:23 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ui/ModelIcon.tsx, /src/styles/index.css[22m
+[2m10:27:43 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m10:28:09 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:31:10 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:34:19 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:34:39 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:34:50 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:35:57 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:36:05 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:37:02 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:39:08 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m10:39:08 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m10:39:08 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/layout/AppProviders.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m2395[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.99.46:[1m4028[22m/[39m
+[2m10:40:30 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx[22m
+[2m10:40:30 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx[22m
+[2m10:48:48 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:48:48 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:48:56 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:54:02 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m10:54:23 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:54:31 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:54:38 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:56:42 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m10:56:45 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m10:56:45 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m10:56:54 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:57:09 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:57:13 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:59:15 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:59:15 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m10:59:21 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m11:01:43 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:01:56 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:02:22 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:02:23 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:02:23 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:03:42 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:03:43 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:03:58 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:04:11 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:09:08 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:09:09 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:09:09 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:09:18 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:09:19 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:09:19 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:09:27 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:09:29 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:09:29 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:09:47 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:11:09 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:11:10 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:11:10 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:11:25 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:11:25 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:11:25 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:11:33 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:11:35 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:11:35 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:11:42 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:13:12 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:16:55 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:16:56 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:16:56 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:19:15 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:19:16 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:19:16 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:19:27 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:19:28 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:19:28 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:20:21 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:21:24 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:21:25 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:21:25 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:21:58 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:21:59 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:21:59 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:31:00 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:31:01 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:31:01 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:31:19 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m11:37:13 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:37:45 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:37:47 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:37:47 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:38:00 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:38:02 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m11:38:02 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:38:23 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:38:30 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:40:31 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:40:31 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:40:37 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:40:45 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:42:36 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:42:54 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatContextIndicator.tsx, /src/styles/index.css[22m
+[2m11:44:39 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:44:46 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/onboarding/ModelSetupStep.tsx, /src/styles/index.css, /src/components/settings/tabs/GeneralTab.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m11:44:53 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatInput.tsx, /src/styles/index.css[22m
+[2m11:45:00 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m11:45:07 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m11:46:36 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+[2m11:46:42 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ModelList.tsx, /src/styles/index.css[22m
+^C
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m2402[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+[2m7:47:07 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/workflow/WorkflowStepCard.tsx[22m
+[2m7:47:08 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/workflow/WorkflowStepCard.tsx[22m
+[2m7:47:08 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/workflow/WorkflowEditor.tsx[22m
+[2m7:47:09 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/workflow/WorkflowEditor.tsx[22m
+[2m7:47:37 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/workflow/ActivityLog.tsx[22m
+[2m7:48:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/workflow/ActivityLog.tsx[22m
+[2m7:48:02 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/workflow/ActivityLog.tsx[22m
+[2m7:48:17 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/plugins/ConnectorCard.tsx[22m
+[2m7:48:17 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/plugins/ConnectorCard.tsx[22m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m1234[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.213.46:[1m4028[22m/[39m
+[2m8:28:36 PM[22m [36m[1m[vite][22m[39m changed tsconfig file detected: C:/Users/zephy/Documents/Raw-Code/packages/avatar/tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+[2m8:30:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/NTabDropdown.tsx, /src/styles/index.css[22m
+[2m8:30:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/agent-workspace/AgentCard.tsx, /src/styles/index.css[22m
+[2m8:30:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/components/workflow/primitive-configs/SubAgentConfig.tsx[22m
+[2m8:30:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/components/workflow/ActivityLog.tsx[22m
+[2m8:30:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/NTabDropdown.tsx, /src/styles/index.css[22m
+[2m8:30:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/components/workflow/ActivityLog.tsx[22m
+[2m8:31:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/agent-workspace/AgentCard.tsx, /src/styles/index.css[22m
+[2m8:31:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/components/workflow/primitive-configs/SubAgentConfig.tsx[22m
+[2m8:31:51 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:32:18 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:33:34 PM[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[2m8:33:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because vite config has changed
+[2m8:33:35 PM[22m [36m[1m[vite][22m[39m server restarted.
+[2m8:49:40 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:49:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:49:46 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:49:51 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:49:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:50:03 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:50:03 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:50:04 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:59:12 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m8:59:12 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m8:59:13 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/AssistantBubble.tsx, /src/styles/index.css[22m
+[2m8:59:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:59:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:59:16 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:59:19 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m957[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.213.46:[1m4028[22m/[39m
+[31merror when starting dev server:
+Error: Port 4028 is already in use
+    at Server.onError (file:///C:/Users/zephy/Documents/Raw-Code/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:25119:18)
+    at Server.emit (node:events:509:28)
+    at emitErrorNT (node:net:2045:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)[39m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m861[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.213.46:[1m4028[22m/[39m
+[2m9:12:43 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/ChatInput.tsx, /src/styles/index.css[22m
+[2m9:12:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MessageList.tsx, /src/styles/index.css[22m
+[2m9:12:45 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MessageList.tsx, /src/styles/index.css[22m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m810[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.213.46:[1m4028[22m/[39m
+[2m9:20:16 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MessageList.tsx, /src/styles/index.css[22m
+[2m9:20:20 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MessageList.tsx, /src/styles/index.css[22m
+[2m9:28:11 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppProviders.tsx, /src/styles/index.css[22m
+[2m9:28:27 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MessageList.tsx, /src/styles/index.css[22m
+[2m9:28:29 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/MessageList.tsx, /src/styles/index.css[22m
+[2m9:36:40 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:58:45 PM[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[2m9:58:45 PM[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[2m9:58:45 PM[22m [36m[1m[vite][22m[39m server restarted.
+[2m10:11:28 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:12:17 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:13:29 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:14:19 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:14:43 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:15:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:15:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:17:19 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:17:20 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:18:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:18:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:18:44 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:20:01 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m10:59:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:00:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:01:41 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:01:41 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:02:45 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:03:36 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:05:14 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:07:23 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:09:19 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:11:39 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:12:24 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:12:41 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:12:41 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:12:41 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:12:41 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /packages/tool-runtime/src/content/crawl-website.ts (resolved id: C:/Users/zephy/Documents/Raw-Code/packages/tool-runtime/src/content/crawl-website.ts) in C:/Users/zephy/Documents/Raw-Code/packages/tool-runtime/src/content/index.ts. Does the file exist?
+[2m11:12:41 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /packages/tool-runtime/src/content/crawl-website.ts (resolved id: C:/Users/zephy/Documents/Raw-Code/packages/tool-runtime/src/content/crawl-website.ts) in C:/Users/zephy/Documents/Raw-Code/packages/tool-runtime/src/content/index.ts. Does the file exist?
+[2m11:12:41 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /packages/tool-runtime/src/content/config.ts (resolved id: C:/Users/zephy/Documents/Raw-Code/packages/tool-runtime/src/content/config.ts) in C:/Users/zephy/Documents/Raw-Code/packages/tool-runtime/src/content/index.ts. Does the file exist?
+[2m11:12:41 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /packages/tool-runtime/src/content/with-crawl-cache.ts (resolved id: C:/Users/zephy/Documents/Raw-Code/packages/tool-runtime/src/content/with-crawl-cache.ts) in C:/Users/zephy/Documents/Raw-Code/packages/tool-runtime/src/content/index.ts. Does the file exist?
+[2m11:12:52 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m11:13:07 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:26:56 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:27:14 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:33:45 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:33:58 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:34:10 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m7:42:55 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m8:02:51 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:19:16 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:20:21 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:20:47 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:21:09 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:22:00 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:22:22 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:22:42 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/lib/api.ts[22m
+[2m9:23:23 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:23:49 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/chat/ChatInput.tsx[22m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m3535[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.120.46:[1m4028[22m/[39m
+[2m9:30:36 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:30:36 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:32:01 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:33:03 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:33:13 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/NTabDropdown.tsx, /src/styles/index.css[22m
+[2m9:33:24 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:33:33 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/chat/NTabDropdown.tsx, /src/styles/index.css[22m
+[2m9:33:46 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:36:04 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:36:04 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:40:00 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /antigravity-color.svg[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1194:18)
+    at afterConnectMultiple (node:net:1784:7)
+[2m9:40:54 AM[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[2m9:40:55 AM[22m [36m[1m[vite][22m[39m server restarted.
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m1436[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.120.46:[1m4028[22m/[39m
+[2m9:48:51 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+[2m9:52:10 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/pages/ChatPage.tsx[22m
+
+  [32m[1mVITE[22m v6.4.3[39m  [2mready in [0m[1m1943[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4028[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.120.46:[1m4028[22m/[39m
+[2m10:34:21 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx, /src/components/ui/DefaultModelSelector.tsx[22m
+[2m10:34:24 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m10:34:24 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/layout/AppProviders.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m10:34:51 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx, /src/components/ui/DefaultModelSelector.tsx[22m
+[2m10:34:56 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m10:34:56 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/layout/AppProviders.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m
+[2m10:35:37 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/ModelRegistryContext.tsx, /src/styles/index.css, /src/components/onboarding/ModelSetupStep.tsx, /src/components/ui/ModelIcon.tsx, /src/components/settings/tabs/GeneralTab.tsx, /src/components/settings/tabs/OverviewTab.tsx, /src/components/settings/tabs/KeysTab.tsx, /src/pages/ChatPage.tsx, /src/components/chat/ModelList.tsx[22m
+[2m10:35:38 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/ModelRegistryContext.tsx[22m Could not Fast Refresh ("useModelRegistry" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m10:35:38 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/components/layout/AppProviders.tsx, /src/components/ui/DefaultModelSelector.tsx, /src/components/chat/ChatContextIndicator.tsx, /src/components/chat/ModelList.tsx[22m

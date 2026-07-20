@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { PlayCircle, Loader2, CheckCircle, XCircle, X, Search, Activity } from 'lucide-react';
 import { onAnyEvent } from '@doktor/tool-runtime';
 import type { ToolEvent, ToolEventType } from '@doktor/tool-runtime';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 type LogStatus = 'starting' | 'running' | 'completed' | 'error';
 type LogFilter = 'all' | 'errors' | 'running';
@@ -22,11 +23,8 @@ interface ActivityLogProps {
 
 const AGENT_ALIASES: Record<string, string> = {
   main: 'Main Chat',
-  general: 'General Agent',
-  explore: 'Research Agent',
-  writer: 'Writer Agent',
-  researcher: 'Deep Researcher',
-  video: 'Video Agent',
+  default: 'Default Agent',
+  teamwork: 'Teamwork Coordinator',
   tool_call: 'Tool Call',
   sub_agent: 'Sub-Agent',
   connector: 'Connector',
@@ -286,15 +284,19 @@ export function ActivityLog({ sessionId }: ActivityLogProps) {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => setAutoScroll(!autoScroll)}
-              className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
-                autoScroll ? 'text-foreground/60' : 'text-muted-foreground/40'
-              }`}
-              title="Auto-scroll"
-            >
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setAutoScroll(!autoScroll)}
+                  className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
+                    autoScroll ? 'text-foreground/60' : 'text-muted-foreground/40'
+                  }`}
+                >
               {autoScroll ? 'Auto ▼' : 'Manual'}
             </button>
+              </TooltipTrigger>
+              <TooltipContent>Auto-scroll</TooltipContent>
+            </Tooltip>
             <span className="text-[10px] text-muted-foreground">{filteredEntries.length} entries</span>
             {entries.length > 0 && (
               <button

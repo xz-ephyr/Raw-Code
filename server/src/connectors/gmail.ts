@@ -1,4 +1,5 @@
 import { GoogleConnectorService } from './google-base.js';
+import type { ActionDefinition } from './types.js';
 
 export class GmailConnectorService extends GoogleConnectorService {
   readonly provider = 'gmail';
@@ -102,5 +103,28 @@ export class GmailConnectorService extends GoogleConnectorService {
       read: (params: any) => this.getMessage(params.messageId),
       send: (params: any) => this.sendMessage(params.to, params.subject, params.body),
     };
+  }
+
+  getActionDefinitions(): ActionDefinition[] {
+    return [
+      {
+        name: 'list',
+        description: 'List Gmail messages matching a search query',
+        inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Gmail search query (default: in:inbox)' }, maxResults: { type: 'number', description: 'Maximum results (max 50)' } } },
+        outputSchema: { type: 'object', properties: { messages: { type: 'array', items: { type: 'object' } }, total: { type: 'number' } } },
+      },
+      {
+        name: 'read',
+        description: 'Read a specific Gmail message by ID',
+        inputSchema: { type: 'object', properties: { messageId: { type: 'string', description: 'Gmail message ID' } }, required: ['messageId'] },
+        outputSchema: { type: 'object', properties: { id: { type: 'string' }, threadId: { type: 'string' }, subject: { type: 'string' }, from: { type: 'string' }, to: { type: 'string' }, date: { type: 'string' }, snippet: { type: 'string' }, body: { type: 'string' }, labels: { type: 'array', items: { type: 'string' } } } },
+      },
+      {
+        name: 'send',
+        description: 'Send an email via Gmail',
+        inputSchema: { type: 'object', properties: { to: { type: 'string', description: 'Recipient email' }, subject: { type: 'string', description: 'Email subject' }, body: { type: 'string', description: 'Email body text' } }, required: ['to', 'subject', 'body'] },
+        outputSchema: { type: 'object', properties: { id: { type: 'string' }, threadId: { type: 'string' }, labelIds: { type: 'array', items: { type: 'string' } } } },
+      },
+    ];
   }
 }

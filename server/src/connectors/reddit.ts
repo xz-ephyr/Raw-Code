@@ -1,5 +1,6 @@
 import { query } from '../db.js';
 import { ConnectorService } from './base.js';
+import type { ActionDefinition } from './types.js';
 
 export class RedditConnectorService extends ConnectorService {
   readonly provider = 'reddit';
@@ -165,5 +166,34 @@ export class RedditConnectorService extends ConnectorService {
       submit: (params: any) => this.submitPost(params.subreddit, params.title, params.text),
       comments: (params: any) => this.getComments(params.postId, params.limit),
     };
+  }
+
+  getActionDefinitions(): ActionDefinition[] {
+    return [
+      {
+        name: 'hot',
+        description: 'Get hot posts from a subreddit',
+        inputSchema: { type: 'object', properties: { subreddit: { type: 'string', description: 'Subreddit name' }, limit: { type: 'number', description: 'Max results (max 100)' } }, required: ['subreddit'] },
+        outputSchema: { type: 'object' },
+      },
+      {
+        name: 'search',
+        description: 'Search Reddit posts',
+        inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Search query' }, subreddit: { type: 'string', description: 'Optional subreddit filter' }, limit: { type: 'number', description: 'Max results (max 100)' } }, required: ['query'] },
+        outputSchema: { type: 'object' },
+      },
+      {
+        name: 'submit',
+        description: 'Submit a text post to Reddit',
+        inputSchema: { type: 'object', properties: { subreddit: { type: 'string', description: 'Subreddit name' }, title: { type: 'string', description: 'Post title' }, text: { type: 'string', description: 'Post body text' } }, required: ['subreddit', 'title', 'text'] },
+        outputSchema: { type: 'object' },
+      },
+      {
+        name: 'comments',
+        description: 'Get comments from a Reddit post',
+        inputSchema: { type: 'object', properties: { postId: { type: 'string', description: 'Reddit post ID' }, limit: { type: 'number', description: 'Max results (max 100)' } }, required: ['postId'] },
+        outputSchema: { type: 'object' },
+      },
+    ];
   }
 }

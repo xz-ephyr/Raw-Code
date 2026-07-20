@@ -67,12 +67,6 @@ function currentOrNew(msg: AssistantMessage | null): AssistantMessage {
   }
 }
 
-function stripThinkingTags(text: string): string {
-  return text
-    .replace(/<(?:think|thought)>[\s\S]*?<\/(?:think|thought)>/g, '')
-    .replace(/<(?:think|thought)>[\s\S]*$/g, '')
-}
-
 function generateSummaryFromContent(content: string): string {
   if (!content) return "Processing your request..."
   const cleaned = content.replace(/[#*_`~]/g, '').trim()
@@ -92,19 +86,13 @@ function generateSummaryFromContent(content: string): string {
 function generateSummaryFromToolCalls(toolCalls: ToolCallState[]): string {
   if (toolCalls.length === 0) return ""
   const last = toolCalls[toolCalls.length - 1]
-  if (last.name === "research" || last.name === "web_search") {
+  if (last.name === "web_search") {
     const query = (last.input as any)?.query
     return query ? `Searching for "${query}"` : "Searching the web..."
   }
-  if (last.name === "write_artifact" || last.name === "write_article") {
+  if (last.name === "write_artifact") {
     const title = (last.input as any)?.title
     return title ? `Writing "${title}"` : "Writing content..."
-  }
-  if (last.name === "edit_text") {
-    return "Editing text..."
-  }
-  if (last.name === "generate_script") {
-    return "Generating script..."
   }
   return `Running ${last.name}...`
 }
@@ -114,11 +102,11 @@ function buildActionSummary(
   toolCalls: ToolCallState[],
   isStreaming: boolean
 ): ActionSummary | undefined {
-  if (toolCalls.length === 0 && !content) return undefined
+  if (!isStreaming && toolCalls.length === 0 && !content) return undefined
 
   const actions: ActionItem[] = toolCalls.map((tc, i) => ({
     id: tc.id || `action_${i}`,
-    type: tc.name === "research" || tc.name === "web_search" ? "search" : "tool_call",
+    type: tc.name === "web_search" ? "search" : "tool_call",
     label: tc.name,
     description: formatToolDescription(tc),
     status: tc.status === "complete" ? "complete" : tc.status === "error" ? "error" : "active",
@@ -128,7 +116,7 @@ function buildActionSummary(
   }))
 
   let summary: string
-  if (isStreaming && content) {
+  if (content) {
     summary = generateSummaryFromContent(content)
   } else if (toolCalls.length > 0) {
     summary = generateSummaryFromToolCalls(toolCalls)
@@ -142,39 +130,37 @@ function buildActionSummary(
 function formatToolDescription(tc: ToolCallState): string {
   const input = tc.input as any
   if (!input) return ""
-  if (tc.name === "research" || tc.name === "web_search") {
+  if (tc.name === "web_search") {
     return input.query || ""
   }
-  if (tc.name === "write_artifact" || tc.name === "write_article") {
+  if (tc.name === "write_artifact") {
     return input.title || input.identifier || ""
-  }
-  if (tc.name === "edit_text") {
-    return input.instruction || ""
   }
   return ""
 }
 
-export function reduceEvent(state: StreamState, event: LLMEvent, options?: { skipReasoning?: boolean }): StreamState {
-  const skipReasoning = options?.skipReasoning ?? false
+export function reduceEvent(state: StreamState, event: LLMEvent): StreamState {
   switch (event.type) {
     case "step-start": {
-      return { ...state, status: "streaming" }
+      const msg = currentOrNew(state.currentMessage)
+      const actionSummary = buildActionSummary(msg.content, msg.toolCalls, true)
+      return { ...state, status: "streaming", currentMessage: { ...msg, actionSummary } }
     }
 
     case "text-start": {
-      return { ...state, currentMessage: currentOrNew(state.currentMessage) }
+      const msg = currentOrNew(state.currentMessage)
+      const actionSummary = buildActionSummary(msg.content, msg.toolCalls, true)
+      return { ...state, currentMessage: { ...msg, actionSummary } }
     }
 
     case "text-delta": {
       const msg = currentOrNew(state.currentMessage)
       const newContent = msg.content + event.text
-      const actionSummary = buildActionSummary(newContent, msg.toolCalls, true)
       return {
         ...state,
         currentMessage: {
           ...msg,
           content: newContent,
-          actionSummary,
         },
       }
     }
@@ -184,7 +170,6 @@ export function reduceEvent(state: StreamState, event: LLMEvent, options?: { ski
     }
 
     case "reasoning-delta": {
-      if (skipReasoning) return state
       const msg = currentOrNew(state.currentMessage)
       return {
         ...state,
@@ -268,16 +253,15 @@ export function reduceEvent(state: StreamState, event: LLMEvent, options?: { ski
     }
 
     case "step-finish": {
-      return state
+      const msg = state.currentMessage
+      if (!msg) return state
+      const actionSummary = buildActionSummary(msg.content, msg.toolCalls, false)
+      return { ...state, currentMessage: { ...msg, actionSummary } }
     }
 
     case "finish": {
       if (!state.currentMessage) return { ...state, status: "idle" }
       const msg = { ...state.currentMessage, finishReason: event.reason }
-      if (skipReasoning) {
-        msg.content = stripThinkingTags(msg.content)
-        msg.reasoning = ''
-      }
       return {
         messages: [...state.messages, msg],
         currentMessage: null,
@@ -286,6 +270,15 @@ export function reduceEvent(state: StreamState, event: LLMEvent, options?: { ski
     }
 
     case "provider-error": {
+      if (state.currentMessage) {
+        const msg = { ...state.currentMessage, finishReason: "error" as const }
+        return {
+          messages: [...state.messages, msg],
+          currentMessage: null,
+          status: "error",
+          error: event.message,
+        }
+      }
       return {
         ...state,
         status: "error",

@@ -4,12 +4,16 @@ import { ChatSessionManager } from '@/services/ChatSessionManager';
 import { useParams } from 'react-router-dom';
 import { HugeiconRenderer } from '@/components/ui/HugeiconRenderer';
 import { MessageAdd01Icon } from '@hugeicons/core-free-icons';
+import { ChatContextIndicator } from '@/components/chat/ChatContextIndicator';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface TitleBarProps {
   onNewThread?: () => void;
+  sessionUsage?: { inputTokens: number; outputTokens: number; reasoningTokens?: number; cachedInputTokens?: number };
+  currentModel?: string;
 }
 
-export default function TitleBar({ onNewThread }: TitleBarProps) {
+export default function TitleBar({ onNewThread, sessionUsage, currentModel }: TitleBarProps) {
   const { sessionTitle, setTitle, isTitleGenerating } = useSessionTitle();
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -75,11 +79,12 @@ export default function TitleBar({ onNewThread }: TitleBarProps) {
             <span className="text-[11px] text-muted-foreground">Generating title...</span>
           </div>
         ) : (
-          <button
-            onClick={handleStartEdit}
-            className="flex items-center gap-1.5 min-w-0 cursor-text"
-            title="Click to rename"
-          >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleStartEdit}
+                className="flex items-center gap-1.5 min-w-0 cursor-text"
+              >
             <span className="text-sm font-semibold text-foreground truncate">{displayTitle}</span>
             <span className="shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -88,19 +93,31 @@ export default function TitleBar({ onNewThread }: TitleBarProps) {
               </svg>
             </span>
           </button>
+            </TooltipTrigger>
+            <TooltipContent>Click to rename</TooltipContent>
+          </Tooltip>
         )}
       </div>
 
       <div className="flex items-center gap-1.5 shrink-0 ml-2">
+          <ChatContextIndicator
+            usedTokens={(sessionUsage?.inputTokens ?? 0) + (sessionUsage?.outputTokens ?? 0)}
+            modelId={currentModel}
+            usage={sessionUsage ? { inputTokens: sessionUsage.inputTokens, outputTokens: sessionUsage.outputTokens, totalTokens: sessionUsage.inputTokens + sessionUsage.outputTokens, reasoningTokens: sessionUsage.reasoningTokens, cachedInputTokens: sessionUsage.cachedInputTokens } : undefined}
+          />
           {onNewThread && (
-            <button
-              type="button"
-              onClick={onNewThread}
-              className="p-1.5 hover:bg-muted rounded-[6px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              title="New thread"
-            >
-              <HugeiconRenderer icon={MessageAdd01Icon} size={16} />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={onNewThread}
+                  className="p-1.5 hover:bg-muted rounded-[6px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  <HugeiconRenderer icon={MessageAdd01Icon} size={16} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>New thread</TooltipContent>
+            </Tooltip>
           )}
 
         </div>

@@ -1,6 +1,5 @@
 import { getCache, setCache } from './search/cache';
 import { redactSensitiveUrl, getConfig, requireConfig } from './search/utils';
-import { gocrawlSearch, gocrawlScrape } from './search/providers/gocrawl';
 import { tavilySearch, tavilyNewsSearch } from './search/providers/tavily';
 import { firecrawlSearch, firecrawlScrape } from './search/providers/firecrawl';
 import { googleSearch, googleImageSearch } from './search/providers/google';
@@ -12,18 +11,7 @@ export async function webSearch(params: { query: string; maxResults: number; sit
 
   const query = params.site ? `site:${params.site} ${params.query}` : params.query;
 
-  // Tier 1: try self-hosted go-crawl first (free, zero marginal cost)
-  if (process.env.GO_CRAWL_URL) {
-    try {
-      const result = await gocrawlSearch(query, params.maxResults);
-      await setCache('webSearch', params, 'gocrawl', result);
-      return result;
-    } catch (e) {
-      console.warn(`go-crawl search failed, falling back to paid providers: ${(e as any).message}`);
-    }
-  }
-
-  // Tier 2: paid providers with rotation
+  // Tier 1: paid providers with rotation
   const providerConfigs: Array<{ name: string; key: string; extra?: string }> = [];
   const tavilyKey = await getConfig('search-api-key');
   if (tavilyKey) providerConfigs.push({ name: 'tavily', key: tavilyKey });
@@ -76,25 +64,7 @@ export async function fetchPage(params: { url: string; extractAs: string }) {
 
   let result;
 
-  // Tier 1: try go-crawl (free, self-hosted)
-  if (process.env.GO_CRAWL_URL) {
-    try {
-      const data = await gocrawlScrape(params.url, [params.extractAs === 'text' ? 'text' : 'markdown']);
-      if (data) {
-        result = {
-          content: data.markdown || data.html || '',
-          title: data.metadata?.title || '',
-          url: params.url,
-        };
-        await setCache('fetchPage', params, 'gocrawl', result);
-        return result;
-      }
-    } catch {
-      /* fall through to paid providers */
-    }
-  }
-
-  // Tier 2: Firecrawl (paid)
+  // Tier 1: Firecrawl (paid)
   try {
     const firecrawlKey = await getConfig('search-firecrawl-api-key');
     if (firecrawlKey) {

@@ -38,6 +38,96 @@ import {
   intentEvent,
 } from "./openai-converters"
 
+/**
+ * Parses inline text function calls emitted by models that don't support
+ * native tool_calls. Two observed shapes:
+ *   1. <function name="web_search">{"query": "x"}</function>   (clean, valid JSON)
+ *   2. <function(web_search){\query\ \Elon Musk net worth\ \maxResults\ \5\}</function>
+ *      (Groq-style: name in parens, args as backslash-delimited tokens)
+ * Returns the leftover plain text plus normalized calls (name + raw args +
+ * best-effort parsed object).
+ */
+function parseInlineFunctionCalls(content: string): {
+  remaining: string
+  calls: Array<{ name: string; args: string; parsed: unknown }>
+} {
+  const calls: Array<{ name: string; args: string; parsed: unknown }> = []
+  // Name may appear as: (web_search), \web_search, name="web_search", or just
+  // web_search. Args follow, either as {…} (Groq style) or >…</function> (clean).
+  const re = /<function\s*(?:name=(?:"([^"]*)"|'([^']*)')|[(\\\s]?\s*([A-Za-z0-9_-]+)[)\\]?)\s*([\s\S]*?)<\/function>/gi
+  let remaining = content
+  let match: RegExpExecArray | null
+  while ((match = re.exec(content)) !== null) {
+    const name = match[1] ?? match[2] ?? match[3] ?? ""
+    const body = match[4] ?? ""
+    if (!name) continue
+    // Pull the {...} args block if present; otherwise use the body (minus a
+    // leading '>' from the clean style) as the args string.
+    const braceMatch = /\{[\s\S]*\}/.exec(body)
+    const args = braceMatch ? braceMatch[0] : body.replace(/^>\s*/, "")
+    const parsed = parseInlineArgs(args)
+    calls.push({ name, args, parsed })
+    remaining = remaining.replace(match[0], "")
+  }
+  return { remaining: remaining.trim() === content.trim() ? content : remaining, calls }
+}
+
+/**
+ * Best-effort parser for inline tool-call arguments. Tries strict JSON first,
+ * then falls back to the Groq backslash-delimited token form
+ * ({\key\ \value with spaces\ \key2\ \value2\}), pairing tokens into an object.
+ */
+function parseInlineArgs(args: string): unknown {
+  const trimmed = args.trim()
+  if (!trimmed) return {}
+  try {
+    return JSON.parse(trimmed)
+  } catch {
+    // ignore and try tolerant parse
+  }
+
+  // Tolerant: Groq emits args as {\key\ \value with spaces\ \key2\ \value2\}
+  // — tokens are wrapped in backslashes and separated by spaces. Split on the
+  // backslash boundaries and pair alternating key/value segments. If that
+  // doesn't yield an even set, fall back to returning the raw args string.
+  const segments = trimmed.split("\\").map((s) => s.trim()).filter((s) => s.length > 0)
+  const tokens: string[] = []
+  for (const seg of segments) {
+    let tok = seg
+    if (tok.startsWith("{")) tok = tok.slice(1).trim()
+    if (tok.endsWith("}")) tok = tok.slice(0, -1).trim()
+    if (tok.length > 0) tokens.push(tok)
+  }
+  if (tokens.length >= 2 && tokens.length % 2 === 0) {
+    const obj: Record<string, unknown> = {}
+    for (let i = 0; i < tokens.length; i += 2) {
+      const key = tokens[i]
+      let val: unknown = tokens[i + 1]
+      if (typeof val === "string" && val !== "" && !isNaN(Number(val))) val = Number(val)
+      obj[key] = val
+    }
+    return obj
+  }
+
+  return args
+}
+
+/**
+ * Computes a synthetic tool-call index for inline (text) function calls that
+ * doesn't collide with real delta.tool_calls indices already in state.
+ */
+function nextToolCallIndex(
+  toolCalls: Record<string, unknown>,
+  emitted: ReadonlyArray<string>,
+): number {
+  let max = -1
+  for (const key of [...Object.keys(toolCalls), ...emitted]) {
+    const m = /tool:\d+:(\d+)$/.exec(key)
+    if (m) max = Math.max(max, Number(m[1]))
+  }
+  return max + 1
+}
+
 export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStreamEvent, OpenAIChatState>({
   id: "openai-chat",
   body: {
@@ -180,11 +270,12 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
       intentEmitted: false,
       intentText: "",
       toolNames: [],
+      toolCallsEmitted: [],
     }),
     step: (state: OpenAIChatState, event: OpenAIStreamEvent) =>
       Effect.gen(function* () {
         const events: Array<LLMEvent> = []
-        const choice = event.choices[0]
+        const choice = event.choices?.[0]
         if (!choice) return [state, events] as const
 
         const index = choice.index
@@ -196,6 +287,7 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
         let newIntentEmitted = state.intentEmitted
         let newIntentText = state.intentText
         const newToolNames = [...state.toolNames]
+        let newToolCallsEmitted = [...state.toolCallsEmitted]
 
         // Track tool names as they appear
         if (delta.tool_calls) {
@@ -207,24 +299,54 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
         }
 
         if (delta.content !== undefined && delta.content !== null) {
-          const key = textStartId(index)
-          const existing = newTextBlocks[key]
-          if (!existing) {
-            newTextBlocks[key] = { index, text: delta.content }
-            events.push(stepStartEvent(index))
-            events.push(textStartEvent(key))
-            
-            // Emit intent on first text chunk (before tool calls)
-            if (!state.intentEmitted && !delta.tool_calls) {
-              newIntentEmitted = true
-              newIntentText = delta.content
-              const intentId = `intent:${index}:${Date.now()}`
-              events.push(intentEvent(intentId, delta.content, newToolNames.length > 0 ? newToolNames : undefined))
+          // Some models (e.g. Groq llama) emit tool calls as inline text of the
+          // form <function name="x">args</function> instead of native tool_calls
+          // deltas. Detect and convert those into proper tool-call events so the
+          // tool loop still executes them; the marker text is stripped from the
+          // forwarded content so it isn't shown as prose.
+          const parsed = parseInlineFunctionCalls(delta.content)
+          const plainContent = parsed.remaining
+
+          if (parsed.calls.length > 0) {
+            for (const call of parsed.calls) {
+              if (!newToolNames.includes(call.name)) newToolNames.push(call.name)
+              const tcIndex = nextToolCallIndex(newToolCalls, newToolCallsEmitted)
+              const key = toolInputStartId(index, tcIndex)
+              newToolCalls[key] = { name: call.name, args: call.args, index: tcIndex }
+              newToolCallsEmitted.push(key)
+              events.push(toolInputStartEvent(key, call.name))
+              if (call.args) events.push(toolInputDeltaEvent(key, call.args))
+              events.push(toolInputEndEvent(key, call.name))
+              events.push(toolCallEvent(key, call.name, call.parsed))
+              if (!state.intentEmitted) {
+                newIntentEmitted = true
+                newIntentText = `Using ${call.name} tool...`
+                const intentId = `intent:${index}:${Date.now()}`
+                events.push(intentEvent(intentId, newIntentText, newToolNames.length > 0 ? newToolNames : undefined))
+              }
             }
-          } else {
-            newTextBlocks[key] = { ...existing, text: existing.text + delta.content }
           }
-          events.push(textDeltaEvent(key, delta.content))
+
+          if (plainContent.length > 0) {
+            const key = textStartId(index)
+            const existing = newTextBlocks[key]
+            if (!existing) {
+              newTextBlocks[key] = { index, text: plainContent }
+              events.push(stepStartEvent(index))
+              events.push(textStartEvent(key))
+
+              // Emit intent on first text chunk (before tool calls)
+              if (!state.intentEmitted && !delta.tool_calls && parsed.calls.length === 0) {
+                newIntentEmitted = true
+                newIntentText = plainContent
+                const intentId = `intent:${index}:${Date.now()}`
+                events.push(intentEvent(intentId, plainContent, newToolNames.length > 0 ? newToolNames : undefined))
+              }
+            } else {
+              newTextBlocks[key] = { ...existing, text: existing.text + plainContent }
+            }
+            events.push(textDeltaEvent(key, plainContent))
+          }
         }
 
         if (delta.reasoning_content !== undefined && delta.reasoning_content !== null) {
@@ -245,6 +367,7 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
             const existing = newToolCalls[key]
             if (!existing && tc.id && tc.function?.name) {
               newToolCalls[key] = { name: tc.function.name, args: tc.function.arguments ?? "", index: tc.index }
+              newToolCallsEmitted.push(key)
               events.push(toolInputStartEvent(key, tc.function.name))
               if (tc.function.arguments) {
                 events.push(toolInputDeltaEvent(key, tc.function.arguments))
@@ -271,6 +394,7 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
             events.push({ type: "reasoning-end", id: key } as any)
           }
           for (const [key, tc] of Object.entries(newToolCalls)) {
+            if (newToolCallsEmitted.includes(key)) continue
             const entry = tc as { name: string; args: string; index: number }
             if (entry.args) {
               let parsed: unknown
@@ -307,9 +431,10 @@ export const OpenAIProtocol = Protocol.make<OpenAIChatBody, string, OpenAIStream
           intentEmitted: newIntentEmitted,
           intentText: newIntentText,
           toolNames: newToolNames,
+          toolCallsEmitted: newToolCallsEmitted,
         }, events] as const
       }),
-    terminal: (event: OpenAIStreamEvent) => event.choices[0]?.finish_reason !== null,
+    terminal: (event: OpenAIStreamEvent) => event.choices?.[0]?.finish_reason != null,
     onHalt: (state: OpenAIChatState) => {
       const events: Array<LLMEvent> = []
       for (const key of Object.keys(state.textBlocks)) {

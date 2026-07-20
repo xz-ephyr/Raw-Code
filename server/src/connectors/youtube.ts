@@ -1,4 +1,5 @@
 import { GoogleConnectorService } from './google-base.js';
+import type { ActionDefinition } from './types.js';
 
 export class YouTubeConnectorService extends GoogleConnectorService {
   readonly provider = 'youtube';
@@ -49,5 +50,28 @@ export class YouTubeConnectorService extends GoogleConnectorService {
       playlists: (params: any) => this.getPlaylists(params.maxResults),
       comments: (params: any) => this.getComments(params.videoId, params.maxResults),
     };
+  }
+
+  getActionDefinitions(): ActionDefinition[] {
+    return [
+      {
+        name: 'search',
+        description: 'Search YouTube videos',
+        inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Search query' }, maxResults: { type: 'number', description: 'Max results (max 50)' } }, required: ['query'] },
+        outputSchema: { type: 'object' },
+      },
+      {
+        name: 'playlists',
+        description: 'Get your YouTube playlists',
+        inputSchema: { type: 'object', properties: { maxResults: { type: 'number', description: 'Max results (max 50)' } } },
+        outputSchema: { type: 'object' },
+      },
+      {
+        name: 'comments',
+        description: 'Get comments from a YouTube video',
+        inputSchema: { type: 'object', properties: { videoId: { type: 'string', description: 'YouTube video ID' }, maxResults: { type: 'number', description: 'Max results (max 50)' } }, required: ['videoId'] },
+        outputSchema: { type: 'object' },
+      },
+    ];
   }
 }

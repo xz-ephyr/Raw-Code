@@ -20,7 +20,7 @@ interface ThreadState {
 
 export const useProjectStore = create<ThreadState>((set) => ({
   currentSessionId: null,
-  isThinkingEnabled: false,
+  isThinkingEnabled: true,
   isWebSearchEnabled: false,
   currentMode: 'default',
   selectedModel: 'auto',

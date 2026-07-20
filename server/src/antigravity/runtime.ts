@@ -10,10 +10,13 @@ import {
   toolMessage as nativeToolMessage,
   makeToolDefinition,
   makeToolChoice,
+  ToolCallPart,
 } from '@doktor/llm-providers';
 import type { LLMEvent } from '@doktor/llm-providers';
 import { allRoutes, getRouteByModelId } from '@doktor/llm-providers/providers/model-routes';
 import { createToolLoop } from '@doktor/llm-providers';
+import { injectThinkTool } from '@doktor/llm-providers/adapters/think-tool-inject';
+import { getModelCapability } from '@core/reasoning/capabilities';
 import { materialize } from '@doktor/tool-runtime';
 import { query } from '../db.js';
 
@@ -90,32 +93,58 @@ export interface RunAgentTaskInput {
   enableTools?: boolean;
   forceTools?: boolean;
   /** When set, the backend pre-fetches web research via the `research` tool
-   *  (go-crawl) and injects the sources into the prompt before generation. This
-   *  guarantees real web grounding regardless of the model's tool-calling behavior. */
+   *  (Tavily/Firecrawl/Exa) and injects the sources into the prompt before
+   *  generation. This guarantees real web grounding regardless of the model's
+   *  tool-calling behavior. */
   researchQuery?: string;
   onEvent: (evt: AntigravityEvent) => void;
 }
 
 function convertMessages(msgs: Array<{ role: string; content: unknown }>) {
-  return msgs
-    .filter((m) => m.role !== 'system')
-    .map((m) => {
-      const text = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
-      switch (m.role) {
-        case 'user':
-          return nativeUserMessage(text);
-        case 'assistant':
-          return nativeAssistantMessage(text);
-        case 'tool':
-          return nativeToolMessage({
-            id: (m as any).toolCallId ?? '',
-            name: (m as any).toolName ?? '',
-            result: text,
-          });
-        default:
-          return nativeUserMessage(text);
+  const result: Array<any> = []
+  for (const m of msgs) {
+    if (m.role === 'system') continue
+    const text = typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
+    switch (m.role) {
+      case 'user':
+        result.push(nativeUserMessage(text))
+        break
+      case 'assistant': {
+        const textContent = typeof m.content === 'string' ? m.content : ''
+        const parts: any[] = textContent ? [{ type: 'text' as const, text: textContent }] : []
+        const mc = m as any
+        const toolCalls = mc.toolInvocations ?? mc.toolCalls ?? []
+        for (const tc of toolCalls) {
+          parts.push(ToolCallPart.make({ id: tc.toolCallId ?? tc.id, name: tc.toolName ?? tc.name, input: tc.args ?? tc.input }))
+        }
+        const completedToolResults: { id: string; name: string; result: unknown }[] = []
+        for (const tc of toolCalls) {
+          const isComplete = tc.state === "result" || tc.state === "error" || tc.status === "complete"
+          if (isComplete) {
+            completedToolResults.push({ id: tc.toolCallId ?? tc.id, name: tc.toolName ?? tc.name, result: tc.result ?? (tc.state === "error" ? tc.error : "") })
+          }
+        }
+        if (parts.length > 0) {
+          result.push(nativeAssistantMessage(parts))
+          for (const tr of completedToolResults) {
+            result.push(nativeToolMessage(tr))
+          }
+        }
+        break
       }
-    });
+      case 'tool':
+        result.push(nativeToolMessage({
+          id: (m as any).toolCallId ?? '',
+          name: (m as any).toolName ?? '',
+          result: text,
+        }))
+        break
+      default:
+        result.push(nativeUserMessage(text))
+        break
+    }
+  }
+  return result
 }
 
 /**
@@ -184,7 +213,7 @@ export async function runAgentTask(input: RunAgentTaskInput): Promise<{
   const model = route.model({ id: route.id });
 
   const mat = materialize();
-  const toolDefs = mat.definitions
+  const baseToolDefs = mat.definitions
     .filter((d) => d.inputSchema)
     .map((d) =>
       makeToolDefinition({
@@ -193,6 +222,10 @@ export async function runAgentTask(input: RunAgentTaskInput): Promise<{
         inputSchema: d.inputSchema as any,
       }),
     );
+
+  const capability = getModelCapability(input.model);
+  const needsThinkTool = capability.reasoning === 'none';
+  const toolDefs = injectThinkTool(baseToolDefs, needsThinkTool);
 
   const systemText =
     input.systemPrompt ??
@@ -237,7 +270,11 @@ export async function runAgentTask(input: RunAgentTaskInput): Promise<{
     http: new HttpOptions({ headers: { 'Content-Type': 'application/json' } }),
   });
 
-  const loop = createToolLoop({ routes: [route] });
+  const loop = createToolLoop({
+    routes: [route],
+    maxSteps: 15,
+    timeoutMs: 120_000,
+  });
 
   const executor = (call: { id: string; name: string; input: unknown }) =>
     Effect.tryPromise({

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Copy01Icon, Tick01Icon } from '@hugeicons/core-free-icons';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import CodeMirror from '@uiw/react-codemirror';
 import { EditorView } from '@codemirror/view';
 
@@ -140,18 +141,22 @@ export const CodeBlock = React.memo(function CodeBlock({ content, language }: Co
           {LANG_ALIASES[language] || language}
         </div>
       )}
-      <button
-        onClick={handleCopy}
-        className={`absolute top-1 right-1 p-1.5 rounded-[6px] transition-colors z-10 ${
-          copied
-            ? 'bg-green-900/30 text-green-400'
-            : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground'
-        }`}
-        title="Copy code"
-        aria-label="Copy code to clipboard"
-      >
-        <HugeiconsIcon icon={copied ? Tick01Icon : Copy01Icon} size={14} />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={handleCopy}
+            className={`absolute top-1 right-1 p-1.5 rounded-[6px] transition-colors z-10 ${
+              copied
+                ? 'bg-green-900/30 text-green-400'
+                : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground'
+            }`}
+            aria-label="Copy code to clipboard"
+          >
+            <HugeiconsIcon icon={copied ? Tick01Icon : Copy01Icon} size={14} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>Copy code</TooltipContent>
+      </Tooltip>
       <CodeMirror
         value={normalized}
         theme="light"

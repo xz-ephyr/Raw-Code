@@ -1,0 +1,265 @@
+2026/07/18 18:48:35 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/18 18:48:35 go-crawl server starting on :8080
+2026/07/18 18:50:52 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/18 18:50:52 go-crawl server starting on :8080
+2026/07/18 20:25:23 Shutting down...
+2026/07/18 20:25:38 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/18 20:25:38 go-crawl server starting on :8080
+2026/07/18 22:06:38 Shutting down...
+2026/07/19 03:47:02 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 03:47:02 go-crawl server starting on :8080
+2026/07/19 03:47:14 Shutting down...
+2026/07/19 03:57:32 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 03:57:32 go-crawl server starting on :8080
+2026/07/19 03:58:51 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 03:58:51 go-crawl server starting on :8080
+2026/07/19 04:07:35 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 04:07:35 go-crawl server starting on :8080
+2026/07/19 04:11:32 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 04:11:32 go-crawl server starting on :8080
+2026/07/19 04:17:09 Shutting down...
+2026/07/19 04:17:21 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 04:17:21 go-crawl server starting on :8080
+2026/07/19 04:20:56 Shutting down...
+2026/07/19 04:21:15 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 04:21:15 go-crawl server starting on :8080
+2026/07/19 04:21:15 "GET http://127.0.0.1:8080/health HTTP/1.1" from 127.0.0.1:58693 - 200 1B in 5.504ms
+2026/07/19 05:16:56 Shutting down...
+2026/07/19 05:17:25 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 05:17:25 go-crawl server starting on :8080
+2026/07/19 05:17:25 "GET http://127.0.0.1:8080/health HTTP/1.1" from 127.0.0.1:59706 - 200 1B in 0s
+2026/07/19 05:34:23 Shutting down...
+2026/07/19 05:34:35 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 05:34:35 go-crawl server starting on :8080
+2026/07/19 05:34:35 "GET http://127.0.0.1:8080/health HTTP/1.1" from 127.0.0.1:60031 - 200 1B in 0s
+2026/07/19 05:34:43 Shutting down...
+2026/07/19 09:06:21 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+2026/07/19 09:06:21 go-crawl server starting on :8080
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 09:06:21 "GET http://127.0.0.1:8080/health HTTP/1.1" from 127.0.0.1:60233 - 200 1B in 0s
+2026/07/19 10:06:02 Shutting down...
+2026/07/19 10:06:18 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 10:06:18 go-crawl server starting on :8080
+2026/07/19 10:06:19 "GET http://127.0.0.1:8080/health HTTP/1.1" from 127.0.0.1:61551 - 200 1B in 0s
+2026/07/19 10:40:00 Shutting down...
+2026/07/19 10:40:11 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 10:40:11 go-crawl server starting on :8080
+2026/07/19 10:40:11 "GET http://127.0.0.1:8080/health HTTP/1.1" from 127.0.0.1:62209 - 200 1B in 0s
+2026/07/19 11:52:30 Shutting down...
+2026/07/19 19:17:32 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 19:17:32 go-crawl server starting on :8080
+2026/07/19 19:17:32 "GET http://127.0.0.1:8080/health HTTP/1.1" from 127.0.0.1:64188 - 200 1B in 0s
+2026/07/19 20:00:58 Shutting down...
+2026/07/19 20:03:37 BoltDB store opened at C:\Users\zephy\.go-crawl\data.db
+2026/07/19 20:03:37 go-crawl server starting on :8080
+┌─────────────────────────────────────────┐
+│  🕷️  go-crawl — mini firecrawl clone     │
+│  Listening on http://0.0.0.0:8080      │
+│  Endpoints:                            │
+│    POST /v1/scrape                     │
+│    POST /v1/crawl                      │
+│    GET  /v1/crawl/{id}                 │
+│    POST /v1/map                        │
+│    GET  /v1/search                     │
+│    POST /v1/extract/videos             │
+│    GET  /health                        │
+└─────────────────────────────────────────┘
+2026/07/19 20:03:37 "GET http://127.0.0.1:8080/health HTTP/1.1" from 127.0.0.1:64750 - 200 1B in 0s
+2026/07/19 20:04:01 "GET http://localhost:8080/health HTTP/1.1" from [::1]:64787 - 200 1B in 0s
+2026/07/19 20:04:07 "GET http://localhost:8080/v1/search?query=test HTTP/1.1" from [::1]:64787 - 200 3802B in 5.7086614s
+2026/07/19 21:02:23 go-crawl ready on :8080
+2026/07/19 21:02:23 server error: listen tcp :8080: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.
+2026/07/19 21:05:55 go-crawl ready on :8080
+2026/07/19 21:06:11 go-crawl ready on :8080
+2026/07/19 21:18:36 go-crawl ready on :8080

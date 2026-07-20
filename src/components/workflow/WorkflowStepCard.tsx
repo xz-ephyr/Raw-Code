@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { WorkflowStep } from '@/types/workflow';
 import StepConfigPanel from './StepConfigPanel';
 
@@ -119,14 +120,18 @@ const WorkflowStepCard = memo(function WorkflowStepCard({
           )}
         </div>
 
-        <button
-          onClick={(e) => { e.stopPropagation(); onRemove(step.id); }}
-          className="p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-900/20 transition-colors shrink-0 opacity-0 group-hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring"
-          title="Remove step"
-          aria-label="Remove step"
-        >
-          <Trash2 size={14} />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={(e) => { e.stopPropagation(); onRemove(step.id); }}
+              className="p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-900/20 transition-colors shrink-0 opacity-0 group-hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Remove step"
+            >
+              <Trash2 size={14} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>Remove step</TooltipContent>
+        </Tooltip>
       </div>
 
       {!step.collapsed && (

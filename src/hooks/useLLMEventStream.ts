@@ -91,7 +91,9 @@ export function useLLMEventStream(options?: UseLLMEventStreamOptions): UseLLMEve
       })
 
       await Effect.runPromise(
-        Stream.runForEach(eventStream, (event) =>
+        Stream.runForEach(
+          eventStream.pipe(Stream.timeout("60 seconds")),
+          (event) =>
           Effect.sync(() => {
             if (streamId !== streamIdRef.current) return
             setStreamState((prev) => {
