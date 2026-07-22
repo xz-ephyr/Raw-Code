@@ -36,8 +36,6 @@ interface MarkdownPreviewProps {
 }
 
 export const MarkdownPreview = memo(function MarkdownPreview({ content }: MarkdownPreviewProps) {
-  if (!content) return null;
-
   const components = useMemo(() => {
     const overrides: Record<string, any> = {
       code({ node, className, children, ...props }: any) {
@@ -78,7 +76,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({ content }: Markdo
       h3({ children }: any) {
         const id = slugify(String(children));
         return (
-          <h3 id={id} className="text-lg font-semibold mb-3 mt-4 text-foreground scroll-mt-20">
+          <h3 id={id} className="text-lg font-semibold mb-2 mt-4 text-foreground scroll-mt-20">
             {children}
           </h3>
         );
@@ -91,9 +89,24 @@ export const MarkdownPreview = memo(function MarkdownPreview({ content }: Markdo
           </h4>
         );
       },
+      h5({ children }: any) {
+        const id = slugify(String(children));
+        return (
+          <h5 id={id} className="text-sm font-semibold mb-1 mt-3 text-foreground scroll-mt-20">
+            {children}
+          </h5>
+        );
+      },
+      h6({ children }: any) {
+        const id = slugify(String(children));
+        return (
+          <h6 id={id} className="text-sm font-semibold mb-1 mt-3 text-foreground scroll-mt-20">
+            {children}
+          </h6>
+        );
+      },
       a({ href, children }: any) {
-        if (!href) return <span>{children}</span>;
-        const isExternal = href.startsWith('http');
+        const isExternal = href && (href.startsWith('http://') || href.startsWith('https://'));
         return (
           <a
             href={href}
@@ -110,6 +123,8 @@ export const MarkdownPreview = memo(function MarkdownPreview({ content }: Markdo
 
     return createBaseComponents(overrides);
   }, []);
+
+  if (!content) return null;
 
   return (
     <div className="p-6 text-[15px] leading-relaxed break-words text-foreground [&>p]:my-0">

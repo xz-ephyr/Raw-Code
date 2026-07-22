@@ -72,7 +72,6 @@ export default function App() {
           <Route path="/plugins" element={<Suspense fallback={null}><PluginsPage /></Suspense>} />
           <Route path="/workflow" element={<Suspense fallback={null}><WorkflowPage /></Suspense>} />
           <Route path="/workflow/create" element={<Suspense fallback={null}><WorkflowCreatePage /></Suspense>} />
-          <Route path="/chat/:uuid" element={<Suspense fallback={null}><ChatPage /></Suspense>} />
         </Route>
         <Route path="/__test/selftest" element={<Suspense fallback={<div data-testid="selftest-badge-loading">Loading...</div>}><SelftestStatusBadge /></Suspense>} />
         <Route path="/__test/agent" element={<Suspense fallback={<div>Loading...</div>}><AgentTaskTestRunner /></Suspense>} />

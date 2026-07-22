@@ -147,10 +147,18 @@ export function ActivityLog({ sessionId }: ActivityLogProps) {
   const [autoScroll, setAutoScroll] = useState(true);
   const MAX_DURATION_BAR = 5;
 
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const sparklineData = useMemo(() => {
     if (entries.length === 0) return [];
     const buckets = 10;
-    const now = Date.now();
     const windowMs = 120000;
     const bucketMs = windowMs / buckets;
     const result = new Array(buckets).fill(0);

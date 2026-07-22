@@ -160,7 +160,7 @@ export const AssistantBubble = React.memo(
                                 <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                   {sources.map((s: any, j: number) => {
                                     let domain = s.url || s.metadata?.sourceURL || '';
-                                    try { domain = new URL(domain).hostname; } catch {}
+                                    try { domain = new URL(domain).hostname; } catch { /* empty */ }
                                     return (
                                       <span key={j} className="inline-flex items-center px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground font-normal">
                                         {domain}

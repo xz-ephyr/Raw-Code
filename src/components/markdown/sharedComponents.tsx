@@ -82,7 +82,7 @@ export function createBaseComponents(overrides?: Partial<Components>): Component
     td({ children, ...props }) {
       return <TableCell {...props}>{children}</TableCell>;
     },
-    blockquote({ children }) {
+    Blockquote({ children }) {
       const [copied, setCopied] = useState(false);
       const handleCopy = () => {
         const text = extractText(children);

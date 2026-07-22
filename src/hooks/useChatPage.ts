@@ -120,6 +120,37 @@ const {
 
   const [completionDurations, setCompletionDurations] = useState<Record<string, number>>({});
 
+  const titleGeneratedRef = useRef(false);
+  const titleGeneratingRef = useRef(false);
+
+  const maybeGenerateTitle = async (
+    sessionUuid: string,
+    content: string,
+    responseContent?: string,
+  ) => {
+    if (titleGeneratingRef.current || titleGeneratedRef.current) return;
+
+    const session = await ChatSessionManager.getSession(sessionUuid).catch(() => null);
+    if (session && session.title && session.title !== 'New conversation') {
+      titleGeneratedRef.current = true;
+      return;
+    }
+
+    titleGeneratingRef.current = true;
+    setIsTitleGenerating(true);
+    try {
+      const generatedTitle = await generateSessionTitle(content, responseContent);
+      if (generatedTitle) {
+        await ChatSessionManager.rename(sessionUuid, generatedTitle);
+        window.dispatchEvent(new CustomEvent('session-title-changed'));
+        setSessionTitle(generatedTitle);
+        titleGeneratedRef.current = true;
+      }
+    } catch (e) { console.error('Failed to generate title:', e); }
+    setIsTitleGenerating(false);
+    titleGeneratingRef.current = false;
+  };
+
   const modelRevision = useProjectStore(s => s.modelRevision);
   const incrementModelRevision = useProjectStore(s => s.incrementModelRevision);
 
@@ -135,7 +166,11 @@ const {
 
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const messagesRef = useRef(messages);
-  messagesRef.current = messages;
+  
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+  
   const [status, setStatus] = useState<'idle' | 'streaming' | 'submitted' | 'error'>('idle');
   const [sessionUsage, setSessionUsage] = useState<{ inputTokens: number; outputTokens: number; reasoningTokens?: number; cachedInputTokens?: number } | undefined>();
   const [streamError, setStreamError] = useState<string | undefined>();
@@ -144,6 +179,7 @@ const {
   const isWebSearchEnabledRef = useRef(false);
   const lastUuidRef = useRef<string | undefined>(undefined);
   const firstUserMessageRef = useRef<string | undefined>(undefined);
+  const currentModelRef = useRef<string | null>(null);
 
   useEffect(() => {
     isThinkingEnabledRef.current = isThinkingEnabled;
@@ -152,6 +188,10 @@ const {
   useEffect(() => {
     isWebSearchEnabledRef.current = isWebSearchEnabled;
   }, [isWebSearchEnabled]);
+
+  useEffect(() => {
+    currentModelRef.current = currentModel;
+  }, [currentModel]);
 
   useEffect(() => {
     if (!uuid || uuid === 'new') {
@@ -374,36 +414,7 @@ setSessionId(uuid);
     return () => window.removeEventListener('stream-cancelled', handleStreamCancelled);
   }, [uuid]);
 
-  const titleGeneratedRef = useRef(false);
-  const titleGeneratingRef = useRef(false);
 
-  const maybeGenerateTitle = async (
-    sessionUuid: string,
-    content: string,
-    responseContent?: string,
-  ) => {
-    if (titleGeneratingRef.current || titleGeneratedRef.current) return;
-
-    const session = await ChatSessionManager.getSession(sessionUuid).catch(() => null);
-    if (session && session.title && session.title !== 'New conversation') {
-      titleGeneratedRef.current = true;
-      return;
-    }
-
-    titleGeneratingRef.current = true;
-    setIsTitleGenerating(true);
-    try {
-      const generatedTitle = await generateSessionTitle(content, responseContent);
-      if (generatedTitle) {
-        await ChatSessionManager.rename(sessionUuid, generatedTitle);
-        window.dispatchEvent(new CustomEvent('session-title-changed'));
-        setSessionTitle(generatedTitle);
-        titleGeneratedRef.current = true;
-      }
-    } catch (e) { console.error('Failed to generate title:', e); }
-    setIsTitleGenerating(false);
-    titleGeneratingRef.current = false;
-  };
 
   const handleOpenFile = useCallback(
     (file: FileItem) => {
@@ -427,8 +438,7 @@ setSessionId(uuid);
     return -1;
   }, [messages, isLoading]);
 
-  const currentModelRef = useRef<string | null>(null);
-  currentModelRef.current = currentModel;
+
 
   return {
     uuid,
@@ -467,6 +477,7 @@ setSessionId(uuid);
     handleConfirmApprove,
     handleConfirmDeny,
     streamError,
+    setStreamError,
     sessionUsage,
     agentAgents,
     activeAgent,

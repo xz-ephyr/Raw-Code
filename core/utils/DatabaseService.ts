@@ -150,7 +150,7 @@ export const DatabaseService = {
     }));
   },
 
-  async saveMessages(sessionId: string, messages: any[]) {
+  async saveMessages(sessionId: string, messages: any[], partial?: boolean) {
     const messagesToSave = messages.map((m) => ({
       id: m.id || crypto.randomUUID(),
       sessionId,
@@ -163,7 +163,7 @@ export const DatabaseService = {
       contentBeforeTool: m.contentBeforeTool || null,
       contentAfterTool: m.contentAfterTool || null,
     }));
-    await request('save_messages', { sessionId, messages: messagesToSave });
+    await request('save_messages', { sessionId, messages: messagesToSave, partial: !!partial });
   },
 
   // Project Files

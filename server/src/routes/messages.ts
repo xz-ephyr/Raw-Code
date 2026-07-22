@@ -57,11 +57,14 @@ router.post('/save_messages', async (req, res) => {
     params
   );
 
-  const newestCreatedAt = Math.max(...messages.map((m: any) => m.createdAt));
-  await query(
-    `UPDATE chat_sessions SET updated_at = $1 WHERE id = $2 AND (COALESCE(updated_at, 0) < $3)`,
-    [newestCreatedAt, sessionId, newestCreatedAt]
-  );
+  // Only bump updated_at for final (non-partial) saves to prevent sidebar reordering during streaming
+  if (!req.body.partial) {
+    const newestCreatedAt = Math.max(...messages.map((m: any) => m.createdAt));
+    await query(
+      `UPDATE chat_sessions SET updated_at = $1 WHERE id = $2 AND (COALESCE(updated_at, 0) < $3)`,
+      [newestCreatedAt, sessionId, newestCreatedAt]
+    );
+  }
 
   res.json({ success: true });
 });

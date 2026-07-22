@@ -149,7 +149,7 @@ export function ModelSelectorDropdown({ currentModel }: { currentModel: string }
   const handleSelect = (modelId: string) => {
     try {
       localStorage.setItem("selected-model", modelId)
-    } catch {}
+    } catch { /* ignore */ }
     window.dispatchEvent(new CustomEvent("model-changed"))
     setOpen(false)
   }

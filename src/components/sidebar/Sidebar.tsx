@@ -8,7 +8,7 @@ import {
   PanelRightIcon,
   FolderLibraryIcon,
   CursorRectangleSelection02Icon,
-  Sparkles01Icon,
+  SparklesIcon,
 } from '@hugeicons/core-free-icons';
 import SidebarTab from './SidebarTab';
 
@@ -115,7 +115,7 @@ const Sidebar = React.memo(function Sidebar() {
           {!isCollapsed && (
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center">
-                <HugeiconRenderer icon={Sparkles01Icon} size={18} className="text-white" />
+                <HugeiconRenderer icon={SparklesIcon} size={18} className="text-white" />
               </div>
               <span className="font-bold text-lg text-sidebar-foreground">Raw-Code</span>
             </div>

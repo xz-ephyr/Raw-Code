@@ -87,18 +87,13 @@ function toUIMessage(msg: { id: string; role: "assistant"; content: string; reas
     reasoning: reasoning || null,
     toolInvocations,
     actionSummary: msg.actionSummary || null,
-    parts: [
-      ...(reasoning ? [{ type: "reasoning" as const, text: reasoning }] : []),
-      ...(toolInvocations ? toolInvocations.map((ti) => ({ type: "tool-invocation" as const, ...ti })) : []),
-      { type: "text" as const, text: content },
-    ],
     createdAt: msg.createdAt,
   }
 }
 
 async function persistMessage(sessionId: string, message: UIMessage, isPartial: boolean) {
   try {
-    await DatabaseService.saveMessages(sessionId, [{ ...message }])
+    await DatabaseService.saveMessages(sessionId, [{ ...message }], isPartial)
       if (!isPartial) {
         const session = await ChatSessionManager.getSession(sessionId)
         if (session && session.id !== getActiveSessionId()) {

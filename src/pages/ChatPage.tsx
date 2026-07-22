@@ -54,6 +54,8 @@ export const ChatPage = () => {
     startAgentResize,
     handleAgentTouchStart,
     handleAgentDividerKeyDown,
+    streamError,
+    setStreamError,
     AGENT_PANEL_MIN_WIDTH,
     AGENT_PANEL_MAX_WIDTH,
   } = useChatPage();
@@ -113,6 +115,14 @@ export const ChatPage = () => {
               />
             ) : undefined}
           />
+          {streamError && (
+            <div className="shrink-0 mx-auto w-full px-4 pb-2" style={{ maxWidth: 'min(1020px, 100%)' }}>
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-600">
+                <span className="flex-1">{streamError}</span>
+                <button onClick={() => setStreamError(undefined)} className="shrink-0 hover:text-red-800 font-medium">Dismiss</button>
+              </div>
+            </div>
+          )}
         </div>
 
         {isPanelOpen && files.length > 0 && (
