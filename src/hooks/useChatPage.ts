@@ -8,7 +8,7 @@ import { getAIErrorMessage, generateSessionTitle } from '@core/models/aiService'
 import { DatabaseService } from '@core/utils/DatabaseService';
 import { useToast } from '../components/ui/Toast';
 import { useProjectStore } from '@/stores/projectStore';
-import { hydrateStoredMessage } from '../lib/chatUtils';
+import { hydrateStoredMessage, mapUIMessageToLegacyMessage } from '../lib/chatUtils';
 import { useFilePanel } from '../hooks/useFilePanel';
 import { useAgentWorkspace } from '../hooks/useAgentWorkspace';
 import { useSessionTitle } from '../hooks/useSessionTitle';
@@ -202,14 +202,15 @@ setSessionId(uuid);
     if (streamStatus === 'streaming') {
       setStatus('streaming');
       const unsubscribe = ChatStreamService.subscribe(uuid, (msg, isPartial) => {
+        const legacyMsg = mapUIMessageToLegacyMessage(msg) || msg;
         setMessages(prev => {
-          const exists = prev.findIndex(m => m.id === msg.id);
+          const exists = prev.findIndex(m => m.id === legacyMsg.id);
           if (exists >= 0) {
             const updated = [...prev];
-            updated[exists] = msg;
+            updated[exists] = legacyMsg;
             return updated;
           }
-          return [...prev, msg];
+          return [...prev, legacyMsg];
         });
         if (!isPartial) {
           setStatus('idle');
@@ -264,7 +265,6 @@ setSessionId(uuid);
 
     if (uuid && uuid !== 'new' && !titleGeneratedRef.current) {
       firstUserMessageRef.current = content;
-      maybeGenerateTitle(uuid, content);
     }
 
     setStatus('submitted');
@@ -281,20 +281,21 @@ setSessionId(uuid);
       isWebSearchEnabled: isWebSearchEnabledRef.current,
     }, {
       onMessage: (msg, isPartial) => {
+        const legacyMsg = mapUIMessageToLegacyMessage(msg) || msg;
         setMessages(prev => {
-          const exists = prev.findIndex(m => m.id === msg.id);
+          const exists = prev.findIndex(m => m.id === legacyMsg.id);
           if (exists >= 0) {
             const updated = [...prev];
-            updated[exists] = msg;
+            updated[exists] = legacyMsg;
             return updated;
           }
           const placeholderIdx = prev.findIndex(m => m.role === 'assistant' && !m.content);
           if (placeholderIdx >= 0) {
             const updated = [...prev];
-            updated[placeholderIdx] = msg;
+            updated[placeholderIdx] = legacyMsg;
             return updated;
           }
-          return [...prev, msg];
+          return [...prev, legacyMsg];
         });
         if (!isPartial) {
           setStatus('idle');
@@ -305,23 +306,24 @@ setSessionId(uuid);
       onUsageUpdate: (usage) => setSessionUsage(usage),
       onFinish: (msg) => {
         setStatus('idle');
-        const duration = Date.now() - (msg.createdAt || Date.now());
-        if (msg.id) {
-          setCompletionDurations(prev => ({ ...prev, [msg.id as string]: duration }));
+        const legacyMsg = mapUIMessageToLegacyMessage(msg) || msg;
+        const duration = Date.now() - (legacyMsg.createdAt || Date.now());
+        if (legacyMsg.id) {
+          setCompletionDurations(prev => ({ ...prev, [legacyMsg.id as string]: duration }));
         }
         if (uuid && uuid !== 'new' && !titleGeneratedRef.current && firstUserMessageRef.current) {
-          maybeGenerateTitle(uuid, firstUserMessageRef.current, msg.content);
+          maybeGenerateTitle(uuid, firstUserMessageRef.current, legacyMsg.content);
           firstUserMessageRef.current = undefined;
         }
-        if (msg.files?.length > 0) {
+        if (legacyMsg.files && legacyMsg.files.length > 0) {
           const autoFiles = localStorage.getItem('auto_files') !== 'false';
           if (autoFiles) {
-            addFiles(msg.files);
+            addFiles(legacyMsg.files);
           }
         }
         if (uuid && uuid !== 'new') {
           const savedModel = currentModelRef.current || currentModel;
-          DatabaseService.saveMessages(uuid, [{ ...msg, model: savedModel }]).catch((e) =>
+          DatabaseService.saveMessages(uuid, [{ ...legacyMsg, model: savedModel }]).catch((e) =>
             console.error('Failed to save assistant message to DB:', e)
           );
         }
@@ -361,6 +363,17 @@ setSessionId(uuid);
     return () => window.removeEventListener('reset-chat', handleResetChat);
   }, [setMessages]);
 
+  useEffect(() => {
+    const handleStreamCancelled = (e: Event) => {
+      const { sessionId } = (e as CustomEvent).detail || {};
+      if (sessionId && sessionId === uuid) {
+        setMessages(prev => prev.filter(m => !(m.role === 'assistant' && !m.content)));
+      }
+    };
+    window.addEventListener('stream-cancelled', handleStreamCancelled);
+    return () => window.removeEventListener('stream-cancelled', handleStreamCancelled);
+  }, [uuid]);
+
   const titleGeneratedRef = useRef(false);
   const titleGeneratingRef = useRef(false);
 
@@ -385,11 +398,11 @@ setSessionId(uuid);
         await ChatSessionManager.rename(sessionUuid, generatedTitle);
         window.dispatchEvent(new CustomEvent('session-title-changed'));
         setSessionTitle(generatedTitle);
+        titleGeneratedRef.current = true;
       }
     } catch (e) { console.error('Failed to generate title:', e); }
     setIsTitleGenerating(false);
     titleGeneratingRef.current = false;
-    titleGeneratedRef.current = true;
   };
 
   const handleOpenFile = useCallback(

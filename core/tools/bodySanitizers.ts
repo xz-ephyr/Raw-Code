@@ -1,5 +1,4 @@
 import type { LLMRequest } from "@doktor/llm-providers"
-import { getAllProviderIds } from "@doktor/llm-providers/model-registry"
 
 export type BodySanitizer<Body = Record<string, unknown>> = (
   body: Body,
@@ -36,44 +35,15 @@ function ensureSimpleToolChoice(body: Record<string, unknown>): void {
   }
 }
 
-function ensureRoleAlternation(body: Record<string, unknown>): void {
-  const messages = body.messages as Array<Record<string, unknown>> | undefined
-  if (!messages || messages.length < 2) return
-  const merged: Array<Record<string, unknown>> = [messages[0]]
-  for (let i = 1; i < messages.length; i++) {
-    const prev = merged[merged.length - 1]
-    const curr = messages[i]
-    if (prev.role === curr.role && curr.role !== "system") {
-      if (curr.role === "tool") {
-        merged.push(curr)
-      } else if (prev.tool_calls || curr.tool_calls) {
-        prev.tool_calls = [...(prev.tool_calls as any[] || []), ...(curr.tool_calls as any[] || [])]
-        const prevContent = typeof prev.content === "string" ? prev.content : ""
-        const currContent = typeof curr.content === "string" ? curr.content : ""
-        const merged = prevContent + currContent
-        prev.content = merged || undefined
-        if (prev.content === undefined) delete prev.content
-      } else {
-        const prevContent = typeof prev.content === "string" ? prev.content : safeJson(prev.content)
-        const currContent = typeof curr.content === "string" ? curr.content : safeJson(curr.content)
-        prev.content = prevContent + "\n" + currContent
-      }
-    } else {
-      merged.push(curr)
+function sanitizeToolDefinitions(body: Record<string, unknown>): void {
+  const tools = body.tools as Array<Record<string, unknown>> | undefined
+  if (!tools) return
+  for (const tool of tools) {
+    if (tool.function && typeof tool.function === "object") {
+      const fn = tool.function as Record<string, unknown>
+      delete fn.parallel_tool_calls
     }
   }
-  body.messages = merged
-}
-
-function validateNoConsecutiveSameRole(body: Record<string, unknown>, provider: string): string | null {
-  const messages = body.messages as Array<Record<string, unknown>> | undefined
-  if (!messages) return null
-  for (let i = 1; i < messages.length; i++) {
-    if (messages[i].role === messages[i - 1].role && messages[i].role !== "system") {
-      return `${provider}: messages[${i - 1}] and messages[${i}] both have role="${messages[i].role}" — consecutive same-role messages are not supported`
-    }
-  }
-  return null
 }
 
 function logFailure(provider: string, requestBody: unknown, status: number, responseBody: string): void {
@@ -94,41 +64,10 @@ function logFailure(provider: string, requestBody: unknown, status: number, resp
   } catch {}
 }
 
-function sanitizeToolDefinitions(body: Record<string, unknown>): void {
-  const tools = body.tools as Array<Record<string, unknown>> | undefined
-  if (!tools) return
-  for (const tool of tools) {
-    if (tool.function && typeof tool.function === "object") {
-      const fn = tool.function as Record<string, unknown>
-      delete fn.parallel_tool_calls
-    }
-  }
-}
-
-export function buildOpenAIBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
-  return body
-}
-
-export function buildMistralBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
-  stripStreamOptions(body)
-  stripParallelToolCalls(body)
-  stripUnsupportedGenParams(body)
-  ensureRoleAlternation(body)
-  sanitizeToolDefinitions(body)
-  if (body.tool_choice && typeof body.tool_choice === "object") {
-    const tc = body.tool_choice as Record<string, unknown>
-    if (tc.type === "function") body.tool_choice = "auto"
-  }
-  const err = validateNoConsecutiveSameRole(body, "Mistral")
-  if (err) console.warn(`[pre-send] ${err} — merged consecutive roles`)
-  return body
-}
-
 export function buildGeminiBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
   stripStreamOptions(body)
   stripParallelToolCalls(body)
   stripUnsupportedGenParams(body)
-  ensureRoleAlternation(body)
   ensureSimpleToolChoice(body)
   sanitizeToolDefinitions(body)
   delete body.reasoning_effort
@@ -138,79 +77,11 @@ export function buildGeminiBody(body: Record<string, unknown>, _request: LLMRequ
     body.maxOutputTokens = body.max_tokens
     delete body.max_tokens
   }
-  const err = validateNoConsecutiveSameRole(body, "Gemini")
-  if (err) console.warn(`[pre-send] ${err} — merged consecutive roles`)
   return body
 }
 
-export function buildDeepSeekBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
-  stripStreamOptions(body)
-  ensureRoleAlternation(body)
-  return body
-}
-
-export function buildGroqBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
-  stripStreamOptions(body)
-  stripParallelToolCalls(body)
-  ensureRoleAlternation(body)
-  return body
-}
-
-export function buildOpenRouterBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
-  stripStreamOptions(body)
-  ensureRoleAlternation(body)
-  return body
-}
-
-export function buildNvidiaBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
-  stripStreamOptions(body)
-  stripParallelToolCalls(body)
-  stripUnsupportedGenParams(body)
-  ensureRoleAlternation(body)
-  ensureSimpleToolChoice(body)
-  sanitizeToolDefinitions(body)
-  return body
-}
-
-export function buildCerebrasBody(body: Record<string, unknown>, _request: LLMRequest): Record<string, unknown> {
-  stripStreamOptions(body)
-  stripParallelToolCalls(body)
-  ensureRoleAlternation(body)
-  return body
-}
-
-const BUILTIN_SANITIZERS: Record<string, BodySanitizer> = {
-  openai: buildOpenAIBody,
-  anthropic: buildOpenAIBody,
+export const providerBuilders: Record<string, BodySanitizer> = {
   google: buildGeminiBody,
-  deepseek: buildDeepSeekBody,
-  mistral: buildMistralBody,
-  groq: buildGroqBody,
-  openrouter: buildOpenRouterBody,
-  nvidia: buildNvidiaBody,
-  cerebras: buildCerebrasBody,
-}
-
-export const providerBuilders: Record<string, BodySanitizer> = {}
-
-for (const providerId of getAllProviderIds()) {
-  providerBuilders[providerId] = BUILTIN_SANITIZERS[providerId] ?? buildOpenAIBody
-}
-
-export function validateBody(body: Record<string, unknown>, provider: string): string | null {
-  const msg = body.messages
-  if (!Array.isArray(msg) || msg.length === 0) {
-    return `${provider}: messages must be a non-empty array`
-  }
-  for (const m of msg) {
-    if (!m || typeof m !== "object") return `${provider}: each message must be an object`
-    if (!m.role || typeof m.role !== "string") return `${provider}: each message must have a string role`
-  }
-  if (provider === "mistral") {
-    const err = validateNoConsecutiveSameRole(body, provider)
-    if (err) return err
-  }
-  return null
 }
 
 export function captureProviderFailure(provider: string, body: unknown, status: number, responseText: string): void {

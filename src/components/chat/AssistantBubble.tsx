@@ -1,22 +1,16 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { SearchIcon, CheckIcon } from 'lucide-react';
+import { GlobeIcon } from 'lucide-react';
 import { MarkdownMessage } from './MarkdownMessage';
 import { FilePreviewCard } from './FilePreviewCard';
 import { useWriteArtifactStream } from '@/hooks/useWriteArtifactStream';
 import { BubbleActions } from './BubbleActions';
-import { MarkdownErrorBoundary } from './MarkdownErrorBoundary';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Streamdown } from 'streamdown';
-import {
-  ChainOfThoughtStep,
-  ChainOfThoughtSearchResults,
-  ChainOfThoughtSearchResult,
-} from '@/components/ai/chain-of-thought';
+
 import {
   ActionTimeline,
   type ActionItem,
 } from '@/components/ai/action-summary';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 interface AssistantBubbleProps {
   content: string;
@@ -55,7 +49,6 @@ export const AssistantBubble = React.memo(
   ({
     content,
     isStreaming,
-    isThinkingEnabled,
     model,
     version,
     completionDuration,
@@ -131,7 +124,7 @@ export const AssistantBubble = React.memo(
       <div className="mb-10 w-full group/bubble">
         <div className="text-base px-4 break-words flex flex-col gap-1">
           {showUnifiedPanel && (
-            <Collapsible className="not-prose mb-4" defaultOpen={false}>
+            <Collapsible className="not-prose mb-4" defaultOpen={isStreaming || !!reasoning}>
               <CollapsibleTrigger className="flex w-full items-center gap-2 text-muted-foreground text-sm transition-colors cursor-pointer hover:text-foreground">
                 <span className="inline-flex items-center gap-1.5">
                   {isStreaming && (
@@ -145,37 +138,45 @@ export const AssistantBubble = React.memo(
               {(reasoning || hasResearchSteps || hasActionSummary) && (
                 <CollapsibleContent className="mt-4 text-sm space-y-4 text-muted-foreground">
                   {reasoning && (
-                    <MarkdownErrorBoundary rawContent={reasoning}>
-                      <Streamdown>{reasoning}</Streamdown>
-                    </MarkdownErrorBoundary>
+                    <div className="whitespace-pre-wrap break-words font-[inherit] leading-relaxed">
+                      {reasoning}
+                    </div>
                   )}
                   {hasResearchSteps && (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {researchCalls.map((tc, i) => {
                         const isComplete = tc.state === 'result';
+                        const query = tc.args?.query || tc.args?.url || tc.toolName;
+                        const sources = tc.result?.sources || tc.result?.pages || [];
                         return (
-                          <ChainOfThoughtStep
-                            key={tc.toolCallId || i}
-                            icon={isComplete ? CheckIcon : SearchIcon}
-                            label={tc.args?.url || tc.args?.query || tc.toolName}
-                            status={isComplete ? 'complete' : 'active'}
-                          >
-                            {isComplete && (tc.result?.sources?.length > 0 || tc.result?.pages?.length > 0) && (
-                              <ChainOfThoughtSearchResults>
-                                {(tc.result?.sources || tc.result?.pages || []).map((s: any, j: number) => {
-                                  let domain = s.url || s.metadata?.sourceURL || '';
-                                  try { domain = new URL(domain).hostname; } catch {}
-                                  return <ChainOfThoughtSearchResult key={j}>{domain}</ChainOfThoughtSearchResult>;
-                                })}
-                              </ChainOfThoughtSearchResults>
-                            )}
-                          </ChainOfThoughtStep>
+                          <div key={tc.toolCallId || i} className="flex items-start gap-2 text-sm">
+                            <GlobeIcon className={cn("size-4 mt-0.5 shrink-0", isComplete ? "text-muted-foreground" : "text-primary")} />
+                            <div className="flex-1 min-w-0">
+                              <span className={cn(isStreaming && !isComplete ? "writing-shimmer-text" : "")}>
+                                <span className="text-muted-foreground">{isComplete ? 'searched' : 'searching'}</span>
+                                <span className="text-foreground ml-1">{query}</span>
+                              </span>
+                              {isComplete && sources.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                  {sources.map((s: any, j: number) => {
+                                    let domain = s.url || s.metadata?.sourceURL || '';
+                                    try { domain = new URL(domain).hostname; } catch {}
+                                    return (
+                                      <span key={j} className="inline-flex items-center px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground font-normal">
+                                        {domain}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         );
                       })}
                     </div>
                   )}
                   {hasActionSummary && (
-                    <ActionTimeline actions={actionSummary!.actions} />
+                    <ActionTimeline actions={actionSummary!.actions.filter(a => !hasResearchSteps || a.type !== 'search')} />
                   )}
                 </CollapsibleContent>
               )}
@@ -221,9 +222,9 @@ export const AssistantBubble = React.memo(
               )}
             </>
             ) : (
-            content ? (
+            (content || isStreaming) ? (
               <div className="font-normal text-foreground leading-[1.2]">
-                <MarkdownMessage content={content} sources={[]} />
+                <MarkdownMessage content={content || ' '} sources={[]} />
               </div>
             ) : null
           )}

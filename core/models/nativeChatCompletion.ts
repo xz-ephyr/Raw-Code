@@ -12,8 +12,9 @@ import type { LLMEvent } from "@doktor/llm-providers"
 import { injectThinkTool } from "@doktor/llm-providers/adapters/think-tool-inject"
 import { getModelCapability } from "@core/reasoning/capabilities"
 import { materialize } from "@doktor/tool-runtime"
+import { ensureToolRuntimeInit } from "@core/tools/initToolRuntime"
 import { initializeConnectorTools } from "@doktor/tool-runtime/connector"
-import { providerRouteMap, proxyMistral } from "@core/tools/nativeRoutes"
+import { modelRouteMap, googleRouteForModel } from "@core/tools/nativeRoutes"
 import { buildNativeSystemPrompt } from "./nativeSystemPrompt"
 import type { ProjectContext } from "@core/memory/contextController"
 import { userMessage, assistantMessage, toolMessage, ToolCallPart } from "@doktor/llm-providers"
@@ -21,11 +22,10 @@ import { getProviders } from "./providerCache"
 import { getModelDefinition } from "@core/config/models"
 
 function selectRoute(modelName: string) {
-  const def = getModelDefinition(modelName)
-  if (def && providerRouteMap[def.provider]) {
-    return providerRouteMap[def.provider]
+  if (modelRouteMap[modelName]) {
+    return modelRouteMap[modelName]
   }
-  return proxyMistral
+  return googleRouteForModel(modelName)
 }
 
 function convertMessages(msgs: import("@/lib/chatUtils").UIMessage[]) {
@@ -44,11 +44,10 @@ function convertMessages(msgs: import("@/lib/chatUtils").UIMessage[]) {
         const toolCalls = m.toolInvocations ?? m.toolCalls ?? []
         const completedToolResults: { id: string; name: string; result: unknown }[] = []
         for (const tc of toolCalls) {
-          parts.push(ToolCallPart.make({ id: tc.toolCallId ?? tc.id, name: tc.toolName ?? tc.name, input: tc.args ?? tc.input }))
           const isComplete = tc.state === "result" || tc.state === "error" || tc.status === "complete"
-          if (isComplete) {
-            completedToolResults.push({ id: tc.toolCallId ?? tc.id, name: tc.toolName ?? tc.name, result: tc.result ?? (tc.state === "error" ? tc.error : "") })
-          }
+          if (!isComplete) continue
+          parts.push(ToolCallPart.make({ id: tc.toolCallId ?? tc.id, name: tc.toolName ?? tc.name, input: tc.args ?? tc.input }))
+          completedToolResults.push({ id: tc.toolCallId ?? tc.id, name: tc.toolName ?? tc.name, result: tc.result ?? (tc.state === "error" ? tc.error : "") })
         }
         if (parts.length > 0) {
           result.push(assistantMessage(parts))
@@ -84,7 +83,7 @@ export async function nativeChatCompletion(input: NativeChatInput): Promise<Stre
   const model = route.model({ id: input.modelName })
 
   const def = getModelDefinition(input.modelName)
-  const providerId = def?.provider || "openai"
+  const providerId = def?.provider || "google"
   const configKey = `${providerId}-api-key`
 
   let apiKey = ""
@@ -96,7 +95,7 @@ export async function nativeChatCompletion(input: NativeChatInput): Promise<Stre
     }
   } catch { /* fallback */ }
   if (!apiKey && typeof localStorage !== "undefined") {
-    apiKey = localStorage.getItem(configKey) || localStorage.getItem("openai_api_key") || ""
+    apiKey = localStorage.getItem(configKey) || localStorage.getItem("google-api-key") || ""
   }
 
   const systemPrompt = await buildNativeSystemPrompt({
@@ -107,6 +106,10 @@ export async function nativeChatCompletion(input: NativeChatInput): Promise<Stre
   })
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
+  // Register content tools (web_search, etc.) and subagent tools globally
+  ensureToolRuntimeInit();
+
   if (input.projectId && input.connectedConnectors?.length) {
     for (const provider of input.connectedConnectors) {
       await initializeConnectorTools({
@@ -136,12 +139,9 @@ export async function nativeChatCompletion(input: NativeChatInput): Promise<Stre
 
   const loop = createToolLoop({ routes: [route], abortSignal: input.abortSignal, smooth: true })
 
-  const resolveCredential = (provider: string): string | undefined => {
-    const defs = getModelDefinition(input.modelName)
-    const useProvider = provider || defs?.provider || "openai"
-    const configKey = `${useProvider}-api-key`
+  const resolveCredential = (_provider: string): string | undefined => {
     if (typeof localStorage !== "undefined") {
-      return localStorage.getItem(configKey) || localStorage.getItem("openai_api_key") || undefined
+      return localStorage.getItem("google-api-key") || undefined
     }
     return undefined
   }
@@ -156,6 +156,7 @@ export async function nativeChatCompletion(input: NativeChatInput): Promise<Stre
             agentID: "main",
             assistantMessageID: "",
             toolCallID: call.id,
+            abortSignal: input.abortSignal,
             resolveCredential,
           },
         ),

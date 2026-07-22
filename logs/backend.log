@@ -529,3 +529,136 @@ Emitted 'error' event on Server instance at:
 }
 
 Node.js v24.18.0
+[scheduler] Background cheap checks running every 300s
+node:events:487
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::3001
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at Server.listen (node:net:2171:7)
+    at app.listen (C:\Users\zephy\Documents\Raw-Code\server\node_modules\express\lib\application.js:635:24)
+    at start (C:\Users\zephy\Documents\Raw-Code\server\src\index.ts:142:7)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:2045:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3001
+}
+
+Node.js v24.18.0
+[scheduler] Background cheap checks running every 300s
+node:events:487
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::3001
+    at Server.setupListenHandle [as _listen2] (node:net:2009:16)
+    at listenInCluster (node:net:2066:12)
+    at Server.listen (node:net:2171:7)
+    at app.listen (C:\Users\zephy\Documents\Raw-Code\server\node_modules\express\lib\application.js:635:24)
+    at start (C:\Users\zephy\Documents\Raw-Code\server\src\index.ts:142:7)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:2045:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3001
+}
+
+Node.js v24.18.0
+[scheduler] Background cheap checks running every 300s
+11:52:42 AM [tsx] change in ./packages\llm-providers\src\protocols\google-gemini.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+11:52:51 AM [tsx] change in ./core\reasoning\capabilities.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+11:55:14 AM [tsx] change in ./core\reasoning\capabilities.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+11:56:04 AM [tsx] change in ./server\src\antigravity\runtime.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+[scheduler] Background cheap checks running every 300s
+12:11:02 PM [tsx] change in ./packages\llm-providers\src\providers\sanitize-config.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+12:14:16 PM [tsx] change in ./packages\llm-providers\src\providers\sanitize-config.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+12:14:31 PM [tsx] unlink in ./packages\llm-providers\src\protocols\openai-converters.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+12:54:06 PM [tsx] change in ./packages\llm-providers\src\protocols\google-gemini.ts Restarting...
+c12:54:15 PM [tsx] change in ./packages\llm-providers\src\adapters\tool-loop.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+1:09:19 PM [tsx] change in ./packages\llm-providers\src\providers\google.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+1:11:14 PM [tsx] change in ./server\src\routes\proxy.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+1:12:21 PM [tsx] change in ./packages\llm-providers\src\adapters\tool-loop.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+1:12:28 PM [tsx] change in ./packages\llm-providers\src\protocols\google-gemini.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+[scheduler] Background cheap checks running every 300s
+4:20:38 PM [tsx] change in ./packages\llm-providers\src\adapters\tool-loop.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+4:32:56 PM [tsx] change in ./packages\tool-runtime\src\content\web-search.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+4:33:04 PM [tsx] change in ./packages\tool-runtime\src\content\web-search.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+4:45:44 PM [tsx] change in ./server\src\routes\sessions.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+Proxy error: [TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 172.217.113.4:443, 172.217.114.4:443, 172.217.117.4:443, 172.217.112.4:443, 172.217.116.4:443, 172.217.118.4:443, 172.217.115.4:443, 172.217.119.4:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1991:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1957:35)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+^C[scheduler] Background cheap checks running every 300s
+Proxy error: [TypeError: fetch failed] {
+  [cause]: ConnectTimeoutError: Connect Timeout Error (attempted addresses: 172.217.114.4:443, 172.217.116.4:443, 172.217.115.4:443, 172.217.118.4:443, 172.217.113.4:443, 172.217.119.4:443, 172.217.117.4:443, 172.217.112.4:443, timeout: 10000ms)
+      at onConnectTimeout (node:internal/deps/undici/undici:1991:23)
+      at Immediate._onImmediate (node:internal/deps/undici/undici:1957:35)
+      at process.processImmediate (node:internal/timers:504:21) {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+Proxy error: [TypeError: fetch failed] {
+  [cause]: Error: getaddrinfo ENOTFOUND generativelanguage.googleapis.com
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'generativelanguage.googleapis.com'
+  }
+}
+12:12:22 AM [tsx] change in ./packages\llm-providers\src\providers\google.ts Restarting...
+c12:12:27 AM [tsx] change in ./packages\llm-providers\src\providers\google.ts Restarting...
+c12:12:38 AM [tsx] change in ./packages\llm-providers\src\providers\google.ts Restarting...
+c12:12:43 AM [tsx] change in ./packages\llm-providers\src\providers\google.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+^C[scheduler] Background cheap checks running every 300s
+6:17:01 PM [tsx] change in ./packages\llm-providers\src\providers\google.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+6:17:19 PM [tsx] change in ./packages\llm-providers\src\providers\google.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+6:17:44 PM [tsx] change in ./packages\llm-providers\src\providers\google.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+6:18:16 PM [tsx] change in ./packages\llm-providers\src\providers\google.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+6:43:58 PM [tsx] change in ./packages\llm-providers\src\adapters\smooth.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+6:48:19 PM [tsx] change in ./packages\llm-providers\src\adapters\smooth.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+6:55:58 PM [tsx] change in ./packages\tool-runtime\src\registry\session.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+[scheduler] Background cheap checks running every 300s
+7:45:57 PM [tsx] change in ./packages\tool-runtime\src\content\web-search.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+7:53:22 PM [tsx] change in ./packages\tool-runtime\src\registry\global.ts Restarting...
+c[scheduler] Background cheap checks running every 300s
+7:54:08 PM [tsx] change in ./packages\tool-runtime\src\registry\global.ts Restarting...
+c[scheduler] Background cheap checks running every 300s

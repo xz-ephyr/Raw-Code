@@ -10,7 +10,7 @@ const router = Router();
  * provider whose key is stored in the DB. Falls back to whichever model routes
  * are available.
  */
-const DEFAULT_CLOUD_MODEL = process.env['ANTIGRAVITY_DEFAULT_MODEL'] || 'mistral-small-latest';
+const DEFAULT_CLOUD_MODEL = process.env['ANTIGRAVITY_DEFAULT_MODEL'] || 'gemini-2.5-flash';
 
 /** Max wall-clock lifetime of an in-memory job (matches spec: 24h expiry). */
 const JOB_TTL_MS = 24 * 60 * 60 * 1000;

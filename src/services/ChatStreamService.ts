@@ -38,10 +38,11 @@ interface StreamState {
   subscribers: Set<(message: UIMessage, isPartial: boolean) => void>
   callbacks: StreamCallbacks
   llmState: ReturnType<typeof createEmptyState>
+  streamGeneration: number
 }
 
 const activeStreams = new Map<string, StreamState>()
-let streamIdCounter = 0
+const sessionGenerationCounters = new Map<string, number>()
 
 function toUIMessage(msg: { id: string; role: "assistant"; content: string; reasoning: string; createdAt: number; toolCalls?: { id: string; name: string; input: unknown; result?: unknown; error?: string; status: string }[]; actionSummary?: { summary: string; actions: any[] } }): UIMessage {
   let content = msg.content || "";
@@ -50,17 +51,17 @@ function toUIMessage(msg: { id: string; role: "assistant"; content: string; reas
   // Extract inline reasoning tags (even unclosed ones during streaming)
   const extractedReasoning: string[] = [];
   
-  content = content.replace(/<(?:think|thought|reasoning)>([\s\S]*?)(?:<\/(?:think|thought|reasoning)>|$)/gi, (_, innerText) => {
+  content = content.replace(/<(?:think|thought|reasoning)>([\s\S]*?)<\/(?:think|thought|reasoning)>/gi, (_, innerText) => {
     extractedReasoning.push(innerText);
     return '';
   });
 
-  content = content.replace(/```(?:think|thinking|reasoning)\s*\n([\s\S]*?)(?:```|$)/gi, (_, innerText) => {
+  content = content.replace(/```(?:think|thinking|reasoning)\s*\n([\s\S]*?)```/gi, (_, innerText) => {
     extractedReasoning.push(innerText);
     return '';
   });
 
-  content = content.replace(/\[(?:think|thought|reasoning)\]([\s\S]*?)(?:\[\/(?:think|thought|reasoning)\]|$)/gi, (_, innerText) => {
+  content = content.replace(/\[(?:think|thought|reasoning)\]([\s\S]*?)\[\/(?:think|thought|reasoning)\]/gi, (_, innerText) => {
     extractedReasoning.push(innerText);
     return '';
   });
@@ -114,9 +115,7 @@ let activeSessionId: string | null = null
 export function setActiveSessionId(id: string | null) { activeSessionId = id }
 function getActiveSessionId() { return activeSessionId }
 
-async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks, controller: AbortController) {
-  const streamId = ++streamIdCounter
-
+async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks, controller: AbortController, streamGeneration: number) {
   const cap = getModelCapability(config.modelName)
   const tags = cap.reasoning === 'tagged' && cap.mechanism.type === 'inline_tags'
     ? [{ open: cap.mechanism.open, close: cap.mechanism.close }]
@@ -157,10 +156,9 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
       Stream.runForEach(
         eventStream.pipe(Stream.timeout("60 seconds")),
         (event) =>
-        Effect.sync(() => {
-          if (streamId !== streamIdCounter) return
+          Effect.sync(() => {
           const state = activeStreams.get(config.sessionId)
-          if (!state) return
+          if (!state || state.streamGeneration !== streamGeneration) return
 
           const events: LLMEvent[] = [event]
 
@@ -195,7 +193,7 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
           }
 
           if (event.type === "finish") {
-            const provider = getModelDefinition(config.modelName)?.provider || "openai"
+            const provider = getModelDefinition(config.modelName)?.provider || "google"
             const inputTokens = (event as any).usage?.inputTokens ?? 0
             const outputTokens = (event as any).usage?.outputTokens ?? 0
             const totalTokens = (event as any).usage?.totalTokens ?? 0
@@ -217,7 +215,7 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
               cachedInputTokens: (event as any).usage?.cachedInputTokens,
             })
           } else if (event.type === "provider-error") {
-            const provider = getModelDefinition(config.modelName)?.provider || "openai"
+            const provider = getModelDefinition(config.modelName)?.provider || "google"
             recordUsage({
               model: config.modelName,
               provider,
@@ -232,6 +230,7 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
           
           if (state.llmState.currentMessage && (state.llmState.currentMessage.content || state.llmState.currentMessage.reasoning || state.llmState.currentMessage.actionSummary)) {
             const uiMsg = toUIMessage(state.llmState.currentMessage)
+            console.log('[chatStream] flush:', { contentLen: state.llmState.currentMessage.content.length, reasoningLen: state.llmState.currentMessage.reasoning.length, hasActionSummary: !!state.llmState.currentMessage.actionSummary })
             persistMessage(config.sessionId, uiMsg, true)
             flushMessage(uiMsg, true)
           }
@@ -239,6 +238,7 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
           if (state.status === 'streaming' && state.llmState.status === "idle" && !state.llmState.currentMessage) {
             finalized = true
             const last = state.llmState.messages[state.llmState.messages.length - 1]
+            console.log('[chatStream] finish:', { contentLen: last?.content?.length, reasoningLen: last?.reasoning?.length, msgCount: state.llmState.messages.length, finalized })
             if (last) {
               const uiMsg = toUIMessage(last)
               persistMessage(config.sessionId, uiMsg, false)
@@ -259,7 +259,7 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
 
     // Safety net: if stream ended without a finish event, force completion
     const st = activeStreams.get(config.sessionId)
-    if (st && st.status === 'streaming') {
+    if (st && st.streamGeneration === streamGeneration && st.status === 'streaming') {
       finalized = true
       const last = st.llmState.messages[st.llmState.messages.length - 1]
       if (last) {
@@ -276,9 +276,9 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
     if (err?.name === "AbortError") return
 
     const state = activeStreams.get(config.sessionId)
-    if (!state || state.status !== 'streaming') return
+    if (!state || state.streamGeneration !== streamGeneration || state.status !== 'streaming') return
 
-    const provider = getModelDefinition(config.modelName)?.provider || "openai"
+    const provider = getModelDefinition(config.modelName)?.provider || "google"
     recordUsage({
       model: config.modelName,
       provider,
@@ -296,8 +296,8 @@ async function runNativeStream(config: StreamConfig, callbacks: StreamCallbacks,
 
 
 
-function runAISDKStream(config: StreamConfig, callbacks: StreamCallbacks, controller: AbortController) {
-  return runNativeStream(config, callbacks, controller)
+function runAISDKStream(config: StreamConfig, callbacks: StreamCallbacks, controller: AbortController, streamGeneration: number) {
+  return runNativeStream(config, callbacks, controller, streamGeneration)
 }
 
 export const ChatStreamService = {
@@ -307,6 +307,8 @@ export const ChatStreamService = {
       await this.stop(config.sessionId)
     }
 
+    const generation = (sessionGenerationCounters.get(config.sessionId) ?? 0) + 1
+    sessionGenerationCounters.set(config.sessionId, generation)
     const controller = new AbortController()
     const state: StreamState = {
       config,
@@ -315,6 +317,7 @@ export const ChatStreamService = {
       subscribers: new Set(),
       callbacks,
       llmState: createEmptyState(),
+      streamGeneration: generation,
     }
     activeStreams.set(config.sessionId, state)
 
@@ -337,7 +340,7 @@ export const ChatStreamService = {
           this._clearStreaming(config.sessionId)
         },
         onUsageUpdate: (usage) => callbacks.onUsageUpdate?.(usage),
-      }, controller)
+      }, controller, generation)
     } catch (err: any) {
       if (err?.name === "AbortError") return
       callbacks.onError?.(err instanceof Error ? err : new Error(String(err)))
@@ -365,6 +368,7 @@ export const ChatStreamService = {
       } catch (e) {
         console.error('Failed to clear streaming flag:', e)
       }
+      window.dispatchEvent(new CustomEvent('stream-cancelled', { detail: { sessionId } }))
     }
   },
 

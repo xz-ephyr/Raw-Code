@@ -100,39 +100,13 @@ router.post('/stream', async (req: Request, res: Response) => {
 
   const route = selectRoute(modelName ?? 'auto')
 
-  const providerConfigKey: Record<string, string> = {
-    openai: 'openai-api-key',
-    anthropic: 'anthropic-api-key',
-    google: 'google-api-key',
-    deepseek: 'deepseek-api-key',
-    mistral: 'mistral-api-key',
-    groq: 'groq-api-key',
-    cohere: 'cohere-api-key',
-    togetherai: 'together-api-key',
-    openrouter: 'openrouter-api-key',
-    nvidia: 'nvidia-api-key',
-    cerebras: 'cerebras-api-key',
-    sambanova: 'sambanova-api-key',
-    huggingface: 'huggingface-api-key',
-    cloudflare: 'cloudflare-api-key',
-  }
-  const provider = route.provider ?? 'openai'
-  const configKey = providerConfigKey[provider]
+  const provider = route.provider ?? 'google'
+  const configKey = 'google-api-key'
   let patchedRoute = route
   if (configKey) {
     const dbKey = await getAppConfig(configKey)
     if (dbKey) {
-      if (provider === 'anthropic') {
-        patchedRoute = route.with({
-          auth: Auth.custom((input) =>
-            Auth.toEffect(Auth.bearer(Auth.value(dbKey)))(input).pipe(
-              Effect.map((headers) => ({ ...headers, 'anthropic-version': '2023-06-01' })),
-            ),
-          ),
-        })
-      } else {
-        patchedRoute = route.with({ auth: Auth.bearer(Auth.value(dbKey)) })
-      }
+      patchedRoute = route.with({ auth: Auth.bearer(Auth.value(dbKey)) })
     }
   }
 
@@ -173,26 +147,8 @@ router.post('/stream', async (req: Request, res: Response) => {
     timeoutMs: 120_000,
   })
 
-  const resolveCredential = (provider: string): string | undefined => {
-    const envMap: Record<string, string> = {
-      openai: 'OPENAI_API_KEY',
-      anthropic: 'ANTHROPIC_API_KEY',
-      google: 'GOOGLE_API_KEY',
-      deepseek: 'DEEPSEEK_API_KEY',
-      mistral: 'MISTRAL_API_KEY',
-      groq: 'GROQ_API_KEY',
-      cohere: 'COHERE_API_KEY',
-      togetherai: 'TOGETHER_API_KEY',
-      openrouter: 'OPENROUTER_API_KEY',
-      nvidia: 'NVIDIA_API_KEY',
-      cerebras: 'CEREBRAS_API_KEY',
-      sambanova: 'SAMBANOVA_API_KEY',
-      huggingface: 'HUGGINGFACE_API_KEY',
-      cloudflare: 'CLOUDFLARE_API_KEY',
-    }
-    const envVar = envMap[provider]
-    if (envVar) return process.env[envVar]
-    return undefined
+  const resolveCredential = (_provider: string): string | undefined => {
+    return process.env['GOOGLE_API_KEY']
   }
 
   const executor: ToolExecutor = (call) =>

@@ -1,7 +1,6 @@
-import type { FaceLandmarks, FaceParameters } from "./face"
+import type { FaceParameters, AvatarLandmarks } from "./face"
 import type { AvatarPalette, RGBA } from "./palette"
-import { rgba, mulRGBA } from "./palette"
-import { vec2, dist, sdEllipse, sdLineSegment, pixelCoverage, smoothMin } from "./primitives"
+import { rgba } from "./palette"
 
 const SIZE = 64
 
@@ -11,212 +10,243 @@ export interface PixelImage {
   readonly height: number
 }
 
-export function renderAvatar(
-  p: FaceParameters,
-  lm: FaceLandmarks,
-  palette: AvatarPalette,
-): PixelImage {
-  const size = SIZE
-  const px = new Uint8ClampedArray(size * size * 4)
+export function renderAvatar(p: FaceParameters, lm: AvatarLandmarks, pal: AvatarPalette): PixelImage {
+  const s = SIZE
+  const px = new Uint8ClampedArray(s * s * 4)
 
-  // Layers bottom→top
-  neck(px, size, lm, palette)
-  head(px, size, lm, palette)
-  hair(px, size, lm, palette)
-  brows(px, size, lm, palette)
-  eyes(px, size, lm, palette)
-  nose(px, size, lm, palette)
-  mouth(px, size, lm, palette)
-  if (lm.hasGlasses) glasses(px, size, lm, palette)
+  // Layers bottom → top
+  drawFeet(px, s, lm, pal)
+  drawLegs(px, s, lm, pal)
+  drawBody(px, s, lm, pal)
+  drawArms(px, s, lm, pal)
+  drawNeck(px, s, lm, pal)
+  drawHead(px, s, lm, pal)
+  drawHair(px, s, lm, p, pal)
+  drawEyes(px, s, lm, pal)
+  drawNose(px, s, lm, pal)
+  drawMouth(px, s, lm, pal)
+  if (lm.glasses) drawGlasses(px, s, lm, pal)
+  if (lm.hat) drawHat(px, s, lm.hat, pal)
 
-  return { data: px, width: size, height: size }
+  return { data: px, width: s, height: s }
 }
 
-// --- helpers ---
+// --- pixel helpers ---
+
 function i(x: number, y: number, s: number): number {
   return (Math.floor(y) * s + Math.floor(x)) * 4
 }
 
-function set(p: Uint8ClampedArray, s: number, x: number, y: number, c: RGBA): void {
+function setP(px: Uint8ClampedArray, s: number, x: number, y: number, c: RGBA): void {
   const idx = i(x, y, s)
-  if (idx < 0 || idx >= p.length) return
-  const a = c.a / 255, ia = 1 - a
-  p[idx] = p[idx] * ia + c.r * a
-  p[idx + 1] = p[idx + 1] * ia + c.g * a
-  p[idx + 2] = p[idx + 2] * ia + c.b * a
-  p[idx + 3] = Math.min(255, p[idx + 3] + c.a)
+  if (idx < 0 || idx + 3 >= px.length) return
+  px[idx] = c.r
+  px[idx + 1] = c.g
+  px[idx + 2] = c.b
+  px[idx + 3] = c.a
 }
 
-function cov(p: Uint8ClampedArray, s: number, x: number, y: number, c: RGBA, v: number): void {
-  if (v <= 0) return
-  set(p, s, x, y, rgba(c.r, c.g, c.b, Math.round(255 * v)))
+function rect(px: Uint8ClampedArray, s: number, x: number, y: number, w: number, h: number, c: RGBA): void {
+  for (let dy = 0; dy < h; dy++) {
+    for (let dx = 0; dx < w; dx++) {
+      setP(px, s, x + dx, y + dy, c)
+    }
+  }
 }
 
-// --- Neck ---
-function neck(px: Uint8ClampedArray, s: number, lm: FaceLandmarks, pal: AvatarPalette): void {
+function rectOutline(px: Uint8ClampedArray, s: number, x: number, y: number, w: number, h: number, c: RGBA): void {
+  for (let dx = 0; dx < w; dx++) {
+    setP(px, s, x + dx, y, c)
+    setP(px, s, x + dx, y + h - 1, c)
+  }
+  for (let dy = 1; dy < h - 1; dy++) {
+    setP(px, s, x, y + dy, c)
+    setP(px, s, x + w - 1, y + dy, c)
+  }
+}
+
+function hLine(px: Uint8ClampedArray, s: number, x: number, y: number, w: number, c: RGBA): void {
+  for (let dx = 0; dx < w; dx++) setP(px, s, x + dx, y, c)
+}
+
+function vLine(px: Uint8ClampedArray, s: number, x: number, y: number, h: number, c: RGBA): void {
+  for (let dy = 0; dy < h; dy++) setP(px, s, x, y + dy, c)
+}
+
+function vLineTaper(px: Uint8ClampedArray, s: number, x: number, y: number, h: number, startW: number, endW: number, c: RGBA): void {
+  for (let dy = 0; dy < h; dy++) {
+    const t = dy / (h - 1 || 1)
+    const w = Math.round(startW + (endW - startW) * t)
+    for (let dx = 0; dx < w; dx++) {
+      setP(px, s, x + dx, y + dy, c)
+    }
+  }
+}
+
+// --- drawing functions ---
+
+function drawFeet(px: Uint8ClampedArray, s: number, lm: AvatarLandmarks, pal: AvatarPalette): void {
+  for (const f of [lm.leftFoot, lm.rightFoot]) {
+    rect(px, s, f.x, f.y, f.w, f.h, pal.shoes)
+    rectOutline(px, s, f.x, f.y, f.w, f.h, pal.outline)
+    hLine(px, s, f.x + 1, f.y + 1, f.w - 2, pal.shoesDark)
+  }
+}
+
+function drawLegs(px: Uint8ClampedArray, s: number, lm: AvatarLandmarks, pal: AvatarPalette): void {
+  for (const leg of [lm.leftLeg, lm.rightLeg]) {
+    rect(px, s, leg.x, leg.y, leg.w, leg.h, pal.pants)
+    rectOutline(px, s, leg.x, leg.y, leg.w, leg.h, pal.outline)
+    // knee highlight
+    hLine(px, s, leg.x + 1, leg.y + Math.floor(leg.h * 0.5), leg.w - 2, pal.pantsDark)
+  }
+}
+
+function drawBody(px: Uint8ClampedArray, s: number, lm: AvatarLandmarks, pal: AvatarPalette): void {
+  const b = lm.body
+  rect(px, s, b.x, b.y, b.w, b.h, pal.shirt)
+  rectOutline(px, s, b.x, b.y, b.w, b.h, pal.outline)
+
+  // Collar
+  hLine(px, s, b.x + 2, b.y, b.w - 4, pal.shirtDark)
+  hLine(px, s, b.x + 3, b.y + 1, b.w - 6, pal.outline)
+
+  // Belt
+  hLine(px, s, b.x + 1, b.y + b.h - 2, b.w - 2, pal.belt)
+}
+
+function drawArms(px: Uint8ClampedArray, s: number, lm: AvatarLandmarks, pal: AvatarPalette): void {
+  for (const arm of [lm.leftArm, lm.rightArm]) {
+    rect(px, s, arm.x, arm.y, arm.w, arm.h, pal.skin)
+    rectOutline(px, s, arm.x, arm.y, arm.w, arm.h, pal.outline)
+    // Sleeve cuff
+    hLine(px, s, arm.x, arm.y, arm.w, pal.shirtDark)
+    hLine(px, s, arm.x, arm.y + 1, arm.w, pal.shirt)
+  }
+}
+
+function drawNeck(px: Uint8ClampedArray, s: number, lm: AvatarLandmarks, pal: AvatarPalette): void {
   const n = lm.neck
-  for (let y = Math.round(n.topY); y < Math.round(n.botY); y++) {
-    for (let x = Math.round(n.cx - n.rx); x <= Math.round(n.cx + n.rx); x++) {
-      const d = sdEllipse(vec2(x - n.cx, y - (n.topY + n.botY) / 2), n.rx, (n.botY - n.topY) / 2)
-      cov(px, s, x, y, mulRGBA(pal.skin, 0.9), pixelCoverage(d))
-    }
-  }
+  rect(px, s, n.x, n.y, n.w, n.h, pal.skin)
+  rectOutline(px, s, n.x, n.y, n.w, n.h, pal.outline)
 }
 
-// --- Head (simple fill with cheek shadow) ---
-function head(px: Uint8ClampedArray, s: number, lm: FaceLandmarks, pal: AvatarPalette): void {
+function drawHead(px: Uint8ClampedArray, s: number, lm: AvatarLandmarks, pal: AvatarPalette): void {
   const h = lm.head
-  for (let y = 0; y < s; y++) {
-    for (let x = 0; x < s; x++) {
-      const d = sdEllipse(vec2(x - h.cx, y - h.cy), h.rx, h.ry)
-      const v = pixelCoverage(d)
-      if (v === 0) continue
+  // Main head rectangle (slightly rounded effect by skipping corners)
+  rect(px, s, h.x, h.y, h.w, h.h, pal.skin)
+  rectOutline(px, s, h.x, h.y, h.w, h.h, pal.outline)
 
-      // Simple gradient: lighter on left side → darker right
-      const t = (x - h.cx) / h.rx // -1..1
-      const shade = 0.85 - 0.15 * t // 1.0 on left → 0.7 on right
-      cov(px, s, x, y, mulRGBA(pal.skin, shade), v)
+  // Cheek blush (subtle)
+  hLine(px, s, h.x + 1, h.y + Math.floor(h.h * 0.65), Math.floor(h.w * 0.25), pal.skinShadow)
+  hLine(px, s, h.x + h.w - 1 - Math.floor(h.w * 0.25), h.y + Math.floor(h.h * 0.65), Math.floor(h.w * 0.25), pal.skinShadow)
+}
+
+function drawHair(px: Uint8ClampedArray, s: number, lm: AvatarLandmarks, p: FaceParameters, pal: AvatarPalette): void {
+  const h = lm.hairTop
+  const head = lm.head
+
+  switch (p.hairStyle) {
+    case "buzz": {
+      // Very short, just a cap on top
+      rect(px, s, h.x + 2, h.y, h.w - 4, Math.min(4, h.h), pal.hair)
+      break
+    }
+    case "spiky": {
+      // Spiky top
+      vLineTaper(px, s, h.x + 1, h.y, Math.min(h.h, 6), 1, 3, pal.hair)
+      vLineTaper(px, s, h.x + Math.floor(h.w * 0.25), h.y - 1, Math.min(h.h + 1, 7), 1, 3, pal.hair)
+      vLineTaper(px, s, h.x + Math.floor(h.w * 0.5) - 1, h.y - 2, Math.min(h.h + 2, 8), 1, 4, pal.hair)
+      vLineTaper(px, s, h.x + Math.floor(h.w * 0.75) - 1, h.y - 1, Math.min(h.h + 1, 7), 1, 3, pal.hair)
+      vLineTaper(px, s, h.x + h.w - 3, h.y, Math.min(h.h, 6), 1, 3, pal.hair)
+      // Fill between spikes
+      rect(px, s, h.x + 3, h.y + 2, h.w - 6, Math.max(1, h.h - 2), pal.hair)
+      // Side hair
+      rect(px, s, head.x - 1, head.y + 2, 2, Math.floor(head.h * 0.45), pal.hair)
+      rect(px, s, head.x + head.w - 1, head.y + 2, 2, Math.floor(head.h * 0.45), pal.hair)
+      break
+    }
+    case "long": {
+      // Full top coverage + sides flowing down
+      rect(px, s, h.x, h.y, h.w, h.h, pal.hair)
+      // Sides flowing down past head
+      const sideLen = Math.floor(head.h * 0.5)
+      rect(px, s, head.x - 2, head.y + 1, 2, sideLen, pal.hair)
+      rect(px, s, head.x + head.w, head.y + 1, 2, sideLen, pal.hair)
+      // Bangs
+      hLine(px, s, h.x + 1, h.y + h.h - 2, h.w - 2, pal.hairHighlight)
+      break
+    }
+    case "side": {
+      // Swept to the side
+      rect(px, s, h.x, h.y, h.w, Math.min(h.h, 5), pal.hair)
+      rect(px, s, h.x + 2, h.y + 1, h.w - 4, h.h - 1, pal.hair)
+      // Swept side part
+      hLine(px, s, h.x + Math.floor(h.w * 0.3), h.y + h.h - 1, Math.floor(h.w * 0.5), pal.hairHighlight)
+      break
+    }
+    default: {
+      // Short — full cap
+      rect(px, s, h.x, h.y, h.w, Math.min(h.h, 5), pal.hair)
+      rect(px, s, h.x + 1, h.y + 1, h.w - 2, h.h, pal.hair)
+      rect(px, s, head.x - 1, head.y + 2, 2, Math.floor(head.h * 0.3), pal.hair)
+      rect(px, s, head.x + head.w - 1, head.y + 2, 2, Math.floor(head.h * 0.3), pal.hair)
+      break
+    }
+  }
+
+  // Hair outline always
+  if (p.hairStyle !== "buzz") {
+    rectOutline(px, s, h.x, h.y, h.w, Math.min(h.h, 6), pal.outline)
+  }
+}
+
+function drawEyes(px: Uint8ClampedArray, s: number, lm: AvatarLandmarks, pal: AvatarPalette): void {
+  for (const eye of [lm.leftEye, lm.rightEye]) {
+    // Eye white
+    setP(px, s, eye.x, eye.y, pal.eyeWhite)
+    if (lm.glasses) {
+      setP(px, s, eye.x + 1, eye.y, pal.eyeWhite)
+    }
+    // Pupil
+    setP(px, s, eye.x + 1, eye.y, pal.pupil)
+    if (lm.glasses) {
+      setP(px, s, eye.x + 2, eye.y, pal.pupil)
     }
   }
 }
 
-// --- Hair (dark block on top) ---
-function hair(px: Uint8ClampedArray, s: number, lm: FaceLandmarks, pal: AvatarPalette): void {
-  const h = lm.head
-  const top = h.cy - h.ry * 1.15
-  const bot = h.cy - h.ry * 0.2
-  const hrx = h.rx * 1.2
-  const hry = (bot - top) / 2
-  const hcx = h.cx
-  const hcy = (top + bot) / 2
-
-  for (let y = 0; y < s; y++) {
-    for (let x = 0; x < s; x++) {
-      const d0 = sdEllipse(vec2(x - hcx, y - hcy), hrx, hry)
-      const d1 = sdEllipse(vec2(x - hcx, y - hcy + hry * 0.1), hrx * 0.92, hry * 0.85)
-      const d = Math.max(d0, -d1) // subtract bottom to expose forehead
-      const v = pixelCoverage(d)
-      if (v === 0) continue
-
-      // Simple texture
-      const tex = 0.9 + 0.1 * ((Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1)
-      const hl = y < hcy - hry * 0.4 ? 0.3 : 0 // subtle top highlight
-      cov(px, s, x, y, mulRGBA(pal.hair, tex + hl), v)
-
-      // Forehead shadow line
-      if (y === Math.round(hcy + hry * 0.5) || y === Math.round(hcy + hry * 0.5) + 1) {
-        set(px, s, x, y, mulRGBA(pal.skinShadow, 0.3))
-      }
-    }
-  }
+function drawNose(px: Uint8ClampedArray, s: number, lm: AvatarLandmarks, pal: AvatarPalette): void {
+  // Small nose dot
+  setP(px, s, lm.nose.x, lm.nose.y, pal.skinShadow)
+  setP(px, s, lm.nose.x, lm.nose.y + 1, pal.skinShadow)
 }
 
-// --- Brows ---
-function brows(px: Uint8ClampedArray, s: number, lm: FaceLandmarks, pal: AvatarPalette): void {
-  for (const b of [lm.leftBrow, lm.rightBrow]) {
-    const bw = b.w / 2, bh = b.h / 2
-    const ang = b.angle * 0.3, ca = Math.cos(ang), sa = Math.sin(ang)
-    for (let y = 0; y < s; y++) {
-      for (let x = 0; x < s; x++) {
-        const dx = x - b.cx, dy = y - b.cy
-        const rx2 = dx * ca + dy * sa, ry2 = -dx * sa + dy * ca
-        cov(px, s, x, y, pal.brow, pixelCoverage(sdEllipse(vec2(rx2, ry2), bw, bh)))
-      }
-    }
-  }
+function drawMouth(px: Uint8ClampedArray, s: number, lm: AvatarLandmarks, pal: AvatarPalette): void {
+  hLine(px, s, lm.mouth.x, lm.mouth.y, lm.mouth.w, pal.lip)
+  // Smile corners
+  setP(px, s, lm.mouth.x - 1, lm.mouth.y - 1, pal.lip)
+  setP(px, s, lm.mouth.x + lm.mouth.w, lm.mouth.y - 1, pal.lip)
+  // Lip line
+  hLine(px, s, lm.mouth.x + 1, lm.mouth.y + 1, lm.mouth.w - 2, pal.outline)
 }
 
-// --- Eyes (simple black slits + iris dot) ---
-function eyes(px: Uint8ClampedArray, s: number, lm: FaceLandmarks, pal: AvatarPalette): void {
-  for (const e of [lm.leftEye, lm.rightEye]) {
-    for (let y = 0; y < s; y++) {
-      for (let x = 0; x < s; x++) {
-        const rx = e.w / 2, ry = e.h / 2
-        const dO = sdEllipse(vec2(x - e.cx, y - e.cy - ry * 0.15), rx, ry * 0.9)
-        const dI = sdEllipse(vec2(x - e.cx, y - e.cy + ry * 0.15), rx, ry * 0.7)
-        const dEye = smoothMin(dO, dI, 0.5)
-        const v = pixelCoverage(dEye)
-        if (v === 0) continue
-
-        // Lid top shadow
-        const lid = Math.max(0, 1 - (y - (e.cy - ry)) / (ry * 0.35))
-        cov(px, s, x, y, mulRGBA(pal.eyeWhite, 1 - lid * 0.3), v)
-
-        // Iris (dark dot)
-        const ir = rx * 0.4
-        const dIris = dist(vec2(x, y), vec2(e.cx, e.cy + ry * 0.1))
-        if (dIris < ir) {
-          set(px, s, x, y, pal.pupil)
-        }
-      }
-    }
-  }
-}
-
-// --- Nose (subtle bridge + tip) ---
-function nose(px: Uint8ClampedArray, s: number, lm: FaceLandmarks, pal: AvatarPalette): void {
-  const n = lm.nose
-  for (let y = 0; y < s; y++) {
-    for (let x = 0; x < s; x++) {
-      // Side shadows
-      const side = Math.abs(x - n.bridgeTop.x)
-      if (side < 4 && side > 1 && y > n.bridgeTop.y + 2 && y < n.tip.y) {
-        const shade = ((side - 1) / 3) * 0.3
-        set(px, s, x, y, mulRGBA(pal.skinShadow, shade))
-      }
-      // Tip (small dot)
-      if (dist(vec2(x, y), n.tip) < 1.5) {
-        set(px, s, x, y, mulRGBA(pal.skin, 0.85))
-      }
-      // Nostrils
-      for (const no of [n.leftN, n.rightN]) {
-        if (dist(vec2(x, y), no) < 1) set(px, s, x, y, pal.skinShadow)
-      }
-    }
-  }
-}
-
-// --- Mouth (simple line) ---
-function mouth(px: Uint8ClampedArray, s: number, lm: FaceLandmarks, pal: AvatarPalette): void {
-  const m = lm.mouth
-  const uC = vec2(m.cx, m.cy - m.upperH * 0.3)
-  const lC = vec2(m.cx, m.cy + m.lowerH * 0.3)
-  const rx = m.halfW * 0.8
-
-  for (let y = 0; y < s; y++) {
-    for (let x = 0; x < s; x++) {
-      const dU = sdEllipse(vec2(x - uC.x, y - uC.y), rx, m.upperH)
-      const dL = sdEllipse(vec2(x - lC.x, y - lC.y), rx, m.lowerH)
-      const dM = smoothMin(dU, dL, 0.3)
-      const v = pixelCoverage(dM)
-      if (v === 0) continue
-
-      const isLine = Math.abs(y - m.cy) < 0.5
-      cov(px, s, x, y, isLine ? mulRGBA(pal.skinShadow, 1.3) : mulRGBA(pal.lip, 0.85), v)
-    }
-  }
-}
-
-// --- Glasses (thin wireframe) ---
-function glasses(px: Uint8ClampedArray, s: number, lm: FaceLandmarks, pal: AvatarPalette): void {
-  for (const e of [lm.leftEye, lm.rightEye]) {
-    const cx = e.cx, cy = e.cy + e.h * 0.3
-    const rx = e.w * 0.7, ry = e.h * 0.6
-    for (let y = 0; y < s; y++) {
-      for (let x = 0; x < s; x++) {
-        const dO = sdEllipse(vec2(x - cx, y - cy), rx, ry)
-        const dI = sdEllipse(vec2(x - cx, y - cy), rx - 0.8, ry - 0.8)
-        if (dO < 0 && dI > 0) set(px, s, x, y, pal.glasses)
-      }
-    }
+function drawGlasses(px: Uint8ClampedArray, s: number, lm: AvatarLandmarks, pal: AvatarPalette): void {
+  for (const eye of [lm.leftEye, lm.rightEye]) {
+    // Frame around eye
+    rectOutline(px, s, eye.x - 1, eye.y - 1, 4, 3, pal.accessory)
   }
   // Bridge
   const l = lm.leftEye, r = lm.rightEye
-  const by = l.cy + l.h * 0.3
-  for (let x = Math.round(l.cx + l.w * 0.5); x <= Math.round(r.cx - r.w * 0.5); x++) {
-    for (let dy = -1; dy <= 1; dy++) {
-      const yy = Math.round(by + dy)
-      if (x >= 0 && x < s && yy >= 0 && yy < s) set(px, s, x, yy, pal.glasses)
-    }
-  }
+  const bridgeX = l.x + 3
+  const bridgeW = r.x - bridgeX
+  hLine(px, s, bridgeX, l.y, bridgeW, pal.accessory)
+}
+
+function drawHat(px: Uint8ClampedArray, s: number, hat: NonNullable<AvatarLandmarks["hat"]>, pal: AvatarPalette): void {
+  rect(px, s, hat.x, hat.y, hat.w, hat.h, pal.accessory)
+  rectOutline(px, s, hat.x, hat.y, hat.w, hat.h, pal.outline)
+  // Brim
+  hLine(px, s, hat.x - 1, hat.y + hat.h - 1, hat.w + 2, pal.accessory)
+  hLine(px, s, hat.x - 1, hat.y + hat.h, hat.w + 2, pal.outline)
 }

@@ -26,5 +26,11 @@ export function getModelCapability(modelId: string): ModelCapability {
   for (const [pattern, cap] of Object.entries(MODEL_CAPABILITIES)) {
     if (modelId.includes(pattern)) return cap
   }
+  if (/^gemini-(2\.5|3\.[15])/i.test(modelId)) {
+    return { reasoning: 'native', mechanism: { type: 'reasoning_content' } }
+  }
+  if (/^gemma/i.test(modelId)) {
+    return { reasoning: 'tagged', mechanism: { type: 'inline_tags', open: '<thought>', close: '</thought>' }, tags: { open: '<thought>', close: '</thought>' } }
+  }
   return { reasoning: 'none', mechanism: { type: 'none' } }
 }

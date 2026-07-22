@@ -5,14 +5,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./route": "./src/route/index.ts",
-    "./providers/openai": "./src/providers/openai.ts",
-    "./providers/anthropic": "./src/providers/anthropic.ts",
-    "./providers/openai-compatible": "./src/providers/openai-compatible.ts",
     "./providers/google": "./src/providers/google.ts",
     "./schema": "./src/schema/index.ts",
     "./adapters": "./src/adapters/index.ts",
-    "./protocols/openai-chat": "./src/protocols/openai-chat.ts",
-    "./protocols/anthropic-messages": "./src/protocols/anthropic-messages.ts",
     "./model-registry": "./src/model-registry.ts",
     "./model-catalog": "./src/model-catalog.ts"
   },

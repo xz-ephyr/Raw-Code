@@ -1,14 +1,13 @@
 import { Effect } from "effect"
-import { OpenAIProtocol } from "../protocols/openai-chat"
-import type { OpenAIChatBody } from "../protocols/openai-chat"
-import { getAllProviderIds } from "../model-registry"
+import { GeminiProtocol } from "../protocols/google-gemini"
+import type { GeminiRequestBody } from "../protocols/google-gemini"
 
 export interface ProviderSanitizeConfig {
   readonly deleteFields?: readonly string[]
   readonly convertJsonSchemaToJsonObject?: boolean
   readonly convertReasoningEffortToMaxTokens?: boolean
   readonly modelMap?: Record<string, string>
-  readonly customSanitizer?: (body: OpenAIChatBody) => OpenAIChatBody
+  readonly customSanitizer?: (body: GeminiRequestBody) => GeminiRequestBody
 }
 
 const DEFAULT_UNSUPPORTED_FIELDS: readonly string[] = [
@@ -24,7 +23,7 @@ const DEFAULT_UNSUPPORTED_FIELDS: readonly string[] = [
 ]
 
 export function createSanitizedProtocol(
-  baseProtocol: typeof OpenAIProtocol,
+  baseProtocol: typeof GeminiProtocol,
   config: ProviderSanitizeConfig = {},
 ) {
   const unsupportedFields = config.deleteFields ?? DEFAULT_UNSUPPORTED_FIELDS
@@ -32,7 +31,7 @@ export function createSanitizedProtocol(
   const modelMap = config.modelMap ?? {}
   const customSanitizer = config.customSanitizer
 
-  function sanitizeBody(body: OpenAIChatBody): OpenAIChatBody {
+  function sanitizeBody(body: GeminiRequestBody): GeminiRequestBody {
     const out = { ...body } as any
 
     for (const field of unsupportedFields) {
@@ -67,31 +66,17 @@ export function createSanitizedProtocol(
   }
 }
 
-const DEFAULT_SANITIZE_CONFIG: ProviderSanitizeConfig = {
-  deleteFields: DEFAULT_UNSUPPORTED_FIELDS,
-  convertJsonSchemaToJsonObject: true,
-}
-
-export const PROVIDER_SANITIZE_CONFIG: Record<string, ProviderSanitizeConfig> = {}
-
-for (const providerId of getAllProviderIds()) {
-  PROVIDER_SANITIZE_CONFIG[providerId] = { ...DEFAULT_SANITIZE_CONFIG }
-}
-
-PROVIDER_SANITIZE_CONFIG.google = {
-  ...DEFAULT_SANITIZE_CONFIG,
-  modelMap: {
-    "gpt-4o": "gemini-1.5-flash",
-    "gpt-4o-mini": "gemini-1.5-flash",
-    "o3": "gemini-1.5-pro",
-    "o4-mini": "gemini-1.5-flash",
+export const PROVIDER_SANITIZE_CONFIG: Record<string, ProviderSanitizeConfig> = {
+  google: {
+    deleteFields: DEFAULT_UNSUPPORTED_FIELDS,
+    convertJsonSchemaToJsonObject: true,
   },
 }
 
 export function getSanitizedProtocol(providerId: string) {
   const config = PROVIDER_SANITIZE_CONFIG[providerId]
-  if (!config) return OpenAIProtocol
-  return createSanitizedProtocol(OpenAIProtocol, config)
+  if (!config) return GeminiProtocol
+  return createSanitizedProtocol(GeminiProtocol, config)
 }
 
 export function getProviderSanitizeConfig(providerId: string): ProviderSanitizeConfig {

@@ -22,7 +22,7 @@ export function generateAvatar(seed: string, options?: GenerateAvatarOptions): P
 
   const p = generateFaceParams(rng, options?.agentType)
   const lm = computeLandmarks(p)
-  const palette = generatePalette(rng)
+  const palette = generatePalette(rng, options?.agentType)
 
   return renderAvatar(p, lm, palette)
 }

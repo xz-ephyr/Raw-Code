@@ -1,268 +1,170 @@
 import type { RNG } from "./rng"
-import { lerp } from "./rng"
-import type { Vec2 } from "./primitives"
-import { vec2 } from "./primitives"
+import { pick } from "./rng"
 
 export type AgentType = "general" | "explore" | "writer" | "researcher" | "video" | string
 
 export interface FaceParameters {
   readonly headW: number
   readonly headH: number
-  readonly faceTopY: number
-  readonly faceBottomY: number
   readonly cx: number
-  readonly cy: number
-  readonly jawW: number
-  readonly jawAngularity: number
-  readonly chin: number
-  readonly eyeSize: number
-  readonly eyeTilt: number
+  readonly faceTopY: number
+  readonly eyeY: number
   readonly eyeSep: number
-  readonly browH: number
-  readonly browAngle: number
-  readonly noseW: number
+  readonly eyeSize: number
   readonly noseLen: number
-  readonly noseBridge: number
+  readonly mouthH: number
   readonly mouthW: number
-  readonly mouthThick: number
-  readonly neckW: number
+  readonly mouthY: number
+  readonly browH: number
   readonly neckH: number
+  readonly neckW: number
+  readonly hairStyle: "short" | "spiky" | "long" | "buzz" | "side"
+  readonly hairVolume: number
+  readonly hasHat: boolean
   readonly hasGlasses: boolean
+  readonly bodyW: number
+  readonly bodyH: number
+  readonly shoulderW: number
+  readonly armLen: number
+  readonly legLen: number
+  readonly footH: number
+  readonly build: "slim" | "medium" | "wide"
 }
 
-export interface FaceLandmarks {
-  readonly head: { cx: number; cy: number; rx: number; ry: number }
-  readonly neck: { cx: number; topY: number; botY: number; rx: number }
-  readonly jaw: { readonly points: readonly Vec2[] }
-  readonly leftEye: { cx: number; cy: number; w: number; h: number }
-  readonly rightEye: { cx: number; cy: number; w: number; h: number }
-  readonly leftBrow: { cx: number; cy: number; w: number; h: number; angle: number }
-  readonly rightBrow: { cx: number; cy: number; w: number; h: number; angle: number }
-  readonly nose: { bridgeTop: Vec2; bridgeBot: Vec2; tip: Vec2; leftN: Vec2; rightN: Vec2; nw: number }
-  readonly mouth: { cx: number; cy: number; halfW: number; upperH: number; lowerH: number }
-  readonly hasGlasses: boolean
+export interface AvatarLandmarks {
+  readonly head: { x: number; y: number; w: number; h: number }
+  readonly neck: { x: number; y: number; w: number; h: number }
+  readonly body: { x: number; y: number; w: number; h: number }
+  readonly leftArm: { x: number; y: number; w: number; h: number }
+  readonly rightArm: { x: number; y: number; w: number; h: number }
+  readonly leftLeg: { x: number; y: number; w: number; h: number }
+  readonly rightLeg: { x: number; y: number; w: number; h: number }
+  readonly leftFoot: { x: number; y: number; w: number; h: number }
+  readonly rightFoot: { x: number; y: number; w: number; h: number }
+  readonly leftEye: { x: number; y: number }
+  readonly rightEye: { x: number; y: number }
+  readonly mouth: { x: number; y: number; w: number }
+  readonly nose: { x: number; y: number }
+  readonly hairTop: { x: number; y: number; w: number; h: number }
+  readonly hat: { x: number; y: number; w: number; h: number } | null
+  readonly glasses: boolean
+}
+
+function rngRange(rng: RNG, min: number, max: number): number {
+  return min + rng() * (max - min)
 }
 
 export function generateFaceParams(rng: RNG, agentType?: AgentType): FaceParameters {
   const size = 64
 
-  // Base face — different head shapes per agent type
-  let headW: number, headH: number, faceTopY: number
-
-  switch (agentType) {
-    case "explore":
-      headW = size * 0.60
-      headH = size * 0.80
-      faceTopY = size * 0.04
-      break
-    case "writer":
-      headW = size * 0.52
-      headH = size * 0.76
-      faceTopY = size * 0.06
-      break
-    case "researcher":
-      headW = size * 0.50
-      headH = size * 0.74
-      faceTopY = size * 0.06
-      break
-    case "video":
-      headW = size * 0.58
-      headH = size * 0.78
-      faceTopY = size * 0.04
-      break
-    default: // general
-      headW = size * 0.55
-      headH = size * 0.76
-      faceTopY = size * 0.06
-  }
-
+  const headW = rngRange(rng, 16, 22)
+  const headH = rngRange(rng, 18, 24)
   const cx = size / 2
-  const cy = faceTopY + headH / 2
+  const faceTopY = rngRange(rng, 2, 6)
 
-  // Randomize within agent range
-  let jawW: number, jawAngularity: number, chin: number, eyeSize: number
-  let eyeTilt: number, eyeSep: number, browH: number, browAngle: number
-  let noseW: number, noseLen: number, noseBridge: number
-  let mouthW: number, mouthThick: number
-  let neckW: number, neckH: number
-  let hasGlasses: boolean
+  const build = pick(rng, agentType === "writer" ? ["slim"] : agentType === "explore" ? ["medium", "wide"] : ["slim", "medium", "wide"]) as "slim" | "medium" | "wide"
+  const bodyW = build === "slim" ? rngRange(rng, 14, 16) : build === "wide" ? rngRange(rng, 20, 24) : rngRange(rng, 16, 20)
+  const shoulderW = bodyW + (build === "wide" ? 6 : 4)
+  const bodyH = rngRange(rng, 14, 18)
 
-  switch (agentType) {
-    case "explore":
-      jawW = 0.3 + rng() * 0.3
-      jawAngularity = 0.1 + rng() * 0.2
-      chin = 0.2 + rng() * 0.2
-      eyeSize = 0.6 + rng() * 0.4
-      eyeTilt = (rng() - 0.2) * 0.3
-      eyeSep = 0.3 + rng() * 0.2
-      browH = 0.6 + rng() * 0.4
-      browAngle = 0.1 + rng() * 0.4
-      noseW = 0.2 + rng() * 0.3
-      noseLen = 0.2 + rng() * 0.2
-      noseBridge = 0.1 + rng() * 0.2
-      mouthW = 0.3 + rng() * 0.3
-      mouthThick = 0.3 + rng() * 0.3
-      neckW = 0.25
-      neckH = 0.12
-      hasGlasses = false
-      break
-    case "writer":
-      jawW = 0.4 + rng() * 0.3
-      jawAngularity = 0.3 + rng() * 0.4
-      chin = 0.3 + rng() * 0.3
-      eyeSize = 0.3 + rng() * 0.3
-      eyeTilt = (rng() - 0.3) * 0.5
-      eyeSep = 0.4 + rng() * 0.2
-      browH = 0.3 + rng() * 0.3
-      browAngle = 0.1 + rng() * 0.3
-      noseW = 0.3 + rng() * 0.3
-      noseLen = 0.5 + rng() * 0.3
-      noseBridge = 0.3 + rng() * 0.3
-      mouthW = 0.4 + rng() * 0.3
-      mouthThick = 0.3 + rng() * 0.3
-      neckW = 0.28
-      neckH = 0.14
-      hasGlasses = false
-      break
-    case "researcher":
-      jawW = 0.4 + rng() * 0.2
-      jawAngularity = 0.4 + rng() * 0.4
-      chin = 0.4 + rng() * 0.3
-      eyeSize = 0.2 + rng() * 0.2
-      eyeTilt = (rng() - 0.4) * 0.4
-      eyeSep = 0.3 + rng() * 0.2
-      browH = 0.2 + rng() * 0.2
-      browAngle = -0.2 + rng() * 0.2
-      noseW = 0.4 + rng() * 0.3
-      noseLen = 0.5 + rng() * 0.3
-      noseBridge = 0.5 + rng() * 0.4
-      mouthW = 0.3 + rng() * 0.3
-      mouthThick = 0.2 + rng() * 0.2
-      neckW = 0.27
-      neckH = 0.13
-      hasGlasses = rng() > 0.3
-      break
-    case "video":
-      jawW = 0.4 + rng() * 0.3
-      jawAngularity = 0.2 + rng() * 0.3
-      chin = 0.3 + rng() * 0.3
-      eyeSize = 0.5 + rng() * 0.3
-      eyeTilt = (rng() - 0.2) * 0.4
-      eyeSep = 0.4 + rng() * 0.2
-      browH = 0.3 + rng() * 0.3
-      browAngle = 0.0 + rng() * 0.3
-      noseW = 0.4 + rng() * 0.3
-      noseLen = 0.4 + rng() * 0.3
-      noseBridge = 0.3 + rng() * 0.3
-      mouthW = 0.6 + rng() * 0.3
-      mouthThick = 0.4 + rng() * 0.4
-      neckW = 0.30
-      neckH = 0.14
-      hasGlasses = false
-      break
-    default:
-      jawW = 0.4 + rng() * 0.3
-      jawAngularity = 0.3 + rng() * 0.3
-      chin = 0.3 + rng() * 0.3
-      eyeSize = 0.4 + rng() * 0.3
-      eyeTilt = (rng() - 0.4) * 0.4
-      eyeSep = 0.4 + rng() * 0.2
-      browH = 0.3 + rng() * 0.3
-      browAngle = (rng() - 0.3) * 0.4
-      noseW = 0.3 + rng() * 0.3
-      noseLen = 0.4 + rng() * 0.3
-      noseBridge = 0.3 + rng() * 0.3
-      mouthW = 0.4 + rng() * 0.3
-      mouthThick = 0.3 + rng() * 0.3
-      neckW = 0.28
-      neckH = 0.13
-      hasGlasses = false
-  }
-
-  const faceBottomY = faceTopY + headH
+  const hairStyle = (() => {
+    if (agentType === "explore") return pick(rng, ["spiky", "short", "side"] as const)
+    if (agentType === "writer") return pick(rng, ["short", "side", "long"] as const)
+    if (agentType === "video") return pick(rng, ["long", "spiky", "side"] as const)
+    if (agentType === "researcher") return pick(rng, ["short", "buzz", "side"] as const)
+    return pick(rng, ["short", "spiky", "long", "buzz", "side"] as const)
+  })()
 
   return {
-    headW, headH, faceTopY, faceBottomY, cx, cy,
-    jawW, jawAngularity, chin, eyeSize, eyeTilt, eyeSep,
-    browH, browAngle, noseW, noseLen, noseBridge,
-    mouthW, mouthThick, neckW, neckH, hasGlasses,
+    headW, headH, cx, faceTopY,
+    eyeY: faceTopY + headH * 0.48,
+    eyeSep: rngRange(rng, 4, 7),
+    eyeSize: rngRange(rng, 1, 2.5),
+    noseLen: rngRange(rng, 3, 6),
+    mouthH: faceTopY + headH * 0.78,
+    mouthW: rngRange(rng, 3, 6),
+    mouthY: faceTopY + headH * 0.78,
+    browH: rngRange(rng, 2, 4),
+    neckH: 3,
+    neckW: Math.round(bodyW * 0.55),
+    hairStyle,
+    hairVolume: rngRange(rng, 1, 4),
+    hasHat: agentType === "explore" ? rng() > 0.4 : false,
+    hasGlasses: agentType === "researcher" ? rng() > 0.3 : rng() > 0.75,
+    bodyW, bodyH, shoulderW, armLen: rngRange(rng, 8, 12),
+    legLen: rngRange(rng, 9, 13),
+    footH: 4,
+    build,
   }
 }
 
-export function computeLandmarks(p: FaceParameters): FaceLandmarks {
-  const { headW, headH, faceTopY, cx, neckW, neckH, hasGlasses } = p
-  const cy = faceTopY + headH / 2
-  const head = { cx, cy, rx: headW / 2, ry: headH / 2 }
+export function computeLandmarks(p: FaceParameters): AvatarLandmarks {
+  const size = 64
 
-  // Neck
-  const neckTopY = faceTopY + headH - 4
-  const neckBotY = Math.min(64, faceTopY + headH + headH * neckH)
-  const neckRx = headW * neckW
+  const headX = Math.round(p.cx - p.headW / 2)
+  const headY = Math.round(p.faceTopY)
+  const headB = { x: headX, y: headY, w: p.headW, h: p.headH }
 
-  // Jaw
-  const chinY = faceTopY + headH * 0.92
-  const chinX = cx
-  const jawLX = cx - headW * (0.35 + p.jawW * 0.15)
-  const jawRX = cx + headW * (0.35 + p.jawW * 0.15)
-  const jCtrlY = faceTopY + headH * 0.7
-  const cOff = p.chin * headH * 0.05
-  const ang = p.jawAngularity * 0.3
-  const jaw = {
-    points: [
-      vec2(jawLX, faceTopY + headH * 0.45),
-      vec2(jawLX - ang * 3, faceTopY + headH * 0.55),
-      vec2(jawLX - ang * 2, jCtrlY),
-      vec2(lerp(jawLX, chinX, 0.5) - ang * 2, chinY - cOff * 1.5),
-      vec2(chinX, chinY + cOff),
-      vec2(lerp(chinX, jawRX, 0.5) + ang * 2, chinY - cOff * 1.5),
-      vec2(jawRX + ang * 2, jCtrlY),
-      vec2(jawRX + ang * 3, faceTopY + headH * 0.55),
-      vec2(jawRX, faceTopY + headH * 0.45),
-    ],
-  }
+  const neckTop = headY + p.headH
+  const neckX = Math.round(p.cx - p.neckW / 2)
+  const neckB = { x: neckX, y: neckTop, w: p.neckW, h: p.neckH }
 
-  // Eyes
-  const eyeY = faceTopY + headH * 0.50
-  const eyeW = headW * 0.22 * (0.6 + p.eyeSize * 0.4)
-  const eyeH = eyeW * 0.45
-  const eyeSp = eyeW * (1.0 + p.eyeSep * 0.4)
-  const lEyeCx = cx - eyeSp / 2 - eyeW / 2
-  const rEyeCx = cx + eyeSp / 2 + eyeW / 2
+  const bodyTop = neckTop + p.neckH
+  const bodyX = Math.round(p.cx - p.bodyW / 2)
+  const bodyB = { x: bodyX, y: bodyTop, w: p.bodyW, h: p.bodyH }
 
-  // Brows
-  const browW = eyeW * 1.2
-  const browH = eyeH * 0.6
-  const browY = eyeY - eyeH * 0.7 - browH * p.browH
+  const armY = bodyTop + 2
+  const armH = p.bodyH - 2
+  const lArm = { x: bodyX - Math.round(p.shoulderW / 2 - p.bodyW / 2) - 2, y: armY, w: 3, h: armH }
+  const rArm = { x: bodyX + p.bodyW - 1, y: armY, w: 3, h: armH }
 
-  // Nose
-  const noseBaseY = faceTopY + headH * 0.66
-  const noseW2 = headW * 0.18 * (0.6 + p.noseW * 0.4)
+  const legTop = bodyTop + p.bodyH
+  const legW = Math.round(p.bodyW * 0.38)
+  const legXGap = Math.round(p.bodyW * 0.08)
+  const lLegX = bodyX + legXGap
+  const rLegX = bodyX + p.bodyW - legXGap - legW
+  const lLeg = { x: lLegX, y: legTop, w: legW, h: p.legLen }
+  const rLeg = { x: rLegX, y: legTop, w: legW, h: p.legLen }
 
-  // Mouth
-  const mouthY = faceTopY + headH * 0.78
-  const mouthHalfW = (rEyeCx + eyeW / 2 - lEyeCx - eyeW / 2) * 1.25 * (0.7 + p.mouthW * 0.3)
+  const footTop = legTop + p.legLen
+  const footW = legW + 2
+  const lFoot = { x: lLegX - 1, y: footTop, w: footW, h: p.footH }
+  const rFoot = { x: rLegX - 1, y: footTop, w: footW, h: p.footH }
+
+  const eyeY = Math.round(p.eyeY)
+  const lEyeX = Math.round(p.cx - p.eyeSep / 2 - p.eyeSize / 2)
+  const rEyeX = Math.round(p.cx + p.eyeSep / 2 - p.eyeSize / 2)
+
+  const mouthY = Math.round(p.mouthY)
+
+  const hairTop = Math.max(0, headY - Math.round(3 + p.hairVolume))
+  const hairW = p.headW + (p.hairStyle === "long" ? 4 : p.hairStyle === "spiky" ? 2 : 0)
+  const hairX = Math.round(headX - (hairW - p.headW) / 2)
+  const hairH = headY - hairTop + Math.round(p.headH * 0.3)
+
+  const hat = p.hasHat ? {
+    x: hairX - 2,
+    y: hairTop - 4,
+    w: hairW + 4,
+    h: 6,
+  } : null
 
   return {
-    head,
-    neck: { cx, topY: neckTopY, botY: neckBotY, rx: neckRx },
-    jaw,
-    leftEye: { cx: lEyeCx, cy: eyeY, w: eyeW, h: eyeH },
-    rightEye: { cx: rEyeCx, cy: eyeY, w: eyeW, h: eyeH },
-    leftBrow: { cx: lEyeCx, cy: browY, w: browW, h: browH, angle: p.browAngle },
-    rightBrow: { cx: rEyeCx, cy: browY, w: browW, h: browH, angle: p.browAngle },
-    nose: {
-      bridgeTop: vec2(cx, eyeY + eyeH * 0.3 - p.noseBridge * headH * 0.08),
-      bridgeBot: vec2(cx, noseBaseY - headH * 0.05),
-      tip: vec2(cx, noseBaseY),
-      leftN: vec2(cx - noseW2 / 2, noseBaseY + headH * 0.01),
-      rightN: vec2(cx + noseW2 / 2, noseBaseY + headH * 0.01),
-      nw: noseW2 * 0.4,
-    },
-    mouth: {
-      cx, cy: mouthY, halfW: mouthHalfW,
-      upperH: 2 + p.mouthThick * 3,
-      lowerH: 2 + p.mouthThick * 2,
-    },
-    hasGlasses,
+    head: headB,
+    neck: neckB,
+    body: bodyB,
+    leftArm: lArm,
+    rightArm: rArm,
+    leftLeg: lLeg,
+    rightLeg: rLeg,
+    leftFoot: lFoot,
+    rightFoot: rFoot,
+    leftEye: { x: lEyeX, y: eyeY },
+    rightEye: { x: rEyeX, y: eyeY },
+    mouth: { x: p.cx - Math.round(p.mouthW / 2), y: mouthY, w: p.mouthW },
+    nose: { x: p.cx, y: Math.round(eyeY + p.noseLen) },
+    hairTop: { x: hairX, y: hairTop, w: hairW, h: hairH },
+    hat,
+    glasses: p.hasGlasses,
   }
 }

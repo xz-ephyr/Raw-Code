@@ -41,7 +41,7 @@ export type AIModel = string;
 
 const FALLBACK_MODEL_IDS = new Set(MODELS.map(m => m.id))
 
-export const DEFAULT_MODEL: AIModel = 'mistral-small-latest';
+export const DEFAULT_MODEL: AIModel = 'gemini-2.5-flash';
 
 export const SELECTED_MODEL_STORAGE_KEY = 'selected-model';
 
@@ -54,7 +54,7 @@ function isAIModel(model: string | null): model is AIModel {
 
 export function getStoredSelectedModel(): AIModel {
   const storedModel = localStorage.getItem(SELECTED_MODEL_STORAGE_KEY);
-  return storedModel && isAIModel(storedModel) ? storedModel : DEFAULT_MODEL;
+  return storedModel || DEFAULT_MODEL;
 }
 
 export function getModelForChatRequest(_sessionId: string | undefined, _projectId?: string): AIModel {

@@ -1,4 +1,4 @@
-import { PROVIDER_CONFIGS, getAllProviderIds, type ModelRegistryEntry, type ProviderId, type ReasoningMechanism } from "./model-registry"
+import { PROVIDER_CONFIGS, type ModelRegistryEntry, type ProviderId, type ReasoningMechanism } from "./model-registry"
 
 interface ReasoningRule {
   test: RegExp
@@ -7,15 +7,8 @@ interface ReasoningRule {
 }
 
 const REASONING_RULES: ReasoningRule[] = [
-  { test: /^(o5)/, reasoning: "native", mechanism: { type: "reasoning_content" } },
-  { test: /^claude-(sonnet|opus|fable)-[45]/, reasoning: "native", mechanism: { type: "thinking_delta" } },
   { test: /^gemini-(2\.5|3\.[15])/, reasoning: "native", mechanism: { type: "reasoning_content" } },
   { test: /^gemma/, reasoning: "tagged", mechanism: { type: "inline_tags", open: "<thought>", close: "</thought>" } },
-  { test: /deepseek-(v[34]|reasoner|r1)/, reasoning: "native", mechanism: { type: "reasoning_content" } },
-  { test: /mistral-(large|medium)/, reasoning: "native", mechanism: { type: "reasoning_content" } },
-  { test: /qwen.*3\.6/, reasoning: "tagged", mechanism: { type: "inline_tags", open: "<think>", close: "</think>" } },
-  { test: /mistralai\/mistral-large/, reasoning: "native", mechanism: { type: "reasoning_content" } },
-  { test: /^grok-[45]/, reasoning: "native", mechanism: { type: "reasoning_content" } },
 ]
 
 export const MODEL_REGISTRY_FALLBACK: ModelRegistryEntry[] = [
@@ -26,16 +19,9 @@ export const MODEL_REGISTRY_FALLBACK: ModelRegistryEntry[] = [
 
 export function getDefaultEnabledModels(): { provider: ProviderId; modelId: string }[] {
   return [
-    { provider: "openai", modelId: "gpt-5" },
-    { provider: "anthropic", modelId: "claude-sonnet-4.5" },
     { provider: "google", modelId: "gemini-2.5-flash" },
-    { provider: "deepseek", modelId: "deepseek-v3" },
-    { provider: "grok", modelId: "grok-4" },
-    { provider: "mistral", modelId: "mistral-small-latest" },
-    { provider: "cerebras", modelId: "cerebras/gpt-oss-120b" },
-    { provider: "nvidia", modelId: "nvidia/llama-3.3-nemotron-super-49b-v1" },
-    { provider: "openrouter", modelId: "openrouter/auto" },
-    { provider: "groq", modelId: "llama-3.3-70b-versatile" },
+    { provider: "google", modelId: "gemini-2.5-pro" },
+    { provider: "google", modelId: "gemini-2.5-flash-lite" },
   ]
 }
 
@@ -58,26 +44,13 @@ function getApiKey(providerId: ProviderId): string | null {
   )
 }
 
-function buildCatalogHeaders(providerId: ProviderId, apiKey: string): Record<string, string> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" }
-  if (providerId === "anthropic") {
-    headers["x-api-key"] = apiKey
-    headers["anthropic-version"] = "2023-06-01"
-  } else if (providerId === "google") {
-    headers["x-goog-api-key"] = apiKey
-  } else {
-    headers["Authorization"] = `Bearer ${apiKey}`
-  }
-  return headers
+function buildHeaders(apiKey: string): Record<string, string> {
+  return { "Content-Type": "application/json", "x-goog-api-key": apiKey }
 }
 
-function normalizeCatalogResponse(providerId: ProviderId, data: any): string[] {
-  if (providerId === "google") {
-    if (!data?.models) return []
-    return data.models.map((m: any) => (m.name as string).replace("models/", ""))
-  }
-  if (!data?.data) return []
-  return data.data.map((m: any) => m.id as string)
+function normalizeCatalogResponse(data: any): string[] {
+  if (!data?.models) return []
+  return data.models.map((m: any) => (m.name as string).replace("models/", ""))
 }
 
 async function fetchRawModelIds(providerId: ProviderId): Promise<string[]> {
@@ -85,10 +58,10 @@ async function fetchRawModelIds(providerId: ProviderId): Promise<string[]> {
   if (!cfg?.catalogEndpoint) return []
   const apiKey = getApiKey(providerId)
   if (!apiKey) return []
-  const res = await fetch(cfg.catalogEndpoint, { headers: buildCatalogHeaders(providerId, apiKey) })
+  const res = await fetch(cfg.catalogEndpoint, { headers: buildHeaders(apiKey) })
   if (!res.ok) return []
   const raw = await res.json()
-  return normalizeCatalogResponse(providerId, raw)
+  return normalizeCatalogResponse(raw)
 }
 
 function buildEntries(providerId: ProviderId, modelIds: string[]): ModelRegistryEntry[] {
@@ -110,28 +83,20 @@ function buildEntries(providerId: ProviderId, modelIds: string[]): ModelRegistry
 }
 
 export async function loadModelRegistry(): Promise<ModelRegistryEntry[]> {
-  const results = await Promise.allSettled(getAllProviderIds().map(fetchRawModelIds))
+  const ids = ["google"] as ProviderId[]
+  const results = await Promise.allSettled(ids.map(fetchRawModelIds))
   const entries: ModelRegistryEntry[] = []
-  const providersWithLive = new Set<ProviderId>()
 
   for (let i = 0; i < results.length; i++) {
     const r = results[i]
-    const pid = getAllProviderIds()[i]
-    if (r.status === "fulfilled") {
-      if (r.value.length > 0) {
-        providersWithLive.add(pid)
-        entries.push(...buildEntries(pid, r.value))
-      }
+    const pid = ids[i]
+    if (r.status === "fulfilled" && r.value.length > 0) {
+      entries.push(...buildEntries(pid, r.value))
     }
   }
 
-  // For providers that returned no live models, add fallback entry
-  for (const fb of MODEL_REGISTRY_FALLBACK) {
-    if (!providersWithLive.has(fb.provider as ProviderId)) {
-      if (!entries.some(e => e.id === fb.id)) {
-        entries.push(fb)
-      }
-    }
+  if (entries.length === 0) {
+    entries.push(...MODEL_REGISTRY_FALLBACK)
   }
 
   return entries

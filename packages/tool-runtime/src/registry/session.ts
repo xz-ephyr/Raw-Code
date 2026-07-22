@@ -21,9 +21,7 @@ function getSessionMap(sessionID: string): Map<string, SessionRegistryEntry> {
 
 export function registerSession(sessionID: string, name: string, tool: AnyTool, source: FilterSource = 'session'): void {
   const map = getSessionMap(sessionID);
-  if (map.has(name)) {
-    console.warn(`[tool-runtime] Duplicate session tool registration: "${name}" for session "${sessionID}". Existing entry will be overwritten.`);
-  }
+  if (map.has(name)) return
   map.set(name, { tool, source, sessionID });
 }
 

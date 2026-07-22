@@ -7,22 +7,19 @@ import type { KeyProvider } from '@core/providers/providerRegistry';
 interface ProviderKeyModalProps {
   provider: KeyProvider;
   currentKey: string;
-  currentExtras?: Record<string, string>;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (key: string, extras?: Record<string, string>) => Promise<void>;
+  onSave: (key: string) => Promise<void>;
 }
 
 export function ProviderKeyModal({
   provider,
   currentKey,
-  currentExtras,
   isOpen,
   onClose,
   onSave,
 }: ProviderKeyModalProps) {
   const [key, setKey] = useState(currentKey);
-  const [extras, setExtras] = useState<Record<string, string>>(currentExtras || {});
   const [saving, setSaving] = useState(false);
 
   if (!isOpen) return null;
@@ -30,7 +27,7 @@ export function ProviderKeyModal({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave(key, extras);
+      await onSave(key);
     } finally {
       setSaving(false);
     }
@@ -73,20 +70,6 @@ export function ProviderKeyModal({
                   showKeyIcon
                 />
               </div>
-
-              {provider.id === 'cloudflare' && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Account ID (required for Cloudflare)</label>
-                  <input
-                    type="text"
-                    value={extras['cloudflare-account-id'] || ''}
-                    onChange={(e) => setExtras(prev => ({ ...prev, 'cloudflare-account-id': e.target.value }))}
-                    placeholder="Enter your Cloudflare Account ID"
-                    className="w-full px-3.5 py-2.5 text-sm bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                  />
-                  <p className="text-xs text-muted-foreground">Find this in your Cloudflare dashboard URL or in My Profile → API Tokens.</p>
-                </div>
-              )}
             </div>
 
             <div className="flex gap-3">

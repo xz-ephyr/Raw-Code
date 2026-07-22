@@ -29,32 +29,6 @@ const ensureSimpleToolChoice = (body: Record<string, unknown>): void => {
   const tc = body.tool_choice as Record<string, unknown>
   if (tc.type === "function" && tc.function) body.tool_choice = "auto"
 }
-const ensureRoleAlternation = (body: Record<string, unknown>): void => {
-  const messages = body.messages as Array<Record<string, unknown>> | undefined
-  if (!messages || messages.length < 2) return
-  const merged: Array<Record<string, unknown>> = [messages[0]]
-  for (let i = 1; i < messages.length; i++) {
-    const prev = merged[merged.length - 1]
-    const curr = messages[i]
-    if (prev.role === curr.role && curr.role !== "system") {
-      prev.content = String(prev.content) + "\n" + String(curr.content)
-    } else {
-      merged.push(curr)
-    }
-  }
-  body.messages = merged
-}
-
-const buildMistralBody: BodySanitizer = (body) => {
-  stripStreamOptions(body)
-  stripParallelToolCalls(body)
-  ensureRoleAlternation(body)
-  if (body.tool_choice && typeof body.tool_choice === "object") {
-    const tc = body.tool_choice as Record<string, unknown>
-    if (tc.type === "function") body.tool_choice = "auto"
-  }
-  return body
-}
 
 const buildGeminiBody: BodySanitizer = (body) => {
   stripStreamOptions(body)
@@ -70,83 +44,7 @@ const buildGeminiBody: BodySanitizer = (body) => {
   return body
 }
 
-const buildGroqBody: BodySanitizer = (body) => {
-  stripStreamOptions(body)
-  stripParallelToolCalls(body)
-  return body
-}
-
-const identityBody: BodySanitizer = (body) => body
-
 describe("bodySanitizers", () => {
-  describe("Mistral", () => {
-    fixture({
-      name: "strips stream_options",
-      sanitizer: buildMistralBody,
-      input: { messages: [{ role: "user", content: "hi" }], stream_options: { include_usage: true } },
-      expected: { messages: [{ role: "user", content: "hi" }] },
-    })
-
-    fixture({
-      name: "strips parallel_tool_calls",
-      sanitizer: buildMistralBody,
-      input: { messages: [{ role: "user", content: "hi" }], parallel_tool_calls: true },
-      expected: { messages: [{ role: "user", content: "hi" }] },
-    })
-
-    fixture({
-      name: "merges consecutive same-role messages",
-      sanitizer: buildMistralBody,
-      input: {
-        messages: [
-          { role: "user", content: "first" },
-          { role: "user", content: "second" },
-          { role: "assistant", content: "response" },
-          { role: "user", content: "third" },
-        ],
-      },
-      expected: {
-        messages: [
-          { role: "user", content: "first\nsecond" },
-          { role: "assistant", content: "response" },
-          { role: "user", content: "third" },
-        ],
-      },
-    })
-
-    fixture({
-      name: "does not merge system messages even if consecutive",
-      sanitizer: buildMistralBody,
-      input: {
-        messages: [
-          { role: "system", content: "sys1" },
-          { role: "system", content: "sys2" },
-          { role: "user", content: "hi" },
-        ],
-      },
-      expected: {
-        messages: [
-          { role: "system", content: "sys1" },
-          { role: "system", content: "sys2" },
-          { role: "user", content: "hi" },
-        ],
-      },
-    })
-
-    fixture({
-      name: "converts function tool_choice to auto",
-      sanitizer: buildMistralBody,
-      input: {
-        messages: [{ role: "user", content: "hi" }],
-        tool_choice: { type: "function", function: { name: "my_tool" } },
-      },
-      expected: {
-        messages: [{ role: "user", content: "hi" }],
-        tool_choice: "auto",
-      },
-    })
-  })
-
   describe("Gemini", () => {
     fixture({
       name: "strips stream_options",
@@ -187,47 +85,6 @@ describe("bodySanitizers", () => {
         messages: [{ role: "user", content: "hi" }],
         tool_choice: "auto",
       },
-    })
-  })
-
-  describe("Groq", () => {
-    fixture({
-      name: "strips stream_options",
-      sanitizer: buildGroqBody,
-      input: { messages: [{ role: "user", content: "hi" }], stream_options: { include_usage: true } },
-      expected: { messages: [{ role: "user", content: "hi" }] },
-    })
-
-    fixture({
-      name: "strips parallel_tool_calls",
-      sanitizer: buildGroqBody,
-      input: { messages: [{ role: "user", content: "hi" }], parallel_tool_calls: true },
-      expected: { messages: [{ role: "user", content: "hi" }] },
-    })
-  })
-
-  describe("OpenAI (identity)", () => {
-    fixture({
-      name: "preserves all fields",
-      sanitizer: identityBody,
-      input: { messages: [{ role: "user", content: "hi" }], stream_options: { include_usage: true }, parallel_tool_calls: true, max_tokens: 4096, tool_choice: "auto" },
-      expected: { messages: [{ role: "user", content: "hi" }], stream_options: { include_usage: true }, parallel_tool_calls: true, max_tokens: 4096, tool_choice: "auto" },
-    })
-  })
-
-  describe("empty messages edge case", () => {
-    fixture({
-      name: "handles empty messages array gracefully",
-      sanitizer: buildMistralBody,
-      input: { messages: [] },
-      expected: { messages: [] },
-    })
-
-    fixture({
-      name: "handles single message without alteration",
-      sanitizer: buildMistralBody,
-      input: { messages: [{ role: "user", content: "only one" }] },
-      expected: { messages: [{ role: "user", content: "only one" }] },
     })
   })
 })

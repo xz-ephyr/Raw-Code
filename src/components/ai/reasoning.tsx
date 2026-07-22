@@ -4,7 +4,8 @@ import { useControllableState } from "@radix-ui/react-use-controllable-state"
 
 import type { ComponentProps, ReactNode } from "react"
 import { createContext, memo, useContext, useEffect, useState } from "react"
-import { Streamdown } from "streamdown"
+
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { cn } from "@/lib/utils"
 
@@ -132,13 +133,13 @@ export type ReasoningContentProps = ComponentProps<typeof CollapsibleContent> & 
 export const ReasoningContent = memo(({ className, children, ...props }: ReasoningContentProps) => (
   <CollapsibleContent
     className={cn(
-      "mt-4 text-sm",
+      "mt-4 text-sm whitespace-pre-wrap break-words font-[inherit] leading-relaxed",
       "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-muted-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in",
       className,
     )}
     {...props}
   >
-    <Streamdown>{children}</Streamdown>
+    {children}
   </CollapsibleContent>
 ))
 

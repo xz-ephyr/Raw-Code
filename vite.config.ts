@@ -49,6 +49,10 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/create_session': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
       '/get_session': {
         target: 'http://localhost:3001',
         changeOrigin: true,
@@ -57,7 +61,79 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/get_all_sessions': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/update_session': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/delete_session': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/pin_session': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
       '/sessions': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/get_messages': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/save_messages': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/get_projects': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/create_project': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/delete_project': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/save_project_files': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/get_project_files': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/get_project_file_content': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/get_app_config': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/set_app_config': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/get_project_memory': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/set_project_memory': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/delete_project_memory': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/clear_project_memory': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },

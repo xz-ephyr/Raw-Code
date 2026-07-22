@@ -36,7 +36,7 @@ export const gemini25Flash = Route.make<GeminiRequestBody, any, string>({
   id: "gemini-2.5-flash",
   provider: "google",
   protocol: GeminiProtocol,
-  endpoint: makeEndpoint("/v1beta/models/gemini-2.5-flash:streamGenerateContent"),
+  endpoint: makeEndpoint("/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse"),
   auth,
   transport,
   defaults: {
@@ -50,7 +50,7 @@ export const gemini25Pro = Route.make<GeminiRequestBody, any, string>({
   id: "gemini-2.5-pro",
   provider: "google",
   protocol: GeminiProtocol,
-  endpoint: makeEndpoint("/v1beta/models/gemini-2.5-pro:streamGenerateContent"),
+  endpoint: makeEndpoint("/v1beta/models/gemini-2.5-pro:streamGenerateContent?alt=sse"),
   auth,
   transport,
   defaults: {
@@ -64,7 +64,7 @@ export const gemini25FlashLite = Route.make<GeminiRequestBody, any, string>({
   id: "gemini-2.5-flash-lite",
   provider: "google",
   protocol: GeminiProtocol,
-  endpoint: makeEndpoint("/v1beta/models/gemini-2.5-flash-lite:streamGenerateContent"),
+  endpoint: makeEndpoint("/v1beta/models/gemini-2.5-flash-lite:streamGenerateContent?alt=sse"),
   auth,
   transport,
   defaults: {
@@ -78,7 +78,7 @@ export const gemini31FlashLite = Route.make<GeminiRequestBody, any, string>({
   id: "gemini-3.1-flash-lite-preview",
   provider: "google",
   protocol: GeminiProtocol,
-  endpoint: makeEndpoint("/v1beta/models/gemini-3.1-flash-lite-preview:streamGenerateContent"),
+  endpoint: makeEndpoint("/v1beta/models/gemini-3.1-flash-lite-preview:streamGenerateContent?alt=sse"),
   auth,
   transport,
   defaults: {
@@ -92,7 +92,7 @@ export const gemma431bIt = Route.make<GeminiRequestBody, any, string>({
   id: "gemma-4-31b-it",
   provider: "google",
   protocol: GeminiProtocol,
-  endpoint: makeEndpoint("/v1beta/models/gemma-4-31b-it:streamGenerateContent"),
+  endpoint: makeEndpoint("/v1beta/models/gemma-4-31b-it:streamGenerateContent?alt=sse"),
   auth,
   transport,
   defaults: {
@@ -106,7 +106,7 @@ export const gemma426bIt = Route.make<GeminiRequestBody, any, string>({
   id: "gemma-4-26b-a4b-it",
   provider: "google",
   protocol: GeminiProtocol,
-  endpoint: makeEndpoint("/v1beta/models/gemma-4-26b-a4b-it:streamGenerateContent"),
+  endpoint: makeEndpoint("/v1beta/models/gemma-4-26b-a4b-it:streamGenerateContent?alt=sse"),
   auth,
   transport,
   defaults: {

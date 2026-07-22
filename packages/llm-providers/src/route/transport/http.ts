@@ -41,7 +41,7 @@ export const httpJson = <Body, Frame>(input: { readonly framing: Framing<Frame> 
 
     const providerId = prepareInput.request.model.provider
     const bodyText = prepareInput.encodeBody(prepareInput.body)
-    if (typeof process !== 'undefined' && process.env?.LLM_DEBUG && (providerId === "mistral" || providerId === "google")) {
+    if (typeof process !== 'undefined' && process.env?.LLM_DEBUG && providerId === "google") {
       console.log(`[body:${providerId}]`, JSON.stringify(JSON.parse(bodyText), null, 2))
     }
       const headers = yield* Auth.toEffect(prepareInput.auth)({

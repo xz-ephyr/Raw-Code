@@ -29,9 +29,9 @@ export function runSubAgent(
   materialization: Materialization,
   abortSignal?: AbortSignal,
 ): Effect.Effect<SubAgentResult, Error> {
-  return Effect.tryPromise(async () => {
+  return Effect.gen(function* () {
     const subAgentSessionID = `sub_${crypto.randomUUID()}`;
-    const agentID = request.agentType ?? 'general';
+    const agentID = request.agentType ?? 'default';
 
     emit({
       type: 'subagent_start',
@@ -49,16 +49,22 @@ export function runSubAgent(
 
     let filteredMat = materialization;
     if (scope) {
-      const filteredDefs = materialization.definitions.filter((d) => scope.includes(d.name));
+      const allowedNames = new Set(scope);
+      const filteredDefs = materialization.definitions.filter((d) => allowedNames.has(d.name));
       const filteredDefsMap = new Map(filteredDefs.map((d) => [d.name, d]));
       filteredMat = {
         definitions: filteredDefs,
         definitionsMap: filteredDefsMap,
-        settle: materialization.settle,
+        settle: async (call, context) => {
+          if (!allowedNames.has(call.name)) {
+            return { type: 'error', message: `Tool "${call.name}" is not allowed in this scope` } as const;
+          }
+          return materialization.settle(call, context);
+        },
       };
     }
 
-    const modelId = typeof request.model === 'string' ? request.model : (PROVIDER_CONFIGS.openai?.defaultModel ?? 'gpt-4o-mini');
+    const modelId = typeof request.model === 'string' ? request.model : (PROVIDER_CONFIGS.google?.defaultModel ?? 'gemini-2.5-flash');
     const route = getRoute(modelId)
     const provider = route.provider as string
     const model = Model.make({ id: modelId, provider, route })
@@ -98,6 +104,7 @@ export function runSubAgent(
               agentID,
               assistantMessageID: `msg_${crypto.randomUUID()}`,
               toolCallID: call.id,
+              abortSignal,
               resolveCredential: request.resolveCredential,
             },
           ),
@@ -118,7 +125,7 @@ export function runSubAgent(
     let totalOutputTokens = 0
     const toolResults: ToolResult[] = []
 
-    await Stream.runForEach(stream, (event) =>
+    const streamEffect = Stream.runForEach(stream, (event) =>
       Effect.sync(() => {
         if (event.type === 'text-delta') text += event.text ?? ''
         if (event.type === 'tool-call') toolCallCount++
@@ -142,14 +149,32 @@ export function runSubAgent(
           })
         }
         if (event.type === 'finish') {
-          totalInputTokens += (event as any).usage?.inputTokens ?? 0
-          totalOutputTokens += (event as any).usage?.outputTokens ?? 0
+          const usage = (event as { usage?: { inputTokens?: number; outputTokens?: number } }).usage;
+          totalInputTokens += usage?.inputTokens ?? 0
+          totalOutputTokens += usage?.outputTokens ?? 0
         }
       }),
-    ).pipe(
-      Effect.catchAll(() => Effect.void),
-      Effect.runPromise,
-    )
+    );
+
+    yield* streamEffect.pipe(
+      Effect.catchAll((err) => {
+        const error = err instanceof Error ? err : new Error(String(err));
+        emit({
+          type: 'subagent_end',
+          sessionID: subAgentSessionID,
+          agentID,
+          timestamp: Date.now(),
+          payload: {
+            text,
+            steps: stepCount,
+            toolCalls: toolCallCount,
+            error: error.message,
+            usage: { inputTokens: totalInputTokens, outputTokens: totalOutputTokens },
+          },
+        });
+        return Effect.fail(error);
+      }),
+    );
 
     emit({
       type: 'subagent_end',

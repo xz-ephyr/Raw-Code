@@ -150,11 +150,14 @@ export function createToolLoop(
 
         if (toolCalls.length === 0) {
           if (finishEvent) return Stream.make(finishEvent)
+          // If a provider-error was already emitted by catchAll, don't synthesize
+          // a finish — it would overwrite the error in smoothStream's pendingFinish.
+          if (hasError) return Stream.empty as any
           // Stream ended without a finish or error — synthesize one so consumers
           // (especially smoothStream) always get a terminal event
           return Stream.make({
             type: "finish",
-            reason: hasError ? "error" : "unknown",
+            reason: "unknown",
           } as LLMEvent)
         }
 

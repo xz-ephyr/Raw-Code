@@ -29,7 +29,7 @@ async function checkPersonalities(layer: string): Promise<SelfTestResult[]> {
     } else {
       results.push(fail(layer, 'Personalities: getMaxSteps', 'Not a function'));
     }
-    const prompt = mod.buildSystemPrompt({ task: 'test', parentSessionID: 'p1' });
+    const prompt = mod.buildSystemPrompt({ task: 'test' });
     if (typeof prompt === 'string' && prompt.length > 0) {
       results.push(ok(layer, 'Personalities: buildSystemPrompt returns non-empty string'));
     } else {
@@ -105,11 +105,6 @@ async function checkBridgeTools(layer: string): Promise<SelfTestResult[]> {
     } else {
       results.push(fail(layer, 'Bridge: composeRunTool exported', 'Not found'));
     }
-    if (typeof mod.setToolFilter === 'function') {
-      results.push(ok(layer, 'Bridge: setToolFilter exported'));
-    } else {
-      results.push(fail(layer, 'Bridge: setToolFilter exported', 'Not a function'));
-    }
   } catch (e) {
     results.push(skip(layer, 'Bridge tools', String(e)));
   }
@@ -119,9 +114,8 @@ async function checkBridgeTools(layer: string): Promise<SelfTestResult[]> {
 async function checkSubagentTypes(layer: string): Promise<SelfTestResult[]> {
   const results: SelfTestResult[] = [];
   try {
-    const { SubAgentRequest, SubAgentResult } = await import('@doktor/subagent/types');
-    if (SubAgentRequest) results.push(ok(layer, 'SubAgentRequest type importable'));
-    if (SubAgentResult) results.push(ok(layer, 'SubAgentResult type importable'));
+    const mod = await import('@doktor/subagent/types');
+    if (mod) results.push(ok(layer, 'Subagent types module importable'));
   } catch {
     results.push(skip(layer, 'Subagent types', 'May not be runtime values'));
   }

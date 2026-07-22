@@ -27,20 +27,7 @@ import { query } from '../db.js';
  * before running a real cloud request.
  */
 const CONFIG_KEY_TO_ENV: Record<string, string> = {
-  'anthropic-api-key': 'ANTHROPIC_API_KEY',
-  'openai-api-key': 'OPENAI_API_KEY',
   'google-api-key': 'GOOGLE_API_KEY',
-  'deepseek-api-key': 'DEEPSEEK_API_KEY',
-  'mistral-api-key': 'MISTRAL_API_KEY',
-  'cohere-api-key': 'COHERE_API_KEY',
-  'groq-api-key': 'GROQ_API_KEY',
-  'together-api-key': 'TOGETHER_API_KEY',
-  'openrouter-api-key': 'OPENROUTER_API_KEY',
-  'nvidia-api-key': 'NVIDIA_API_KEY',
-  'cerebras-api-key': 'CEREBRAS_API_KEY',
-  'sambanova-api-key': 'SAMBANOVA_API_KEY',
-  'huggingface-api-key': 'HUGGINGFACE_API_KEY',
-  'cloudflare-api-key': 'CLOUDFLARE_API_KEY',
 };
 
 let envHydrated = false;
@@ -287,13 +274,7 @@ export async function runAgentTask(input: RunAgentTaskInput): Promise<{
     }).pipe(
       Effect.flatMap((result) => {
         if (result.type === 'error') {
-          const msg =
-            typeof result.message === 'string'
-              ? result.message
-              : result.message instanceof Error
-                ? result.message.message
-                : JSON.stringify(result.message);
-          return Effect.fail(new Error(msg));
+          return Effect.fail(new Error(result.message));
         }
         return Effect.succeed({ id: call.id, name: call.name, result: result.value });
       }),

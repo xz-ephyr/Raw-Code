@@ -3,6 +3,7 @@ export interface ToolExecuteContext {
   readonly agentID: string;
   readonly assistantMessageID: string;
   readonly toolCallID: string;
+  readonly abortSignal?: AbortSignal;
   readonly resolveModel?: (name: string) => unknown;
   readonly resolveCredential?: (provider: string) => string | undefined;
 }

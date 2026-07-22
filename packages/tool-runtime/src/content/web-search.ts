@@ -1,4 +1,4 @@
-import { Effect, Schema } from 'effect';
+import { Effect, Schema, Duration } from 'effect';
 import { make } from '../tool/make';
 import { putToolOutput } from '../store';
 import { emit } from '../events';
@@ -40,7 +40,25 @@ export const webSearchTool = make({
 
       const maxResults = input.maxResults ?? 5;
 
-      const searchResult = yield* Effect.promise(() => serverWebSearch(input.query, maxResults));
+      const searchResult = yield* Effect.tryPromise({
+        try: () => serverWebSearch(input.query, maxResults),
+        catch: (err) => new Error(`Web search failed: ${err instanceof Error ? err.message : String(err)}`),
+      }).pipe(
+        Effect.timeout(Duration.seconds(35)),
+        Effect.catchAll((err) =>
+          Effect.gen(function* () {
+            yield* Effect.logError("Web search error", err);
+            emit({
+              type: 'tool_call_end',
+              sessionID: context.sessionID,
+              agentID: context.agentID,
+              timestamp: Date.now(),
+              payload: { toolName: 'web_search', toolCallID: context.toolCallID, error: err.message ?? String(err) },
+            });
+            return yield* Effect.fail(err);
+          }),
+        ),
+      );
 
       const sources = searchResult.results.slice(0, maxResults).map((r) => ({
         title: r.title || 'Untitled',

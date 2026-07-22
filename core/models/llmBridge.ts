@@ -1,16 +1,10 @@
 import { Effect, Stream } from "effect"
 import type { AnyRoute } from "@doktor/llm-providers/route"
-import openaiRoutes from "@doktor/llm-providers/providers/openai"
-import anthropicRoutes from "@doktor/llm-providers/providers/anthropic"
-import openaiCompatRoutes from "@doktor/llm-providers/providers/openai-compatible"
 import googleRoutes from "@doktor/llm-providers/providers/google"
 import type { LLMEvent, SystemPart, Message, Model } from "@doktor/llm-providers/schema"
-import { LLMRequest } from "@doktor/llm-providers/schema"
+import { LLMRequest, makeGenerationOptions } from "@doktor/llm-providers/schema"
 
 const allRoutes: ReadonlyArray<AnyRoute> = [
-  ...openaiRoutes,
-  ...anthropicRoutes,
-  ...openaiCompatRoutes,
   ...googleRoutes,
 ]
 
@@ -84,7 +78,7 @@ function buildRequest(options: { messages: any[]; modelName: string; system?: st
     system: systemParts,
     messages,
     tools: [],
-    generation: { maxTokens: options.maxTokens, temperature: options.temperature },
+    generation: makeGenerationOptions({ maxTokens: options.maxTokens, temperature: options.temperature }),
   })
 }
 

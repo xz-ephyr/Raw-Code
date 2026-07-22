@@ -7,6 +7,7 @@ import type { LLMEvent } from "../schema/event-schemas"
 
 interface GeminiPart {
   text?: string
+  thought?: boolean
   inlineData?: { mimeType: string; data: string }
   functionCall?: { name: string; args: Record<string, unknown> }
   functionResponse?: { name: string; response: Record<string, unknown> }
@@ -288,20 +289,36 @@ export const GeminiProtocol = Protocol.make<GeminiRequestBody, string, GeminiStr
           if (part.text) {
             const key = textLabel(index)
             const existing = newTextBlocks[key]
+            const isThought = !!part.thought
+
             if (!existing) {
               newTextBlocks[key] = { index, text: part.text }
               events.push({ type: "step-start", index: newStepIndex } as any)
-              events.push({ type: "text-start", id: key } as any)
+              if (isThought) {
+                events.push({ type: "reasoning-start", id: key } as any)
+              } else {
+                events.push({ type: "text-start", id: key } as any)
+              }
 
               if (!state.intentEmitted) {
                 newIntentEmitted = true
-                newIntentText = part.text
-                events.push({ type: "intent", id: `intent:${index}:${Date.now()}`, text: part.text, toolNames: newToolNames.length > 0 ? newToolNames : undefined } as any)
+                newIntentText = isThought ? "Reasoning..." : part.text
+                events.push({
+                  type: "intent",
+                  id: `intent:${index}:${Date.now()}`,
+                  text: newIntentText,
+                  toolNames: newToolNames.length > 0 ? newToolNames : undefined
+                } as any)
               }
             } else {
               newTextBlocks[key] = { ...existing, text: existing.text + part.text }
             }
-            events.push({ type: "text-delta", id: key, text: part.text } as any)
+
+            if (isThought) {
+              events.push({ type: "reasoning-delta", id: key, text: part.text } as any)
+            } else {
+              events.push({ type: "text-delta", id: key, text: part.text } as any)
+            }
           }
 
           if (part.functionCall) {

@@ -12,12 +12,12 @@ export interface SmoothConfig {
 }
 
 export const defaultSmoothConfig: SmoothConfig = {
-  charsPerTick: 8,
-  tickMs: 16,
+  charsPerTick: 9999,
+  tickMs: 1,
   idleTimeoutMs: 30_000,
-  punctuationPauseMs: 120,
+  punctuationPauseMs: 0,
   codeBlockMultiplier: 1,
-  wordBoundaryAware: true,
+  wordBoundaryAware: false,
 }
 
 export function smoothStream(

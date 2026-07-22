@@ -113,7 +113,7 @@ router.post('/update_session', async (req, res) => {
   if (sets.length === 0) return res.json({ success: true });
 
   // Only bump updated_at for content changes, not metadata (unread, streaming, pinned)
-  if (title !== undefined || lastMessage !== undefined) {
+  if ((title !== undefined && title !== null) || (lastMessage !== undefined && lastMessage !== null)) {
     sets.push(`updated_at = $${idx++}`);
     params.push(Date.now());
   }

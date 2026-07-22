@@ -7,42 +7,15 @@ interface ModelIconProps {
   className?: string;
 }
 
-const FIRST_PARTY_PROVIDERS = new Set(['openai', 'anthropic', 'google', 'grok'])
+const FIRST_PARTY_PROVIDERS = new Set(['google'])
 
 const MODEL_PATTERN_ICONS: [RegExp, string][] = [
-  [/zai/i, '/zai.svg'],
   [/gemma/i, '/gemma-color.svg'],
-  [/deepseek/i, '/deepseek-color.svg'],
-  [/openai|^gpt/i, '/openai.svg'],
-  [/llama|^meta/i, '/meta-color.svg'],
   [/gemini/i, '/gemini-color.svg'],
-  [/nemotron/i, '/nvidia-color.svg'],
-  [/mistral|codestral|pixtral/i, '/mistral-color.svg'],
-  [/qwen/i, '/qwen-color.svg'],
-  [/phi/i, '/microsoft-color.svg'],
-  [/command|^c4ai/i, '/commanda-color.svg'],
-  [/together/i, '/together-color.svg'],
-  [/claude|anthropic/i, '/claude-color.svg'],
-  [/openrouter/i, '/openrouter.svg'],
-  [/^grok/i, '/grok-color.svg'],
 ];
 
 const PROVIDER_ICONS: Record<string, string> = {
-  anthropic: '/claude-color.svg',
-  openai: '/openai.svg',
   google: '/google-color.svg',
-  deepseek: '/deepseek-color.svg',
-  mistral: '/mistral-color.svg',
-  cohere: '/commanda-color.svg',
-  groq: '/assets/images/providers/groq.svg',
-  together: '/together-color.svg',
-  openrouter: '/openrouter.svg',
-  nvidia: '/nvidia-color.svg',
-  cerebras: '/assets/images/providers/cerebras.svg',
-  sambanova: '/assets/images/providers/cerebras.svg',
-  huggingface: '/assets/images/providers/mistral.svg',
-  cloudflare: '/assets/images/providers/cerebras.svg',
-  grok: '/grok-color.svg',
 };
 
 export function ModelIcon({ modelId, size = 14, className = '' }: ModelIconProps) {

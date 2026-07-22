@@ -124,6 +124,12 @@ app.use(websearchRoutes);
 app.use(connectorRoutes);
 app.use('/llm', llmStreamRoutes);
 
+// Global error handler
+app.use((err: any, _req: any, res: any, _next: any) => {
+  console.error('[server] Global error handler:', err);
+  res.status(500).json({ error: 'Internal server error', details: String(err) });
+});
+
 const PORT = process.env.PORT || 3001;
 
 async function start() {
@@ -144,4 +150,10 @@ async function start() {
   startBackgroundScheduler();
 }
 
-start();
+// Global error handler
+app.use((err: any, _req: any, res: any, _next: any) => {
+  console.error('[server] Global error handler:', err);
+  res.status(500).json({ error: 'Internal server error', details: String(err) });
+});
+
+start().catch(console.error);

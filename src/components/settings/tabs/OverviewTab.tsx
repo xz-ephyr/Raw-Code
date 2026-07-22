@@ -359,8 +359,7 @@ export function OverviewTab() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {Array.from(grouped.entries()).sort((a, b) => {
-          const rank: Record<string, number> = { anthropic: 0, openai: 1, google: 2, deepseek: 3, mistral: 4, cohere: 5, groq: 6, together: 7, openrouter: 8, nvidia: 9, cerebras: 10, sambanova: 11, huggingface: 12, cloudflare: 13 };
-          // Keep in sync with the provider registry order when adding new providers
+          const rank: Record<string, number> = { google: 0 };
           return (rank[a[0]] ?? 99) - (rank[b[0]] ?? 99);
         }).map(([provider, models]) => {
           const providerInfo = getProvider(provider);

@@ -4,24 +4,11 @@ const ANTIGRAVITY_REAL_SMOKE_INTERVAL_MS = 60 * 60 * 1000;
 let lastCheapRunTimestamp: string | null = null;
 
 const REQUIRED_ENV_KEYS = [
-  'OPENAI_API_KEY',
-  'ANTHROPIC_API_KEY',
   'GOOGLE_API_KEY',
-  'DEEPSEEK_API_KEY',
-  'MISTRAL_API_KEY',
 ];
 
 const OPTIONAL_ENV_KEYS = [
   'ANTIGRAVITY_API_KEY',
-  'GROQ_API_KEY',
-  'TOGETHER_API_KEY',
-  'OPENROUTER_API_KEY',
-  'SAMBANOVA_API_KEY',
-  'HUGGINGFACE_API_KEY',
-  'CLOUDFLARE_API_KEY',
-  'NVIDIA_API_KEY',
-  'CEREBRAS_API_KEY',
-  'COHERE_API_KEY',
 ];
 
 export interface CheapCheckResult {

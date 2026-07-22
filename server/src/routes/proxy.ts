@@ -6,7 +6,7 @@ const ALLOWED_HOST_RE = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0
 const PRIVATE_IPS = /^(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|0\.|169\.254\.|::1|fe80:)/;
 
 router.all('/proxy/*', async (req, res) => {
-  const raw = req.path.replace(/^\//, '');
+  const raw = req.originalUrl.replace(/^\//, '');
   const actualUrl = raw.replace(/^proxy\//, '');
 
   let parsed: URL;

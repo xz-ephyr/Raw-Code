@@ -202,5 +202,16 @@ export async function migrate() {
     );
   `);
 
+  // Migration: remove non-google LLM provider config keys
+  const providerKeys = [
+    'openai-api-key', 'anthropic-api-key', 'deepseek-api-key', 'mistral-api-key',
+    'cerebras-api-key', 'nvidia-api-key', 'openrouter-api-key', 'groq-api-key',
+    'xai-api-key', 'cohere-api-key', 'together-api-key', 'sambanova-api-key',
+    'huggingface-api-key', 'cloudflare-api-key',
+  ]
+  for (const key of providerKeys) {
+    db.prepare('DELETE FROM app_config WHERE key = ?').run(key)
+  }
+
   // Migration complete
 }

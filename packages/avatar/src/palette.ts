@@ -1,4 +1,6 @@
 import type { RNG } from "./rng"
+import { pick } from "./rng"
+import type { AgentType } from "./face"
 
 export interface RGBA {
   readonly r: number
@@ -15,65 +17,123 @@ function clampByte(v: number): number {
   return Math.max(0, Math.min(255, Math.round(v)))
 }
 
-export function blendRGBA(a: RGBA, b: RGBA): RGBA {
-  const alpha = b.a / 255
-  const invAlpha = 1 - alpha
-  return {
-    r: clampByte(a.r * invAlpha + b.r * alpha),
-    g: clampByte(a.g * invAlpha + b.g * alpha),
-    b: clampByte(a.b * invAlpha + b.b * alpha),
-    a: 255,
-  }
-}
-
 export function mulRGBA(c: RGBA, factor: number): RGBA {
   return rgba(c.r * factor, c.g * factor, c.b * factor, c.a)
 }
 
-export function alphaBlend(layers: readonly RGBA[]): RGBA {
-  let result = layers[0] ?? rgba(0, 0, 0, 0)
-  for (let i = 1; i < layers.length; i++) {
-    result = blendRGBA(result, layers[i])
-  }
-  return result
-}
-
-// Greyscale portrait palette — 5 shades
-const SKIN_VALUES: readonly number[] = [220, 200, 180, 160, 140]
-const HAIR_VALUES: readonly number[] = [20, 35, 55, 80, 110]
-
 export interface AvatarPalette {
-  readonly skin: RGBA        // light grey
-  readonly skinShadow: RGBA  // darker grey
-  readonly skinHighlight: RGBA // white-ish
-  readonly hair: RGBA        // near-black
-  readonly eyeWhite: RGBA    // white
-  readonly iris: RGBA        // mid-dark grey
-  readonly pupil: RGBA       // black
-  readonly lip: RGBA         // mid grey
-  readonly lipHighlight: RGBA // lighter grey
-  readonly brow: RGBA        // dark
-  readonly glasses: RGBA     // light grey (wire frames)
-  readonly bg: RGBA          // transparent
+  readonly skin: RGBA
+  readonly skinShadow: RGBA
+  readonly skinHighlight: RGBA
+  readonly hair: RGBA
+  readonly hairHighlight: RGBA
+  readonly eyeWhite: RGBA
+  readonly pupil: RGBA
+  readonly lip: RGBA
+  readonly shirt: RGBA
+  readonly shirtDark: RGBA
+  readonly pants: RGBA
+  readonly pantsDark: RGBA
+  readonly shoes: RGBA
+  readonly shoesDark: RGBA
+  readonly belt: RGBA
+  readonly accessory: RGBA
+  readonly outline: RGBA
+  readonly bg: RGBA
 }
 
-export function generatePalette(rng: RNG): AvatarPalette {
-  const skinL = SKIN_VALUES[Math.floor(rng() * SKIN_VALUES.length)]
-  const skin = rgba(skinL, skinL, skinL)
-  const skinShadow = rgba(Math.max(0, skinL - 60), Math.max(0, skinL - 60), Math.max(0, skinL - 60))
-  const skinHighlight = rgba(Math.min(255, skinL + 40), Math.min(255, skinL + 40), Math.min(255, skinL + 40))
+interface ColorScheme {
+  skin: readonly number[]
+  hair: readonly number[]
+  shirt: readonly number[]
+  pants: readonly number[]
+  shoes: readonly number[]
+  accessory: readonly number[]
+}
 
-  const hairL = HAIR_VALUES[Math.floor(rng() * HAIR_VALUES.length)]
-  const hair = rgba(hairL, hairL, hairL)
+const SCHEMES: Record<string, ColorScheme> = {
+  general: {
+    skin: [255, 220, 185],
+    hair: [80, 55, 30],
+    shirt: [50, 120, 200],
+    pants: [40, 50, 70],
+    shoes: [60, 60, 60],
+    accessory: [200, 180, 100],
+  },
+  explore: {
+    skin: [230, 195, 160],
+    hair: [60, 40, 20],
+    shirt: [55, 140, 65],
+    pants: [130, 110, 70],
+    shoes: [100, 65, 40],
+    accessory: [200, 160, 60],
+  },
+  writer: {
+    skin: [245, 225, 210],
+    hair: [120, 50, 40],
+    shirt: [160, 60, 60],
+    pants: [80, 80, 90],
+    shoes: [30, 30, 35],
+    accessory: [180, 180, 190],
+  },
+  researcher: {
+    skin: [240, 225, 210],
+    hair: [180, 180, 185],
+    shirt: [220, 225, 235],
+    pants: [50, 55, 75],
+    shoes: [40, 40, 45],
+    accessory: [150, 170, 200],
+  },
+  video: {
+    skin: [235, 210, 180],
+    hair: [25, 30, 40],
+    shirt: [130, 60, 170],
+    pants: [30, 30, 35],
+    shoes: [200, 200, 210],
+    accessory: [60, 180, 180],
+  },
+}
 
-  const eyeWhite = rgba(240, 240, 240)
-  const iris = rgba(60, 60, 60)
-  const pupil = rgba(0, 0, 0)
-  const lip = rgba(120, 120, 120)
-  const lipHighlight = rgba(160, 160, 160)
-  const brow = rgba(hairL, hairL, hairL)
-  const glasses = rgba(160, 160, 160)
-  const bg = rgba(0, 0, 0, 0)
+export function getScheme(agentType?: AgentType): ColorScheme {
+  return SCHEMES[agentType ?? "general"] ?? SCHEMES.general
+}
 
-  return { skin, skinShadow, skinHighlight, hair, eyeWhite, iris, pupil, lip, lipHighlight, brow, glasses, bg }
+function vary(rng: RNG, base: readonly number[], range: number): readonly [number, number, number] {
+  return [
+    clampByte(base[0] + (rng() - 0.5) * range),
+    clampByte(base[1] + (rng() - 0.5) * range),
+    clampByte(base[2] + (rng() - 0.5) * range),
+  ]
+}
+
+export function generatePalette(rng: RNG, agentType?: AgentType): AvatarPalette {
+  const scheme = getScheme(agentType)
+  const s = vary(rng, scheme.skin, 30)
+  const h = vary(rng, scheme.hair, 20)
+  const sh = vary(rng, scheme.shirt, 25)
+  const p = vary(rng, scheme.pants, 20)
+  const so = vary(rng, scheme.shoes, 15)
+  const acc = vary(rng, scheme.accessory, 30)
+
+  const skin = rgba(s[0], s[1], s[2])
+  return {
+    skin,
+    skinShadow: rgba(Math.max(0, s[0] - 50), Math.max(0, s[1] - 50), Math.max(0, s[2] - 50)),
+    skinHighlight: rgba(Math.min(255, s[0] + 30), Math.min(255, s[1] + 30), Math.min(255, s[2] + 30)),
+    hair: rgba(h[0], h[1], h[2]),
+    hairHighlight: rgba(Math.min(255, h[0] + 40), Math.min(255, h[1] + 40), Math.min(255, h[2] + 40)),
+    eyeWhite: rgba(240, 240, 240),
+    pupil: rgba(20, 20, 25),
+    lip: rgba(200, 120, 110),
+    shirt: rgba(sh[0], sh[1], sh[2]),
+    shirtDark: rgba(Math.max(0, sh[0] - 40), Math.max(0, sh[1] - 40), Math.max(0, sh[2] - 40)),
+    pants: rgba(p[0], p[1], p[2]),
+    pantsDark: rgba(Math.max(0, p[0] - 30), Math.max(0, p[1] - 30), Math.max(0, p[2] - 30)),
+    shoes: rgba(so[0], so[1], so[2]),
+    shoesDark: rgba(Math.max(0, so[0] - 25), Math.max(0, so[1] - 25), Math.max(0, so[2] - 25)),
+    belt: rgba(50, 40, 30),
+    accessory: rgba(acc[0], acc[1], acc[2]),
+    outline: rgba(30, 30, 35),
+    bg: rgba(0, 0, 0, 0),
+  }
 }

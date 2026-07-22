@@ -1,6 +1,6 @@
 import { Effect } from "effect"
 import { Service as LLMClient, LLMRequest, SystemPart, userMessage, makeGenerationOptions, layer } from "@doktor/llm-providers"
-import { proxyGpt4oMini } from "@core/tools/nativeRoutes"
+import { proxyGemini25Flash } from "@core/tools/nativeRoutes"
 import { getProviders } from "@core/models/providerCache"
 
 interface Message {
@@ -28,17 +28,17 @@ ${history}
 CONCISE SUMMARY:`;
 
   const providers = await getProviders(projectId)
-  const openaiClient = providers.get("openai")
+  const geminiClient = providers.get("google")
   let apiKey = ""
-  if (openaiClient && typeof (openaiClient as any).apiKey === "string") {
-    apiKey = (openaiClient as any).apiKey
+  if (geminiClient && typeof (geminiClient as any).apiKey === "string") {
+    apiKey = (geminiClient as any).apiKey
   }
   if (!apiKey) {
-    apiKey = typeof localStorage !== "undefined" ? localStorage.getItem("openai_api_key") || "" : ""
+    apiKey = typeof localStorage !== "undefined" ? localStorage.getItem("google-api-key") || "" : ""
   }
   if (!apiKey) return null
 
-  const route = proxyGpt4oMini
+  const route = proxyGemini25Flash
   const model = route.model({ id: route.id })
 
   const request = new LLMRequest({

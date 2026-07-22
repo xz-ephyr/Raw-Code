@@ -1,94 +1,10 @@
-import { Auth } from "@doktor/llm-providers"
-import { Route, Endpoint, type AnyRoute } from "@doktor/llm-providers/route"
-import { Framing } from "@doktor/llm-providers/route/framing"
-import { HttpTransport } from "@doktor/llm-providers/route/transport"
-import { OpenAIProtocol } from "@doktor/llm-providers/protocols/openai-chat"
-import type { OpenAIChatBody } from "@doktor/llm-providers/protocols/openai-chat"
+import { Auth, Route } from "@doktor/llm-providers"
+import { Endpoint, HttpTransport, Framing, type AnyRoute } from "@doktor/llm-providers/route"
+import { GeminiProtocol, type GeminiRequestBody } from "@doktor/llm-providers/protocols/google-gemini"
 import { Effect } from "effect"
-import { gpt4o, gpt4oMini, o3, o4Mini } from "@doktor/llm-providers/providers/openai"
-import { claudeSonnet4, claudeHaiku3, claudeOpus4 } from "@doktor/llm-providers/providers/anthropic"
 import { gemini25Flash, gemini25Pro, gemini25FlashLite, gemini31FlashLite, gemma431bIt, gemma426bIt } from "@doktor/llm-providers/providers/google"
-import { providerBuilders } from "./bodySanitizers"
-import { PROVIDER_CONFIGS, getAllProviderIds } from "@doktor/llm-providers/model-registry"
 
-function proxyURL(baseURL: string): string {
-  return `/proxy/${baseURL}`
-}
-
-const PROVIDER_PROXY_URLS: Record<string, string> = {}
-for (const id of getAllProviderIds()) {
-  PROVIDER_PROXY_URLS[id] = proxyURL(PROVIDER_CONFIGS[id].baseURL)
-}
-
-const sseFraming = Framing.sse
-const jsonTransport = HttpTransport.httpJson<OpenAIChatBody, string>({ framing: sseFraming })
-
-function makeProxyRoute(
-  id: string,
-  provider: string,
-  baseURL: string,
-  limits?: { context?: number; output?: number },
-): AnyRoute {
-  const bodyTransform = providerBuilders[provider]
-  return Route.make<OpenAIChatBody, any, string>({
-    id,
-    provider,
-    protocol: OpenAIProtocol,
-    endpoint: Endpoint.path<OpenAIChatBody>("/chat/completions", { baseURL }),
-    auth: Auth.none,
-    transport: jsonTransport,
-    defaults: { headers: { "Content-Type": "application/json" }, limits },
-    bodyTransform: bodyTransform as any,
-  })
-}
-
-export const proxyGpt4o = gpt4o.with({
-  endpoint: { baseURL: PROVIDER_PROXY_URLS.openai },
-  auth: Auth.none,
-  bodyTransform: providerBuilders.openai as any,
-})
-
-export const proxyGpt4oMini = gpt4oMini.with({
-  endpoint: { baseURL: PROVIDER_PROXY_URLS.openai },
-  auth: Auth.none,
-  bodyTransform: providerBuilders.openai as any,
-})
-
-export const proxyO3 = o3.with({
-  endpoint: { baseURL: PROVIDER_PROXY_URLS.openai },
-  auth: Auth.none,
-  bodyTransform: providerBuilders.openai as any,
-})
-
-export const proxyO4Mini = o4Mini.with({
-  endpoint: { baseURL: PROVIDER_PROXY_URLS.openai },
-  auth: Auth.none,
-  bodyTransform: providerBuilders.openai as any,
-})
-
-const anthropicAuth = Auth.custom((input) => {
-  const key = (input.headers["authorization"] || "").replace(/^Bearer\s*/i, "")
-  const { authorization, ...rest } = input.headers
-  return Effect.succeed({ ...rest, "x-api-key": key, "anthropic-version": "2023-06-01" })
-})
-
-export const proxyClaudeSonnet4 = claudeSonnet4.with({
-  endpoint: { baseURL: PROVIDER_PROXY_URLS.anthropic },
-  auth: anthropicAuth,
-  bodyTransform: providerBuilders.anthropic as any,
-})
-
-export const proxyClaudeHaiku3 = claudeHaiku3.with({
-  endpoint: { baseURL: PROVIDER_PROXY_URLS.anthropic },
-  auth: anthropicAuth,
-  bodyTransform: providerBuilders.anthropic as any,
-})
-
-export const proxyClaudeOpus4 = claudeOpus4.with({
-  endpoint: { baseURL: PROVIDER_PROXY_URLS.anthropic },
-  auth: anthropicAuth,
-  bodyTransform: providerBuilders.anthropic as any,
-})
+const GOOGLE_PROXY_URL = `/proxy/https://generativelanguage.googleapis.com`
 
 const googleAuth = Auth.custom((input) => {
   const key = (input.headers["authorization"] || "").replace(/^Bearer\s*/i, "")
@@ -97,52 +13,68 @@ const googleAuth = Auth.custom((input) => {
 })
 
 export const proxyGemini25Flash = gemini25Flash.with({
-  endpoint: { baseURL: PROVIDER_PROXY_URLS.google },
+  endpoint: { baseURL: GOOGLE_PROXY_URL },
   auth: googleAuth,
 })
 
 export const proxyGemini25Pro = gemini25Pro.with({
-  endpoint: { baseURL: PROVIDER_PROXY_URLS.google },
+  endpoint: { baseURL: GOOGLE_PROXY_URL },
   auth: googleAuth,
 })
 
 export const proxyGemini25FlashLite = gemini25FlashLite.with({
-  endpoint: { baseURL: PROVIDER_PROXY_URLS.google },
+  endpoint: { baseURL: GOOGLE_PROXY_URL },
   auth: googleAuth,
 })
 
 export const proxyGemini31FlashLite = gemini31FlashLite.with({
-  endpoint: { baseURL: PROVIDER_PROXY_URLS.google },
+  endpoint: { baseURL: GOOGLE_PROXY_URL },
   auth: googleAuth,
 })
 
 export const proxyGemma431bIt = gemma431bIt.with({
-  endpoint: { baseURL: PROVIDER_PROXY_URLS.google },
+  endpoint: { baseURL: GOOGLE_PROXY_URL },
   auth: googleAuth,
 })
 
 export const proxyGemma426bIt = gemma426bIt.with({
-  endpoint: { baseURL: PROVIDER_PROXY_URLS.google },
+  endpoint: { baseURL: GOOGLE_PROXY_URL },
   auth: googleAuth,
 })
 
-export const proxyDeepSeek = makeProxyRoute("deepseek", "deepseek", PROVIDER_PROXY_URLS.deepseek, { context: 64000, output: 8192 })
-export const proxyMistral = makeProxyRoute("mistral", "mistral", PROVIDER_PROXY_URLS.mistral)
-export const proxyCerebras = makeProxyRoute("cerebras", "cerebras", PROVIDER_PROXY_URLS.cerebras)
-export const proxyNvidia = makeProxyRoute("nvidia", "nvidia", PROVIDER_PROXY_URLS.nvidia)
-export const proxyOpenRouter = makeProxyRoute("openrouter", "openrouter", PROVIDER_PROXY_URLS.openrouter, { context: 128000, output: 4096 })
-export const proxyGroq = makeProxyRoute("groq", "groq", PROVIDER_PROXY_URLS.groq)
-export const proxyGrok = makeProxyRoute("grok", "grok", PROVIDER_PROXY_URLS.grok)
+const dynamicRouteCache = new Map<string, AnyRoute>()
+
+export function googleRouteForModel(modelId: string): AnyRoute {
+  const cached = dynamicRouteCache.get(modelId)
+  if (cached) return cached
+
+  const route = Route.make<GeminiRequestBody, any, string>({
+    id: modelId,
+    provider: "google",
+    protocol: GeminiProtocol,
+    endpoint: Endpoint.path(`/v1beta/models/${modelId}:streamGenerateContent?alt=sse`, { baseURL: GOOGLE_PROXY_URL }),
+    auth: googleAuth,
+    transport: HttpTransport.httpJson<GeminiRequestBody, string>({ framing: Framing.sse }),
+    defaults: {
+      headers: { "Content-Type": "application/json" },
+      generation: { maxTokens: 8192, temperature: 0.7 },
+      limits: { context: 1048576, output: 8192 },
+    },
+  })
+
+  dynamicRouteCache.set(modelId, route)
+  return route
+}
 
 export const providerRouteMap: Record<string, AnyRoute> = {
-  openai: proxyGpt4o,
-  anthropic: proxyClaudeSonnet4,
   google: proxyGemini25Flash,
-  deepseek: proxyDeepSeek,
-  mistral: proxyMistral,
-  cerebras: proxyCerebras,
-  nvidia: proxyNvidia,
-  openrouter: proxyOpenRouter,
-  groq: proxyGroq,
-  grok: proxyGrok,
+}
+
+export const modelRouteMap: Record<string, AnyRoute> = {
+  "gemini-2.5-flash": proxyGemini25Flash,
+  "gemini-2.5-pro": proxyGemini25Pro,
+  "gemini-2.5-flash-lite": proxyGemini25FlashLite,
+  "gemini-3.1-flash-lite-preview": proxyGemini31FlashLite,
+  "gemma-4-31b-it": proxyGemma431bIt,
+  "gemma-4-26b-a4b-it": proxyGemma426bIt,
 }

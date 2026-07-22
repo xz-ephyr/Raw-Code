@@ -7,14 +7,12 @@ import { ProviderKeyModal } from '@/components/settings/ProviderKeyModal';
 import type { KeyProvider } from '@core/providers/providerRegistry';
 
 export function KeysTab() {
-  const { providers, keys, setKeys, extras, setExtraValue } = useProviderKeys([
-    { key: 'cloudflare-account-id', storageKey: 'cloudflare-account-id' },
-  ]);
+  const { providers, keys, setKeys } = useProviderKeys();
 
   const [selectedProvider, setSelectedProvider] = useState<KeyProvider | null>(null);
   const filteredProviders = providers;
 
-  const handleSaveProviderKey = useCallback(async (providerId: string, key: string, providerExtras?: Record<string, string>) => {
+  const handleSaveProviderKey = useCallback(async (providerId: string, key: string) => {
     const p = providers.find(pr => pr.id === providerId);
     if (!p) return;
 
@@ -23,19 +21,8 @@ export function KeysTab() {
     await DatabaseService.setConfig(p.configKey, key).catch((e) => console.error('Failed to save provider key:', e));
     localStorage.setItem(p.configKey, key);
 
-    const cfAccountId = providerExtras?.['cloudflare-account-id'];
-    if (cfAccountId) {
-      setExtraValue('cloudflare-account-id', cfAccountId);
-      await DatabaseService.setConfig('cloudflare-account-id', cfAccountId).catch((e) => console.error('Failed to save CF account ID:', e));
-      localStorage.setItem('cloudflare-account-id', cfAccountId);
-
-      const cfBaseURL = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/v1`;
-      await DatabaseService.setConfig('cloudflare-base-url', cfBaseURL).catch((e) => console.error('Failed to save CF base URL:', e));
-      localStorage.setItem('cloudflare-base-url', cfBaseURL);
-    }
-
     await refreshProviders();
-  }, [providers, setKeys, setExtraValue]);
+  }, [providers, setKeys]);
 
   return (
     <>
@@ -76,11 +63,10 @@ export function KeysTab() {
         <ProviderKeyModal
           provider={selectedProvider}
           currentKey={keys[selectedProvider.id] || ''}
-          currentExtras={selectedProvider.id === 'cloudflare' ? { 'cloudflare-account-id': extras['cloudflare-account-id'] || '' } : undefined}
           isOpen={!!selectedProvider}
           onClose={() => setSelectedProvider(null)}
-          onSave={async (key, providerExtras) => {
-            await handleSaveProviderKey(selectedProvider.id, key, providerExtras);
+          onSave={async (key) => {
+            await handleSaveProviderKey(selectedProvider.id, key);
             setSelectedProvider(null);
           }}
         />

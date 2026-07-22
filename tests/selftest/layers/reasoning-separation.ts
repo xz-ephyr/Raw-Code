@@ -112,15 +112,15 @@ async function checkCleanReasoning(layer: string): Promise<SelfTestResult[]> {
   return results;
 }
 
-async function checkReasoningAnthropic(layer: string): Promise<SelfTestResult[]> {
+async function checkReasoningGemini(layer: string): Promise<SelfTestResult[]> {
   const results: SelfTestResult[] = [];
   try {
-    const mod = await import('@doktor/llm-providers/protocols/anthropic-messages');
+    const mod = await import('@doktor/llm-providers/protocols/google-gemini');
     if (typeof mod === 'object') {
-      results.push(ok(layer, 'anthropic-messages protocol module loaded'));
+      results.push(ok(layer, 'google-gemini protocol module loaded'));
     }
   } catch (e) {
-    results.push(skip(layer, 'anthropic-messages protocol', String(e)));
+    results.push(skip(layer, 'google-gemini protocol', String(e)));
   }
   return results;
 }
@@ -136,7 +136,7 @@ export const reasoningSeparationManifest: LayerManifest = {
       ...await checkInlineScanner('reasoning-separation'),
       ...await checkModelCapabilities('reasoning-separation'),
       ...await checkCleanReasoning('reasoning-separation'),
-      ...await checkReasoningAnthropic('reasoning-separation'),
+      ...await checkReasoningGemini('reasoning-separation'),
     ];
     return results;
   },

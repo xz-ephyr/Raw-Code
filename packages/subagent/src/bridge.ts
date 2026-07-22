@@ -7,17 +7,18 @@ import { compose } from './composer';
 import { synthesize } from './synthesizer';
 import type { SubAgentRequest } from './types';
 
-let toolFilter: readonly string[] | undefined;
-
-export function setToolFilter(scope: readonly string[] | undefined): void {
-  toolFilter = scope;
-}
-
 function resolveModelFromContext(context: ToolExecuteContext, name?: string): unknown {
   if (!name) return undefined;
   if (context.resolveModel) return context.resolveModel(name);
   return name;
 }
+
+const toolResultSchema = Schema.Struct({
+  name: Schema.String,
+  input: Schema.Unknown,
+  output: Schema.Unknown,
+  error: Schema.optional(Schema.String),
+});
 
 const inputSchema = Schema.Struct({
   task: Schema.optional(Schema.String),
@@ -33,6 +34,7 @@ const outputSchema = Schema.Struct({
   result: Schema.String,
   steps: Schema.Number,
   mode: Schema.String,
+  toolResults: Schema.Array(toolResultSchema),
 });
 
 export const subagentRunTool = make({
@@ -58,10 +60,11 @@ Two modes:
   },
   execute: (input, context: ToolExecuteContext) =>
     Effect.gen(function* () {
-      const scope = input.toolScope ?? toolFilter;
+      const scope = input.toolScope;
       const mat = materialize({ filterByScope: scope, sessionID: context.sessionID });
 
       const resolveCredential = context.resolveCredential;
+      const abortSignal = context.abortSignal;
 
       if (input.tasks && input.tasks.length > 0) {
         const requests: readonly SubAgentRequest[] = input.tasks.map((t: string) => ({
@@ -75,7 +78,7 @@ Two modes:
           resolveCredential,
         }));
 
-        const results = yield* runParallel(requests, mat);
+        const results = yield* runParallel(requests, mat, abortSignal);
         const summary = synthesize(results);
         const allToolResults = results.flatMap(r => r.toolResults);
         return { result: summary, steps: results.length, mode: 'parallel', toolResults: allToolResults };
@@ -96,7 +99,7 @@ Two modes:
         resolveCredential,
       };
 
-      const result = yield* runSubAgent(request, mat);
+      const result = yield* runSubAgent(request, mat, abortSignal);
       return { result: result.output, steps: result.steps, mode: 'single', toolResults: result.toolResults };
     }),
 });
@@ -156,16 +159,22 @@ Example:
   execute: (input, context: ToolExecuteContext) =>
     Effect.gen(function* () {
       const mat = materialize({ filterByScope: undefined, sessionID: context.sessionID });
+      const abortSignal = context.abortSignal;
+
       const pipeline = {
         steps: input.steps.map((s: any) => ({
-          ...s,
-          systemPromptOverride: undefined,
+          name: s.name,
+          agentType: s.agentType,
+          taskTemplate: s.taskTemplate,
+          toolScope: s.toolScope,
+          maxSteps: s.maxSteps,
         })),
         initialContext: input.initialContext,
         model: resolveModelFromContext(context, input.model),
+        parentSessionID: context.sessionID,
       };
 
-      const result = yield* compose(pipeline, mat);
+      const result = yield* compose(pipeline, mat, abortSignal);
       return { outputs: [...result.outputs], stepCount: result.stepResults.length };
     }),
 });

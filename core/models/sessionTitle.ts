@@ -1,6 +1,8 @@
-import { getModelDefinition } from "@core/config/models"
-import { getAllProviders } from "@core/providers"
-import { PROVIDER_CONFIGS } from "@doktor/llm-providers/model-registry"
+import { Effect, Stream } from "effect"
+import type { AnyRoute } from "@doktor/llm-providers/route"
+import { LLMRequest, userMessage, makeGenerationOptions } from "@doktor/llm-providers/schema"
+import { modelRouteMap, googleRouteForModel } from "@core/tools/nativeRoutes"
+import { getProviders } from "./providerCache"
 
 function sanitizeForTitleInput(raw: string): string {
   return raw
@@ -25,116 +27,26 @@ function tryParseTitle(raw: string): string | null {
   return null
 }
 
-function getStoredKey(providerId: string): string {
-  const p = getAllProviders().find(x => x.id === providerId)
-  if (!p) return ""
-  const stored = typeof localStorage !== "undefined"
-    ? (localStorage.getItem(`rc_config_${p.configKey}`) || localStorage.getItem(p.configKey) || "")
-    : ""
-  const env = typeof process !== "undefined" ? (process.env[p.envVar] || "") : ""
-  return stored || env
-}
-
-interface TitleProvider {
-  id: string
-  model: string
-  key: string
-}
-
-function collectTitleProviders(): TitleProvider[] {
-  const providers: TitleProvider[] = []
-
-  const googleKey = getStoredKey("google")
-  if (googleKey) {
-    providers.push({ id: "google", model: PROVIDER_CONFIGS.google.defaultModel, key: googleKey })
-  }
-
-  for (const p of getAllProviders()) {
-    if (p.id === "google") continue
-    const key = getStoredKey(p.id)
-    if (key && p.defaultModel) {
-      providers.push({ id: p.id, model: p.defaultModel, key })
-    }
-  }
-
-  return providers
-}
-
-async function callGemini(model: string, apiKey: string, prompt: string): Promise<string | null> {
-  const url = `/proxy/https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
-      },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 100, temperature: 0.3 },
+const RUNTIME = {
+  http: {
+    execute: (url: string, body: string, headers: Record<string, string>) =>
+      Effect.tryPromise({
+        try: async () => {
+          const res = await fetch(url, { method: "POST", headers, body })
+          return {
+            status: res.status,
+            headers: Object.fromEntries(res.headers.entries()),
+            text: Effect.promise(() => res.text()),
+            stream: res.body,
+          }
+        },
+        catch: (err) => new Error(`HTTP request failed: ${err}`),
       }),
-    })
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => "")
-      console.warn(`Gemini title API error ${res.status}: ${body.slice(0, 200)}`)
-      return null
-    }
-
-    const data = await res.json()
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-    if (!text) return null
-
-    return tryParseTitle(text)
-  } catch (e) {
-    console.warn("Gemini title fetch failed:", e)
-    return null
-  }
+  },
 }
 
-async function callOpenAICompatible(
-  providerId: string,
-  baseURL: string,
-  model: string,
-  apiKey: string,
-  prompt: string,
-): Promise<string | null> {
-  const url = `/proxy/${baseURL.replace(/^https?:\/\//, "")}/chat/completions`
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: "You are a helpful assistant that generates concise conversation titles. Return JSON with a single \"title\" field." },
-          { role: "user", content: prompt },
-        ],
-        max_tokens: 100,
-        temperature: 0.3,
-      }),
-    })
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => "")
-      console.warn(`${providerId} title API error ${res.status}: ${body.slice(0, 200)}`)
-      return null
-    }
-
-    const data = await res.json()
-    const text = data?.choices?.[0]?.message?.content
-    if (!text) return null
-
-    return tryParseTitle(text)
-  } catch (e) {
-    console.warn(`${providerId} title fetch failed:`, e)
-    return null
-  }
+function selectRoute(modelName: string): AnyRoute {
+  return modelRouteMap[modelName] || googleRouteForModel(modelName)
 }
 
 async function generateTitleNative(message: string, responseContext?: string): Promise<string | null> {
@@ -162,34 +74,57 @@ Bad (wrong case): {"title": "Fix Login Button On Mobile"}
 User message:
 ${sanitized}${contextSection}`
 
-  const candidates = collectTitleProviders()
-  if (candidates.length === 0) return null
-
-  for (const candidate of candidates) {
-    if (candidate.id === "google") {
-      const title = await callGemini(candidate.model, candidate.key, prompt)
-      if (title) return title
-    } else {
-      const def = getModelDefinition(candidate.model)
-      if (!def) {
-        const genericUrl = `https://api.${candidate.id}.com/v1`
-        const title = await callOpenAICompatible(candidate.id, genericUrl, candidate.model, candidate.key, prompt)
-        if (title) return title
-      } else {
-        const p = getAllProviders().find(x => x.id === candidate.id)
-        const baseURL = p?.baseURL || `https://api.${candidate.id}.com/v1`
-        const title = await callOpenAICompatible(candidate.id, baseURL, candidate.model, candidate.key, prompt)
-        if (title) return title
-      }
+  let apiKey = ""
+  try {
+    const providers = await getProviders()
+    const client = providers.get("google")
+    if (client && typeof (client as any).apiKey === "string") {
+      apiKey = (client as any).apiKey
     }
+  } catch { /* fallback */ }
+  if (!apiKey && typeof localStorage !== "undefined") {
+    apiKey = localStorage.getItem("rc_config_google-api-key") || localStorage.getItem("google-api-key") || ""
   }
+  if (!apiKey) return null
 
-  return null
+  try {
+    const route = selectRoute("gemini-2.5-flash")
+    const model = route.model({ provider: route.provider ?? "google", id: route.id })
+
+    const request = new LLMRequest({
+      model,
+      system: [],
+      messages: [userMessage(prompt)],
+      tools: [],
+      generation: makeGenerationOptions({ maxTokens: 100, temperature: 0.3 }),
+    })
+
+    const merged = {
+      ...request,
+      headers: {
+        ...(route.defaults as any)?.headers,
+        authorization: `Bearer ${apiKey}`,
+      },
+    }
+
+    const body = await Effect.runPromise(route.body.from(merged as any))
+    const prepared = await Effect.runPromise(route.prepareTransport(body, merged as any))
+    const collected = await Effect.runPromise(Stream.runCollect(route.streamPrepared(prepared, merged as any, RUNTIME)))
+
+    let text = ""
+    for (const event of collected) {
+      if ((event as any).type === "text-delta") text += (event as any).text
+    }
+
+    return tryParseTitle(text)
+  } catch (e) {
+    console.warn("Title generation failed:", e)
+    return null
+  }
 }
 
 export async function generateSessionTitle(userMessage: string, responseContext?: string): Promise<string | null> {
   const sanitized = sanitizeForTitleInput(userMessage)
   if (!sanitized) return null
-
   return generateTitleNative(sanitized, responseContext)
 }
